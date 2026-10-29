@@ -4,7 +4,9 @@ const PORT = 3100;
 
 export default defineConfig({
   testDir: 'tests/e2e',
-  fullyParallel: true,
+  // Software WebGL is CPU-bound; parallel pages starve each other's frame loops.
+  fullyParallel: false,
+  workers: 1,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? 'github' : 'list',

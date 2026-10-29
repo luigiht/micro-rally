@@ -32,3 +32,24 @@ Newest at the bottom. Format: date — decision — why.
     for missing prebuilt binaries; lint works without it.
 11. **2026-10-29 — Lint enforces sim purity.** `no-restricted-imports` blocks
     `three`, `react` and `@react-three/*` in `src/game/**` and `src/lib/**`.
+12. **2026-10-29 — Vehicle model.** Bicycle model with per-axle linear tyres
+    clamped by a friction circle (μ × axle load) and an 18% post-peak
+    fall-off for controllable slides. Load comes from the suspension spring,
+    so crests lighten the car; `stability` filters that variation (the
+    Suspension upgrade hook). Below 4 m/s yaw blends to kinematic steering to
+    avoid low-speed pirouettes. Surface drag is longitudinal only — lateral
+    drag would add grip off-road.
+13. **2026-10-29 — Brake pedal doubles as reverse** once stopped, throttle
+    re-selects first. No separate reverse key; matches arcade expectations.
+14. **2026-10-29 — `DrivingSession` class owns the runtime** (sim, stepper,
+    input, rig, telemetry) and lives in a ref. React Compiler lint forbids
+    mutating hook-held values, and this keeps the R3F component thin.
+15. **2026-10-29 — Shadows use PCF (`shadows="percentage"`)**; three r186
+    deprecates `PCFSoftShadowMap`. The remaining `THREE.Clock` deprecation
+    warning comes from R3F internals.
+16. **2026-10-29 — Speed-sensitive steering.** Steering lock is
+    `maxSteer / (1 + v / steerFalloffSpeed)` and digital input ramps at
+    3.2/s (returns at 5.5/s), scaled by the steering-sensitivity setting.
+17. **2026-10-29 — Playwright runs with one worker.** SwiftShader WebGL is
+    CPU-bound; parallel pages starved each other's frame loops and the
+    driving test saw 0 km/h.

@@ -12,13 +12,17 @@ Status legend: [x] done · [~] in progress · [ ] not started
 - [x] `pnpm check` script + GitHub Actions workflow
 - [x] Minimal typed i18n dictionary so components never hold literals
 
-## 2. Vehicle sim + flat test track + chase camera — [ ]
+## 2. Vehicle sim + flat test track + chase camera — [x]
 
-- [ ] `src/game/vehicle`: bicycle model, surfaces, torque curve, 5-speed auto
-- [ ] Fixed 120 Hz stepper with render interpolation
-- [ ] Keyboard input mapping (pure TS state, DOM listener in component)
-- [ ] Flat test track scene + `ChaseCameraRig`
-- [ ] Unit tests: top speed per car, braking distance, grip ordering
+- [x] `src/game/vehicle`: bicycle model, friction circle, weight transfer,
+      surfaces, torque curve, 5-speed auto (manual via env), turbo, handbrake
+- [x] Suspension spring/damper over terrain height, airtime + landings
+- [x] Fixed 120 Hz stepper (`FixedStepper`) with render interpolation
+- [x] `KeyboardControls` → `ControlInput`; `DrivingSession` runtime outside React
+- [x] Flat test track (tarmac ring, gravel/snow/mud pads, jump ramp) + `ChaseCameraRig`
+- [x] Speed readout + backtick debug overlay (10 Hz telemetry store)
+- [x] Unit tests: top speed per car, 0–100, braking distance, grip ordering,
+      off-road drag, reverse, handbrake, ramp airtime, turbo, determinism
 
 ## 3. Terrain, road, checkpoints, timing, Forest — [ ]
 
