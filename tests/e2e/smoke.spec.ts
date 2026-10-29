@@ -7,8 +7,8 @@ test('home page boots and renders the 3D canvas', async ({ page }) => {
   await expect(page.locator('[data-testid="game-canvas"] canvas')).toBeVisible();
 });
 
-test('holding W accelerates the car', async ({ page }) => {
-  await page.goto('/');
+test('holding W accelerates the car on the test track', async ({ page }) => {
+  await page.goto('/?track=test');
   const readout = page.getByTestId('speed-readout');
   await expect(readout).toBeVisible();
   await expect(page.locator('[data-testid="game-canvas"] canvas')).toBeVisible();
@@ -19,4 +19,11 @@ test('holding W accelerates the car', async ({ page }) => {
   const text = await readout.innerText();
   const speed = Number(text.match(/\d+/)?.[0]);
   expect(speed, text).toBeGreaterThan(20);
+});
+
+test('a stage counts down, then the clock runs', async ({ page }) => {
+  await page.goto('/');
+  const timer = page.getByTestId('stage-timer');
+  await expect(timer).toHaveText('0:00.00');
+  await expect(timer).not.toHaveText('0:00.00', { timeout: 10_000 });
 });

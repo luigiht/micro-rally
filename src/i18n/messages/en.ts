@@ -35,6 +35,22 @@ export const en = {
     snow: 'Snow',
     grass: 'Grass',
   },
+  stage: {
+    go: 'GO!',
+    checkpoint: 'Checkpoint {n}/{total}',
+    penalties: '+{s}s penalties',
+    money: 'Money',
+    resultTitle: 'Stage complete',
+    time: 'Time',
+    par: 'Par',
+    best: 'Previous best',
+    prize: 'Prize money',
+    repairs: 'Repairs',
+    newRecord: 'New stage record!',
+    retry: 'Drive it again',
+    next: 'Next stage',
+    resetHint: 'Lost? Press R to return to the last checkpoint.',
+  },
 };
 
 type Widen<T> = { [K in keyof T]: T[K] extends string ? string : Widen<T[K]> };

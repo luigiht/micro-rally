@@ -24,7 +24,21 @@ Status legend: [x] done · [~] in progress · [ ] not started
 - [x] Unit tests: top speed per car, 0–100, braking distance, grip ordering,
       off-road drag, reverse, handbrake, ramp airtime, turbo, determinism
 
-## 3. Terrain, road, checkpoints, timing, Forest — [ ]
+## 3. Terrain, road, checkpoints, timing, Forest — [x]
+
+- [x] `StageGenerator`: seeded (game seed, region, index) Catmull-Rom road,
+      heading clamped to ±63° of a main axis so it never self-crosses
+- [x] `TerrainField`: simplex fBm, road bed smoothed + grade-limited (12%),
+      corridor blended flat; surface = stage surface on the road, grass off it
+- [x] Terrain chunks (64 m, 32² quads) meshed in a Web Worker, streamed by
+      `ChunkStreamer`; sync fallback when workers are unavailable
+- [x] Road ribbon pieces, edge lines, marker posts; start/checkpoint/finish arches
+- [x] Instanced, chunked scenery (trees, bushes, rocks) + tree/rock colliders
+- [x] `StageRun`: countdown, gated checkpoints (order enforced), penalties,
+      repair fees, respawn at last checkpoint (R)
+- [x] Prize formula (length × surface × pace vs par × loop) + records
+- [x] Minimal stage HUD: timer, checkpoints, money, countdown, result panel
+- [x] Free-roam test track kept at `/?track=test`
 
 ## 4. Cockpit + Isometric cameras, V cycling, reduced motion — [ ]
 

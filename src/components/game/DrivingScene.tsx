@@ -1,79 +1,86 @@
 'use client';
 
-import { useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useRef } from 'react';
-import type { DirectionalLight, PerspectiveCamera } from 'three';
+import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
+import type { Group } from 'three';
+import { REGIONS } from '@/game/stage/regions';
+import { createStageWorld } from '@/game/stage/StageWorld';
 import { TEST_TRACK, testTrackTerrain } from '@/game/stage/TestTrack';
-import { CAR_SPECS } from '@/game/vehicle/CarSpec';
-import { CarModel, type CarModelHandle } from './CarModel';
-import { DrivingSession } from './DrivingSession';
+import type { VehiclePose } from '@/game/vehicle/interpolatePose';
+import { StageRenderer } from '@/render/stage/StageRenderer';
+import { useGameStore } from '@/state/gameStore';
+import { DriveRig } from './DriveRig';
+import type { DriveWorld } from './DrivingSession';
 import { TestTrackView } from './TestTrackView';
-import { usePrefersReducedMotion } from './usePrefersReducedMotion';
 
-const SHADOW_OFFSET = [8, 14, 6] as const;
-const spec = CAR_SPECS.hatchback;
+const TEST_WORLD: DriveWorld = { terrain: testTrackTerrain, spawn: TEST_TRACK.spawn };
+
+function StageDrive({ gameSeed, stageIndex }: { gameSeed: number; stageIndex: number }) {
+  const world = useMemo(() => createStageWorld(gameSeed, stageIndex), [gameSeed, stageIndex]);
+  const drive = useMemo<DriveWorld>(
+    () => ({
+      terrain: world.field,
+      spawn: world.stage.spawn,
+      obstacles: world.obstacles,
+      stage: world.stage,
+    }),
+    [world],
+  );
+  const group = useRef<Group>(null);
+  const renderer = useRef<StageRenderer | null>(null);
+
+  useEffect(() => {
+    const r = new StageRenderer(world);
+    group.current?.add(r.group);
+    renderer.current = r;
+    return () => {
+      r.dispose();
+      renderer.current = null;
+    };
+  }, [world]);
+
+  const onPose = useCallback((pose: Readonly<VehiclePose>) => {
+    renderer.current?.update(pose.x, pose.z);
+  }, []);
+
+  const palette = REGIONS[world.stage.region].palette;
+  return (
+    <DriveRig world={drive} sky={palette.sky} fog={palette.fog} onPose={onPose}>
+      <group ref={group} />
+    </DriveRig>
+  );
+}
+
+function subscribeNoop(): () => void {
+  return () => {};
+}
+
+/** `?track=test` opens the flat proving ground used for tuning the car. */
+function useTestTrackFlag(): boolean {
+  return useSyncExternalStore(
+    subscribeNoop,
+    () => new URLSearchParams(window.location.search).get('track') === 'test',
+    () => false,
+  );
+}
 
 export function DrivingScene() {
-  const camera = useThree((s) => s.camera) as PerspectiveCamera;
-  const gl = useThree((s) => s.gl);
-  const reducedMotion = usePrefersReducedMotion();
-  const reduced = useRef(reducedMotion);
-  const session = useRef<DrivingSession | null>(null);
-  const car = useRef<CarModelHandle>(null);
-  const sun = useRef<DirectionalLight>(null);
+  const gameSeed = useGameStore((s) => s.gameSeed);
+  const stageIndex = useGameStore((s) => s.stageIndex);
+  const attempt = useGameStore((s) => s.attempt);
+  const testTrack = useTestTrackFlag();
 
-  useEffect(() => {
-    reduced.current = reducedMotion;
-  }, [reducedMotion]);
-
-  useEffect(() => {
-    const s = new DrivingSession(spec, testTrackTerrain, TEST_TRACK.spawn, camera);
-    s.attach(window, gl.domElement);
-    session.current = s;
-    return () => {
-      s.dispose(window);
-      session.current = null;
-    };
-  }, [camera, gl]);
-
-  useFrame((state, dt) => {
-    const s = session.current;
-    if (!s) return;
-    s.tick(dt, reduced.current, state.gl.info.render);
-    const pose = s.pose;
-    car.current?.apply(pose);
-    const light = sun.current;
-    if (light) {
-      light.position.set(
-        pose.x + SHADOW_OFFSET[0],
-        pose.y + SHADOW_OFFSET[1],
-        pose.z + SHADOW_OFFSET[2],
-      );
-      light.target.position.set(pose.x, pose.y, pose.z);
-      light.target.updateMatrixWorld();
-    }
-  });
-
+  if (testTrack) {
+    return (
+      <DriveRig world={TEST_WORLD} sky="#cfe3e8" fog="#cfe3e8">
+        <TestTrackView />
+      </DriveRig>
+    );
+  }
   return (
-    <>
-      <color attach="background" args={['#cfe3e8']} />
-      <fog attach="fog" args={['#cfe3e8', 70, 220]} />
-      <hemisphereLight args={['#fff6e0', '#7fa05f', 1.9]} />
-      <directionalLight
-        ref={sun}
-        intensity={2.6}
-        castShadow
-        shadow-mapSize={[2048, 2048]}
-        shadow-camera-left={-30}
-        shadow-camera-right={30}
-        shadow-camera-top={30}
-        shadow-camera-bottom={-30}
-        shadow-camera-near={1}
-        shadow-camera-far={60}
-        shadow-bias={-0.0005}
-      />
-      <TestTrackView />
-      <CarModel ref={car} spec={spec} />
-    </>
+    <StageDrive
+      key={`${gameSeed}-${stageIndex}-${attempt}`}
+      gameSeed={gameSeed}
+      stageIndex={stageIndex}
+    />
   );
 }

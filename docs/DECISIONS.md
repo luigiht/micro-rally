@@ -53,3 +53,20 @@ Newest at the bottom. Format: date — decision — why.
 17. **2026-10-29 — Playwright runs with one worker.** SwiftShader WebGL is
     CPU-bound; parallel pages starved each other's frame loops and the
     driving test saw 0 km/h.
+18. **2026-10-29 — Workers regenerate the stage from its seed** instead of
+    receiving serialised geometry. Generation takes ~1 ms and is
+    deterministic, so main thread and worker always agree.
+19. **2026-10-29 — Road never self-intersects by construction:** heading is
+    a damped random walk clamped to ±1.1 rad of a main axis, so the road
+    always makes forward progress.
+20. **2026-10-29 — Terrain is non-indexed and flat-shaded** with per-face
+    colours computed in the worker (linear-space vertex colours). Costs
+    ~3× vertices but gives the faceted diorama look with zero textures.
+21. **2026-10-29 — Timing advances inside the fixed physics step**, so
+    stage times are frame-rate independent and comparable across devices.
+22. **2026-10-29 — Repair fees are charged at the finish**, netted against
+    prize money, never taking the balance below zero.
+23. **2026-10-29 — Stage names are procedural proper nouns** (syllable
+    pairs) and are not translated; everything around them is.
+24. **2026-10-29 — Prize money uses a `$` prefix in every locale** with
+    locale digit grouping; it's a fictional currency.

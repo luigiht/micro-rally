@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import { useMessages } from '@/i18n/useMessages';
 import { DebugOverlay } from '@/components/hud/DebugOverlay';
 import { SpeedReadout } from '@/components/hud/SpeedReadout';
+import { StageHud } from '@/components/hud/StageHud';
 
 const GameCanvas = dynamic(() => import('./GameCanvas').then((m) => m.GameCanvas), {
   ssr: false,
@@ -30,6 +31,7 @@ export function GameRoot() {
       </header>
       <DebugOverlay />
       <SpeedReadout />
+      <StageHud />
       <p className="pointer-events-none absolute bottom-4 left-4 rounded-md bg-paper/80 px-2 py-1 text-xs text-ink">
         {m.hud.controlsHint}
       </p>
