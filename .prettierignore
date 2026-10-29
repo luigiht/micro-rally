@@ -1,0 +1,11 @@
+.next
+out
+node_modules
+pnpm-lock.yaml
+coverage
+playwright-report
+test-results
+.data
+ios
+android
+next-env.d.ts
