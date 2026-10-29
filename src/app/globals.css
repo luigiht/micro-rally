@@ -1,5 +1,8 @@
 @import 'tailwindcss';
 
+/* Touch-first layout: phones/tablets report a coarse primary pointer. */
+@custom-variant coarse (@media (pointer: coarse));
+
 @theme {
   --color-paper: #f4ecd8;
   --color-ink: #2b2a33;
@@ -15,7 +18,8 @@
   letter-spacing: 0.02em;
 }
 
-/* Retro containers: square, 4px ink border with notched corners, hard drop shadow. */
+/* Retro containers: square with a hard drop shadow. Panels are borderless;
+   buttons keep a 4px ink ring with notched corners. */
 @layer components {
   .pixel-box,
   .pixel-box-dark,
@@ -25,6 +29,10 @@
     --px-border: var(--color-ink);
     --px-shadow: rgb(43 42 51 / 0.35);
     border-radius: 0;
+    box-shadow: 8px 8px 0 0 var(--px-shadow);
+  }
+  .pixel-btn,
+  .pixel-btn-ghost {
     box-shadow:
       0 -4px 0 0 var(--px-border),
       0 4px 0 0 var(--px-border),
@@ -37,19 +45,13 @@
     color: var(--color-ink);
   }
   .pixel-box-dark {
-    --px-border: var(--color-paper);
     background-color: rgb(43 42 51 / 0.9);
     color: var(--color-paper);
   }
   .pixel-tag {
     background-color: var(--color-paper);
     color: var(--color-ink);
-    box-shadow:
-      0 -2px 0 0 var(--px-border),
-      0 2px 0 0 var(--px-border),
-      -2px 0 0 0 var(--px-border),
-      2px 0 0 0 var(--px-border),
-      4px 4px 0 0 var(--px-shadow);
+    box-shadow: 4px 4px 0 0 var(--px-shadow);
   }
   .pixel-btn,
   .pixel-btn-ghost {
@@ -73,15 +75,120 @@
   .pixel-btn-ghost:hover {
     filter: brightness(1.06);
   }
-  .pixel-btn:active,
-  .pixel-btn-ghost:active {
+  .pixel-btn:active:not(:disabled),
+  .pixel-btn-ghost:active:not(:disabled) {
     transform: translate(4px, 4px);
     --px-shadow: transparent;
+  }
+  .pixel-btn:disabled,
+  .pixel-btn-ghost:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: none;
   }
   .pixel-btn:focus-visible,
   .pixel-btn-ghost:focus-visible {
     outline: 3px dashed var(--color-rally);
     outline-offset: 8px;
+  }
+  /* Native select dressed as a pixel box; the chevron is an inline 1-bit glyph. */
+  .pixel-select {
+    appearance: none;
+    font-family: var(--font-pixel);
+    -webkit-font-smoothing: none;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    padding: 0.75rem 3rem 0.75rem 1rem;
+    border: 4px solid var(--color-ink);
+    border-radius: 0;
+    background-color: var(--color-paper);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 7 4' shape-rendering='crispEdges' fill='%232b2a33'%3E%3Crect width='7' height='1'/%3E%3Crect x='1' y='1' width='5' height='1'/%3E%3Crect x='2' y='2' width='3' height='1'/%3E%3Crect x='3' y='3' width='1' height='1'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-size: 14px 8px;
+    background-position: right 1rem center;
+    color: var(--color-ink);
+    box-shadow: 8px 8px 0 0 rgb(43 42 51 / 0.35);
+    cursor: pointer;
+  }
+  .pixel-input {
+    font-size: 1rem; /* ≥16px so iOS doesn't zoom the page on focus */
+    line-height: 1.5;
+    padding: 0.75rem 1rem;
+    border: 4px solid var(--color-ink);
+    border-radius: 0;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    box-shadow: 8px 8px 0 0 rgb(43 42 51 / 0.35);
+  }
+  /* Square button that sits beside a .pixel-input and matches its height and border. */
+  .pixel-input-btn {
+    display: grid;
+    place-items: center;
+    width: 3.5rem;
+    flex-shrink: 0;
+    border: 4px solid var(--color-ink);
+    border-radius: 0;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    box-shadow: 8px 8px 0 0 rgb(43 42 51 / 0.35);
+    cursor: pointer;
+  }
+  .pixel-input-btn:hover {
+    filter: brightness(1.06);
+  }
+  .pixel-input-btn:active {
+    transform: translate(4px, 4px);
+    box-shadow: none;
+  }
+  .pixel-input-btn:focus-visible {
+    outline: 3px dashed var(--color-rally);
+    outline-offset: 4px;
+  }
+  /* Footer language picker: a bare link with a chevron, still a real <select>. */
+  .pixel-select-sm {
+    appearance: none;
+    font: inherit;
+    padding: 0 0.9rem 0 0;
+    border: 0;
+    border-radius: 0;
+    background-color: transparent;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 7 4' shape-rendering='crispEdges' fill='%23f4ecd8'%3E%3Crect width='7' height='1'/%3E%3Crect x='1' y='1' width='5' height='1'/%3E%3Crect x='2' y='2' width='3' height='1'/%3E%3Crect x='3' y='3' width='1' height='1'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-size: 10px 6px;
+    background-position: right center;
+    color: var(--color-paper);
+    /* Browsers ignore text-decoration on <select>; a hairline border is the link underline. */
+    border-bottom: 1px solid currentColor;
+    padding-bottom: 1px;
+    cursor: pointer;
+  }
+  .pixel-select-sm:hover,
+  .pixel-select-sm:focus-visible {
+    color: var(--color-rally);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 7 4' shape-rendering='crispEdges' fill='%23e8623a'%3E%3Crect width='7' height='1'/%3E%3Crect x='1' y='1' width='5' height='1'/%3E%3Crect x='2' y='2' width='3' height='1'/%3E%3Crect x='3' y='3' width='1' height='1'/%3E%3C/svg%3E");
+  }
+  .pixel-select-sm:focus-visible {
+    outline: 2px dashed var(--color-rally);
+    outline-offset: 4px;
+  }
+  .pixel-select-sm option {
+    color: var(--color-ink);
+    background: var(--color-paper);
+  }
+  .pixel-input::placeholder {
+    color: rgb(43 42 51 / 0.4);
+  }
+  .pixel-input:focus-visible,
+  .pixel-select:focus-visible {
+    outline: 3px dashed var(--color-rally);
+    outline-offset: 4px;
+  }
+  /* HUD frame inset by the device safe areas (notch, home indicator). */
+  .hud-frame {
+    position: absolute;
+    inset: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+      env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+    pointer-events: none;
   }
   /* Scanline scrim behind dialogs. */
   .pixel-scrim {

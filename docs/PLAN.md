@@ -40,14 +40,37 @@ Status legend: [x] done · [~] in progress · [ ] not started
 - [x] Minimal stage HUD: timer, checkpoints, money, countdown, result panel
 - [x] Free-roam test track kept at `/?track=test`
 
-## 4. Cockpit + Isometric cameras, V cycling, reduced motion — [ ]
+## 4. Cockpit + Isometric cameras, V cycling, reduced motion — [x]
+
+- [x] `CockpitCameraRig` (eye on the chassis, glance into corners, cabin hidden), `IsometricCameraRig` (long lens, 55° pitch, stage axis + 45°, zoom)
+- [x] `C` / `V` cycle; Camera dropdown in Settings; rigs swap via `createCameraRig` and snap
+- [x] Interior view behind the wheel with a modelled cabin (`CarInterior`): working speedo/tacho, turning wheel, seats, pillars
+- [x] Reduced motion: level head in the cab, no roll / FOV kick in chase
+- [ ] Look-around in the interior view (drag / arrows) — later
 
 ## 5. HUD, service park, Garage, car models, economy tests — [ ]
 
+- [x] Stage progress bar down the left edge with checkpoint ticks and a finish flag
+- [x] Garage panel: Upgrades (7 cards, per-level pricing, applied via `applyUpgrades`) and Dealership (stat bars; second car: wedge coupé)
+- [x] Economy tests for upgrade pricing/effects, catalogue and store purchases; save v2 migration
+
 ## 6. Save system, API route, Game ID URL, start/continue — [ ]
+
+- [x] Versioned `SaveFile` + Crockford Game IDs in `src/game/save`, unit-tested
+- [x] Device-first saves (Web Storage) pushed to `/api/games/[id]` (file-backed), newest-wins merge
+- [x] Autosave on start, after progress, every minute, on hide/unload and on leave
+- [x] Splash: driver name + Game ID, Continue for returning players, `?game=` deep link
+- [x] Game panel: driver, Game ID + Copy, sync status
+- [x] Splash backdrop: live attract-mode drive (`RoadFollower` + chase camera) under a dark overlay; parked under reduced motion
+- [ ] Delete this game, privacy policy link
 
 ## 7. i18n ES/IT, Settings, quality tiers, post-processing, audio — [ ]
 
+- [x] Settings panel scaffold with Language (EN/ES/IT); HUD toolbar with Restart / Settings / Game
+- [x] Touch-first responsive HUD: safe-area frame, icon-only toolbar on narrow widths, on-screen steer/pedal pads merged with keyboard input
+
 ## 8. Regions, weather, night, polish, smoke tests, screenshot script — [ ]
+
+- [x] Deploy-ready for Vercel: Redis (Upstash/KV) save store, URL resolution from Vercel env, security headers, `docs/DEPLOY.md`
 
 ## 9. Capacitor iOS/Android, docs/ANDROID.md — [ ]

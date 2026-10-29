@@ -15,6 +15,7 @@ export interface VehiclePose {
   latAccel: number;
   steerAngle: number;
   wheelAngle: number;
+  rpm: number;
   grounded: boolean;
 }
 
@@ -33,6 +34,7 @@ export function createVehiclePose(): VehiclePose {
     latAccel: 0,
     steerAngle: 0,
     wheelAngle: 0,
+    rpm: 0,
     grounded: true,
   };
 }
@@ -67,6 +69,7 @@ export function interpolatePose(
   out.latAccel = lerp(prev.latAccel, curr.latAccel, alpha);
   out.steerAngle = lerp(prev.steerAngle, curr.steerAngle, alpha);
   out.wheelAngle = lerpAngle(prev.wheelAngle, curr.wheelAngle, alpha);
+  out.rpm = lerp(prev.rpm, curr.rpm, alpha);
   out.grounded = curr.grounded;
   return out;
 }

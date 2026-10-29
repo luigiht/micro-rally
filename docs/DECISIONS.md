@@ -91,3 +91,173 @@ Newest at the bottom. Format: date — decision — why.
     controls table and an about blurb. The sim pauses while it's open. The
     always-on controls hint is gone. Game ID/delete/privacy join this panel
     in milestone 6.
+29. **2026-10-29 — HUD toolbar: Restart / Settings / Game.** The lone Game
+    button became a top-right toolbar. Buttons carry 8×8 one-bit glyphs drawn
+    as crisp SVG rects in the text colour (`PixelIcon`), so icons need no
+    image assets and recolour with the theme. One `uiStore.panel` slot tracks
+    which modal is open; the sim pauses for any panel and Esc closes it.
+    Restart bumps `attempt` (same path as "Drive it again") and is disabled on
+    the free-roam test track. Settings offers a Language dropdown (native `<select>` dressed as a pixel box, so it works with keyboard, touch and screen readers) now; audio, quality,
+    camera and controls join it in milestone 7. Panels are borderless
+    (drop shadow only); buttons keep the ink ring.
+30. **2026-10-29 — Touch-first responsive HUD.** Racing phones are held in
+    landscape (wide but ~400 px tall), so width breakpoints alone misplace
+    things. Layout is driven by a `coarse` Tailwind variant
+    (`@media (pointer: coarse)`): timer, checkpoint and money stack top-left,
+    the speed readout sits bottom-centre, and on-screen pads appear
+    (handbrake + steer left/right bottom-left, brake + gas bottom-right).
+    Toolbar labels collapse to icons below `md` but stay in the accessible
+    name. The whole HUD lives in a `.hud-frame` inset by `env(safe-area-inset-*)`
+    with pointer events off, so the canvas keeps wheel zoom; interactive
+    pieces opt back in. Touch pads write a shared `TOUCH_INPUT` object that
+    the session merges with the keyboard each physics step
+    (`mergeControlInput`: max pedals, summed steer, ORed buttons, shift edges
+    moved to the merged input). No React state on the input path.
+31. **2026-10-29 — Save system and start screen (milestone 6).** Game IDs
+    are 8 chars of Crockford base32 (no I/L/O/U; typed look-alikes are
+    mapped), shown as XXXX-XXXX. A fresh ID is generated for a new game and
+    never looked up; a typed or prefilled one is, and an unknown typed ID asks
+    before starting a new game under it. Saves are device-first (Web Storage)
+    then pushed to `PUT /api/games/:id`; the server keeps one JSON file per
+    game under `.data/games` (temp file + atomic rename, last write wins), so
+    dev and a single self-hosted node need no database and a KV/Postgres
+    store can replace `gameFileStore.ts` later. Loads merge local and online
+    by `updatedAt`. Autosave runs on start, 2.5 s after progress changes,
+    every minute (which also retries a failed upload), on tab hide / pagehide
+    with `keepalive`, and on leaving the game; nothing on the input path uses
+    React state. Save files are versioned and parsed defensively, so a bad
+    file is ignored rather than crashing. The ID lives in `?game=` so a
+    bookmark resumes. The Game panel now shows stage info plus driver name,
+    Game ID with Copy, sync status and Change driver; the controls table moved
+    to Settings and the about blurb is gone. Knowing an ID is the only
+    credential, and the splash says so. "Delete this game" and the privacy
+    link from the brief are still to come.
+32. **2026-10-29 — Three camera views, C cycles (milestone 4).** `C` (and
+    `V`, as the brief lists) cycles chase → cab → isometric; Settings has the
+    same choice as a dropdown. The mode lives in `settingsStore`; the
+    `DrivingSession` reads it imperatively each frame and swaps rigs through
+    `createCameraRig`, snapping the new rig on its first frame, so key and
+    dropdown stay in sync without React on the frame path. **Cab:** the eye
+    rides the chassis at the left seat, high under the roofline (+x is the
+    car's left; forward is +z), looks along the heading with a 3° downward
+    tilt and a small damped glance into the steering, and the car model hides
+    its cabin, glass and mirror pods so the view is out over the bonnet;
+    no zoom. **Isometric:** a 28° lens 32 m away at 55° pitch, fixed
+    at the stage's spawn heading + 45° so the road runs diagonally up-screen,
+    following the car with damped position and slow height; wheel/pinch zooms.
+    Under reduced motion the cab keeps the head level and ignores steering,
+    and the chase rig already drops roll and the speed FOV kick. The chase
+    rig now resets its FOV on snap so switching back doesn't ease in from the
+    long lens. Camera preference is per device and not yet persisted; it
+    resets on reload like the language.
+33. **2026-10-29 — Interior view and a modelled cabin.** A fourth camera,
+    _interior_, sits behind the wheel (eye at 0.34 left, 1.2 up, 0.33 back in
+    the car frame, 70° lens, 4° down tilt). Rather than making the exterior
+    glass translucent (which would expose the solid cabin box behind it), the
+    car model keeps its exterior as is and carries a separate `CarInterior`
+    group inside the leaning body: dark floor, roof lining, windscreen header,
+    A- and B-pillars, door cards with armrests, dash with a driver's binnacle,
+    speedo (0–240 km/h) and tacho (to redline) needles driven from the pose,
+    a three-spoke wheel on a raked column that turns 4.5× the road-wheel angle
+    (clockwise for a right turn), centre console with gear lever, co-driver's
+    pace-note pad, rear-view mirror and two bucket seats. The exterior cabin
+    and glass are hidden in both first-person views; the interior is shown
+    only in this one, so chase and isometric cost nothing extra. Both
+    first-person views share `FirstPersonCameraRig` with a preset per mode.
+    `rpm` joined the interpolated pose so the tacho is frame-smooth. The cycle
+    is now chase → cab → interior → isometric.
+34. **2026-10-29 — Stage progress bar.** A 12 px vertical bar down the left
+    edge: start at the top, chequered flag at the bottom, a tick per
+    checkpoint (paper once passed) and a pointer at the car. Progress is the
+    nearest centreline point's arc length mapped onto the start→finish span
+    (`StageRun.progressAt`, pure and unit-tested), sampled at the 10 Hz HUD
+    tick. It holds its last value while the car is more than six road
+    half-widths from the centreline, so cutting a bend never jolts it. Hidden
+    on the free-roam test track. On touch layouts the top-left timer stack
+    moves right to clear the bar and its pointer.
+35. **2026-10-29 — Restart moves into the Game panel.** The toolbar is down
+    to Settings and Game; "Restart stage" sits under the stage facts inside
+    the Game panel, where a destructive action belongs behind one deliberate
+    tap rather than next to the always-visible buttons. The progress bar lost
+    its finish flag: the bottom of the bar is self-evidently the finish. "Change driver" went too: switching games is done
+    from the splash, which a reload (or a `?game=` link) brings back.
+36. **2026-10-29 — Attract-mode splash backdrop.** The splash card now sits
+    over a live scene instead of paper: a freshly generated stage, the
+    hatchback following the centreline at a steady 17 m/s through the pure
+    `RoadFollower` (position and heading from the arc-length sample, height
+    and pitch from the terrain, steering and lateral g from the heading rate,
+    no physics), the normal `ChaseCameraRig` behind it, and a 45 % ink
+    overlay so the card reads. Coasting past the finish regenerates the world
+    with a new seed, so the backdrop never repeats. Under
+    `prefers-reduced-motion` the car stays parked and the camera still. The
+    scene has its own client-only canvas (`SplashScene`), unmounted when the
+    game starts; sky, fog and lights moved into `SceneLights` so the game and
+    the demo share them.
+37. **2026-10-29 — Splash: logo, no tagline, paste-to-continue ID.** The
+    card shows the brand SVG from `assets/` (imported through the `@assets`
+    alias with `next/image`, which leaves SVGs unoptimised) inside the `h1`,
+    so the heading keeps its accessible name. The Game ID field is now empty
+    and optional: leave it to start a new game under a generated ID (shown
+    later in the Game panel), or paste one to resume. An unknown ID is
+    refused with an inline message rather than offered as a new game, which
+    removes the typo-creates-a-game path. Returning players still get their
+    ID and name prefilled and a Continue button. On wide screens the demo
+    camera's view is offset so the car drives beside the card, not under it.
+38. **2026-10-29 — Brand assets, metadata and SEO.** `assets/` holds the
+    source SVGs (logo, favicon, Open Graph). `pnpm brand`
+    (`scripts/render-brand.mjs`, Playwright) copies the favicon to
+    `src/app/icon0.svg` and renders `icon1.png` (192), `apple-icon.png` (180)
+    and `opengraph-image.png` (1200×630) by inlining the SVGs, since the OG
+    art uses `foreignObject` and scrapers need raster. Next's file
+    conventions then emit the icon, Apple touch and `og:image` tags with
+    sizes. `layout.tsx` sets `metadataBase` from `NEXT_PUBLIC_SITE_URL`
+    (localhost fallback), a title template, keywords, canonical, robots,
+    Open Graph with ES/IT alternate locales, a `summary_large_image` Twitter
+    card, iOS web-app hints and VideoGame JSON-LD; `robots.ts` disallows
+    `/api/` and `sitemap.ts` lists the single page. The logo is centred in
+    the splash card.
+39. **2026-10-29 — Splash fields.** Both inputs type in the rounded sans
+    (the pixel font stays for labels and buttons); the Game ID explanation
+    sits behind a "?" button beside the field, revealed on tap but always
+    present for screen readers through `aria-describedby`.
+40. **2026-10-29 — Splash help dialog, footer and privacy page.** The "?"
+    beside the Game ID is a square `pixel-input-btn` that matches the input's
+    height and border and opens a small `InfoDialog` (Close button, Esc,
+    focus returned to the opener); the same text stays as an `sr-only`
+    description of the field. A footer in paper-white over the backdrop
+    carries the copyright, a Privacy link, "Created by Luis Hermosilla"
+    (luigiht.com) and a compact language select bound to the same settings
+    store as the Settings panel. `/privacy` is a short, translated policy
+    describing exactly what is stored (driver name, game state, Game ID),
+    where (browser storage and the server under the ID), the no-cookies /
+    no-analytics stance, and how to have a save removed; it is in the
+    sitemap. Site constants (`SITE_URL`, `AUTHOR`) live in `src/lib/site.ts`.
+41. **2026-10-29 — Garage: upgrades and dealership (milestone 5 start).** A
+    Garage button beside Money opens a tabbed panel. _Upgrades_ (seven cards:
+    engine, turbo, tyres, suspension, brakes, gearbox, weight) have per-level
+    prices that grow geometrically and apply to the `CarSpec` through the
+    pure `applyUpgrades`, so the sim never knows about money. _Dealership_
+    lists cars from `CAR_CATALOG` with stat bars derived from the physics; the
+    second car is an original low-poly 1970s wedge coupé with a generic
+    green/white/red stripe set (no real marque names or logos), built from an
+    extruded side profile plus boxes, in `bodies/CoupeBody.tsx`; the
+    hatchback shell moved to `bodies/HatchbackBody.tsx`. Purchases update the
+    store at once but the car on track changes on the next run: `DriveRig`
+    snapshots car + upgrades when a run mounts, which keeps mid-stage
+    shopping from resetting the clock. Lower cabins pass a `cabinDrop` to the
+    interior group and the first-person eye. Saves are now v2 (`carId`,
+    `ownedCars`, `upgrades`); v1 files migrate to the hatchback with nothing
+    bought.
+42. **2026-10-29 — Vercel-ready persistence and URLs.** Serverless has no
+    writable disk, so the save API now selects its store from the
+    environment: `RedisGameStore` talks to Upstash Redis (Vercel's KV
+    integration) through its REST API with plain `fetch` (no SDK, one key per
+    Game ID), `FileGameStore` stays for dev and self-hosting, and on Vercel
+    without Redis the route answers `503 storage_unconfigured` instead of
+    silently losing writes; the client already degrades to device-only saves.
+    `SITE_URL` resolves from `NEXT_PUBLIC_SITE_URL`, then Vercel's
+    `VERCEL_PROJECT_PRODUCTION_URL` / `VERCEL_URL`, then localhost. Security
+    headers (`nosniff`, referrer policy, permissions policy) come from
+    `next.config.ts` so they apply on any host; `X-Powered-By` is off. No
+    `vercel.json` is needed: Next.js is zero-config there. Steps and env vars
+    are in `docs/DEPLOY.md` and `.env.example`.

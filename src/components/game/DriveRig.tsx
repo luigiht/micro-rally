@@ -1,16 +1,23 @@
 'use client';
 
 import { useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { DirectionalLight, PerspectiveCamera } from 'three';
-import { CAR_SPECS } from '@/game/vehicle/CarSpec';
+import { applyUpgrades } from '@/game/economy/upgrades';
+import { CAR_SPECS, type CarSpec } from '@/game/vehicle/CarSpec';
 import type { VehiclePose } from '@/game/vehicle/interpolatePose';
+import type { CameraMode } from '@/lib/cameraMode';
+import { useGameStore } from '@/state/gameStore';
 import { CarModel, type CarModelHandle } from './CarModel';
 import { DrivingSession, type DriveWorld } from './DrivingSession';
+import { followSun, SceneLights } from './SceneLights';
 import { usePrefersReducedMotion } from './usePrefersReducedMotion';
 
-const SHADOW_OFFSET = [8, 14, 6] as const;
-const spec = CAR_SPECS.hatchback;
+/** The active car with its purchased upgrades, frozen for this run (garage changes apply on the next one). */
+function resolveActiveSpec(): CarSpec {
+  const { carId, upgrades } = useGameStore.getState();
+  return applyUpgrades(CAR_SPECS[carId], upgrades);
+}
 
 interface DriveRigProps {
   world: DriveWorld;
@@ -25,12 +32,14 @@ interface DriveRigProps {
 export function DriveRig({ world, sky, fog, onPose, children }: DriveRigProps) {
   const camera = useThree((s) => s.camera) as PerspectiveCamera;
   const gl = useThree((s) => s.gl);
+  const [spec] = useState(resolveActiveSpec);
   const reducedMotion = usePrefersReducedMotion();
   const reduced = useRef(reducedMotion);
   const poseCallback = useRef(onPose);
   const session = useRef<DrivingSession | null>(null);
   const car = useRef<CarModelHandle>(null);
   const sun = useRef<DirectionalLight>(null);
+  const view = useRef<CameraMode | null>(null);
 
   useEffect(() => {
     reduced.current = reducedMotion;
@@ -45,45 +54,25 @@ export function DriveRig({ world, sky, fog, onPose, children }: DriveRigProps) {
       s.dispose(window);
       session.current = null;
     };
-  }, [world, camera, gl]);
+  }, [spec, world, camera, gl]);
 
   useFrame((state, dt) => {
     const s = session.current;
     if (!s) return;
     s.tick(dt, reduced.current, state.gl.info.render);
+    if (s.cameraMode !== view.current) {
+      view.current = s.cameraMode;
+      car.current?.setView(s.cameraMode);
+    }
     const pose = s.pose;
     car.current?.apply(pose);
     poseCallback.current?.(pose);
-    const light = sun.current;
-    if (light) {
-      light.position.set(
-        pose.x + SHADOW_OFFSET[0],
-        pose.y + SHADOW_OFFSET[1],
-        pose.z + SHADOW_OFFSET[2],
-      );
-      light.target.position.set(pose.x, pose.y, pose.z);
-      light.target.updateMatrixWorld();
-    }
+    if (sun.current) followSun(sun.current, pose);
   });
 
   return (
     <>
-      <color attach="background" args={[sky]} />
-      <fog attach="fog" args={[fog, 70, 260]} />
-      <hemisphereLight args={['#fff6e0', '#7fa05f', 1.9]} />
-      <directionalLight
-        ref={sun}
-        intensity={2.6}
-        castShadow
-        shadow-mapSize={[2048, 2048]}
-        shadow-camera-left={-30}
-        shadow-camera-right={30}
-        shadow-camera-top={30}
-        shadow-camera-bottom={-30}
-        shadow-camera-near={1}
-        shadow-camera-far={60}
-        shadow-bias={-0.0005}
-      />
+      <SceneLights sky={sky} fog={fog} sunRef={sun} />
       {children}
       <CarModel ref={car} spec={spec} />
     </>

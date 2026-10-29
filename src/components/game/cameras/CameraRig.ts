@@ -1,7 +1,8 @@
 import type { PerspectiveCamera } from 'three';
 import type { VehiclePose } from '@/game/vehicle/interpolatePose';
+import type { CameraMode } from '@/lib/cameraMode';
 
-export type CameraMode = 'cockpit' | 'chase' | 'iso';
+export type { CameraMode };
 
 export interface CameraRigFrame {
   camera: PerspectiveCamera;

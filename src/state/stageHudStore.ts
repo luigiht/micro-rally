@@ -20,6 +20,9 @@ export interface StageHudState {
   time: number;
   gatesPassed: number;
   gateCount: number;
+  /** 0..1 along the stage, and where each gate sits on that scale. */
+  progress: number;
+  gateFractions: number[];
   penalties: number;
   hits: number;
   result: StageResult | null;
@@ -32,6 +35,8 @@ export const INITIAL_STAGE_HUD: StageHudState = {
   time: 0,
   gatesPassed: 0,
   gateCount: 0,
+  progress: 0,
+  gateFractions: [],
   penalties: 0,
   hits: 0,
   result: null,

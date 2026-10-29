@@ -1,6 +1,6 @@
 import type { SpawnPose } from '../vehicle/VehicleSim';
 import { CheckpointTracker } from './Checkpoints';
-import type { RoadSample } from './RoadPath';
+import { createRoadHit, type RoadHit, type RoadSample } from './RoadPath';
 import type { StageDef } from './StageGenerator';
 
 export type RunPhase = 'countdown' | 'running' | 'finished';
@@ -25,6 +25,8 @@ export class StageRun {
   private readonly tracker: CheckpointTracker;
   private hitCooldown = 0;
   private readonly sample: RoadSample = { x: 0, z: 0, heading: 0 };
+  private readonly hit: RoadHit = createRoadHit();
+  private progressValue = 0;
 
   constructor(readonly stage: StageDef) {
     this.tracker = new CheckpointTracker(stage.gates);
@@ -40,6 +42,29 @@ export class StageRun {
 
   get canDrive(): boolean {
     return this.phase !== 'countdown';
+  }
+
+  /** Where each gate sits along the stage as a 0..1 fraction; the finish is 1. */
+  get gateFractions(): number[] {
+    return this.stage.gates.map((g) => this.fraction(g.distance));
+  }
+
+  /**
+   * How far along the stage the car is (0..1), from the nearest centreline
+   * point. Holds the last value while the car is far off the road, so cutting
+   * a bend never jolts the bar.
+   */
+  progressAt(x: number, z: number): number {
+    if (this.stage.path.nearest(x, z, this.stage.halfWidth * 6, this.hit)) {
+      this.progressValue = this.fraction(this.hit.along);
+    }
+    return this.progressValue;
+  }
+
+  /** Start-to-finish fraction for a road distance, clamped to 0..1. */
+  private fraction(along: number): number {
+    const f = (along - this.stage.startDistance) / this.stage.length;
+    return f < 0 ? 0 : f > 1 ? 1 : f;
   }
 
   tick(dt: number): void {

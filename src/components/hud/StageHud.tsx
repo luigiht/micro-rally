@@ -5,6 +5,8 @@ import { useMessages } from '@/i18n/useMessages';
 import { useGameStore, type StageResult } from '@/state/gameStore';
 import { useSettingsStore } from '@/state/settingsStore';
 import { useStageHudStore } from '@/state/stageHudStore';
+import { useUiStore } from '@/state/uiStore';
+import { PixelIcon } from './PixelIcon';
 
 function Countdown() {
   const m = useMessages();
@@ -19,7 +21,7 @@ function Countdown() {
     <p
       role="status"
       aria-live="assertive"
-      className="pointer-events-none absolute inset-x-0 top-1/3 text-center font-pixel text-8xl text-paper drop-shadow-[0_4px_0_rgba(43,42,51,0.6)]"
+      className="pointer-events-none absolute inset-x-0 top-1/3 text-center font-pixel text-6xl text-paper drop-shadow-[0_4px_0_rgba(43,42,51,0.6)] md:text-8xl"
     >
       {label}
     </p>
@@ -39,7 +41,7 @@ function ResultPanel({ result }: { result: StageResult }) {
   if (result.repairCost > 0)
     rows.push([m.stage.repairs, `−${formatMoney(result.repairCost, locale)}`]);
   return (
-    <div className="pixel-scrim absolute inset-0 grid place-items-center p-6">
+    <div className="pixel-scrim pointer-events-auto absolute inset-0 grid place-items-center p-4 md:p-6">
       <section
         role="dialog"
         aria-labelledby="result-title"
@@ -81,6 +83,27 @@ function ResultPanel({ result }: { result: StageResult }) {
   );
 }
 
+function GarageButton() {
+  const m = useMessages();
+  const open = useUiStore((s) => s.panel === 'garage');
+  return (
+    <button
+      type="button"
+      aria-haspopup="dialog"
+      aria-expanded={open}
+      title={m.garage.button}
+      onClick={(e) => {
+        e.currentTarget.blur();
+        useUiStore.getState().togglePanel('garage');
+      }}
+      className="pixel-btn-ghost pointer-events-auto inline-flex items-center gap-2 p-3 md:px-4 md:py-3 coarse:p-2"
+    >
+      <PixelIcon name="garage" />
+      <span className="max-md:sr-only">{m.garage.button}</span>
+    </button>
+  );
+}
+
 export function StageHud() {
   const m = useMessages();
   const locale = useSettingsStore((s) => s.locale);
@@ -93,8 +116,12 @@ export function StageHud() {
   if (gateCount === 0) return null;
   return (
     <>
-      <div className="pointer-events-none absolute inset-x-0 top-4 flex flex-col items-center font-pixel text-ink">
-        <p className="pixel-box px-4 py-2 text-2xl leading-none" data-testid="stage-timer">
+      {/* Centred on desktop; on touch devices the stack hugs the top-left and money joins it. */}
+      <div className="pointer-events-none absolute inset-0 flex flex-col items-center p-4 font-pixel text-ink coarse:items-start coarse:pl-14">
+        <p
+          className="pixel-box px-4 py-2 text-xl leading-none md:text-2xl coarse:text-lg"
+          data-testid="stage-timer"
+        >
           {formatTime(time)}
         </p>
         <p className="pixel-tag mt-4 px-2 py-1 text-[10px]">
@@ -105,13 +132,16 @@ export function StageHud() {
             {fill(m.stage.penalties, { s: penalties })}
           </p>
         )}
+        <div className="absolute bottom-6 left-6 flex items-center gap-2 coarse:static coarse:mt-3">
+          <p
+            className="pixel-box px-4 py-3 text-sm coarse:px-2 coarse:py-1 coarse:text-[10px]"
+            data-testid="money"
+          >
+            {m.stage.money} {formatMoney(money, locale)}
+          </p>
+          <GarageButton />
+        </div>
       </div>
-      <p
-        className="pixel-box pointer-events-none absolute bottom-6 left-6 px-4 py-3 font-pixel text-sm"
-        data-testid="money"
-      >
-        {m.stage.money} {formatMoney(money, locale)}
-      </p>
       <Countdown />
       {result && <ResultPanel result={result} />}
     </>

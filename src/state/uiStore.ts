@@ -1,14 +1,19 @@
 import { create } from 'zustand';
 
+/** Modal HUD panels. Driving pauses while one is open. */
+export type HudPanel = 'game' | 'settings' | 'garage';
+
 interface UiState {
-  /** The Game panel (controls + info). Driving pauses while it's open. */
-  gamePanelOpen: boolean;
-  toggleGamePanel: () => void;
-  setGamePanelOpen: (open: boolean) => void;
+  panel: HudPanel | null;
+  openPanel: (panel: HudPanel) => void;
+  closePanel: () => void;
+  /** Open `panel`, or close it if it's already the open one. */
+  togglePanel: (panel: HudPanel) => void;
 }
 
 export const useUiStore = create<UiState>()((set) => ({
-  gamePanelOpen: false,
-  toggleGamePanel: () => set((s) => ({ gamePanelOpen: !s.gamePanelOpen })),
-  setGamePanelOpen: (open) => set({ gamePanelOpen: open }),
+  panel: null,
+  openPanel: (panel) => set({ panel }),
+  closePanel: () => set({ panel: null }),
+  togglePanel: (panel) => set((s) => ({ panel: s.panel === panel ? null : panel })),
 }));

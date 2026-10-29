@@ -2,10 +2,9 @@ export const en = {
   meta: {
     title: 'Micro Rally',
     description:
-      'A cozy low-poly rally game. Drive procedural stages, earn prize money, upgrade your car.',
+      'A cozy low-poly rally game for your browser. Drive procedural stages, earn prize money and upgrade your car. Free, no ads, no tracking.',
   },
   boot: {
-    tagline: 'Tabletop diorama rally',
     loading: 'Warming up the engine…',
     canvasLabel: 'Micro Rally 3D view',
   },
@@ -14,9 +13,130 @@ export const en = {
     gear: 'Gear',
     reverse: 'R',
   },
+  splash: {
+    nameLabel: 'Driver name',
+    namePlaceholder: 'Your name',
+    idLabel: 'Game ID',
+    idPlaceholder: 'Paste a Game ID to continue',
+    idHelp: 'About the Game ID',
+    idHint:
+      'Leave it empty to start a new game. You’ll find your ID in the Game panel; anyone who has it can play that game.',
+    play: 'Drive',
+    continue: 'Continue',
+    checking: 'Checking…',
+    notFound: 'No saved game was found for {id}. Check it, or clear the field to start a new game.',
+  },
+  footer: {
+    copyright: '© {year} Micro Rally',
+    privacy: 'Privacy',
+    createdBy: 'Created by',
+    language: 'Language',
+  },
+  privacy: {
+    title: 'Privacy',
+    updated: 'Last updated: 29 October 2026',
+    intro:
+      'Micro Rally is a free game with no accounts, no ads and no tracking. This page explains the little it does store.',
+    sections: [
+      {
+        title: 'What is stored',
+        body: 'Your driver name and your game state: money, current stage, stage records and the world seed, together with the Game ID that identifies them. Nothing else. No email, no password, no device identifiers.',
+      },
+      {
+        title: 'Where it lives',
+        body: 'On your device, in the browser’s local storage, and on the game server under your Game ID so you can continue on another device. The server keeps only the save file; it does not record who sent it.',
+      },
+      {
+        title: 'Game IDs',
+        body: 'A Game ID is the only key to a game. Anyone who has it can load that game, so share it only with people you want playing it.',
+      },
+      {
+        title: 'Cookies and analytics',
+        body: 'The game sets no cookies and uses no analytics, advertising or third-party scripts. Fonts and the 3D engine ship with the game.',
+      },
+      {
+        title: 'Your choices',
+        body: 'Clearing this site’s data in your browser removes the local copy. There is no delete button yet; to have a save removed from the server, send its Game ID to the author.',
+      },
+    ],
+    contact: 'Questions about this policy? Reach the author at',
+    back: 'Back to the game',
+  },
+  garage: {
+    button: 'Garage',
+    title: 'Garage',
+    hint: 'Changes apply on your next run.',
+    tabs: { upgrades: 'Upgrades', dealership: 'Dealership' },
+    buy: 'Buy',
+    maxed: 'Maxed out',
+    select: 'Select',
+    inUse: 'In use',
+    owned: 'Owned',
+    level: 'Level {n} of {max}',
+    stats: { power: 'Power', grip: 'Grip', agility: 'Agility' },
+  },
+  upgrades: {
+    engine: {
+      name: 'Engine tune',
+      desc: 'Freer breathing and a sharper map: more torque everywhere.',
+    },
+    turbo: {
+      name: 'Turbo kit',
+      desc: 'Hold Shift for a burst of boost. Recharges while you drive.',
+    },
+    tyres: {
+      name: 'Rally tyres',
+      desc: 'Softer compound and a wider footprint for grip on every surface.',
+    },
+    suspension: {
+      name: 'Suspension',
+      desc: 'Stiffer springs and dampers keep the car settled over crests and ruts.',
+    },
+    brakes: { name: 'Brakes', desc: 'Bigger discs stop harder and later into the corner.' },
+    gearbox: {
+      name: 'Quick-shift gearbox',
+      desc: 'Faster shifts and less drivetrain loss between gears.',
+    },
+    weight: {
+      name: 'Weight reduction',
+      desc: 'Lighter panels and glass: quicker everywhere, easier to turn.',
+    },
+  },
+  cars: {
+    hatchback: {
+      name: 'Rally Hatch',
+      blurb: 'The friendly, front-biased hatchback you started with.',
+    },
+    coupe: {
+      name: 'Tricolore Coupé',
+      blurb: 'A low 1970s wedge: rear-wheel drive, short wheelbase, lively tail.',
+    },
+  },
+  touch: {
+    left: 'Steer left',
+    right: 'Steer right',
+    gas: 'Gas',
+    brake: 'Brake',
+    handbrake: 'Handbrake',
+  },
+  toolbar: {
+    label: 'Game menu',
+    settings: 'Settings',
+    game: 'Game',
+  },
+  settings: {
+    title: 'Settings',
+    language: 'Language',
+    controls: 'Controls',
+    camera: 'Camera',
+    cameraHint: 'Press C while driving to switch.',
+    cameras: { chase: 'Chase', cockpit: 'Cab', interior: 'Interior', iso: 'Isometric' },
+    languages: { en: 'English', es: 'Español', it: 'Italiano' },
+    close: 'Close',
+  },
   game: {
-    button: 'Game',
     title: 'Game',
+    restartStage: 'Restart stage',
     paused: 'Paused while this panel is open.',
     close: 'Close',
     stageSection: 'This stage',
@@ -28,9 +148,15 @@ export const en = {
     par: 'Par time',
     best: 'Your best',
     none: '—',
-    controlsSection: 'Controls',
-    about:
-      'Micro Rally: cozy little stages, no ads, no tracking. Just you, the gravel and some very patient trees.',
+    driverSection: 'Driver',
+    driver: 'Name',
+    gameId: 'Game ID',
+    copy: 'Copy',
+    copied: 'Copied!',
+    syncOnline: 'Progress saved online.',
+    syncOffline: 'Saved on this device only. Will retry online.',
+    syncSaving: 'Saving…',
+    syncIdle: 'Progress is saved automatically.',
   },
   regions: {
     forest: 'Forest',
@@ -45,9 +171,10 @@ export const en = {
     { keys: 'Space', action: 'Handbrake' },
     { keys: 'Shift', action: 'Turbo (when fitted)' },
     { keys: 'R', action: 'Back to the last checkpoint' },
+    { keys: 'C · V', action: 'Switch camera (chase / cab / interior / isometric)' },
     { keys: 'Mouse wheel', action: 'Zoom the camera' },
     { keys: '`', action: 'Debug overlay' },
-    { keys: 'Esc', action: 'Open / close this panel' },
+    { keys: 'Esc', action: 'Open / close the Game panel' },
   ],
   debug: {
     title: 'Debug',
@@ -71,6 +198,7 @@ export const en = {
   },
   stage: {
     go: 'GO!',
+    progress: 'Stage progress',
     checkpoint: 'Checkpoint {n}/{total}',
     penalties: '+{s}s penalties',
     money: 'Money',

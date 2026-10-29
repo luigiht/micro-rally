@@ -5,17 +5,19 @@ import { StageRun } from '@/game/stage/StageRun';
 import type { StageDef } from '@/game/stage/StageGenerator';
 import type { CarSpec } from '@/game/vehicle/CarSpec';
 import { resolveObstacleCollisions, type ObstacleGrid } from '@/game/vehicle/Collisions';
-import { createControlInput } from '@/game/vehicle/ControlInput';
+import { createControlInput, mergeControlInput } from '@/game/vehicle/ControlInput';
 import { createVehiclePose, interpolatePose } from '@/game/vehicle/interpolatePose';
 import type { TerrainQuery } from '@/game/vehicle/Terrain';
 import { DEFAULT_ENV, VehicleSim, type SpawnPose } from '@/game/vehicle/VehicleSim';
 import { useGameStore } from '@/state/gameStore';
+import { useSettingsStore } from '@/state/settingsStore';
 import { INITIAL_STAGE_HUD, useStageHudStore } from '@/state/stageHudStore';
 import { useTelemetryStore } from '@/state/telemetryStore';
 import { useUiStore } from '@/state/uiStore';
-import type { CameraRig, CameraRigFrame } from './cameras/CameraRig';
-import { ChaseCameraRig } from './cameras/ChaseCameraRig';
+import type { CameraMode, CameraRig, CameraRigFrame } from './cameras/CameraRig';
+import { createCameraRig } from './cameras/createCameraRig';
 import { KeyboardControls, type KeyAction } from './input/KeyboardControls';
+import { TOUCH_INPUT } from './input/touchInput';
 
 const HUD_INTERVAL = 0.1;
 
@@ -40,6 +42,8 @@ export class DrivingSession {
   private readonly stepper = new FixedStepper();
   private readonly keyboard: KeyboardControls;
   private readonly coast = createControlInput();
+  private readonly merged = createControlInput();
+  private readonly cabinDrop: number;
   private readonly respawn: SpawnPose = { x: 0, z: 0, yaw: 0 };
   private rig: CameraRig;
   private readonly frame: CameraRigFrame;
@@ -56,7 +60,10 @@ export class DrivingSession {
       run.tick(dt);
       if (!run.canDrive) return;
     }
-    const input = run?.phase === 'finished' ? this.coast : this.keyboard.input;
+    const input =
+      run?.phase === 'finished'
+        ? this.coast
+        : mergeControlInput(this.keyboard.input, TOUCH_INPUT, this.merged);
     const px = s.x;
     const pz = s.z;
     this.sim.step(dt, input, this.world.terrain, DEFAULT_ENV);
@@ -73,15 +80,22 @@ export class DrivingSession {
     camera: PerspectiveCamera,
   ) {
     this.sim = new VehicleSim(spec);
+    this.cabinDrop = spec.cabinDrop;
     this.sim.reset(world.spawn, world.terrain);
     this.run = world.stage ? new StageRun(world.stage) : null;
     this.coast.brake = 0.35;
     this.keyboard = new KeyboardControls(this.handleAction);
-    this.rig = new ChaseCameraRig(world.terrain);
+    this.rig = createCameraRig(
+      useSettingsStore.getState().camera,
+      world.terrain,
+      world.spawn.yaw,
+      spec.cabinDrop,
+    );
     this.frame = { camera, target: this.pose, dt: 0, reducedMotion: false };
     useStageHudStore.setState({
       ...INITIAL_STAGE_HUD,
       gateCount: world.stage?.gates.length ?? 0,
+      gateFractions: this.run?.gateFractions ?? [],
       stage: world.stage
         ? {
             index: world.stage.index,
@@ -108,9 +122,15 @@ export class DrivingSession {
     this.rig.dispose();
   }
 
+  /** The active view; DriveRig hides the car's cabin while it's the cockpit. */
+  get cameraMode(): CameraMode {
+    return this.rig.mode;
+  }
+
   tick(dt: number, reducedMotion: boolean, info: RenderInfo): void {
-    // The Game panel pauses the sim; the camera keeps rendering the frozen pose.
-    const paused = useUiStore.getState().gamePanelOpen;
+    this.syncCameraRig();
+    // An open HUD panel pauses the sim; the camera keeps rendering the frozen pose.
+    const paused = useUiStore.getState().panel !== null;
     const alpha = paused ? 1 : this.stepper.advance(dt, this.stepFn);
     interpolatePose(this.pose, this.sim.prev, this.sim.state, alpha);
 
@@ -124,6 +144,15 @@ export class DrivingSession {
     }
     if (this.run?.phase === 'finished' && !this.finishedReported) this.reportFinish();
     this.publishHud(dt, info);
+  }
+
+  /** Swap rigs when the setting changes (C key or Settings); the new rig snaps on its first frame. */
+  private syncCameraRig(): void {
+    const wanted = useSettingsStore.getState().camera;
+    if (wanted === this.rig.mode) return;
+    this.rig.dispose();
+    this.rig = createCameraRig(wanted, this.world.terrain, this.world.spawn.yaw, this.cabinDrop);
+    this.needsSnap = true;
   }
 
   resetCar(): void {
@@ -158,10 +187,14 @@ export class DrivingSession {
   private readonly handleAction = (action: KeyAction): void => {
     if (action === 'reset') {
       if (!this.run || this.run.phase === 'running') this.resetCar();
+    } else if (action === 'camera') {
+      useSettingsStore.getState().cycleCamera();
     } else if (action === 'debug') {
       useTelemetryStore.getState().toggleDebug();
     } else if (action === 'pause') {
-      useUiStore.getState().toggleGamePanel();
+      const ui = useUiStore.getState();
+      if (ui.panel) ui.closePanel();
+      else ui.openPanel('game');
     }
   };
 
@@ -195,6 +228,7 @@ export class DrivingSession {
         countdown: run.countdown,
         time: run.totalTime,
         gatesPassed: run.gatesPassed,
+        progress: run.progressAt(s.x, s.z),
         penalties: run.penalties,
         hits: run.hits,
       });

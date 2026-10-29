@@ -3,9 +3,14 @@
 import dynamic from 'next/dynamic';
 import { useMessages } from '@/i18n/useMessages';
 import { DebugOverlay } from '@/components/hud/DebugOverlay';
+import { HudToolbar } from '@/components/hud/HudToolbar';
 import { SpeedReadout } from '@/components/hud/SpeedReadout';
 import { StageHud } from '@/components/hud/StageHud';
-import { GameMenu } from '@/components/hud/GameMenu';
+import { StageProgress } from '@/components/hud/StageProgress';
+import { TouchControls } from '@/components/hud/TouchControls';
+import { SplashScreen } from '@/components/splash/SplashScreen';
+import { useGameStore } from '@/state/gameStore';
+import { useAutosave } from './useAutosave';
 
 const GameCanvas = dynamic(() => import('./GameCanvas').then((m) => m.GameCanvas), {
   ssr: false,
@@ -21,19 +26,25 @@ function BootMessage() {
   );
 }
 
-export function GameRoot() {
-  const m = useMessages();
+/** Canvas + HUD for the active game; autosaves while mounted. */
+function GameShell() {
+  useAutosave();
   return (
     <>
       <GameCanvas />
-      <header className="pointer-events-none absolute top-4 left-4">
-        <h1 className="font-pixel text-lg tracking-tight text-ink">{m.meta.title}</h1>
-        <p className="mt-1 text-sm text-ink/70">{m.boot.tagline}</p>
-      </header>
-      <DebugOverlay />
-      <SpeedReadout />
-      <StageHud />
-      <GameMenu />
+      <div className="hud-frame">
+        <DebugOverlay />
+        <SpeedReadout />
+        <StageHud />
+        <StageProgress />
+        <TouchControls />
+        <HudToolbar />
+      </div>
     </>
   );
+}
+
+export function GameRoot() {
+  const active = useGameStore((s) => s.gameId !== null);
+  return active ? <GameShell /> : <SplashScreen />;
 }

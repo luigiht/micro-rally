@@ -1,11 +1,11 @@
 import { createControlInput, type ControlInput } from '@/game/vehicle/ControlInput';
 
-export type KeyAction = 'reset' | 'camera' | 'recentre' | 'debug' | 'pause';
+export type KeyAction = 'reset' | 'camera' | 'debug' | 'pause';
 
 const ACTIONS: Readonly<Record<string, KeyAction>> = {
   KeyR: 'reset',
+  KeyC: 'camera',
   KeyV: 'camera',
-  KeyC: 'recentre',
   Backquote: 'debug',
   Escape: 'pause',
 };

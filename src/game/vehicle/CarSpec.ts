@@ -49,6 +49,8 @@ export interface CarSpec {
   turboRecharge: number;
   /** Grip gain per (m/s)² / 1000 from downforce. */
   aeroGrip: number;
+  /** Visual only: how much lower this car's cabin (and first-person eye) sits than the hatchback's. */
+  cabinDrop: number;
 }
 
 const BASE: Omit<CarSpec, 'id'> = {
@@ -92,6 +94,7 @@ const BASE: Omit<CarSpec, 'id'> = {
   turboDuration: 3,
   turboRecharge: 12,
   aeroGrip: 0.02,
+  cabinDrop: 0,
 };
 
 export const CAR_SPECS: Readonly<Record<CarId, CarSpec>> = {
@@ -100,13 +103,20 @@ export const CAR_SPECS: Readonly<Record<CarId, CarSpec>> = {
     ...BASE,
     id: 'coupe',
     mass: 1050,
+    cgToFront: 1.05,
+    cgToRear: 1.15,
+    cgHeight: 0.48,
+    trackWidth: 1.56,
+    wheelRadius: 0.33,
     peakTorque: 270,
     dragCoeff: 0.65,
     frontDrive: 0,
+    tyreGrip: 1.04,
     corneringRear: 8,
     yawInertiaScale: 1.3,
     maxSteer: 0.5,
     stability: 0.3,
+    cabinDrop: -0.12,
   },
   pickup: {
     ...BASE,

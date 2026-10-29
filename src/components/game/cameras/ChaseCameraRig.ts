@@ -24,6 +24,8 @@ export class ChaseCameraRig implements CameraRig {
     this.heading = target.yaw;
     this.baseY = target.y;
     this.roll = 0;
+    camera.fov = BASE_FOV;
+    camera.updateProjectionMatrix();
     this.computeDesired(target);
     this.pos.copy(this.desired);
     this.apply(camera, target);

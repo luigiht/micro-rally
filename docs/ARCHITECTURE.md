@@ -11,8 +11,8 @@ flowchart TD
   Store --> Sim
   Store --> Save[game/save — serialise + migrate]
   Save -->|fetch| API[app/api/games/:id]
-  API --> Files[.data/games/*.json]
-  API --> Supabase[(Supabase, optional)]
+  API --> Files[.data/games/*.json\ndev / self-hosted]
+  API --> Redis[(Upstash Redis / Vercel KV\nproduction)]
 ```
 
 - **`src/game`, `src/lib`** — pure TypeScript. No `three`, no React. Vehicle
@@ -58,3 +58,30 @@ flowchart LR
   publishes telemetry/HUD snapshots to Zustand at 10 Hz.
 - `StageRenderer` owns every three.js object for a stage and disposes them
   together; chunk managers stream around the car via `ChunkStreamer`.
+
+## Save pipeline (milestone 6)
+
+```mermaid
+flowchart LR
+  Splash[SplashScreen] -->|load id| Manager[SaveManager]
+  Manager --> Local[LocalSaveBackend\nWeb Storage]
+  Manager --> Remote[RemoteSaveBackend\nfetch]
+  Remote --> Route[app/api/games/:id]
+  Route --> Files[gameFileStore\n.data/games/*.json]
+  Store[gameStore] -->|subscribe| Autosave[useAutosave] --> Manager
+```
+
+- `src/game/save` is pure: `GameId` (Crockford base32, normalize/format) and
+  `SaveFile` (versioned schema, defensive `parseSaveFile`, `newestSave`).
+- `SaveManager` (`src/lib/save`) writes locally first, then online; a failed
+  upload flips `saveStore.status` to `offline` and the next save retries.
+  Loads return the newest of the two copies.
+- `useAutosave` reads the store imperatively and saves on start, 2.5 s after
+  progress changes, every minute, on `visibilitychange`/`pagehide` (with
+  `keepalive`) and on unmount.
+- The route validates every body with `parseSaveFile`; IDs are checked before
+  any key or filesystem path is built. `gameStore.ts` picks the backend from
+  the environment: Redis over the Upstash REST API when `KV_REST_API_*` (or
+  `UPSTASH_REDIS_REST_*`) is set, the file store otherwise, and none on Vercel
+  without Redis (the API answers 503 and saves stay on the device). See
+  `docs/DEPLOY.md`.

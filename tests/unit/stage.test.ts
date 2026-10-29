@@ -170,3 +170,23 @@ describe('Collisions', () => {
     expect(s.vz).toBeLessThan(0);
   });
 });
+
+describe('StageRun progress', () => {
+  it('maps road distance to a 0..1 stage fraction and holds it while off the road', () => {
+    const stage = generateStage(11, 0);
+    const run = new StageRun(stage);
+    const at = { x: 0, z: 0, heading: 0 };
+    stage.path.sample(stage.startDistance + stage.length / 2, at);
+    expect(run.progressAt(at.x, at.z)).toBeCloseTo(0.5, 2);
+    expect(run.progressAt(at.x + 5000, at.z + 5000)).toBeCloseTo(0.5, 2);
+    stage.path.sample(stage.startDistance, at);
+    expect(run.progressAt(at.x, at.z)).toBeCloseTo(0, 2);
+    const fractions = run.gateFractions;
+    expect(fractions.length).toBe(stage.gates.length);
+    expect(fractions.at(-1)).toBeGreaterThan(0.97);
+    expect(fractions.at(-1)).toBeLessThanOrEqual(1);
+    for (let i = 1; i < fractions.length; i++) {
+      expect(fractions[i]!).toBeGreaterThan(fractions[i - 1]!);
+    }
+  });
+});

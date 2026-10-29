@@ -10,10 +10,10 @@ export function SpeedReadout() {
   const gear = useTelemetryStore((s) => s.telemetry.gear);
   return (
     <div
-      className="pixel-box pointer-events-none absolute right-6 bottom-6 px-4 py-3 text-right font-pixel"
+      className="pixel-box pointer-events-none absolute right-6 bottom-6 px-4 py-3 text-right font-pixel coarse:right-1/2 coarse:bottom-4 coarse:translate-x-1/2 coarse:px-3 coarse:py-2 coarse:text-center"
       data-testid="speed-readout"
     >
-      <p className="text-3xl leading-none">
+      <p className="text-3xl leading-none coarse:text-xl">
         {speed}
         <span className="ml-2 text-[10px]">{m.hud.kmh}</span>
       </p>
