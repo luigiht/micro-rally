@@ -70,10 +70,12 @@ test('the progress bar fills as the car drives down the stage', async ({ page })
   const bar = page.getByRole('progressbar', { name: 'Stage progress' });
   await expect(bar).toHaveAttribute('aria-valuenow', '0');
   await expect(page.getByTestId('stage-timer')).not.toHaveText('0:00.00', { timeout: 10_000 });
+  // Software rendering on CI runs the sim slowly, so hold the throttle until the bar moves.
   await page.keyboard.down('KeyW');
-  await page.waitForTimeout(5000);
+  await expect
+    .poll(async () => Number(await bar.getAttribute('data-progress')), { timeout: 30_000 })
+    .toBeGreaterThan(0.002);
   await page.keyboard.up('KeyW');
-  expect(Number(await bar.getAttribute('aria-valuenow'))).toBeGreaterThan(0);
 });
 
 test('the page ships a favicon, Apple icon, Open Graph image and Twitter card', async ({

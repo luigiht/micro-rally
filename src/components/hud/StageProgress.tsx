@@ -24,6 +24,7 @@ export function StageProgress() {
       aria-valuemax={100}
       aria-valuenow={Math.round(progress * 100)}
       data-testid="stage-progress"
+      data-progress={progress.toFixed(4)}
       className="pointer-events-none absolute top-4 bottom-20 left-4 w-3 coarse:bottom-40"
     >
       <div className="pixel-tag absolute inset-0 overflow-hidden">
