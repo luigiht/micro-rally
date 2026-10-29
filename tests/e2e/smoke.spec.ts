@@ -27,3 +27,15 @@ test('a stage counts down, then the clock runs', async ({ page }) => {
   await expect(timer).toHaveText('0:00.00');
   await expect(timer).not.toHaveText('0:00.00', { timeout: 10_000 });
 });
+
+test('the Game button opens controls and info, Esc closes it', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('[data-testid="game-canvas"] canvas')).toBeVisible();
+  await page.getByRole('button', { name: 'Game' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Game' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('rowheader', { name: 'Space' })).toBeVisible();
+  await expect(dialog.getByText('Par time')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+});

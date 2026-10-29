@@ -69,6 +69,25 @@ describe('StageGenerator', () => {
     expect(s.parTime).toBeGreaterThan(60);
   });
 
+  it('is curvy but never brings distant parts of the road close together', () => {
+    for (let seed = 1; seed <= 12; seed++) {
+      const p = generateStage(seed * 7919, seed % 3).path;
+      let turn = 0;
+      for (let i = 1; i < p.count; i++) {
+        const dh = p.headings[i]! - p.headings[i - 1]!;
+        turn += Math.abs(Math.atan2(Math.sin(dh), Math.cos(dh)));
+      }
+      expect(turn / (p.length / 1000)).toBeGreaterThan(8);
+      let minSep = Infinity;
+      for (let i = 0; i < p.count; i += 4) {
+        for (let j = i + 100; j < p.count; j += 4) {
+          minSep = Math.min(minSep, Math.hypot(p.xs[i]! - p.xs[j]!, p.zs[i]! - p.zs[j]!));
+        }
+      }
+      expect(minSep).toBeGreaterThan(50);
+    }
+  });
+
   it('loops regions and grows stages on later loops', () => {
     expect(stageRegion(0)).toEqual({ region: 'forest', loop: 0 });
     const later = stageRegion(30);

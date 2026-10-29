@@ -65,10 +65,10 @@ const FOREST: RegionDef = {
     boulder: '#9a9688',
   },
   terrain: { amplitude: 22, frequency: 1 / 260 },
-  twistiness: 0.6,
+  twistiness: 0.9,
   baseLength: 1800,
   scenery: { trees: 80, broadleaf: 18, bushes: 16, rocks: 5 },
-  parSpeed: 17,
+  parSpeed: 15,
 };
 
 export const REGIONS: Readonly<Record<RegionId, RegionDef>> = {

@@ -6,10 +6,10 @@ import { REGION_ORDER, REGIONS, STAGES_PER_REGION, type RegionId, type Weather }
 import { RoadPath, type RoadSample } from './RoadPath';
 
 export const ROAD_SPACING = 2;
-const CONTROL_STEP = 30;
+const CONTROL_STEP = 20;
 const START_DISTANCE = 30;
 const RUNOUT = 140;
-const MAX_DEVIATION = 1.1;
+const MAX_DEVIATION = 1.25;
 
 const SURFACE_PAR: Readonly<Record<Surface, number>> = {
   tarmac: 1.12,
@@ -101,6 +101,9 @@ function buildCentreline(rand: () => number, total: number, twist: number): Road
   const theta0 = rand() * Math.PI * 2;
   let heading = theta0;
   let curv = 0;
+  let bendCurv = 0;
+  let bendLeft = 0;
+  let bendSign = rand() < 0.5 ? -1 : 1;
   let x = 0;
   let z = 0;
   const ctrl: number[] = [
@@ -111,13 +114,26 @@ function buildCentreline(rand: () => number, total: number, twist: number): Road
   ];
   for (let d = 0; d < total + CONTROL_STEP * 3; d += CONTROL_STEP) {
     if (d > START_DISTANCE + CONTROL_STEP) {
-      curv = curv * 0.55 + (rand() - 0.5) * twist;
-      if (rand() < 0.06 * twist) curv += (rand() < 0.5 ? -1 : 1) * 0.7;
+      if (bendLeft <= 0) {
+        if (rand() < 0.2) {
+          bendCurv = 0;
+          bendLeft = 1 + Math.floor(rand() * 2);
+        } else {
+          // Mostly alternate direction so bends chain into S-curves.
+          if (rand() < 0.7) bendSign = -bendSign;
+          bendCurv = bendSign * (0.18 + Math.pow(rand(), 0.7) * 0.55) * (0.5 + twist * 0.6);
+          bendLeft = 1 + Math.floor(rand() * 3);
+        }
+      }
+      bendLeft--;
+      curv += (bendCurv - curv) * 0.85;
       heading += curv;
       const dev = heading - theta0;
       if (Math.abs(dev) > MAX_DEVIATION) {
         heading = theta0 + Math.sign(dev) * MAX_DEVIATION;
-        curv *= -0.5;
+        curv = 0;
+        bendSign = -Math.sign(dev);
+        bendLeft = 0;
       }
     }
     x += Math.sin(heading) * CONTROL_STEP;

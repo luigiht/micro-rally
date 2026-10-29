@@ -12,6 +12,7 @@ import { DEFAULT_ENV, VehicleSim, type SpawnPose } from '@/game/vehicle/VehicleS
 import { useGameStore } from '@/state/gameStore';
 import { INITIAL_STAGE_HUD, useStageHudStore } from '@/state/stageHudStore';
 import { useTelemetryStore } from '@/state/telemetryStore';
+import { useUiStore } from '@/state/uiStore';
 import type { CameraRig, CameraRigFrame } from './cameras/CameraRig';
 import { ChaseCameraRig } from './cameras/ChaseCameraRig';
 import { KeyboardControls, type KeyAction } from './input/KeyboardControls';
@@ -78,7 +79,20 @@ export class DrivingSession {
     this.keyboard = new KeyboardControls(this.handleAction);
     this.rig = new ChaseCameraRig(world.terrain);
     this.frame = { camera, target: this.pose, dt: 0, reducedMotion: false };
-    useStageHudStore.setState({ ...INITIAL_STAGE_HUD, gateCount: world.stage?.gates.length ?? 0 });
+    useStageHudStore.setState({
+      ...INITIAL_STAGE_HUD,
+      gateCount: world.stage?.gates.length ?? 0,
+      stage: world.stage
+        ? {
+            index: world.stage.index,
+            name: world.stage.name,
+            region: world.stage.region,
+            surface: world.stage.surface,
+            length: world.stage.length,
+            parTime: world.stage.parTime,
+          }
+        : null,
+    });
   }
 
   attach(win: Window, canvas: HTMLElement): void {
@@ -95,7 +109,9 @@ export class DrivingSession {
   }
 
   tick(dt: number, reducedMotion: boolean, info: RenderInfo): void {
-    const alpha = this.stepper.advance(dt, this.stepFn);
+    // The Game panel pauses the sim; the camera keeps rendering the frozen pose.
+    const paused = useUiStore.getState().gamePanelOpen;
+    const alpha = paused ? 1 : this.stepper.advance(dt, this.stepFn);
     interpolatePose(this.pose, this.sim.prev, this.sim.state, alpha);
 
     this.frame.dt = dt;
@@ -144,6 +160,8 @@ export class DrivingSession {
       if (!this.run || this.run.phase === 'running') this.resetCar();
     } else if (action === 'debug') {
       useTelemetryStore.getState().toggleDebug();
+    } else if (action === 'pause') {
+      useUiStore.getState().toggleGamePanel();
     }
   };
 

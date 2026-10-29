@@ -5,6 +5,7 @@ import { useMessages } from '@/i18n/useMessages';
 import { DebugOverlay } from '@/components/hud/DebugOverlay';
 import { SpeedReadout } from '@/components/hud/SpeedReadout';
 import { StageHud } from '@/components/hud/StageHud';
+import { GameMenu } from '@/components/hud/GameMenu';
 
 const GameCanvas = dynamic(() => import('./GameCanvas').then((m) => m.GameCanvas), {
   ssr: false,
@@ -32,9 +33,7 @@ export function GameRoot() {
       <DebugOverlay />
       <SpeedReadout />
       <StageHud />
-      <p className="pointer-events-none absolute bottom-4 left-4 rounded-md bg-paper/80 px-2 py-1 text-xs text-ink">
-        {m.hud.controlsHint}
-      </p>
+      <GameMenu />
     </>
   );
 }

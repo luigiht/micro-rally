@@ -1,8 +1,20 @@
 import { create } from 'zustand';
+import type { RegionId } from '@/game/stage/regions';
 import type { RunPhase } from '@/game/stage/StageRun';
+import type { Surface } from '@/game/vehicle/surfaces';
 import type { StageResult } from './gameStore';
 
+export interface StageInfo {
+  index: number;
+  name: string;
+  region: RegionId;
+  surface: Surface;
+  length: number;
+  parTime: number;
+}
+
 export interface StageHudState {
+  stage: StageInfo | null;
   phase: RunPhase;
   countdown: number;
   time: number;
@@ -14,6 +26,7 @@ export interface StageHudState {
 }
 
 export const INITIAL_STAGE_HUD: StageHudState = {
+  stage: null,
   phase: 'countdown',
   countdown: 3,
   time: 0,

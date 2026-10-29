@@ -109,7 +109,10 @@ export function StageHud() {
           </p>
         )}
       </div>
-      <p className="pointer-events-none absolute top-4 right-4 rounded-xl bg-paper/85 px-3 py-2 font-pixel text-xs text-ink">
+      <p
+        className="pointer-events-none absolute bottom-4 left-4 rounded-xl bg-paper/85 px-4 py-3 font-pixel text-sm text-ink shadow"
+        data-testid="money"
+      >
         {m.stage.money} {formatMoney(money, locale)}
       </p>
       <Countdown />

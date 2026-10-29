@@ -79,3 +79,15 @@ Newest at the bottom. Format: date — decision — why.
 26. **2026-10-29 — Two tree species.** Forest mixes cone pines with round
     broadleaf trees (merged icosahedra) at ~100 trees per 100 m of road,
     clumped by a slow along-road wobble; both share one instanced trunk mesh.
+27. **2026-10-29 — Curvier roads from a bend sequencer.** The road is built
+    from bends (1–3 × 20 m control steps, mostly alternating direction into
+    S-curves) and short straights, instead of a random-walk curvature. That
+    roughly doubles average turning (~15 rad/km). Heading stays within ±1.25
+    rad of the main axis, and a unit test checks that parts of the road more
+    than 200 m apart stay at least 50 m apart, keeping terrain corridors from
+    overlapping. Forest par speed dropped to 15 m/s to match.
+28. **2026-10-29 — HUD layout and Game panel.** Money sits bottom-left; a
+    top-right Game button (or Esc) opens a modal with stage info, the full
+    controls table and an about blurb. The sim pauses while it's open. The
+    always-on controls hint is gone. Game ID/delete/privacy join this panel
+    in milestone 6.
