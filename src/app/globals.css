@@ -15,6 +15,84 @@
   letter-spacing: 0.02em;
 }
 
+/* Retro containers: square, 4px ink border with notched corners, hard drop shadow. */
+@layer components {
+  .pixel-box,
+  .pixel-box-dark,
+  .pixel-btn,
+  .pixel-btn-ghost,
+  .pixel-tag {
+    --px-border: var(--color-ink);
+    --px-shadow: rgb(43 42 51 / 0.35);
+    border-radius: 0;
+    box-shadow:
+      0 -4px 0 0 var(--px-border),
+      0 4px 0 0 var(--px-border),
+      -4px 0 0 0 var(--px-border),
+      4px 0 0 0 var(--px-border),
+      8px 8px 0 0 var(--px-shadow);
+  }
+  .pixel-box {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+  }
+  .pixel-box-dark {
+    --px-border: var(--color-paper);
+    background-color: rgb(43 42 51 / 0.9);
+    color: var(--color-paper);
+  }
+  .pixel-tag {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    box-shadow:
+      0 -2px 0 0 var(--px-border),
+      0 2px 0 0 var(--px-border),
+      -2px 0 0 0 var(--px-border),
+      2px 0 0 0 var(--px-border),
+      4px 4px 0 0 var(--px-shadow);
+  }
+  .pixel-btn,
+  .pixel-btn-ghost {
+    font-family: var(--font-pixel);
+    -webkit-font-smoothing: none;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    padding: 0.75rem 1rem;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .pixel-btn {
+    background-color: var(--color-rally);
+    color: var(--color-paper);
+  }
+  .pixel-btn-ghost {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+  }
+  .pixel-btn:hover,
+  .pixel-btn-ghost:hover {
+    filter: brightness(1.06);
+  }
+  .pixel-btn:active,
+  .pixel-btn-ghost:active {
+    transform: translate(4px, 4px);
+    --px-shadow: transparent;
+  }
+  .pixel-btn:focus-visible,
+  .pixel-btn-ghost:focus-visible {
+    outline: 3px dashed var(--color-rally);
+    outline-offset: 8px;
+  }
+  /* Scanline scrim behind dialogs. */
+  .pixel-scrim {
+    background: repeating-linear-gradient(
+      0deg,
+      rgb(43 42 51 / 0.55) 0 2px,
+      rgb(43 42 51 / 0.4) 2px 4px
+    );
+  }
+}
+
 html,
 body {
   height: 100%;

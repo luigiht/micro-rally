@@ -19,7 +19,7 @@ function DebugPanel() {
   return (
     <section
       aria-label={m.debug.title}
-      className="pointer-events-none absolute top-20 left-4 rounded-md bg-ink/80 px-3 py-2 font-mono text-xs text-paper"
+      className="pixel-box-dark pointer-events-none absolute top-24 left-6 px-3 py-2 font-mono text-xs"
     >
       <dl className="grid grid-cols-[auto_auto] gap-x-3">
         {rows.map(([k, v]) => (

@@ -18,7 +18,7 @@ export const en = {
     button: 'Game',
     title: 'Game',
     paused: 'Paused while this panel is open.',
-    close: 'Back to driving',
+    close: 'Close',
     stageSection: 'This stage',
     stageName: 'Stage',
     region: 'Region',

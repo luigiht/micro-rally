@@ -20,7 +20,7 @@ export const es: Messages = {
     button: 'Juego',
     title: 'Juego',
     paused: 'En pausa mientras este panel esté abierto.',
-    close: 'Volver a conducir',
+    close: 'Cerrar',
     stageSection: 'Este tramo',
     stageName: 'Tramo',
     region: 'Región',

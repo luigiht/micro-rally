@@ -10,7 +10,7 @@ export function SpeedReadout() {
   const gear = useTelemetryStore((s) => s.telemetry.gear);
   return (
     <div
-      className="pointer-events-none absolute right-4 bottom-4 rounded-xl bg-paper/85 px-4 py-3 text-right font-pixel text-ink shadow"
+      className="pixel-box pointer-events-none absolute right-6 bottom-6 px-4 py-3 text-right font-pixel"
       data-testid="speed-readout"
     >
       <p className="text-3xl leading-none">
