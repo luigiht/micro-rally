@@ -10,14 +10,14 @@ export function SpeedReadout() {
   const gear = useTelemetryStore((s) => s.telemetry.gear);
   return (
     <div
-      className="pointer-events-none absolute right-4 bottom-4 rounded-xl bg-paper/85 px-4 py-2 text-right text-ink shadow"
+      className="pointer-events-none absolute right-4 bottom-4 rounded-xl bg-paper/85 px-4 py-3 text-right font-pixel text-ink shadow"
       data-testid="speed-readout"
     >
-      <p className="text-4xl leading-none font-black tabular-nums">
+      <p className="text-3xl leading-none">
         {speed}
-        <span className="ml-1 text-sm font-semibold">{m.hud.kmh}</span>
+        <span className="ml-2 text-[10px]">{m.hud.kmh}</span>
       </p>
-      <p className="text-sm font-semibold">
+      <p className="mt-2 text-xs">
         {m.hud.gear} {gear === -1 ? m.hud.reverse : gear}
       </p>
     </div>

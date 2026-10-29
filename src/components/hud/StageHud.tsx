@@ -19,7 +19,7 @@ function Countdown() {
     <p
       role="status"
       aria-live="assertive"
-      className="pointer-events-none absolute inset-x-0 top-1/3 text-center text-8xl font-black text-paper drop-shadow-[0_4px_0_rgba(43,42,51,0.6)]"
+      className="pointer-events-none absolute inset-x-0 top-1/3 text-center font-pixel text-8xl text-paper drop-shadow-[0_4px_0_rgba(43,42,51,0.6)]"
     >
       {label}
     </p>
@@ -45,15 +45,17 @@ function ResultPanel({ result }: { result: StageResult }) {
         aria-labelledby="result-title"
         className="w-80 rounded-2xl bg-paper p-6 text-ink shadow-xl"
       >
-        <h2 id="result-title" className="text-2xl font-black">
+        <h2 id="result-title" className="font-pixel text-lg leading-snug">
           {m.stage.resultTitle}
         </h2>
-        {result.newRecord && <p className="mt-1 font-semibold text-rally">{m.stage.newRecord}</p>}
-        <dl className="mt-4 grid grid-cols-[1fr_auto] gap-y-1 tabular-nums">
+        {result.newRecord && (
+          <p className="mt-2 font-pixel text-[10px] leading-snug text-rally">{m.stage.newRecord}</p>
+        )}
+        <dl className="mt-4 grid grid-cols-[1fr_auto] gap-y-2">
           {rows.map(([k, v]) => (
             <div key={k} className="contents">
               <dt>{k}</dt>
-              <dd className="text-right font-semibold">{v}</dd>
+              <dd className="text-right font-pixel text-xs leading-6">{v}</dd>
             </div>
           ))}
         </dl>
@@ -91,23 +93,23 @@ export function StageHud() {
   if (gateCount === 0) return null;
   return (
     <>
-      <div className="pointer-events-none absolute inset-x-0 top-4 flex flex-col items-center text-ink">
+      <div className="pointer-events-none absolute inset-x-0 top-4 flex flex-col items-center font-pixel text-ink">
         <p
-          className="rounded-xl bg-paper/85 px-4 py-1 text-3xl font-black tabular-nums"
+          className="rounded-xl bg-paper/85 px-4 py-2 text-2xl leading-none"
           data-testid="stage-timer"
         >
           {formatTime(time)}
         </p>
-        <p className="mt-1 rounded-md bg-paper/80 px-2 text-sm font-semibold">
+        <p className="mt-2 rounded-md bg-paper/80 px-2 py-1 text-[10px]">
           {fill(m.stage.checkpoint, { n: gatesPassed, total: gateCount })}
         </p>
         {penalties > 0 && (
-          <p className="mt-1 rounded-md bg-rally px-2 text-sm font-semibold text-paper">
+          <p className="mt-1 rounded-md bg-rally px-2 py-1 text-[10px] text-paper">
             {fill(m.stage.penalties, { s: penalties })}
           </p>
         )}
       </div>
-      <p className="pointer-events-none absolute top-4 right-4 rounded-xl bg-paper/85 px-3 py-1 font-semibold text-ink tabular-nums">
+      <p className="pointer-events-none absolute top-4 right-4 rounded-xl bg-paper/85 px-3 py-2 font-pixel text-xs text-ink">
         {m.stage.money} {formatMoney(money, locale)}
       </p>
       <Countdown />

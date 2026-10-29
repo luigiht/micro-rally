@@ -12,6 +12,8 @@ export interface RegionPalette {
   shoulder: string;
   foliage: string;
   foliageAlt: string;
+  canopy: string;
+  canopyAlt: string;
   trunk: string;
   boulder: string;
 }
@@ -19,6 +21,7 @@ export interface RegionPalette {
 export interface SceneryDensity {
   /** Expected items per 100 m of road, both sides combined. */
   trees: number;
+  broadleaf: number;
   bushes: number;
   rocks: number;
 }
@@ -56,13 +59,15 @@ const FOREST: RegionDef = {
     shoulder: '#a3a46c',
     foliage: '#3f7a4a',
     foliageAlt: '#2f6440',
+    canopy: '#6f9a45',
+    canopyAlt: '#8aab4f',
     trunk: '#6b4d33',
     boulder: '#9a9688',
   },
   terrain: { amplitude: 22, frequency: 1 / 260 },
   twistiness: 0.6,
   baseLength: 1800,
-  scenery: { trees: 34, bushes: 10, rocks: 4 },
+  scenery: { trees: 80, broadleaf: 18, bushes: 16, rocks: 5 },
   parSpeed: 17,
 };
 

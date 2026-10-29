@@ -70,3 +70,12 @@ Newest at the bottom. Format: date — decision — why.
     pairs) and are not translated; everything around them is.
 24. **2026-10-29 — Prize money uses a `$` prefix in every locale** with
     locale digit grouping; it's a fictional currency.
+25. **2026-10-29 — Pixel font: Press Start 2P (OFL 1.1), bundled via
+    `@fontsource`.** Requested by the user for headline HUD info (timer,
+    speed, gear, countdown, money, result values). It's the one non-procedural
+    asset: OFL rather than CC0, self-hosted (no runtime network), covers
+    Latin-1 for ES/IT, and is listed in `CREDITS.md`. Labels and buttons stay
+    in the rounded sans for legibility.
+26. **2026-10-29 — Two tree species.** Forest mixes cone pines with round
+    broadleaf trees (merged icosahedra) at ~100 trees per 100 m of road,
+    clumped by a slow along-road wobble; both share one instanced trunk mesh.

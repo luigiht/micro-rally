@@ -4,7 +4,7 @@ import { REGIONS } from './regions';
 import { createRoadHit, type RoadSample } from './RoadPath';
 import type { TerrainField } from './TerrainField';
 
-export type PropKind = 'tree' | 'bush' | 'rock';
+export type PropKind = 'tree' | 'broadleaf' | 'bush' | 'rock';
 
 export interface Prop {
   kind: PropKind;
@@ -18,10 +18,15 @@ export interface Prop {
 
 const STEP = 4;
 const MIN_CLEARANCE = 3;
-const MEAN_OFFSET = 20;
-const MAX_OFFSET = 110;
+const MEAN_OFFSET = 28;
+const MAX_OFFSET = 160;
 
-const COLLIDER_RADIUS: Readonly<Record<PropKind, number>> = { tree: 0.45, bush: 0, rock: 0.85 };
+const COLLIDER_RADIUS: Readonly<Record<PropKind, number>> = {
+  tree: 0.45,
+  broadleaf: 0.4,
+  bush: 0,
+  rock: 0.85,
+};
 
 /** Deterministic roadside scenery along the stage. */
 export function scatterScenery(field: TerrainField): Prop[] {
@@ -34,6 +39,7 @@ export function scatterScenery(field: TerrainField): Prop[] {
   const props: Prop[] = [];
   const kinds: readonly [PropKind, number][] = [
     ['tree', density.trees],
+    ['broadleaf', density.broadleaf],
     ['bush', density.bushes],
     ['rock', density.rocks],
   ];
@@ -43,7 +49,7 @@ export function scatterScenery(field: TerrainField): Prop[] {
     const clump =
       0.35 + 1.3 * (0.5 + 0.5 * Math.sin(d * 0.011 + stage.seed * 1e-9) * Math.cos(d * 0.0047));
     for (const [kind, perHundred] of kinds) {
-      const expected = ((perHundred * STEP) / 100) * (kind === 'tree' ? clump : 1);
+      const expected = ((perHundred * STEP) / 100) * (kind === 'rock' ? 1 : clump);
       let n = Math.floor(expected) + (rand() < expected % 1 ? 1 : 0);
       while (n-- > 0) {
         path.sample(d + rand() * STEP, sample);
@@ -54,7 +60,7 @@ export function scatterScenery(field: TerrainField): Prop[] {
         );
         const x = sample.x + Math.cos(sample.heading) * offset * side;
         const z = sample.z - Math.sin(sample.heading) * offset * side;
-        const scale = kind === 'tree' ? 0.7 + rand() * 0.8 : 0.6 + rand() * 0.8;
+        const scale = kind === 'rock' || kind === 'bush' ? 0.6 + rand() * 0.8 : 0.7 + rand() * 0.8;
         const rotation = rand() * Math.PI * 2;
         const variant = rand() < 0.5 ? 0 : 1;
         // Keep every part of the road (including other bends) clear.

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { en } from '@/i18n/messages/en';
+import '@fontsource/press-start-2p/400.css';
 import './globals.css';
 
 export const metadata: Metadata = {
