@@ -431,3 +431,21 @@ Newest at the bottom. Format: date — decision — why.
     gear glyph; the filled front view with open headlights read best at the
     small size (by request: front-facing). The mobile e2e test checks the
     Garage is inside the toolbar and that there is only one.
+55. **2026-10-30 — Open Graph art refresh, web manifest and richer SEO.**
+    `assets/og-image.svg` now carries the pixel wordmark over a rendered
+    forest stage (Figma export with embedded PNGs, so it is ~3 MB and stays
+    a source asset); `pnpm brand` re-rendered `opengraph-image.png` and the
+    alt text (`opengraph-image.alt.txt`, mirrored in `meta.ogAlt` for all
+    three locales) describes the new picture. The brand script also renders
+    a 512×512 `icon2.png`, the size browsers require to install a web app.
+    `src/app/manifest.ts` adds `/manifest.webmanifest` (name, short name,
+    description, standalone landscape display, paper theme colour, the SVG
+    - 192 + 512 icons and the OG image as a wide screenshot); Next links it
+      from `<head>` automatically. `layout.tsx` gains author, creator and
+      publisher (from `AUTHOR` in `lib/site.ts`), a `googleBot` rule allowing
+      large image previews and unlimited snippets, and JSON-LD rewritten as a
+      `@graph` of `WebSite`, `Person` and `VideoGame` with `image`, genres,
+      keywords, `isAccessibleForFree`, play mode, browser requirements and
+      cross-references by `@id`. No visible splash copy was added: decision
+      37 keeps the splash to the logo, and the description already reaches
+      crawlers through the meta tags and structured data.

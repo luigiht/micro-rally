@@ -5,6 +5,8 @@ export const it: Messages = {
     title: 'Micro Rally',
     description:
       'Un rally accogliente low-poly per il tuo browser. Guida prove procedurali, vinci premi e migliora la tua auto. Gratis, senza pubblicità né tracciamento.',
+    ogAlt:
+      'Logo di Micro Rally su una prova forestale accogliente low-poly con un’auto da rally arancione',
   },
   boot: {
     loading: 'Scaldando il motore…',

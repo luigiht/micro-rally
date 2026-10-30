@@ -3,6 +3,7 @@ export const en = {
     title: 'Micro Rally',
     description:
       'A cozy low-poly rally game for your browser. Drive procedural stages, earn prize money and upgrade your car. Free, no ads, no tracking.',
+    ogAlt: 'Micro Rally logo over a cozy low-poly forest stage with an orange rally car',
   },
   boot: {
     loading: 'Warming up the engine…',

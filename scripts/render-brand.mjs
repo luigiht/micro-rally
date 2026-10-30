@@ -1,6 +1,7 @@
 // Renders the brand assets in /assets into the files Next's app-router
 // metadata conventions pick up: SVG favicon, PNG icon + Apple touch icon
-// (180×180) and the 1200×630 Open Graph image (social scrapers need raster).
+// (180×180), the 512×512 manifest icon and the 1200×630 Open Graph image
+// (social scrapers need raster).
 // Re-run with `pnpm brand` whenever the SVGs change.
 import { copyFile, readFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -46,6 +47,12 @@ await render(page, favicon, {
   width: 180,
   height: 180,
   out: path.join(app, 'apple-icon.png'),
+  transparent: true,
+});
+await render(page, favicon, {
+  width: 512,
+  height: 512,
+  out: path.join(app, 'icon2.png'),
   transparent: true,
 });
 await render(page, og, {

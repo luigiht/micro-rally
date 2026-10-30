@@ -57,7 +57,7 @@ pnpm install
 pnpm dev          # http://localhost:3000
 pnpm check        # typecheck + lint + unit tests + build
 pnpm test:e2e     # Playwright suite (desktop + phone landscape)
-pnpm brand        # re-render icons and the Open Graph image from assets/
+pnpm brand        # re-render icons (192/512/Apple) and the Open Graph image from assets/
 ```
 
 Node 22 and pnpm (see `packageManager` in `package.json`).

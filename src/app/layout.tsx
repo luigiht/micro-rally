@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Analytics } from '@vercel/analytics/next';
 import { en } from '@/i18n/messages/en';
-import { SITE_URL } from '@/lib/site';
+import { AUTHOR, SITE_URL } from '@/lib/site';
 import '@fontsource/press-start-2p/400.css';
 import './globals.css';
 
@@ -13,6 +13,8 @@ const KEYWORDS = [
   'free game',
   'no ads',
   'procedural stages',
+  'play in browser',
+  'arcade rally',
 ];
 
 export const metadata: Metadata = {
@@ -22,8 +24,22 @@ export const metadata: Metadata = {
   applicationName: en.meta.title,
   keywords: KEYWORDS,
   category: 'games',
+  classification: 'Game',
+  authors: [{ name: AUTHOR.name, url: AUTHOR.url }],
+  creator: AUTHOR.name,
+  publisher: AUTHOR.name,
   alternates: { canonical: '/' },
-  robots: { index: true, follow: true },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+      'max-video-preview': -1,
+    },
+  },
   formatDetection: { telephone: false },
   appleWebApp: { capable: true, title: en.meta.title, statusBarStyle: 'black-translucent' },
   openGraph: {
@@ -49,19 +65,56 @@ export const viewport: Viewport = {
   themeColor: '#f4ecd8',
 };
 
-/** Structured data so search engines list the app as a free browser game. */
-const GAME_JSON_LD = {
+/**
+ * Structured data: the site and the game it hosts, so search engines list
+ * Micro Rally as a free browser game with its artwork and author.
+ */
+const JSON_LD = {
   '@context': 'https://schema.org',
-  '@type': 'VideoGame',
-  name: en.meta.title,
-  description: en.meta.description,
-  url: SITE_URL,
-  genre: 'Racing',
-  gamePlatform: 'Web browser',
-  applicationCategory: 'Game',
-  operatingSystem: 'Any',
-  inLanguage: ['en', 'es', 'it'],
-  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  '@graph': [
+    {
+      '@type': 'WebSite',
+      '@id': `${SITE_URL}/#website`,
+      url: SITE_URL,
+      name: en.meta.title,
+      description: en.meta.description,
+      inLanguage: ['en', 'es', 'it'],
+      publisher: { '@id': `${SITE_URL}/#author` },
+    },
+    {
+      '@type': 'Person',
+      '@id': `${SITE_URL}/#author`,
+      name: AUTHOR.name,
+      url: AUTHOR.url,
+    },
+    {
+      '@type': 'VideoGame',
+      '@id': `${SITE_URL}/#game`,
+      name: en.meta.title,
+      alternateName: 'MicroRally',
+      description: en.meta.description,
+      url: SITE_URL,
+      image: `${SITE_URL}/opengraph-image.png`,
+      genre: ['Racing', 'Rally', 'Arcade'],
+      keywords: KEYWORDS.join(', '),
+      gamePlatform: 'Web browser',
+      playMode: 'SinglePlayer',
+      applicationCategory: 'GameApplication',
+      operatingSystem: 'Any',
+      browserRequirements: 'Requires a browser with WebGL 2',
+      inLanguage: ['en', 'es', 'it'],
+      isAccessibleForFree: true,
+      author: { '@id': `${SITE_URL}/#author` },
+      publisher: { '@id': `${SITE_URL}/#author` },
+      offers: {
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: 'USD',
+        availability: 'https://schema.org/InStock',
+      },
+      mainEntityOfPage: { '@id': `${SITE_URL}/#website` },
+    },
+  ],
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -72,7 +125,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Analytics />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(GAME_JSON_LD) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
         />
       </body>
     </html>

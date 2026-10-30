@@ -5,6 +5,8 @@ export const es: Messages = {
     title: 'Micro Rally',
     description:
       'Un rally acogedor de pocos polígonos para tu navegador. Conduce tramos procedurales, gana premios y mejora tu coche. Gratis, sin anuncios ni rastreo.',
+    ogAlt:
+      'Logo de Micro Rally sobre un tramo forestal acogedor de pocos polígonos con un coche de rally naranja',
   },
   boot: {
     loading: 'Calentando el motor…',
