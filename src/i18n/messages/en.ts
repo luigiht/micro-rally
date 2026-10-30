@@ -143,6 +143,8 @@ export const en = {
     cameraHint: 'Press C while driving to switch.',
     cameras: { chase: 'Chase', cockpit: 'Cab', interior: 'Interior', iso: 'Isometric' },
     languages: { en: 'English', es: 'Español', it: 'Italiano' },
+    skidMarks: 'Tyre marks',
+    skidMarksHint: 'Rubber and gravel marks left by sliding wheels.',
     close: 'Close',
   },
   game: {

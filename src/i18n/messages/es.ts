@@ -150,6 +150,8 @@ export const es: Messages = {
     cameraHint: 'Pulsa C mientras conduces para cambiar.',
     cameras: { chase: 'Persecución', cockpit: 'Cabina', interior: 'Interior', iso: 'Isométrica' },
     languages: { en: 'English', es: 'Español', it: 'Italiano' },
+    skidMarks: 'Marcas de neumáticos',
+    skidMarksHint: 'Huellas de goma y grava que dejan las ruedas al derrapar.',
     close: 'Cerrar',
   },
   game: {

@@ -8,7 +8,16 @@ export const GRAVITY = 9.81;
 const STEER_RATE = 3.2;
 const STEER_RETURN = 5.5;
 const LOW_SPEED = 4;
-const SLIDE_FALLOFF = 0.18;
+const SLIDE_FALLOFF = 0.06;
+/** Friction ellipse: longitudinal force spends lateral grip at this weight (1 = circle). */
+const COMBINED_SLIP = 0.5;
+/** Built-in understeer: the rear axle gets this much more grip so the front lets go first. */
+export const REAR_GRIP_BIAS = 1.2;
+/** Cornering comes first: the lateral demand reserves grip at this weight before drive/brakes get the rest. */
+const LATERAL_PRIORITY = 0.95;
+/** Steering assist: front slip allowed = peak slip × margin, never below this share of lock. */
+const STEER_ASSIST_MARGIN = 1.35;
+const STEER_ASSIST_FLOOR = 0.3;
 const MAX_COMPRESSION = 0.35;
 const AIR_EPS = 0.06;
 const MAX_GROUND_VY = 15;
@@ -52,8 +61,13 @@ export interface VehicleState {
   turboActive: boolean;
   slipFront: number;
   slipRear: number;
-  /** 0..1 how much drive force exceeded traction. */
+  /** 0..1 share of the longitudinal force (drive or brakes) the front axle could not deliver. */
+  spinFront: number;
+  spinRear: number;
+  /** Max of spinFront/spinRear: how much the tyres are spinning or locked. */
   wheelSpin: number;
+  /** Handbrake held with the car on the ground. */
+  handbrake: boolean;
   wheelAngle: number;
 }
 
@@ -107,7 +121,10 @@ export function createVehicleState(): VehicleState {
     turboActive: false,
     slipFront: 0,
     slipRear: 0,
+    spinFront: 0,
+    spinRear: 0,
     wheelSpin: 0,
+    handbrake: false,
     wheelAngle: 0,
   };
 }
@@ -192,7 +209,8 @@ export class VehicleSim {
     const vLong = s.vx * sinY + s.vz * cosY;
     const vLat = s.vx * cosY - s.vz * sinY;
     const speed = Math.hypot(s.vx, s.vz);
-    s.steerAngle = (-s.steer * p.maxSteer) / (1 + speed / p.steerFalloffSpeed);
+    const vxAbs = Math.max(Math.abs(vLong), 1.5);
+    const sgn = vLong >= 0 ? 1 : -1;
 
     // Ground contact and suspension.
     const L = p.cgToFront + p.cgToRear;
@@ -233,6 +251,17 @@ export class VehicleSim {
     const transfer = (p.cgHeight / L) * p.mass * s.longAccel * load;
     const wf = Math.max(0, (p.cgToRear / L) * weight - transfer);
     const wr = Math.max(0, (p.cgToFront / L) * weight + transfer);
+
+    // Steering assist: trim lock so the front slip angle stays near the tyres' peak instead of
+    // ploughing. The window follows the axle's own slip, so counter-steer is never blocked,
+    // and always spans a share of the mechanical lock so the driver can still over-drive it.
+    const lock = p.maxSteer / (1 + speed / p.steerFalloffSpeed);
+    const betaF = Math.atan2(vLat + s.yawRate * p.cgToFront, vxAbs);
+    const alphaMax = (mu / p.corneringFront) * STEER_ASSIST_MARGIN;
+    const floor = lock * STEER_ASSIST_FLOOR;
+    const lo = Math.min(sgn * betaF - alphaMax, -floor);
+    const hi = Math.max(sgn * betaF + alphaMax, floor);
+    s.steerAngle = clamp(-s.steer * lock, lo, hi);
 
     // Pedals: holding brake at a standstill selects reverse, throttle selects first.
     if (s.gear === REVERSE_GEAR) {
@@ -287,21 +316,32 @@ export class VehicleSim {
     const brakeF = brakePedal * p.brakeDecel * p.mass;
     const handF = input.handbrake ? p.mass * HANDBRAKE_DECEL : 0;
     const capF = mu * wf;
-    const capR = mu * wr;
+    const capR = mu * wr * REAR_GRIP_BIAS;
     const rawFxF = force * p.frontDrive - dir * brakeF * 0.6;
     const rawFxR = force * (1 - p.frontDrive) - dir * (brakeF * 0.4 + handF);
-    const fxF = clamp(rawFxF, -capF, capF);
-    const fxR = clamp(rawFxR, -capR, capR);
-    const excess = Math.abs(rawFxF) - Math.abs(fxF) + Math.abs(rawFxR) - Math.abs(fxR);
-    s.wheelSpin = force !== 0 ? clamp(excess / (Math.abs(force) + 1), 0, 1) : 0;
-
-    // Lateral tyre forces from slip angles.
-    const vxAbs = Math.max(Math.abs(vLong), 1.5);
-    const sgn = vLong >= 0 ? 1 : -1;
-    const alphaF = Math.atan2(vLat + s.yawRate * p.cgToFront, vxAbs) - sgn * s.steerAngle;
     const alphaR = Math.atan2(vLat - s.yawRate * p.cgToRear, vxAbs);
-    const latCapF = Math.sqrt(Math.max(0, capF * capF - fxF * fxF));
-    let latCapR = Math.sqrt(Math.max(0, capR * capR - fxR * fxR));
+    const wantF =
+      LATERAL_PRIORITY * tyreForce(betaF - sgn * s.steerAngle, p.corneringFront * wf, capF);
+    const wantR = LATERAL_PRIORITY * tyreForce(alphaR, p.corneringRear * wr, capR);
+    const longCapF = Math.sqrt(Math.max(0, capF * capF - wantF * wantF));
+    const longCapR = Math.sqrt(Math.max(0, capR * capR - wantR * wantR));
+    const fxF = clamp(rawFxF, -longCapF, longCapF);
+    const fxR = clamp(rawFxR, -longCapR, longCapR);
+    s.spinFront = touching
+      ? clamp((Math.abs(rawFxF) - Math.abs(fxF)) / (Math.abs(rawFxF) + 1), 0, 1)
+      : 0;
+    s.spinRear = touching
+      ? clamp((Math.abs(rawFxR) - Math.abs(fxR)) / (Math.abs(rawFxR) + 1), 0, 1)
+      : 0;
+    s.wheelSpin = Math.max(s.spinFront, s.spinRear);
+    s.handbrake = input.handbrake && touching;
+
+    // Lateral tyre forces from slip angles, sharing grip with the longitudinal force (ellipse).
+    const alphaF = betaF - sgn * s.steerAngle;
+    const usedF = COMBINED_SLIP * fxF;
+    const usedR = COMBINED_SLIP * fxR;
+    const latCapF = Math.sqrt(Math.max(0, capF * capF - usedF * usedF));
+    let latCapR = Math.sqrt(Math.max(0, capR * capR - usedR * usedR));
     if (input.handbrake) latCapR *= p.handbrakeRearGrip;
     const fyF = tyreForce(alphaF, p.corneringFront * wf, latCapF);
     const fyR = tyreForce(alphaR, p.corneringRear * wr, latCapR);

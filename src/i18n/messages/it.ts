@@ -152,6 +152,8 @@ export const it: Messages = {
       iso: 'Isometrica',
     },
     languages: { en: 'English', es: 'Español', it: 'Italiano' },
+    skidMarks: 'Segni di pneumatici',
+    skidMarksHint: 'Tracce di gomma e ghiaia lasciate dalle ruote in derapata.',
     close: 'Chiudi',
   },
   game: {

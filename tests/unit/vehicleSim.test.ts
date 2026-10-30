@@ -53,6 +53,17 @@ describe('Drivetrain', () => {
   });
 });
 
+/** Largest body slip angle (rad) while cornering under power from ~70 km/h. */
+function maxBodySlip(id: CarId, surface: keyof typeof SURFACES, steer = 1, throttle = 0.5): number {
+  const ground = flatTerrain(surface);
+  const sim = makeSim(CAR_SPECS[id], ground, 20);
+  let worst = 0;
+  run(sim, ground, 2.5, input({ steer, throttle }), (s) => {
+    worst = Math.max(worst, Math.abs(Math.atan2(s.state.lateralSpeed, Math.abs(s.state.speed))));
+  });
+  return worst;
+}
+
 describe('VehicleSim', () => {
   it('top speeds sit in their intended bands and order', () => {
     const v = {
@@ -114,6 +125,39 @@ describe('VehicleSim', () => {
     };
     expect(speedOn('grass')).toBeLessThan(speedOn('tarmac') * 0.85);
     expect(speedOn('mud')).toBeLessThan(speedOn('grass'));
+  });
+
+  it('every car stays composed through a fast corner under power on tarmac', () => {
+    for (const id of ['hatchback', 'coupe', 'saloon', 'groupb'] as const) {
+      expect(maxBodySlip(id, 'tarmac'), id).toBeLessThan(0.1);
+    }
+  });
+
+  it('every car holds on through a gravel corner, on and off the throttle', () => {
+    for (const id of ['hatchback', 'coupe', 'saloon', 'groupb'] as const) {
+      expect(maxBodySlip(id, 'gravel'), id).toBeLessThan(0.12);
+      expect(maxBodySlip(id, 'gravel', 0.5, 0), `${id} lift-off`).toBeLessThan(0.12);
+    }
+  });
+
+  it('steering assist keeps full lock from ploughing the front tyres', () => {
+    const sim = makeSim(CAR_SPECS.hatchback, tarmac, 20);
+    let worst = 0;
+    run(sim, tarmac, 2, input({ steer: 1, throttle: 0.4 }), (s) => {
+      worst = Math.max(worst, s.state.slipFront);
+    });
+    expect(worst).toBeLessThan(0.2);
+    expect(Math.abs(sim.state.steerAngle)).toBeLessThan(CAR_SPECS.hatchback.maxSteer / 2);
+  });
+
+  it('reports the handbrake and per-axle spin for the tyre marks', () => {
+    const sim = makeSim(CAR_SPECS.coupe, flatTerrain('snow'), 5);
+    run(sim, flatTerrain('snow'), 0.5, input({ throttle: 1 }));
+    expect(sim.state.spinRear).toBeGreaterThan(0.2);
+    expect(sim.state.spinFront).toBe(0);
+    expect(sim.state.handbrake).toBe(false);
+    run(sim, flatTerrain('snow'), 0.1, input({ handbrake: true }));
+    expect(sim.state.handbrake).toBe(true);
   });
 
   it('steer right turns right and steer left turns left', () => {

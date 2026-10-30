@@ -316,3 +316,56 @@ Newest at the bottom. Format: date — decision — why.
     showroom's Grip bar is therefore equal across cars by design. The game
     canvas carries `data-car` so tests can see that a purchase lands on track
     at once.
+48. **2026-10-30 — Grip rework: cars no longer slide through ordinary
+    corners.** Measured with the sim harness before the change, the coupé spun
+    at 72 km/h with half throttle and half steer (body slip 77°) and the
+    hatchback ploughed with 22° of front slip at full lock. Five changes,
+    all in `VehicleSim`/`CarSpec`: (a) cornering stiffness 9/9.5 → 14/16 per
+    rad and tyre grip 1 → 1.1, so the same lateral force needs less slip;
+    (b) a steering assist clamps the front steer angle so the front slip
+    angle stays within 1.35× the tyre's peak slip — the window follows the
+    axle's own slip, so counter-steer is never blocked, and always spans 30%
+    of the mechanical lock so the car can still be over-driven; (c) a
+    friction ellipse in which the lateral demand reserves grip first (0.9
+    weight) and longitudinal force costs lateral grip at only 0.5 weight;
+    (d) built-in understeer: the rear axle gets 20% more grip
+    (`REAR_GRIP_BIAS`) so the front lets go first — this is what removed the
+    lift-off spins on gravel, which happened even at zero throttle because
+    coasting shifts load forward on a neutral car; (e) post-peak fall-off
+    18% → 12%. Afterwards every dealership car corners at 72 km/h under power
+    with 1–3° of body slip on tarmac and gravel, and the handbrake still
+    spins the car (rear grip × 0.4). Tests pin body slip under 6° on tarmac
+    and 7° on gravel, on and off the throttle.
+49. **2026-10-30 — Tyre marks.** Researched before building: Nition's
+    `UnitySkidmarks` (ring buffer of 2048 quads in one mesh, ~0.25 m sections,
+    intensity in vertex data, polygon offset −4, no depth write, each wheel
+    joins its new section to its last one) and the Irrlicht forum's skid-node
+    thread (side vector = up × travel direction; sample densely in curves,
+    sparsely on straights). Ours: `render/effects/SkidMarks` owns one
+    `ShaderMaterial` mesh with per-vertex intensity and birth time; the
+    vertex shader holds a mark solid for 8 s and then fades it over 22 s, so
+    strips fade from their oldest end with no per-frame CPU work; the ring
+    buffer recycles the oldest quads. The pure `game/vehicle/wheelContacts`
+    decides where and how hard: slip beyond 2.2× the tyre's peak (sharp
+    turns, drifts), the handbrake, or a real burnout/lock-up (over 60% of the
+    demanded longitudinal force lost); hard-but-gripping cornering leaves
+    nothing. Ink is per surface — rubber-black on tarmac, light brown on
+    gravel, churned dark green/brown on grass and mud, compressed grey on
+    snow. Settings has a toggle (`skidMarks`, default on) and `capacity` is
+    the quality knob; a session clock that pauses with the panels drives the
+    fade so marks don't age while paused.
+50. **2026-10-30 — Dealership turntable aims at the car's mid-height.** The
+    default look-at (the origin, at ground level) placed the horizon near the
+    top edge of the 16:9 preview and cropped the roof; the camera now looks
+    at y = 0.7 m from a slightly farther, higher position so the car sits in
+    the vertical centre.
+51. **2026-10-30 — Responsive garage modal.** On a 375 px phone the
+    dealership's 3D canvas pushed the dialog to 452 px (the canvas's pixel
+    width fed the panel's min-content size), and on landscape phones the
+    512 px-wide dialog left ~110 px of visible content. `HudDialog` is now a
+    `min-w-0` flex child, which breaks that chain, and takes a `className`
+    for per-panel sizing. A `short` custom variant (`max-height: 480px`)
+    widens the Garage to `max-w-3xl`, trims padding, lays the dealership out
+    as preview | card and the upgrades as three columns. On phones the
+    carousel arrows move under the full-width preview (prev · dots · next)
+    via CSS grid placement, so the DOM and tab order are unchanged.

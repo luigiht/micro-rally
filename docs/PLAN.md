@@ -54,6 +54,9 @@ Status legend: [x] done · [~] in progress · [ ] not started
 - [x] Garage panel: Upgrades (7 cards, per-level pricing, applied via `applyUpgrades`) and Dealership carousel with a spinning 3D preview
 - [x] Car models: coupé, saloon and Group B built from primitives in the hatchback style, proportions measured from the reference GLBs
 - [x] Economy tests for upgrade pricing/effects, catalogue and store purchases; save v2 migration
+- [x] Grip rework: steering assist, friction ellipse, rear grip bias — every car composed under power and off-throttle (unit-tested)
+- [x] Tyre marks: one-mesh ring buffer fading from the oldest end, per-surface ink, Settings toggle
+- [x] Dealership preview centred on the car; garage modal responsive (phone portrait/landscape, tablet, desktop)
 
 ## 6. Save system, API route, Game ID URL, start/continue — [ ]
 

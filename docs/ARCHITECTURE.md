@@ -39,6 +39,8 @@ flowchart TD
 3. Render transforms = lerp/slerp(previous, current, alpha) into reused
    temp objects.
 4. Active `CameraRig.update(dt)` positions the camera.
+   `wheelContacts` (pure) turns the pose + slip into four contact patches and
+   `SkidMarks` (render) appends quads to its ring buffer when a tyre scrubs.
 5. HUD snapshot is pushed to the store at ≤ 10 Hz.
 
 ## Stage pipeline (milestone 3)

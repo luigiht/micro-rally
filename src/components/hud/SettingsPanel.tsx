@@ -13,6 +13,7 @@ export function SettingsPanel() {
   const m = useMessages();
   const locale = useSettingsStore((s) => s.locale);
   const camera = useSettingsStore((s) => s.camera);
+  const skidMarks = useSettingsStore((s) => s.skidMarks);
 
   return (
     <HudDialog
@@ -54,6 +55,17 @@ export function SettingsPanel() {
         ))}
       </select>
       <p className="mt-2 text-xs text-ink/70">{m.settings.cameraHint}</p>
+
+      <label className="mt-6 flex cursor-pointer items-center gap-3 font-pixel text-xs">
+        <input
+          type="checkbox"
+          checked={skidMarks}
+          onChange={(e) => useSettingsStore.getState().setSkidMarks(e.target.checked)}
+          className="pixel-checkbox"
+        />
+        {m.settings.skidMarks}
+      </label>
+      <p className="mt-2 text-xs text-ink/70">{m.settings.skidMarksHint}</p>
 
       <h3 className="mt-6 font-pixel text-xs">{m.settings.controls}</h3>
       <ControlsTable />

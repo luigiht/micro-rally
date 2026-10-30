@@ -52,6 +52,8 @@ export class DrivingSession {
   private hudFrames = 0;
   private finishedReported = false;
   private canvas: HTMLElement | null = null;
+  /** Seconds of simulated time; stands still while a panel pauses the game. */
+  time = 0;
 
   private readonly stepFn = (dt: number) => {
     const run = this.run;
@@ -147,6 +149,7 @@ export class DrivingSession {
     // An open HUD panel pauses the sim; the camera keeps rendering the frozen pose.
     const paused = useUiStore.getState().panel !== null;
     const alpha = paused ? 1 : this.stepper.advance(dt, this.stepFn);
+    if (!paused) this.time += dt;
     interpolatePose(this.pose, this.sim.prev, this.sim.state, alpha);
 
     this.frame.dt = dt;
