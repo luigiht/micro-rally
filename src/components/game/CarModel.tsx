@@ -20,6 +20,9 @@ export interface CarModelHandle {
   setView(mode: CameraMode): void;
 }
 
+/** Wheels can rise this far into their wells before the body bottoms out (matches the sim). */
+const MAX_WHEEL_LIFT = 0.35;
+
 /** Wheel rim colour per car; cream by default. */
 const RIM: Partial<Record<CarId, string>> = {
   saloon: '#e9b949',
@@ -72,10 +75,11 @@ function BodyFor({ spec, cabinRef }: { spec: CarSpec; cabinRef: Ref<Group> }) {
   }
 }
 
-/** Chassis, wheels, interior and the primitive-built body for `spec.id`. */
+/** Chassis, wheels, interior and the lofted body for `spec.id`. The body rides on the springs; the wheels ride on the ground. */
 export function CarModel({ spec, ref }: { spec: CarSpec; ref: Ref<CarModelHandle> }) {
   const root = useRef<Group>(null);
   const body = useRef<Group>(null);
+  const wheels = useRef<Group>(null);
   const cabin = useRef<Group>(null);
   const interior = useRef<CarInteriorHandle>(null);
   const steerFL = useRef<Group>(null);
@@ -93,6 +97,12 @@ export function CarModel({ spec, ref }: { spec: CarSpec; ref: Ref<CarModelHandle
       r.rotation.set(pose.pitch, pose.yaw, pose.roll, 'YXZ');
       if (body.current)
         body.current.rotation.z = Math.max(-0.07, Math.min(0.07, pose.latAccel * 0.008));
+      // The root is the sprung body; the wheels stay on the ground as the springs compress.
+      if (wheels.current)
+        wheels.current.position.y = Math.max(
+          0,
+          Math.min(MAX_WHEEL_LIFT, pose.groundHeight - pose.y),
+        );
       if (steerFL.current) steerFL.current.rotation.y = pose.steerAngle;
       if (steerFR.current) steerFR.current.rotation.y = pose.steerAngle;
       const spin = pose.wheelAngle;
@@ -124,10 +134,12 @@ export function CarModel({ spec, ref }: { spec: CarSpec; ref: Ref<CarModelHandle
       {/* Mud flaps hang off the chassis, not the leaning body. */}
       <Box p={[half, 0.24, rear - 0.42]} s={[0.3, 0.26, 0.03]} c={C.trim} />
       <Box p={[-half, 0.24, rear - 0.42]} s={[0.3, 0.26, 0.03]} c={C.trim} />
-      <Wheel x={half} z={front} radius={r} rim={rim} steerRef={steerFL} spinRef={spinFL} />
-      <Wheel x={-half} z={front} radius={r} rim={rim} steerRef={steerFR} spinRef={spinFR} />
-      <Wheel x={half} z={rear} radius={r} rim={rim} spinRef={spinRL} />
-      <Wheel x={-half} z={rear} radius={r} rim={rim} spinRef={spinRR} />
+      <group ref={wheels}>
+        <Wheel x={half} z={front} radius={r} rim={rim} steerRef={steerFL} spinRef={spinFL} />
+        <Wheel x={-half} z={front} radius={r} rim={rim} steerRef={steerFR} spinRef={spinFR} />
+        <Wheel x={half} z={rear} radius={r} rim={rim} spinRef={spinRL} />
+        <Wheel x={-half} z={rear} radius={r} rim={rim} spinRef={spinRR} />
+      </group>
     </group>
   );
 }

@@ -3,8 +3,11 @@ import type { VehicleState } from './VehicleSim';
 /** Render-facing pose, blended between two physics steps. */
 export interface VehiclePose {
   x: number;
+  /** Body (sprung mass) reference height; the wheels sit on `groundHeight`. */
   y: number;
   z: number;
+  /** Height of the surface under the car; `groundHeight - y` is the spring compression. */
+  groundHeight: number;
   yaw: number;
   pitch: number;
   roll: number;
@@ -24,6 +27,7 @@ export function createVehiclePose(): VehiclePose {
     x: 0,
     y: 0,
     z: 0,
+    groundHeight: 0,
     yaw: 0,
     pitch: 0,
     roll: 0,
@@ -59,6 +63,7 @@ export function interpolatePose(
   out.x = lerp(prev.x, curr.x, alpha);
   out.y = lerp(prev.y, curr.y, alpha);
   out.z = lerp(prev.z, curr.z, alpha);
+  out.groundHeight = lerp(prev.groundHeight, curr.groundHeight, alpha);
   out.yaw = lerpAngle(prev.yaw, curr.yaw, alpha);
   out.pitch = lerp(prev.pitch, curr.pitch, alpha);
   out.roll = lerp(prev.roll, curr.roll, alpha);

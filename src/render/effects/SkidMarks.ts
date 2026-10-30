@@ -17,7 +17,7 @@ export interface SkidMarkOptions {
   capacity: number;
   /** Mark width in metres (the tyres are 0.26 m wide). */
   width: number;
-  /** Height above the ground query, on top of the road's own lift. */
+  /** Height above the ground query (which already includes the road ribbon's lift). */
   lift: number;
   /** A mark stays solid this long, then fades out over `fadeSeconds`. */
   holdSeconds: number;
@@ -27,7 +27,7 @@ export interface SkidMarkOptions {
 export const DEFAULT_SKID_MARKS: Readonly<SkidMarkOptions> = {
   capacity: 2048,
   width: 0.24,
-  lift: 0.1,
+  lift: 0.02,
   holdSeconds: 8,
   fadeSeconds: 22,
 };

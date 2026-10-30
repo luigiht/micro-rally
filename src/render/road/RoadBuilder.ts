@@ -10,7 +10,7 @@ import {
   Object3D,
 } from 'three';
 import type { StageDef } from '@/game/stage/StageGenerator';
-import type { TerrainField } from '@/game/stage/TerrainField';
+import { ROAD_LIFT, type TerrainField } from '@/game/stage/TerrainField';
 import type { Surface } from '@/game/vehicle/surfaces';
 
 const ROAD_COLORS: Readonly<Record<Surface, string>> = {
@@ -22,7 +22,6 @@ const ROAD_COLORS: Readonly<Record<Surface, string>> = {
 };
 const LINE_COLOR = '#f4f1e8';
 const SAMPLES_PER_PIECE = 100;
-const ROAD_LIFT = 0.08;
 const LINE_LIFT = 0.1;
 const LINE_WIDTH = 0.22;
 const MARKER_SPACING = 20;

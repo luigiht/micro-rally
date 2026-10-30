@@ -66,6 +66,7 @@ export class RoadFollower {
     p.z = s.z;
     p.yaw = s.heading;
     p.y = this.terrain.heightAt(s.x, s.z);
+    p.groundHeight = p.y;
     // Positive pitch dips the nose, i.e. the ground ahead is lower.
     const ahead = this.terrain.heightAt(s.x + fx * PITCH_PROBE, s.z + fz * PITCH_PROBE);
     const behind = this.terrain.heightAt(s.x - fx * PITCH_PROBE, s.z - fz * PITCH_PROBE);

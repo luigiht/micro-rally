@@ -4,7 +4,7 @@ import { createRoadHit, RoadPath } from '@/game/stage/RoadPath';
 import { propObstacles, scatterScenery } from '@/game/stage/SceneryScatter';
 import { generateStage, stageRegion } from '@/game/stage/StageGenerator';
 import { StageRun, TREE_PENALTY_SECONDS } from '@/game/stage/StageRun';
-import { TerrainField } from '@/game/stage/TerrainField';
+import { ROAD_LIFT, TerrainField } from '@/game/stage/TerrainField';
 import { ObstacleGrid, resolveObstacleCollisions } from '@/game/vehicle/Collisions';
 import { createVehicleState } from '@/game/vehicle/VehicleSim';
 
@@ -121,6 +121,18 @@ describe('TerrainField', () => {
     for (let d = 0; d < stage.path.length - 2; d += 2) {
       expect(Math.abs(field.roadHeightAt(d + 2) - field.roadHeightAt(d))).toBeLessThanOrEqual(0.25);
     }
+  });
+
+  it('lifts the driving surface onto the road ribbon, but not the terrain bed beside it', () => {
+    const g = stage.gates[1]!;
+    const lx = Math.cos(g.heading);
+    const lz = -Math.sin(g.heading);
+    const bed = { height: 0, roadBlend: 0, roadDistance: 0 };
+    field.sample(g.x, g.z, bed);
+    expect(field.heightAt(g.x, g.z)).toBeCloseTo(bed.height + ROAD_LIFT, 6);
+    const off = stage.halfWidth + 1;
+    field.sample(g.x + lx * off, g.z + lz * off, bed);
+    expect(field.heightAt(g.x + lx * off, g.z + lz * off)).toBeCloseTo(bed.height, 6);
   });
 
   it('scatters scenery off the road, deterministically', () => {

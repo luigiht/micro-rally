@@ -8,6 +8,10 @@ import type { StageDef } from './StageGenerator';
 
 const FLAT_MARGIN = 2.5;
 const BLEND_WIDTH = 16;
+/** The road ribbon is drawn this far above the terrain bed; wheels rest on the ribbon, not the bed. */
+export const ROAD_LIFT = 0.08;
+/** Half-width of the blend from ribbon height down to the bed, centred on the road edge. */
+const ROAD_EDGE = 0.3;
 const SMOOTH_WINDOW = 15;
 const MAX_GRADE = 0.12;
 
@@ -24,7 +28,12 @@ function smoothstep(e0: number, e1: number, x: number): number {
   return t * t * (3 - 2 * t);
 }
 
-/** Simplex hills with the road corridor flattened onto a smoothed, grade-limited road bed. */
+/**
+ * Simplex hills with the road corridor flattened onto a smoothed, grade-limited
+ * road bed. `sample` is the terrain bed the ground mesh is built from;
+ * `heightAt` is the surface wheels touch, which adds the road ribbon's lift
+ * across the carriageway.
+ */
 export class TerrainField implements TerrainQuery {
   private readonly noise: NoiseFunction2D;
   private readonly amplitude: number;
@@ -84,8 +93,10 @@ export class TerrainField implements TerrainQuery {
     const base = this.baseHeight(x, z);
     if (!this.stage.path.nearest(x, z, this.corridor, this.hit)) return base;
     const road = this.roadHeightAt(this.hit.along);
-    const t = smoothstep(this.stage.halfWidth + FLAT_MARGIN, this.corridor, this.hit.distance);
-    return road + (base - road) * t;
+    const hw = this.stage.halfWidth;
+    const t = smoothstep(hw + FLAT_MARGIN, this.corridor, this.hit.distance);
+    const ribbon = 1 - smoothstep(hw - ROAD_EDGE, hw + ROAD_EDGE, this.hit.distance);
+    return road + (base - road) * t + ROAD_LIFT * ribbon;
   }
 
   surfaceAt(x: number, z: number): Surface {

@@ -5,7 +5,7 @@ import { autoShift, torqueAt } from '@/game/vehicle/Drivetrain';
 import { SURFACES } from '@/game/vehicle/surfaces';
 import { flatTerrain } from '@/game/vehicle/Terrain';
 import { testTrackTerrain, TEST_TRACK } from '@/game/stage/TestTrack';
-import { VehicleSim } from '@/game/vehicle/VehicleSim';
+import { GRAVITY, VehicleSim } from '@/game/vehicle/VehicleSim';
 import { input, makeSim, run } from './vehicleHarness';
 
 const tarmac = flatTerrain('tarmac');
@@ -139,6 +139,16 @@ describe('VehicleSim', () => {
       expect(maxBodySlip(id, 'gravel'), id).toBeLessThan(0.12);
       expect(maxBodySlip(id, 'gravel', 0.5, 0), `${id} lift-off`).toBeLessThan(0.12);
     }
+  });
+
+  it('settles with the wheels on the ground and the body sagging on its springs', () => {
+    const spec = CAR_SPECS.hatchback;
+    const sim = makeSim(spec, tarmac, 0);
+    run(sim, tarmac, 2, input({}));
+    const s = sim.state;
+    // The pose exposes both heights so the model can keep the tyres on the surface.
+    expect(s.groundHeight - s.y).toBeCloseTo(GRAVITY / spec.suspensionStiffness, 2);
+    expect(s.groundHeight - s.y).toBeGreaterThan(0);
   });
 
   it('steering assist keeps full lock from ploughing the front tyres', () => {

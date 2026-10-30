@@ -400,3 +400,19 @@ Newest at the bottom. Format: date — decision — why.
     glass never overpainted. The S1's flare pinstripe likewise moved into
     the flank stripe band (six equal sub-bands under the belt) so it follows
     the belt crease over the box flares.
+53. **2026-10-30 — Wheels rest on the road ribbon, body rides the springs.**
+    The tyres sat ~10 cm into the road: the sim grounded on the terrain bed
+    while the road ribbon is drawn 8 cm above it (`ROAD_LIFT`), and the whole
+    model, wheels included, hung from the sprung body, which sags 2.6 cm at
+    rest and up to 35 cm over bumps. Two changes. `TerrainField.heightAt`
+    (the surface wheels, cameras, props and the demo car query) now adds the
+    ribbon's lift across the carriageway with a 0.6 m blend at the edge, while
+    `sample` stays the bare bed the ground mesh is built from; `ROAD_LIFT`
+    moved to the pure stage module and the road builder imports it, and skid
+    marks drop their extra 0.1 m lift to 0.02 m since the query already
+    includes the ribbon. `VehiclePose` carries `groundHeight`; `CarModel`
+    places the four wheels in their own group raised by
+    `groundHeight − y` (clamped to the sim's maximum compression), so the
+    tyres stay on the surface and the body visibly compresses over them.
+    Tests pin the lifted surface on the road and the bare bed beside it,
+    and the resting sag of the body above the ground.
