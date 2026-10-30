@@ -36,11 +36,12 @@ export function GaragePanel() {
       subtitle={`${m.stage.money} ${formatMoney(money, locale)} · ${m.garage.hint}`}
       closeLabel={m.game.close}
       onClose={() => useUiStore.getState().closePanel()}
+      className="short:max-w-3xl"
     >
       <div
         role="tablist"
         aria-label={m.garage.title}
-        className="mt-5 flex gap-3"
+        className="mt-5 flex gap-3 short:mt-3"
         onKeyDown={onTabKey}
       >
         {TABS.map((t) => (

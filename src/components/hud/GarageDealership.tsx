@@ -55,42 +55,50 @@ export function GarageDealership() {
       aria-roledescription="carousel"
       aria-label={m.garage.tabs.dealership}
       onKeyDown={onKey}
-      className="mt-4"
+      className="mt-4 short:mt-3 short:grid short:grid-cols-2 short:items-start short:gap-3"
     >
-      <div className="flex items-center gap-3">
+      {/*
+        Phones: full-width preview with prev · dots · next underneath.
+        From `sm` up: arrows flank the preview and the dots sit below it.
+      */}
+      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
         <button
           type="button"
           aria-label={m.garage.prev}
           onClick={() => step(-1)}
-          className="pixel-btn-ghost shrink-0 p-3"
+          className="pixel-btn-ghost col-start-1 row-start-2 p-3 sm:row-start-1"
         >
           <PixelIcon name="left" />
         </button>
-        <div className="min-w-0 flex-1 border-4 border-ink">
+        <div className="col-span-3 col-start-1 row-start-1 min-w-0 overflow-hidden border-4 border-ink sm:col-span-1 sm:col-start-2">
           <CarPreview spec={spec} />
         </div>
         <button
           type="button"
           aria-label={m.garage.next}
           onClick={() => step(1)}
-          className="pixel-btn-ghost shrink-0 p-3"
+          className="pixel-btn-ghost col-start-3 row-start-2 p-3 sm:row-start-1"
         >
           <PixelIcon name="right" />
         </button>
+        <div className="col-start-2 row-start-2 flex justify-center gap-2">
+          {CAR_CATALOG.map((c, i) => (
+            <button
+              key={c.id}
+              type="button"
+              aria-label={m.cars[c.id].name}
+              aria-current={i === index ? 'true' : undefined}
+              onClick={() => setIndex(i)}
+              className={`size-3 ${i === index ? 'bg-rally' : 'bg-ink/30'}`}
+            />
+          ))}
+        </div>
       </div>
-      <div className="mt-3 flex justify-center gap-2">
-        {CAR_CATALOG.map((c, i) => (
-          <button
-            key={c.id}
-            type="button"
-            aria-label={m.cars[c.id].name}
-            aria-current={i === index ? 'true' : undefined}
-            onClick={() => setIndex(i)}
-            className={`size-3 ${i === index ? 'bg-rally' : 'bg-ink/30'}`}
-          />
-        ))}
-      </div>
-      <div className="mt-4 border-4 border-ink p-3" aria-live="polite" data-testid="car-details">
+      <div
+        className="mt-4 border-4 border-ink p-3 short:mt-0"
+        aria-live="polite"
+        data-testid="car-details"
+      >
         <h4 className="font-pixel text-[10px] leading-snug">{text.name}</h4>
         <p className="mt-2 text-xs text-ink/80">{text.blurb}</p>
         <div className="mt-3 space-y-1">

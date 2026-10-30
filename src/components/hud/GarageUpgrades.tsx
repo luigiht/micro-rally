@@ -13,7 +13,7 @@ export function GarageUpgrades() {
   const money = useGameStore((s) => s.money);
   const levels = useGameStore((s) => s.upgrades);
   return (
-    <ul className="mt-4 grid gap-4 sm:grid-cols-2">
+    <ul className="mt-4 grid gap-4 short:mt-3 short:grid-cols-3 short:gap-3 sm:grid-cols-2">
       {UPGRADES.map((def) => {
         const level = upgradeLevel(levels, def.id);
         const price = nextUpgradePrice(levels, def.id);
