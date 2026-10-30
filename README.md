@@ -88,9 +88,9 @@ docs/            BRIEF, PLAN, ARCHITECTURE, DECISIONS, DEPLOY
 
 ## Deploy
 
-Zero-config on Vercel: import the repository, add the Upstash Redis (Vercel
-KV) storage integration for online saves, and deploy. Without Redis the game
-still runs and saves stay on each device. Self-hosting uses a file store.
+Zero-config on Vercel: import the repository, connect a Supabase project
+(run the migration in `supabase/migrations`) for online saves, and deploy.
+Without Supabase the game still runs and saves stay on each device. Self-hosting uses a file store.
 Steps, environment variables and a post-deploy smoke test are in
 [docs/DEPLOY.md](docs/DEPLOY.md); see [.env.example](.env.example).
 

@@ -290,3 +290,14 @@ Newest at the bottom. Format: date — decision — why.
     half-torus lips. The glass is part of the hull, so first-person views
     see out through the culled inner faces; only mirrors are hidden.
     Station tables were read off the reference silhouettes.
+45. **2026-10-30 — Supabase replaces Upstash Redis for online saves.** By
+    request, production saves live in a Supabase Postgres table
+    (`public.games`: `id text primary key`, `save jsonb`, `updated_at`), one
+    row per Game ID, upserted with last-write-wins. The route talks to
+    PostgREST with plain `fetch` and the service-role key, which stays
+    server-only; row-level security is enabled with no policies so the public
+    anon key cannot read saves. The schema ships as a Supabase CLI migration.
+    Selection logic is unchanged otherwise: file store for dev and
+    self-hosting, `503 storage_unconfigured` on Vercel without credentials.
+    Postgres also leaves room for later queries (leaderboards, cleanup of
+    stale saves) that a key-value store would not.

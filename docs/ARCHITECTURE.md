@@ -12,7 +12,7 @@ flowchart TD
   Store --> Save[game/save — serialise + migrate]
   Save -->|fetch| API[app/api/games/:id]
   API --> Files[.data/games/*.json\ndev / self-hosted]
-  API --> Redis[(Upstash Redis / Vercel KV\nproduction)]
+  API --> Supabase[(Supabase Postgres\nproduction)]
 ```
 
 - **`src/game`, `src/lib`** — pure TypeScript. No `three`, no React. Vehicle
@@ -84,7 +84,7 @@ flowchart LR
   `keepalive`) and on unmount.
 - The route validates every body with `parseSaveFile`; IDs are checked before
   any key or filesystem path is built. `gameStore.ts` picks the backend from
-  the environment: Redis over the Upstash REST API when `KV_REST_API_*` (or
-  `UPSTASH_REDIS_REST_*`) is set, the file store otherwise, and none on Vercel
-  without Redis (the API answers 503 and saves stay on the device). See
-  `docs/DEPLOY.md`.
+  the environment: Supabase Postgres over its REST API when `SUPABASE_URL`
+  and `SUPABASE_SERVICE_ROLE_KEY` are set, the file store otherwise, and none
+  on Vercel without Supabase (the API answers 503 and saves stay on the
+  device). See `docs/DEPLOY.md`.

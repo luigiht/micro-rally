@@ -41,54 +41,66 @@ export class FileGameStore implements GameStore {
 }
 
 /**
- * Redis over the Upstash REST API (what Vercel's KV / Upstash integration
- * provides). Plain `fetch`, no SDK: `GET /get/<key>` → `{ result }`,
- * `POST /set/<key>` with the value as the body.
+ * Supabase Postgres through its REST API (PostgREST), table `games`
+ * (see supabase/migrations). Plain `fetch` with the service-role key, which
+ * bypasses row-level security; the key never leaves the server.
  */
-export class RedisGameStore implements GameStore {
-  constructor(
-    private readonly url: string,
-    private readonly token: string,
-    private readonly fetchFn: typeof fetch = (...args) => fetch(...args),
-    private readonly prefix = 'micro-rally:game:',
-  ) {}
+export class SupabaseGameStore implements GameStore {
+  private readonly endpoint: string;
 
-  private key(gameId: string): string {
-    if (!isValidGameId(gameId)) throw new Error('invalid game id');
-    return encodeURIComponent(this.prefix + gameId);
+  constructor(
+    url: string,
+    private readonly serviceKey: string,
+    private readonly fetchFn: typeof fetch = (...args) => fetch(...args),
+    table = 'games',
+  ) {
+    this.endpoint = `${url.replace(/\/$/, '')}/rest/v1/${table}`;
+  }
+
+  private headers(extra: Record<string, string> = {}): Record<string, string> {
+    return {
+      apikey: this.serviceKey,
+      authorization: `Bearer ${this.serviceKey}`,
+      accept: 'application/json',
+      ...extra,
+    };
   }
 
   async read(gameId: string): Promise<SaveFile | null> {
-    const res = await this.fetchFn(`${this.url}/get/${this.key(gameId)}`, {
-      headers: { authorization: `Bearer ${this.token}` },
-      cache: 'no-store',
-    });
-    if (!res.ok) throw new Error(`redis get failed: ${res.status}`);
-    const { result } = (await res.json()) as { result: string | null };
-    if (result === null || result === undefined) return null;
-    try {
-      return parseSaveFile(JSON.parse(result));
-    } catch {
-      return null;
-    }
+    if (!isValidGameId(gameId)) throw new Error('invalid game id');
+    const res = await this.fetchFn(
+      `${this.endpoint}?id=eq.${encodeURIComponent(gameId)}&select=save&limit=1`,
+      { headers: this.headers(), cache: 'no-store' },
+    );
+    if (!res.ok) throw new Error(`supabase select failed: ${res.status}`);
+    const rows = (await res.json()) as { save: unknown }[];
+    const row = rows[0];
+    return row ? parseSaveFile(row.save) : null;
   }
 
+  /** Upsert on the primary key; last write wins. */
   async write(file: SaveFile): Promise<void> {
-    const res = await this.fetchFn(`${this.url}/set/${this.key(file.gameId)}`, {
+    const res = await this.fetchFn(this.endpoint, {
       method: 'POST',
-      headers: { authorization: `Bearer ${this.token}`, 'content-type': 'application/json' },
-      body: JSON.stringify(file),
+      headers: this.headers({
+        'content-type': 'application/json',
+        prefer: 'resolution=merge-duplicates,return=minimal',
+      }),
+      body: JSON.stringify({
+        id: file.gameId,
+        save: file,
+        updated_at: new Date(file.updatedAt).toISOString(),
+      }),
     });
-    if (!res.ok) throw new Error(`redis set failed: ${res.status}`);
+    if (!res.ok) throw new Error(`supabase upsert failed: ${res.status}`);
   }
 }
 
 export type StoreEnv = Partial<
   Record<
-    | 'KV_REST_API_URL'
-    | 'KV_REST_API_TOKEN'
-    | 'UPSTASH_REDIS_REST_URL'
-    | 'UPSTASH_REDIS_REST_TOKEN'
+    | 'SUPABASE_URL'
+    | 'NEXT_PUBLIC_SUPABASE_URL'
+    | 'SUPABASE_SERVICE_ROLE_KEY'
     | 'MICRO_RALLY_SAVE_DIR'
     | 'VERCEL',
     string
@@ -97,9 +109,9 @@ export type StoreEnv = Partial<
 
 /**
  * Pick the store for this deployment:
- * - Redis when Vercel KV / Upstash credentials are present (production).
+ * - Supabase when a project URL and the service-role key are present (production).
  * - The file store elsewhere (dev, self-hosted), under MICRO_RALLY_SAVE_DIR or `.data/games`.
- * - `null` on Vercel without Redis: saves then stay on the player's device and the
+ * - `null` on Vercel without Supabase: saves then stay on the player's device and the
  *   API answers 503 rather than pretending to persist into a read-only filesystem.
  */
 export function selectGameStore(
@@ -107,9 +119,9 @@ export function selectGameStore(
   cwd: string,
   fetchFn?: typeof fetch,
 ): GameStore | null {
-  const url = env.KV_REST_API_URL ?? env.UPSTASH_REDIS_REST_URL;
-  const token = env.KV_REST_API_TOKEN ?? env.UPSTASH_REDIS_REST_TOKEN;
-  if (url && token) return new RedisGameStore(url.replace(/\/$/, ''), token, fetchFn);
+  const url = env.SUPABASE_URL ?? env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = env.SUPABASE_SERVICE_ROLE_KEY;
+  if (url && key) return new SupabaseGameStore(url, key, fetchFn);
   if (env.VERCEL) return null;
   return new FileGameStore(env.MICRO_RALLY_SAVE_DIR ?? path.join(cwd, '.data', 'games'));
 }

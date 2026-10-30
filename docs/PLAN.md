@@ -72,6 +72,6 @@ Status legend: [x] done · [~] in progress · [ ] not started
 
 ## 8. Regions, weather, night, polish, smoke tests, screenshot script — [ ]
 
-- [x] Deploy-ready for Vercel: Redis (Upstash/KV) save store, URL resolution from Vercel env, security headers, `docs/DEPLOY.md`
+- [x] Deploy-ready for Vercel: Supabase Postgres save store (migration in `supabase/`), URL resolution from Vercel env, security headers, `docs/DEPLOY.md`
 
 ## 9. Capacitor iOS/Android, docs/ANDROID.md — [ ]

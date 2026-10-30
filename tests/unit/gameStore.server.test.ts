@@ -2,7 +2,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { FileGameStore, RedisGameStore, selectGameStore } from '@/app/api/games/gameStore';
+import { FileGameStore, selectGameStore, SupabaseGameStore } from '@/app/api/games/gameStore';
 import { SAVE_VERSION, type SaveFile } from '@/game/save/SaveFile';
 import { resolveSiteUrl } from '@/lib/site';
 
@@ -17,51 +17,67 @@ const save: SaveFile = {
   carId: 'hatchback',
   ownedCars: ['hatchback'],
   upgrades: {},
-  updatedAt: 10,
+  updatedAt: 1_700_000_000_000,
 };
 
-function fakeRedis() {
+/** A tiny PostgREST stand-in: a `games` table with select-by-id and upsert. */
+function fakeSupabase() {
   const calls: { url: string; init?: RequestInit }[] = [];
-  const data = new Map<string, string>();
+  const rows = new Map<string, { save: unknown; updated_at: string }>();
   const fetchFn: typeof fetch = async (input, init) => {
     const url = String(input);
     calls.push({ url, init });
-    const m = /\/(get|set)\/([^/?]+)$/.exec(url)!;
-    const key = decodeURIComponent(m[2]!);
-    if (m[1] === 'set') {
-      data.set(key, String(init?.body));
-      return Response.json({ result: 'OK' });
+    if (init?.method === 'POST') {
+      const body = JSON.parse(String(init.body)) as {
+        id: string;
+        save: unknown;
+        updated_at: string;
+      };
+      rows.set(body.id, { save: body.save, updated_at: body.updated_at });
+      return new Response(null, { status: 201 });
     }
-    return Response.json({ result: data.get(key) ?? null });
+    const id = decodeURIComponent(/id=eq\.([^&]+)/.exec(url)![1]!);
+    const row = rows.get(id);
+    return Response.json(row ? [{ save: row.save }] : []);
   };
-  return { fetchFn, calls, data };
+  return { fetchFn, calls, rows };
 }
 
-describe('RedisGameStore', () => {
-  it('round-trips a save through the REST API with a namespaced key and bearer token', async () => {
-    const redis = fakeRedis();
-    const store = new RedisGameStore('https://kv.example.com', 'secret', redis.fetchFn);
+describe('SupabaseGameStore', () => {
+  it('upserts and selects through the REST API with the service-role headers', async () => {
+    const db = fakeSupabase();
+    const store = new SupabaseGameStore('https://proj.supabase.co/', 'service-key', db.fetchFn);
     expect(await store.read('ABCD2345')).toBeNull();
     await store.write(save);
     expect(await store.read('ABCD2345')).toEqual(save);
-    expect(redis.data.has('micro-rally:game:ABCD2345')).toBe(true);
-    const put = redis.calls.find((c) => c.init?.method === 'POST')!;
-    expect(put.url).toBe('https://kv.example.com/set/micro-rally%3Agame%3AABCD2345');
-    expect((put.init!.headers as Record<string, string>).authorization).toBe('Bearer secret');
+
+    const post = db.calls.find((c) => c.init?.method === 'POST')!;
+    expect(post.url).toBe('https://proj.supabase.co/rest/v1/games');
+    const headers = post.init!.headers as Record<string, string>;
+    expect(headers.apikey).toBe('service-key');
+    expect(headers.authorization).toBe('Bearer service-key');
+    expect(headers.prefer).toContain('merge-duplicates');
+    expect(db.rows.get('ABCD2345')?.updated_at).toBe(new Date(save.updatedAt).toISOString());
+
+    const get = db.calls.find((c) => !c.init?.method)!;
+    expect(get.url).toBe(
+      'https://proj.supabase.co/rest/v1/games?id=eq.ABCD2345&select=save&limit=1',
+    );
   });
 
-  it('throws on HTTP failures and ignores corrupt values', async () => {
-    const failing = new RedisGameStore(
-      'https://kv',
-      't',
+  it('throws on HTTP failures, ignores corrupt rows and refuses bad IDs', async () => {
+    const failing = new SupabaseGameStore(
+      'https://p',
+      'k',
       async () => new Response('x', { status: 500 }),
     );
     await expect(failing.read('ABCD2345')).rejects.toThrow('500');
     await expect(failing.write(save)).rejects.toThrow('500');
-    const corrupt = new RedisGameStore('https://kv', 't', async () =>
-      Response.json({ result: '{nope' }),
+    const corrupt = new SupabaseGameStore('https://p', 'k', async () =>
+      Response.json([{ save: { nope: 1 } }]),
     );
     expect(await corrupt.read('ABCD2345')).toBeNull();
+    await expect(corrupt.read('../x')).rejects.toThrow('invalid game id');
   });
 });
 
@@ -82,22 +98,29 @@ describe('FileGameStore', () => {
 });
 
 describe('selectGameStore', () => {
-  const noFetch: typeof fetch = async () => Response.json({ result: null });
+  const noFetch: typeof fetch = async () => Response.json([]);
 
-  it('prefers Redis credentials, falls back to files, and refuses silently broken Vercel setups', () => {
-    expect(
-      selectGameStore({ KV_REST_API_URL: 'https://a/', KV_REST_API_TOKEN: 't' }, '/x', noFetch),
-    ).toBeInstanceOf(RedisGameStore);
+  it('prefers Supabase credentials, falls back to files, and refuses silently broken Vercel setups', () => {
     expect(
       selectGameStore(
-        { UPSTASH_REDIS_REST_URL: 'https://b', UPSTASH_REDIS_REST_TOKEN: 't' },
+        { SUPABASE_URL: 'https://p.supabase.co', SUPABASE_SERVICE_ROLE_KEY: 'k' },
         '/x',
         noFetch,
       ),
-    ).toBeInstanceOf(RedisGameStore);
+    ).toBeInstanceOf(SupabaseGameStore);
+    expect(
+      selectGameStore(
+        { NEXT_PUBLIC_SUPABASE_URL: 'https://p.supabase.co', SUPABASE_SERVICE_ROLE_KEY: 'k' },
+        '/x',
+        noFetch,
+      ),
+    ).toBeInstanceOf(SupabaseGameStore);
     expect(selectGameStore({}, '/x')).toBeInstanceOf(FileGameStore);
     expect(selectGameStore({ VERCEL: '1' }, '/x')).toBeNull();
-    expect(selectGameStore({ VERCEL: '1', KV_REST_API_URL: 'https://a' }, '/x')).toBeNull();
+    // The public URL alone (no service key) must not pretend to be a store.
+    expect(
+      selectGameStore({ VERCEL: '1', NEXT_PUBLIC_SUPABASE_URL: 'https://p.supabase.co' }, '/x'),
+    ).toBeNull();
   });
 });
 
