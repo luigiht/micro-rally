@@ -121,10 +121,20 @@ export const it: Messages = {
       blurb:
         'Una berlina turbo a trazione integrale con un grande alettone: incollata, veloce e docile.',
     },
+    wrc: {
+      name: 'Riviera WRC',
+      blurb:
+        'Una World Rally Car di fine secolo: compatta alta, livrea a strisce, turbo con flangia e una ripartizione 50/50 solidissima.',
+    },
     groupb: {
       name: 'Tempesta Gruppo B',
       blurb:
         'Una macchina Gruppo B a motore centrale: alettoni enormi, potenza enorme e una coda da domare.',
+    },
+    s1: {
+      name: 'Edelweiss S1',
+      blurb:
+        'Una coupé Gruppo B a passo corto con parafanghi squadrati e un alettone a mensola: la più potente del salone, e la più nervosa.',
     },
   },
   touch: {

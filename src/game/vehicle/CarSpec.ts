@@ -1,4 +1,5 @@
-export type CarId = 'hatchback' | 'coupe' | 'saloon' | 'groupb' | 'pickup' | 'monster';
+export type CarId =
+  'hatchback' | 'coupe' | 'saloon' | 'wrc' | 'groupb' | 's1' | 'pickup' | 'monster';
 
 /** Tunable physics parameters for one car (SI units). */
 export interface CarSpec {
@@ -154,6 +155,45 @@ export const CAR_SPECS: Readonly<Record<CarId, CarSpec>> = {
     turboForce: 0.35,
     turboDuration: 2.5,
     cabinDrop: -0.04,
+  },
+  /** Turn-of-the-century World Rally Car hatch: 2.615 m wheelbase, 1.55 m track, restricted turbo, 50/50 drive. */
+  wrc: {
+    ...BASE,
+    id: 'wrc',
+    mass: 1230,
+    cgToFront: 1.3,
+    cgToRear: 1.315,
+    cgHeight: 0.48,
+    trackWidth: 1.55,
+    wheelRadius: 0.33,
+    peakTorque: 430,
+    dragCoeff: 0.7,
+    frontDrive: 0.5,
+    brakeDecel: 10.5,
+    yawInertiaScale: 1.6,
+    turboForce: 0.25,
+    turboDuration: 3,
+    cabinDrop: -0.02,
+  },
+  /** Short-wheelbase Group B coupé with box flares: 2.22 m wheelbase, the most powerful car in the shop. */
+  s1: {
+    ...BASE,
+    id: 's1',
+    mass: 1090,
+    cgToFront: 1.1,
+    cgToRear: 1.12,
+    cgHeight: 0.48,
+    trackWidth: 1.5,
+    wheelRadius: 0.33,
+    peakTorque: 470,
+    dragCoeff: 0.78,
+    frontDrive: 0.45,
+    brakeDecel: 10.5,
+    yawInertiaScale: 1.15,
+    maxSteer: 0.5,
+    turboForce: 0.4,
+    turboDuration: 2.5,
+    cabinDrop: -0.1,
   },
   pickup: {
     ...BASE,

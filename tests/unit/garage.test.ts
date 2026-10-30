@@ -72,7 +72,15 @@ describe('cars', () => {
     }
     expect(carStats(CAR_SPECS.coupe).power).toBeGreaterThan(carStats(CAR_SPECS.hatchback).power);
     expect(carStats(CAR_SPECS.groupb).power).toBeGreaterThan(carStats(CAR_SPECS.saloon).power);
-    expect(CAR_CATALOG.map((c) => c.id)).toEqual(['hatchback', 'coupe', 'saloon', 'groupb']);
+    expect(carStats(CAR_SPECS.s1).power).toBeGreaterThan(carStats(CAR_SPECS.groupb).power);
+    expect(CAR_CATALOG.map((c) => c.id)).toEqual([
+      'hatchback',
+      'coupe',
+      'saloon',
+      'wrc',
+      'groupb',
+      's1',
+    ]);
     for (let i = 1; i < CAR_CATALOG.length; i++) {
       expect(CAR_CATALOG[i]!.price).toBeGreaterThan(CAR_CATALOG[i - 1]!.price);
     }

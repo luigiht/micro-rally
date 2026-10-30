@@ -124,10 +124,20 @@ export const es: Messages = {
       blurb:
         'Una berlina turbo con tracción total y un gran alerón trasero: pegada al suelo, rápida y noble.',
     },
+    wrc: {
+      name: 'Riviera WRC',
+      blurb:
+        'Un World Rally Car de cambio de siglo: compacto alto, librea a rayas, turbo con brida y un reparto 50/50 muy estable.',
+    },
     groupb: {
       name: 'Tempesta Grupo B',
       blurb:
         'Una máquina del Grupo B de motor central: alerones enormes, potencia enorme y una zaga que hay que domar.',
+    },
+    s1: {
+      name: 'Edelweiss S1',
+      blurb:
+        'Un coupé del Grupo B de batalla corta con aletas cuadradas y un alerón como una balda: el más potente del concesionario, y el más nervioso.',
     },
   },
   touch: {

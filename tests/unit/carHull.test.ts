@@ -187,4 +187,40 @@ describe('buildCarHull', () => {
       Math.max(...magenta.map((f) => f.y)) - 1e-6,
     );
   });
+
+  it('paints deck decals onto the top faces, inside their range and on the surface', () => {
+    // In this hull both ends are glass, so the roof is the only deck that takes paint.
+    const navy = '#000080';
+    const mesh2 = buildCarHull({
+      ...spec,
+      deck: [{ x0: 0.2, x1: 0.5, z0: -0.5, z1: 0.5, color: navy, mirror: true }],
+    });
+    const t = triangles(mesh2.positions);
+    const faces = t.map((tri, i) => ({
+      tri,
+      c: centroid(tri),
+      color: colorOfTri(mesh2.colors, i),
+    }));
+    // Body red, glass blue, roof white, stripe green, trim black: anything else is the decal.
+    const known = new Set(['1,0,0', '0,0,1', '1,1,1', '0,1,0', '0,0,0']);
+    const painted = faces.filter((f) => !known.has(f.color));
+    expect(painted.length).toBeGreaterThan(0);
+    for (const f of painted) {
+      expect(f.c[2]!).toBeGreaterThan(-0.5 - 1e-6);
+      expect(f.c[2]!).toBeLessThan(0.5 + 1e-6);
+      expect(Math.abs(f.c[0]!)).toBeGreaterThan(0.2 - 1e-6);
+      expect(Math.abs(f.c[0]!)).toBeLessThan(0.5 + 1e-6);
+      // Flat on the roof: every vertex at the roof height.
+      for (const v of f.tri) expect(v[1]).toBeCloseTo(1.4, 6);
+    }
+    expect(painted.some((f) => f.c[0]! > 0)).toBe(true);
+    expect(painted.some((f) => f.c[0]! < 0)).toBe(true);
+    // The roof beside the decal is still roof colour, and the triangle count only grew.
+    const beside = faces.filter(
+      (f) => Math.abs(f.c[2]!) < 0.5 && f.c[1]! > 1.39 && Math.abs(f.c[0]!) < 0.19,
+    );
+    expect(beside.length).toBeGreaterThan(0);
+    expect(beside.every((f) => f.color === '1,1,1')).toBe(true);
+    expect(t.length).toBeGreaterThan(tris.length);
+  });
 });

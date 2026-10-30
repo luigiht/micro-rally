@@ -369,3 +369,34 @@ Newest at the bottom. Format: date — decision — why.
     as preview | card and the upgrades as three columns. On phones the
     carousel arrows move under the full-width preview (prev · dots · next)
     via CSS grid placement, so the DOM and tab order are unchanged.
+52. **2026-10-30 — Two more lofted cars from the `assets/new-cars`
+    references.** The Ford Focus WRC folder holds a 3ds Max scene plus its
+    livery textures (side, top, tail, wing, lamps) and the Audi folder a
+    Blender file; neither opens here, so the textures were read by eye and
+    the `.blend` only for its material names (base white, base yellow, red,
+    black, rubber, lamps). Both cars follow the hull-station pattern. The
+    `wrc` hatch (`WrcHatchBody`) has a sloping nose, a fast windscreen far
+    forward, a tall roof and a near-vertical tailgate; its Martini-style
+    flank is the hull's stripe band stretched from the sill to just under
+    the belt with five sub-bands (sky, navy, red, navy, navy) so the skirt
+    reads double height, plus a navy bonnet oval, bonnet bands, roof scoop
+    and a navy two-tier wing on the roof's trailing edge over a flat, plain
+    white tailgate (by request: no red on the back under the wing). The `s1` coupé
+    (`S1CoupeBody`) gets its box flares from the hull itself: stations step
+    the half-width from 0.88 m to 0.97 m over each axle and run wide to the
+    bumpers, so no arch lips are needed; red-over-yellow band with yellow
+    pinstripes along the flare tops, sill blades, bonnet, splitter, wing and
+    tail in the Audi Sport manner, louvred bonnet, quad lamps in a deep air
+    dam and a shelf wing with yellow end plates on the boot. Physics follow the real wheelbases (2.615 m and 2.22 m);
+    the S1 is the most powerful and shortest car in the shop and prices
+    stay strictly ascending (saloon → wrc → groupb → s1). Display names are
+    generic (Riviera WRC, Edelweiss S1); nothing from the reference files
+    ships. Bonnet graphics (the WRC's navy oval, bands and vent slots; the
+    S1's yellow stripes, red centre line and louvres) were first thin boxes
+    laid on the bonnet and visibly floated or cut through its slopes, so
+    the hull builder gained _deck decals_: signed x/z rectangles painted
+    onto the top faces by splitting them along x at each decal edge (an
+    oval is five slices), with stations inserted at the decal's z edges and
+    glass never overpainted. The S1's flare pinstripe likewise moved into
+    the flank stripe band (six equal sub-bands under the belt) so it follows
+    the belt crease over the box flares.

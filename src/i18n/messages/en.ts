@@ -118,9 +118,19 @@ export const en = {
       blurb:
         'A turbocharged all-wheel-drive saloon with a tall rear wing: planted, fast and forgiving.',
     },
+    wrc: {
+      name: 'Riviera WRC',
+      blurb:
+        'A turn-of-the-century World Rally Car: tall hatch, striped livery, restricted turbo and a rock-steady 50/50 drive split.',
+    },
     groupb: {
       name: 'Tempesta Group B',
       blurb: 'A mid-engined Group B machine: huge wings, huge power, and a tail that needs taming.',
+    },
+    s1: {
+      name: 'Edelweiss S1',
+      blurb:
+        'A short-wheelbase Group B coupé with box flares and a shelf of a rear wing: the most power in the shop, and the twitchiest.',
     },
   },
   touch: {

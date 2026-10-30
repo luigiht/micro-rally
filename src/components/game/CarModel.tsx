@@ -8,7 +8,9 @@ import type { CameraMode } from '@/lib/cameraMode';
 import { CoupeBody } from './bodies/CoupeBody';
 import { GroupBBody } from './bodies/GroupBBody';
 import { HatchbackBody } from './bodies/HatchbackBody';
+import { S1CoupeBody } from './bodies/S1CoupeBody';
 import { SaloonBody } from './bodies/SaloonBody';
+import { WrcHatchBody } from './bodies/WrcHatchBody';
 import { CarInterior, type CarInteriorHandle } from './CarInterior';
 import { Box, CAR_COLORS as C } from './CarParts';
 
@@ -19,7 +21,11 @@ export interface CarModelHandle {
 }
 
 /** Wheel rim colour per car; cream by default. */
-const RIM: Partial<Record<CarId, string>> = { saloon: '#e9b949' };
+const RIM: Partial<Record<CarId, string>> = {
+  saloon: '#e9b949',
+  wrc: '#f4f1ea',
+  s1: '#f4f1ea',
+};
 
 interface WheelProps {
   x: number;
@@ -55,8 +61,12 @@ function BodyFor({ spec, cabinRef }: { spec: CarSpec; cabinRef: Ref<Group> }) {
       return <CoupeBody spec={spec} cabinRef={cabinRef} />;
     case 'saloon':
       return <SaloonBody spec={spec} cabinRef={cabinRef} />;
+    case 'wrc':
+      return <WrcHatchBody spec={spec} cabinRef={cabinRef} />;
     case 'groupb':
       return <GroupBBody spec={spec} cabinRef={cabinRef} />;
+    case 's1':
+      return <S1CoupeBody spec={spec} cabinRef={cabinRef} />;
     default:
       return <HatchbackBody spec={spec} cabinRef={cabinRef} />;
   }

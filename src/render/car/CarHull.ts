@@ -5,8 +5,9 @@
  * joined with quads, the ends are capped, and every face gets a flat colour
  * by band (underside, wheel well, sill, paint, stripe, glass, roof). Wheel
  * wells are cut by inserting stations around each axle and lifting the lower
- * edge along a circle. Output is plain arrays so this module stays free of
- * three.js and unit-testable.
+ * edge along a circle. Deck decals (bonnet stripes, badges, vents) split the
+ * top faces along x so they follow the surface exactly. Output is plain
+ * arrays so this module stays free of three.js and unit-testable.
  */
 import type { CarSpec } from '@/game/vehicle/CarSpec';
 
@@ -43,12 +44,27 @@ export interface WheelWells {
   xInner: number;
 }
 
+/** A painted patch on the top surface (bonnet, roof, deck); never drawn over glass. */
+export interface DeckDecal {
+  /** Signed x range across the car, x0 < x1. */
+  x0: number;
+  x1: number;
+  /** Length range along the car, z0 < z1. */
+  z0: number;
+  z1: number;
+  color: string;
+  /** Also paint the range mirrored about the centre line. */
+  mirror?: boolean;
+}
+
 export interface HullSpec {
   stations: readonly HullStation[];
   colors: HullColors;
   wells?: WheelWells;
   /** Stripe band as offsets below the belt line, [bottom, top]. */
   stripeBand?: readonly [number, number];
+  /** Painted onto the top faces in order; later decals win where they overlap. */
+  deck?: readonly DeckDecal[];
 }
 
 export interface HullMesh {
@@ -141,11 +157,15 @@ function expandStations(spec: HullSpec): Station[] {
   const zs = new Set(spec.stations.map((s) => s.z));
   const first = spec.stations[0]!.z;
   const last = spec.stations[spec.stations.length - 1]!.z;
+  const add = (z: number) => {
+    if (z > first + 1e-3 && z < last - 1e-3) zs.add(Math.round(z * 1e4) / 1e4);
+  };
   for (const wz of spec.wells?.zs ?? []) {
-    for (const f of WELL_STEPS) {
-      const z = wz + f * spec.wells!.radius;
-      if (z > first + 1e-3 && z < last - 1e-3) zs.add(Math.round(z * 1e4) / 1e4);
-    }
+    for (const f of WELL_STEPS) add(wz + f * spec.wells!.radius);
+  }
+  for (const d of spec.deck ?? []) {
+    add(d.z0);
+    add(d.z1);
   }
   return [...zs]
     .sort((a, b) => a - b)
@@ -210,6 +230,26 @@ function bandColor(
   return stripes[kind.stripe] ?? c.body;
 }
 
+/** Decals as absolute-x intervals on one side of the car (sgn = +1 left, -1 right). */
+function decalsOnSide(
+  deck: readonly DeckDecal[],
+  z: number,
+  sgn: 1 | -1,
+): { a: number; b: number; color: string }[] {
+  const out: { a: number; b: number; color: string }[] = [];
+  for (const d of deck) {
+    if (z < d.z0 || z > d.z1) continue;
+    for (const m of d.mirror ? [1, -1] : [1]) {
+      const lo = Math.min(d.x0 * m, d.x1 * m) * sgn;
+      const hi = Math.max(d.x0 * m, d.x1 * m) * sgn;
+      const a = Math.max(0, Math.min(lo, hi));
+      const b = Math.max(lo, hi);
+      if (b > a + 1e-6) out.push({ a, b, color: d.color });
+    }
+  }
+  return out;
+}
+
 export function buildCarHull(spec: HullSpec): HullMesh {
   const pos: number[] = [];
   const col: number[] = [];
@@ -252,6 +292,7 @@ export function buildCarHull(spec: HullSpec): HullMesh {
         ? [spec.colors.stripe]
         : spec.colors.stripe;
   const band = spec.stripeBand ?? DEFAULT_STRIPE_BAND;
+  const deck = spec.deck ?? [];
   const profiles = st.map((s) => profile(s, xInner, Math.max(1, stripes.length), band));
   const bands = profiles[0]!.kinds.length;
   const users = spec.stations;
@@ -272,17 +313,46 @@ export function buildCarHull(spec: HullSpec): HullMesh {
     // The top band is the roof over the cabin, and the windscreen / rear glass
     // where the roof meets the belt on one side of the segment only.
     const top = cabin0 && cabin1 ? 'roof' : flagged && cabin0 !== cabin1 ? 'glass' : 'paint';
+    const zMid = (z0 + z1) / 2;
     for (let k = 0; k < bands; k++) {
-      const color = rgb(bandColor(spec.colors, stripes, profiles[i]!.kinds[k]!, side, top));
+      const kind = profiles[i]!.kinds[k]!;
+      const base = bandColor(spec.colors, stripes, kind, side, top);
+      const color = rgb(base);
       const n0 = edgeNormal(p0, k);
       const n1 = edgeNormal(p1, k);
       for (const sgn of [1, -1] as const) {
         const exp: V3 = [(n0[0] + n1[0]) * sgn, n0[1] + n1[1], 0];
-        const pa: V3 = [p0[k]![0] * sgn, p0[k]![1], z0];
-        const pb: V3 = [p1[k]![0] * sgn, p1[k]![1], z1];
-        const pc: V3 = [p1[k + 1]![0] * sgn, p1[k + 1]![1], z1];
-        const pd: V3 = [p0[k + 1]![0] * sgn, p0[k + 1]![1], z0];
-        quad(pa, pb, pc, pd, exp, color);
+        const decals = kind === 'top' && top !== 'glass' ? decalsOnSide(deck, zMid, sgn) : [];
+        if (decals.length === 0) {
+          const pa: V3 = [p0[k]![0] * sgn, p0[k]![1], z0];
+          const pb: V3 = [p1[k]![0] * sgn, p1[k]![1], z1];
+          const pc: V3 = [p1[k + 1]![0] * sgn, p1[k + 1]![1], z1];
+          const pd: V3 = [p0[k + 1]![0] * sgn, p0[k + 1]![1], z0];
+          quad(pa, pb, pc, pd, exp, color);
+          continue;
+        }
+        // Split the top strip at every decal edge; the outer edge keeps each station's own width.
+        const x0 = p0[k]![0];
+        const x1 = p1[k]![0];
+        const xMax = Math.min(x0, x1);
+        const cuts = [...new Set(decals.flatMap((d) => [d.a, d.b]))]
+          .filter((x) => x > 1e-6 && x < xMax - 1e-6)
+          .sort((u, v) => u - v);
+        const edges = [0, ...cuts, Infinity];
+        for (let e = 0; e < edges.length - 1; e++) {
+          const a = edges[e]!;
+          const bOuter = edges[e + 1] === Infinity;
+          const b0 = bOuter ? x0 : edges[e + 1]!;
+          const b1 = bOuter ? x1 : edges[e + 1]!;
+          const mid = (a + Math.min(b0, b1)) / 2;
+          let paint = base;
+          for (const d of decals) if (mid > d.a && mid < d.b) paint = d.color;
+          const pa: V3 = [b0 * sgn, p0[k]![1], z0];
+          const pb: V3 = [b1 * sgn, p1[k]![1], z1];
+          const pc: V3 = [a * sgn, p1[k + 1]![1], z1];
+          const pd: V3 = [a * sgn, p0[k + 1]![1], z0];
+          quad(pa, pb, pc, pd, exp, rgb(paint));
+        }
       }
     }
   }

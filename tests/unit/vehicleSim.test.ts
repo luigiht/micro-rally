@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { CATALOG_IDS } from '@/game/economy/cars';
 import { CAR_SPECS, type CarId } from '@/game/vehicle/CarSpec';
 import { autoShift, torqueAt } from '@/game/vehicle/Drivetrain';
 import { SURFACES } from '@/game/vehicle/surfaces';
@@ -128,13 +129,13 @@ describe('VehicleSim', () => {
   });
 
   it('every car stays composed through a fast corner under power on tarmac', () => {
-    for (const id of ['hatchback', 'coupe', 'saloon', 'groupb'] as const) {
+    for (const id of CATALOG_IDS) {
       expect(maxBodySlip(id, 'tarmac'), id).toBeLessThan(0.1);
     }
   });
 
   it('every car holds on through a gravel corner, on and off the throttle', () => {
-    for (const id of ['hatchback', 'coupe', 'saloon', 'groupb'] as const) {
+    for (const id of CATALOG_IDS) {
       expect(maxBodySlip(id, 'gravel'), id).toBeLessThan(0.12);
       expect(maxBodySlip(id, 'gravel', 0.5, 0), `${id} lift-off`).toBeLessThan(0.12);
     }
