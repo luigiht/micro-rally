@@ -13,9 +13,11 @@ interface ToolbarButtonProps {
   label: string;
   panel: HudPanel;
   open: boolean;
+  /** Display classes; lets a button show only on some devices. */
+  display?: string;
 }
 
-function ToolbarButton({ icon, label, panel, open }: ToolbarButtonProps) {
+function ToolbarButton({ icon, label, panel, open, display = 'inline-flex' }: ToolbarButtonProps) {
   const handle = (e: MouseEvent<HTMLButtonElement>) => {
     // Drop focus so Space (handbrake) can't re-trigger the button.
     e.currentTarget.blur();
@@ -28,7 +30,7 @@ function ToolbarButton({ icon, label, panel, open }: ToolbarButtonProps) {
       aria-haspopup="dialog"
       onClick={handle}
       title={label}
-      className="pixel-btn-ghost inline-flex items-center gap-2 p-3 md:px-4 md:py-3"
+      className={`pixel-btn-ghost items-center gap-2 p-3 md:px-4 md:py-3 ${display}`}
     >
       <PixelIcon name={icon} />
       <span className="max-md:sr-only">{label}</span>
@@ -36,7 +38,11 @@ function ToolbarButton({ icon, label, panel, open }: ToolbarButtonProps) {
   );
 }
 
-/** Top-right Settings / Game buttons and the panels they open. */
+/**
+ * Top-right toolbar and the panels it opens. On touch devices the Garage
+ * joins it (beside Settings), since the bottom-left corner is under the
+ * steering pad there; on desktop the Garage button sits next to Money.
+ */
 export function HudToolbar() {
   const m = useMessages();
   const panel = useUiStore((s) => s.panel);
@@ -46,6 +52,13 @@ export function HudToolbar() {
         aria-label={m.toolbar.label}
         className="pointer-events-auto absolute top-4 right-4 flex gap-2 md:top-6 md:right-6 md:gap-3"
       >
+        <ToolbarButton
+          icon="garage"
+          label={m.garage.button}
+          panel="garage"
+          open={panel === 'garage'}
+          display="hidden coarse:inline-flex"
+        />
         <ToolbarButton
           icon="settings"
           label={m.toolbar.settings}

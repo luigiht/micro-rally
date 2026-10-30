@@ -32,6 +32,11 @@ test('phone landscape: HUD pieces do not overlap and touch pads are shown', asyn
   expect(overlaps(bar, handbrake)).toBe(false);
   // Labels collapse to icons but stay in the accessible name.
   await expect(page.getByRole('button', { name: 'Settings' })).toBeVisible();
+  // On touch devices the Garage button moves up into the toolbar, beside Settings.
+  const garage = await box(page.getByRole('navigation').getByRole('button', { name: 'Garage' }));
+  expect(garage.x).toBeLessThan(toolbar.x + toolbar.width);
+  expect(garage.y).toBeGreaterThanOrEqual(toolbar.y);
+  await expect(page.getByRole('button', { name: 'Garage' })).toHaveCount(1);
 });
 
 test('holding the on-screen gas pedal drives the car', async ({ page }) => {

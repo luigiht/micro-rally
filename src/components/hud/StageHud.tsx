@@ -83,6 +83,7 @@ function ResultPanel({ result }: { result: StageResult }) {
   );
 }
 
+/** Desktop Garage button beside Money; on touch devices the toolbar carries it instead. */
 function GarageButton() {
   const m = useMessages();
   const open = useUiStore((s) => s.panel === 'garage');
@@ -96,7 +97,7 @@ function GarageButton() {
         e.currentTarget.blur();
         useUiStore.getState().togglePanel('garage');
       }}
-      className="pixel-btn-ghost pointer-events-auto inline-flex items-center gap-2 p-3 md:px-4 md:py-3 coarse:p-2"
+      className="pixel-btn-ghost pointer-events-auto inline-flex items-center gap-2 p-3 md:px-4 md:py-3 coarse:hidden"
     >
       <PixelIcon name="garage" />
       <span className="max-md:sr-only">{m.garage.button}</span>

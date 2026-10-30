@@ -416,3 +416,18 @@ Newest at the bottom. Format: date — decision — why.
     tyres stay on the surface and the body visibly compresses over them.
     Tests pin the lifted surface on the road and the bare bed beside it,
     and the resting sag of the body above the ground.
+54. **2026-10-30 — Garage in the toolbar on touch devices, drawn as a car.**
+    On phones the Garage button sat beside Money in the bottom-left, under the
+    steering pad and easy to miss, and its 8×8 glyph (a diagonal spanner
+    sliver) did not read at 16 px. The toolbar now carries a Garage button
+    on coarse-pointer devices, placed before Settings, and the bottom-left
+    button hides there (`hidden coarse:inline-flex` / `coarse:hidden`, so
+    exactly one is in the accessibility tree; `ToolbarButton` takes its
+    display class as a prop because a base `inline-flex` cannot be
+    overridden by `hidden` at equal specificity). Desktop keeps the button
+    next to Money. The glyph is now a car seen head-on — windscreen, two
+    headlights either side of a grille gap, bumper, two wheels — chosen from
+    nine side- and front-view candidates rendered at 16/24/64 px against the
+    gear glyph; the filled front view with open headlights read best at the
+    small size (by request: front-facing). The mobile e2e test checks the
+    Garage is inside the toolbar and that there is only one.

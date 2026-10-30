@@ -1,4 +1,4 @@
-/** 8×8 one-bit glyphs drawn as crisp SVG rects in the current text colour. */
+/** 8×8 one-bit glyphs drawn as crisp SVG rects in the current text colour. `garage` is a car seen head-on. */
 export type PixelIconName =
   | 'restart'
   | 'settings'
@@ -114,14 +114,14 @@ const GLYPHS: Record<PixelIconName, readonly string[]> = {
     '...##...',
   ],
   garage: [
-    '.....##.',
-    '....####',
-    '....#.##',
-    '...###..',
-    '..###...',
-    '.###....',
-    '###.....',
-    '##......',
+    '........',
+    '..####..',
+    '.#....#.',
+    '########',
+    '#.#..#.#',
+    '########',
+    '.##..##.',
+    '........',
   ],
 };
 
