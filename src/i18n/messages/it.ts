@@ -77,6 +77,8 @@ export const it: Messages = {
     owned: 'Posseduta',
     level: 'Livello {n} di {max}',
     stats: { power: 'Potenza', grip: 'Aderenza', agility: 'Agilità' },
+    prev: 'Auto precedente',
+    next: 'Auto successiva',
   },
   upgrades: {
     engine: {
@@ -113,6 +115,16 @@ export const it: Messages = {
     coupe: {
       name: 'Tricolore Coupé',
       blurb: 'Un cuneo basso anni ’70: trazione posteriore, passo corto e coda vivace.',
+    },
+    saloon: {
+      name: 'Boreal Saloon',
+      blurb:
+        'Una berlina turbo a trazione integrale con un grande alettone: incollata, veloce e docile.',
+    },
+    groupb: {
+      name: 'Tempesta Gruppo B',
+      blurb:
+        'Una macchina Gruppo B a motore centrale: alettoni enormi, potenza enorme e una coda da domare.',
     },
   },
   touch: {

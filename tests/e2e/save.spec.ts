@@ -104,10 +104,16 @@ test('the Garage sells upgrades and the coupé, and the purchase is saved', asyn
   await expect(dialog).toContainText('$9,600');
 
   await dialog.getByRole('tab', { name: 'Dealership' }).click();
-  const coupe = dialog.getByRole('listitem').filter({ hasText: 'Tricolore Coupé' });
-  await coupe.getByRole('button', { name: 'Buy' }).click();
-  await expect(coupe).toContainText('In use');
+  await expect(dialog.getByTestId('car-preview').locator('canvas')).toBeVisible();
+  const details = dialog.getByTestId('car-details');
+  await expect(details).toContainText('Rally Hatch');
+  await dialog.getByRole('button', { name: 'Next car' }).click();
+  await expect(details).toContainText('Tricolore Coupé');
+  await details.getByRole('button', { name: 'Buy' }).click();
+  await expect(details).toContainText('In use');
   await expect(dialog).toContainText('$5,100');
+  await dialog.getByRole('button', { name: 'Next car' }).click();
+  await expect(details).toContainText('Boreal Saloon');
 
   await expect
     .poll(async () => (await (await request.get(`/api/games/${gameId}`)).json()) as unknown, {

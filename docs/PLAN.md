@@ -51,7 +51,8 @@ Status legend: [x] done · [~] in progress · [ ] not started
 ## 5. HUD, service park, Garage, car models, economy tests — [ ]
 
 - [x] Stage progress bar down the left edge with checkpoint ticks and a finish flag
-- [x] Garage panel: Upgrades (7 cards, per-level pricing, applied via `applyUpgrades`) and Dealership (stat bars; second car: wedge coupé)
+- [x] Garage panel: Upgrades (7 cards, per-level pricing, applied via `applyUpgrades`) and Dealership carousel with a spinning 3D preview
+- [x] Car models: coupé, saloon and Group B built from primitives in the hatchback style, proportions measured from the reference GLBs
 - [x] Economy tests for upgrade pricing/effects, catalogue and store purchases; save v2 migration
 
 ## 6. Save system, API route, Game ID URL, start/continue — [ ]

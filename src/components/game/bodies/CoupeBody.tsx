@@ -1,11 +1,12 @@
 'use client';
 
-import { useMemo, type Ref } from 'react';
-import { ExtrudeGeometry, Shape, type Group } from 'three';
-import type { CarSpec } from '@/game/vehicle/CarSpec';
-import { Box, Lamp } from '../CarParts';
+import type { Ref } from 'react';
+import type { Group } from 'three';
+import { CAR_SPECS, type CarSpec } from '@/game/vehicle/CarSpec';
+import { wellsFor, type HullSpec } from '@/render/car/CarHull';
+import { ArchLip, Box, Disc, Lamp } from '../CarParts';
+import { CarHullMesh } from './CarHullMesh';
 
-/** Off-white body with a green / white / red stripe set; dark trim. */
 const K = {
   body: '#efe9dc',
   green: '#2f8f5b',
@@ -19,104 +20,182 @@ const K = {
   rim: '#d9d4c7',
 } as const;
 
-/** Side profile (z forward, y up) of the upper body; extruded across the car. */
-const PROFILE: readonly (readonly [number, number])[] = [
-  [1.85, 0.3],
-  [1.85, 0.58],
-  [1.2, 0.68],
-  [0.5, 0.78],
-  [0.1, 1.12],
-  [-0.55, 1.15],
-  [-1.0, 0.95],
-  [-1.85, 0.86],
-  [-1.85, 0.3],
-];
-const BODY_WIDTH = 1.62;
+/** Low wide wedge: forward cabin with a narrow roof, wraparound glass, high haunches, dipping nose. */
+const HULL: HullSpec = {
+  wells: wellsFor(CAR_SPECS.coupe),
+  colors: { body: K.body, trim: K.trim, glass: K.glass, stripe: [K.green, K.white, K.red] },
+  stripeBand: [0.16, 0.02],
+  stations: [
+    {
+      z: -1.85,
+      floor: 0.34,
+      sill: 0.42,
+      belt: 0.8,
+      roof: 0.8,
+      xSill: 0.78,
+      xBody: 0.86,
+      xRoof: 0.86,
+    },
+    {
+      z: -1.55,
+      floor: 0.3,
+      sill: 0.4,
+      belt: 0.84,
+      roof: 0.84,
+      xSill: 0.84,
+      xBody: 0.9,
+      xRoof: 0.9,
+    },
+    {
+      z: -1.05,
+      floor: 0.3,
+      sill: 0.4,
+      belt: 0.84,
+      roof: 0.84,
+      xSill: 0.84,
+      xBody: 0.9,
+      xRoof: 0.9,
+    },
+    {
+      z: -0.8,
+      floor: 0.3,
+      sill: 0.4,
+      belt: 0.82,
+      roof: 0.82,
+      xSill: 0.84,
+      xBody: 0.9,
+      xRoof: 0.9,
+      glass: true,
+    },
+    {
+      z: -0.56,
+      floor: 0.3,
+      sill: 0.4,
+      belt: 0.82,
+      roof: 1.1,
+      xSill: 0.84,
+      xBody: 0.9,
+      xRoof: 0.54,
+    },
+    {
+      z: -0.48,
+      floor: 0.3,
+      sill: 0.4,
+      belt: 0.82,
+      roof: 1.11,
+      xSill: 0.84,
+      xBody: 0.9,
+      xRoof: 0.55,
+      glass: true,
+    },
+    {
+      z: 0.26,
+      floor: 0.3,
+      sill: 0.4,
+      belt: 0.82,
+      roof: 1.12,
+      xSill: 0.84,
+      xBody: 0.9,
+      xRoof: 0.56,
+    },
+    {
+      z: 0.34,
+      floor: 0.3,
+      sill: 0.4,
+      belt: 0.82,
+      roof: 1.1,
+      xSill: 0.84,
+      xBody: 0.9,
+      xRoof: 0.56,
+      glass: true,
+    },
+    { z: 0.65, floor: 0.3, sill: 0.4, belt: 0.78, roof: 0.78, xSill: 0.84, xBody: 0.9, xRoof: 0.9 },
+    { z: 1.05, floor: 0.3, sill: 0.4, belt: 0.72, roof: 0.72, xSill: 0.84, xBody: 0.9, xRoof: 0.9 },
+    {
+      z: 1.5,
+      floor: 0.3,
+      sill: 0.38,
+      belt: 0.62,
+      roof: 0.62,
+      xSill: 0.82,
+      xBody: 0.88,
+      xRoof: 0.88,
+    },
+    {
+      z: 1.85,
+      floor: 0.32,
+      sill: 0.38,
+      belt: 0.56,
+      roof: 0.56,
+      xSill: 0.78,
+      xBody: 0.84,
+      xRoof: 0.84,
+    },
+  ],
+};
 
-function useWedge(): ExtrudeGeometry {
-  return useMemo(() => {
-    const shape = new Shape();
-    PROFILE.forEach(([z, y], i) => (i === 0 ? shape.moveTo(z, y) : shape.lineTo(z, y)));
-    shape.closePath();
-    return new ExtrudeGeometry(shape, { depth: BODY_WIDTH, bevelEnabled: false });
-  }, []);
-}
-
-/**
- * A low 1970s wedge coupé in the same blocky style as the hatchback, with a
- * true wedge profile, wraparound glass, roof scoop, rear wing and a tricolour
- * stripe set. `cabinRef` groups the glass and mirrors the first-person views hide.
- */
+/** 1970s wedge coupé. Coordinates in the root frame. `cabinRef` holds the mirrors. */
 export function CoupeBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Ref<Group> }) {
-  const wedge = useWedge();
   const front = spec.cgToFront;
   const rear = -spec.cgToRear;
+  const flank = 0.9;
   return (
-    <>
-      {/* Lower tub and the extruded wedge (shape x → car z, extrusion → car x) */}
-      <Box p={[0, 0.42, 0]} s={[1.76, 0.26, 3.6]} c={K.body} shadow />
-      <mesh
-        geometry={wedge}
-        rotation={[0, -Math.PI / 2, 0]}
-        position={[BODY_WIDTH / 2, 0, 0]}
-        castShadow
-      >
-        <meshStandardMaterial color={K.body} flatShading />
-      </mesh>
-      {/* Glass and mirrors: hidden from the driver's seat */}
+    <group position={[0, -0.1, 0]}>
+      <CarHullMesh spec={HULL} />
       <group ref={cabinRef}>
-        <Box p={[0, 0.961, 0.31]} s={[1.46, 0.52, 0.03]} c={K.glass} r={[-0.87, 0, 0]} />
-        <Box p={[0, 1.064, -0.78]} s={[1.3, 0.48, 0.03]} c={K.glass} r={[1.15, 0, 0]} />
         {([1, -1] as const).map((side) => (
           <group key={side}>
-            <Box p={[0.805 * side, 0.96, -0.1]} s={[0.02, 0.26, 0.95]} c={K.glass} />
-            <Box p={[0.86 * side, 0.9, 0.42]} s={[0.1, 0.03, 0.03]} c={K.trim} />
-            <Box p={[0.93 * side, 0.92, 0.42]} s={[0.1, 0.1, 0.07]} c={K.body} />
+            <Box p={[0.78 * side, 0.9, 0.35]} s={[0.08, 0.03, 0.03]} c={K.trim} />
+            <Box p={[0.86 * side, 0.92, 0.35]} s={[0.1, 0.09, 0.07]} c={K.body} />
           </group>
         ))}
       </group>
-      {/* Tricolour: roof bands and flank stripes */}
+      {/* Engine-cover louvres, rear lip spoiler, roof lip */}
+      {[-1.4, -1.25, -1.1, -0.95].map((z) => (
+        <Box key={z} p={[0, 0.85, z]} s={[1.3, 0.015, 0.05]} c={K.trim} />
+      ))}
+      <Box p={[0, 0.9, -1.8]} s={[1.7, 0.05, 0.2]} c={K.body} r={[0.12, 0, 0]} shadow />
+      <Box p={[0.6, 0.86, -1.78]} s={[0.05, 0.06, 0.14]} c={K.trim} />
+      <Box p={[-0.6, 0.86, -1.78]} s={[0.05, 0.06, 0.14]} c={K.trim} />
+      <Box p={[0, 1.14, -0.82]} s={[1.06, 0.04, 0.16]} c={K.trim} />
+      {/* Tricolour roof bands (the flank bands come from the hull) */}
       {(
         [
-          [-0.2, K.green],
+          [-0.18, K.green],
           [0, K.white],
-          [0.2, K.red],
+          [0.18, K.red],
         ] as const
       ).map(([x, c]) => (
-        <Box key={x} p={[x, 1.161, -0.22]} s={[0.18, 0.02, 0.62]} c={c} />
+        <Box key={x} p={[x, 1.126, -0.12]} s={[0.16, 0.016, 0.7]} c={c} />
       ))}
       {([1, -1] as const).map((side) => (
         <group key={side}>
-          <Box p={[0.885 * side, 0.6, 0.1]} s={[0.02, 0.06, 3.2]} c={K.green} />
-          <Box p={[0.885 * side, 0.53, 0.1]} s={[0.02, 0.06, 3.2]} c={K.white} />
-          <Box p={[0.885 * side, 0.46, 0.1]} s={[0.02, 0.06, 3.2]} c={K.red} />
-          {/* Arch flares, sill */}
-          <Box p={[0.9 * side, 0.42, front]} s={[0.1, 0.22, 0.95]} c={K.trim} />
-          <Box p={[0.9 * side, 0.42, rear]} s={[0.1, 0.22, 0.95]} c={K.trim} />
-          <Box p={[0.88 * side, 0.31, 0]} s={[0.06, 0.06, 1.6]} c={K.trim} />
-          {/* Pop-up lamp lids, tail lights, exhausts */}
-          <Box p={[0.55 * side, 0.665, 1.5]} s={[0.34, 0.03, 0.26]} c={K.trim} />
-          <Box p={[0.6 * side, 0.62, -1.86]} s={[0.36, 0.12, 0.04]} c={K.tail} glow={0.5} />
-          <mesh position={[0.35 * side, 0.3, -1.96]} rotation={[Math.PI / 2, 0, 0]}>
+          <Box p={[0.9 * side, 0.8, -0.62]} s={[0.06, 0.1, 0.3]} c={K.trim} />
+          <ArchLip x={flank * side} z={front} radius={spec.wheelRadius} c={K.trim} />
+          <ArchLip x={flank * side} z={rear} radius={spec.wheelRadius} c={K.trim} tube={0.055} />
+          {/* Closed pop-up lamp lids, round tail lamps, exhausts */}
+          <Box p={[0.5 * side, 0.68, 1.4]} s={[0.34, 0.025, 0.26]} c={K.trim} />
+          <group position={[0.55 * side, 0.64, -1.87]} rotation={[0, Math.PI, 0]}>
+            <Disc p={[0, 0, 0]} radius={0.09} depth={0.04} c={K.tail} />
+          </group>
+          <mesh position={[0.3 * side, 0.36, -1.9]} rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[0.05, 0.05, 0.16, 8]} />
             <meshStandardMaterial color={K.rim} metalness={0.5} roughness={0.4} />
           </mesh>
         </group>
       ))}
-      {/* Nose: splitter, grille slot, lamp pod with four rally lamps */}
-      <Box p={[0, 0.3, 1.86]} s={[1.8, 0.1, 0.14]} c={K.trim} />
-      <Box p={[0, 0.5, 1.86]} s={[0.9, 0.08, 0.03]} c={K.trim} />
-      <Box p={[0, 0.72, 1.68]} s={[1.1, 0.05, 0.06]} c={K.trim} />
-      {[-0.42, -0.14, 0.14, 0.42].map((x) => (
-        <Lamp key={x} p={[x, 0.74, 1.74]} radius={0.095} c={K.rally} glow={0.5} />
-      ))}
-      <Box p={[0.5, 0.64, 1.86]} s={[0.3, 0.1, 0.03]} c={K.head} glow={0.4} />
-      <Box p={[-0.5, 0.64, 1.86]} s={[0.3, 0.1, 0.03]} c={K.head} glow={0.4} />
-      {/* Roof scoop and rear wing */}
-      <Box p={[0, 1.19, -0.58]} s={[0.56, 0.07, 0.3]} c={K.trim} />
-      <Box p={[0, 1.02, -1.74]} s={[1.56, 0.05, 0.32]} c={K.body} r={[-0.1, 0, 0]} shadow />
-      <Box p={[0.55, 0.94, -1.7]} s={[0.05, 0.12, 0.2]} c={K.trim} />
-      <Box p={[-0.55, 0.94, -1.7]} s={[0.05, 0.12, 0.2]} c={K.trim} />
-    </>
+      {/* Nose: bumper, splitter, grille slot, four-lamp pod on the bonnet lip, headlight slots */}
+      <Box p={[0, 0.4, 1.86]} s={[1.78, 0.12, 0.14]} c={K.trim} />
+      <Box p={[0, 0.34, 1.93]} s={[1.8, 0.04, 0.1]} c={K.trim} />
+      <Box p={[0, 0.5, 1.87]} s={[0.9, 0.05, 0.03]} c={K.trim} />
+      <group position={[0, 0.6, 1.8]} rotation={[0.17, 0, 0]}>
+        <Box p={[0, 0, 0]} s={[1.0, 0.1, 0.22]} c={K.trim} />
+        {[-0.36, -0.12, 0.12, 0.36].map((x) => (
+          <Lamp key={x} p={[x, 0.01, 0.16]} radius={0.095} c={K.rally} glow={0.5} />
+        ))}
+      </group>
+      <Box p={[0.5, 0.6, 1.87]} s={[0.3, 0.07, 0.03]} c={K.head} glow={0.4} />
+      <Box p={[-0.5, 0.6, 1.87]} s={[0.3, 0.07, 0.03]} c={K.head} glow={0.4} />
+    </group>
   );
 }

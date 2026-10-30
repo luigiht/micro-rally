@@ -261,3 +261,32 @@ Newest at the bottom. Format: date — decision — why.
     `next.config.ts` so they apply on any host; `X-Powered-By` is off. No
     `vercel.json` is needed: Next.js is zero-config there. Steps and env vars
     are in `docs/DEPLOY.md` and `.env.example`.
+43. **2026-10-30 — Three more primitive-built cars and a showroom carousel.**
+    The reference GLBs in `assets/rally-cars-references` are used only as
+    measurements: a script (`scripts/profile-glb.mjs`) bins their body meshes
+    along the length to read the roof line, body width and cabin width, and
+    those silhouettes drive hand-placed boxes in the hatchback's style, so
+    nothing from the files ships and the look stays one family. Coupé (low
+    wide tub, forward narrow cabin, louvred engine cover, lamp pod, tricolour
+    bands), saloon (long shell, bonnet scoop, four-door cabin, tall wing on
+    uprights, gold flank stripe and rims) and Group B (square louvred bonnet,
+    boxy cabin, roof-mounted wing on raked struts, wide arches, side intakes,
+    red/blue bands). Physics follow the reference wheelbase, track and wheel
+    radius; `cabinDrop` places the shared interior under each roof. The
+    Dealership is a carousel: a small R3F turntable (static under reduced
+    motion) with prev/next, dots and the car's card. Display names are
+    generic on purpose; the reference components in `assets/` are excluded
+    from ESLint and `tsc`.
+44. **2026-10-30 — Lofted hulls instead of box stacks.** Every car body is
+    now a procedural low-poly hull (`src/render/car/CarHull.ts`, pure TS,
+    unit-tested): a table of cross-section stations (floor, sill, belt and
+    roof heights; sill, belt and roof half-widths; glass segments and pillar
+    gaps) is lofted into a flat-shaded triangle soup with per-face vertex
+    colours for underside, sill, paint, belt stripe, glass and roof, and
+    faces are wound outward from the profile normals. That gives the raked
+    windscreens, tapering greenhouses, wedge noses and sloping decks the
+    reference models have, in one draw call per body, while details stay as
+    primitives (lamps, wings, scoops, louvres, mirrors) and arches become
+    half-torus lips. The glass is part of the hull, so first-person views
+    see out through the culled inner faces; only mirrors are hidden.
+    Station tables were read off the reference silhouettes.

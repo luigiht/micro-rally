@@ -74,6 +74,8 @@ export const en = {
     owned: 'Owned',
     level: 'Level {n} of {max}',
     stats: { power: 'Power', grip: 'Grip', agility: 'Agility' },
+    prev: 'Previous car',
+    next: 'Next car',
   },
   upgrades: {
     engine: {
@@ -110,6 +112,15 @@ export const en = {
     coupe: {
       name: 'Tricolore Coupé',
       blurb: 'A low 1970s wedge: rear-wheel drive, short wheelbase, lively tail.',
+    },
+    saloon: {
+      name: 'Boreal Saloon',
+      blurb:
+        'A turbocharged all-wheel-drive saloon with a tall rear wing: planted, fast and forgiving.',
+    },
+    groupb: {
+      name: 'Tempesta Group B',
+      blurb: 'A mid-engined Group B machine: huge wings, huge power, and a tail that needs taming.',
     },
   },
   touch: {

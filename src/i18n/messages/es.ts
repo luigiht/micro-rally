@@ -77,6 +77,8 @@ export const es: Messages = {
     owned: 'En propiedad',
     level: 'Nivel {n} de {max}',
     stats: { power: 'Potencia', grip: 'Agarre', agility: 'Agilidad' },
+    prev: 'Coche anterior',
+    next: 'Coche siguiente',
   },
   upgrades: {
     engine: {
@@ -116,6 +118,16 @@ export const es: Messages = {
     coupe: {
       name: 'Tricolore Coupé',
       blurb: 'Una cuña baja de los 70: tracción trasera, batalla corta y una zaga muy viva.',
+    },
+    saloon: {
+      name: 'Boreal Saloon',
+      blurb:
+        'Una berlina turbo con tracción total y un gran alerón trasero: pegada al suelo, rápida y noble.',
+    },
+    groupb: {
+      name: 'Tempesta Grupo B',
+      blurb:
+        'Una máquina del Grupo B de motor central: alerones enormes, potencia enorme y una zaga que hay que domar.',
     },
   },
   touch: {
