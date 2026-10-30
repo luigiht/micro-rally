@@ -97,6 +97,7 @@ const BASE: Omit<CarSpec, 'id'> = {
   cabinDrop: 0,
 };
 
+/** Grip (tyres, cornering stiffness, stability, aero) is shared by every car in the dealership; they differ in mass, power, drag and drive split. */
 export const CAR_SPECS: Readonly<Record<CarId, CarSpec>> = {
   hatchback: { ...BASE, id: 'hatchback' },
   /** Low 1970s wedge: 2.16 m wheelbase, 1.5 m track, rear-drive. */
@@ -112,11 +113,8 @@ export const CAR_SPECS: Readonly<Record<CarId, CarSpec>> = {
     peakTorque: 280,
     dragCoeff: 0.62,
     frontDrive: 0,
-    tyreGrip: 1.04,
-    corneringRear: 8,
     yawInertiaScale: 1.25,
     maxSteer: 0.5,
-    stability: 0.3,
     cabinDrop: -0.3,
   },
   /** Turbocharged all-wheel-drive saloon: 2.5 m wheelbase, planted and forgiving. */
@@ -132,14 +130,9 @@ export const CAR_SPECS: Readonly<Record<CarId, CarSpec>> = {
     peakTorque: 400,
     dragCoeff: 0.72,
     frontDrive: 0.5,
-    tyreGrip: 1.1,
-    corneringFront: 10,
-    corneringRear: 10.5,
     brakeDecel: 10,
     yawInertiaScale: 1.7,
-    stability: 0.55,
     turboForce: 0.2,
-    aeroGrip: 0.04,
     cabinDrop: -0.1,
   },
   /** Mid-engined Group B machine: 2.58 m wheelbase, huge power, lively tail. */
@@ -155,15 +148,11 @@ export const CAR_SPECS: Readonly<Record<CarId, CarSpec>> = {
     peakTorque: 450,
     dragCoeff: 0.7,
     frontDrive: 0.35,
-    tyreGrip: 1.08,
-    corneringRear: 8.5,
     brakeDecel: 10.5,
     yawInertiaScale: 1.2,
     maxSteer: 0.5,
-    stability: 0.25,
     turboForce: 0.35,
     turboDuration: 2.5,
-    aeroGrip: 0.06,
     cabinDrop: -0.04,
   },
   pickup: {

@@ -68,7 +68,7 @@ export const es: Messages = {
   garage: {
     button: 'Taller',
     title: 'Taller',
-    hint: 'Los cambios se aplican en tu próxima salida.',
+    hint: 'Los cambios se aplican al instante, incluso en mitad del tramo.',
     tabs: { upgrades: 'Mejoras', dealership: 'Concesionario' },
     buy: 'Comprar',
     maxed: 'Al máximo',

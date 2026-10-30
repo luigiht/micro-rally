@@ -126,4 +126,16 @@ describe('garage in the store', () => {
         .carId,
     ).toBe('hatchback');
   });
+
+  it('shares one grip setup across the dealership', () => {
+    const base = CAR_SPECS.hatchback;
+    for (const c of CAR_CATALOG) {
+      const spec = CAR_SPECS[c.id];
+      expect(spec.tyreGrip).toBe(base.tyreGrip);
+      expect(spec.corneringFront).toBe(base.corneringFront);
+      expect(spec.corneringRear).toBe(base.corneringRear);
+      expect(spec.stability).toBe(base.stability);
+      expect(spec.aeroGrip).toBe(base.aeroGrip);
+    }
+  });
 });

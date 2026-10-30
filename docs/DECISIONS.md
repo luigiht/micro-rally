@@ -301,3 +301,18 @@ Newest at the bottom. Format: date — decision — why.
     self-hosting, `503 storage_unconfigured` on Vercel without credentials.
     Postgres also leaves room for later queries (leaderboards, cleanup of
     stale saves) that a key-value store would not.
+46. **2026-10-30 — Garage changes apply immediately.** Buying or selecting a
+    car (or an upgrade) now retunes the running `VehicleSim` in place
+    (`retune`: position and speed carry over, gear clamped to the new box),
+    swaps the model, and rebuilds the first-person rig when the cabin height
+    differs, so every camera view sees the chosen car at once. The previous
+    "next run" snapshot was simpler but read as a bug: the showroom said you
+    owned a car you were visibly not driving.
+47. **2026-10-30 — One grip setup for every car.** The coupé's softer rear
+    cornering stiffness and lower stability made it feel like it was on ice,
+    so tyre grip, cornering stiffness, stability and aero grip are now the
+    hatchback's values for every dealership car; cars still differ in mass,
+    torque, drag, gearing and drive split (the coupé stays rear-driven). The
+    showroom's Grip bar is therefore equal across cars by design. The game
+    canvas carries `data-car` so tests can see that a purchase lands on track
+    at once.

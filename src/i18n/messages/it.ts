@@ -68,7 +68,7 @@ export const it: Messages = {
   garage: {
     button: 'Officina',
     title: 'Officina',
-    hint: 'Le modifiche si applicano alla prossima uscita.',
+    hint: 'Le modifiche si applicano subito, anche a metà prova.',
     tabs: { upgrades: 'Potenziamenti', dealership: 'Concessionaria' },
     buy: 'Compra',
     maxed: 'Al massimo',

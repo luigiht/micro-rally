@@ -144,6 +144,14 @@ export class VehicleSim {
 
   constructor(public spec: CarSpec) {}
 
+  /** Swap the car in place: position and speed carry over, the gear is clamped to the new box. */
+  retune(spec: CarSpec): void {
+    this.spec = spec;
+    const s = this.state;
+    if (s.gear > spec.gearRatios.length) s.gear = spec.gearRatios.length;
+    this.prev.gear = s.gear;
+  }
+
   reset(pose: SpawnPose, terrain: TerrainQuery, speed = 0): void {
     const s = this.state;
     const p = this.spec;

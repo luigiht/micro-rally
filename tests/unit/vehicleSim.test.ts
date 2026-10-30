@@ -179,4 +179,17 @@ describe('VehicleSim', () => {
     run(b, testTrackTerrain, 5, controls);
     expect(a.state).toEqual(b.state);
   });
+
+  it('retunes to another car without moving, clamping the gear to the new box', () => {
+    const sim = new VehicleSim(CAR_SPECS.hatchback);
+    sim.state.x = 12;
+    sim.state.speed = 20;
+    sim.state.gear = 5;
+    const twoSpeed = { ...CAR_SPECS.coupe, gearRatios: [3, 2] };
+    sim.retune(twoSpeed);
+    expect(sim.spec).toBe(twoSpeed);
+    expect(sim.state.x).toBe(12);
+    expect(sim.state.speed).toBe(20);
+    expect(sim.state.gear).toBe(2);
+  });
 });

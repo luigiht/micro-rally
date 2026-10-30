@@ -1,7 +1,7 @@
 'use client';
 
 import { useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, type ReactNode } from 'react';
 import type { DirectionalLight, PerspectiveCamera } from 'three';
 import { applyUpgrades } from '@/game/economy/upgrades';
 import { CAR_SPECS, type CarSpec } from '@/game/vehicle/CarSpec';
@@ -13,7 +13,7 @@ import { DrivingSession, type DriveWorld } from './DrivingSession';
 import { followSun, SceneLights } from './SceneLights';
 import { usePrefersReducedMotion } from './usePrefersReducedMotion';
 
-/** The active car with its purchased upgrades, frozen for this run (garage changes apply on the next one). */
+/** The active car with its purchased upgrades, as the store has it right now. */
 function resolveActiveSpec(): CarSpec {
   const { carId, upgrades } = useGameStore.getState();
   return applyUpgrades(CAR_SPECS[carId], upgrades);
@@ -32,7 +32,9 @@ interface DriveRigProps {
 export function DriveRig({ world, sky, fog, onPose, children }: DriveRigProps) {
   const camera = useThree((s) => s.camera) as PerspectiveCamera;
   const gl = useThree((s) => s.gl);
-  const [spec] = useState(resolveActiveSpec);
+  const carId = useGameStore((s) => s.carId);
+  const upgrades = useGameStore((s) => s.upgrades);
+  const spec = useMemo(() => applyUpgrades(CAR_SPECS[carId], upgrades), [carId, upgrades]);
   const reducedMotion = usePrefersReducedMotion();
   const reduced = useRef(reducedMotion);
   const poseCallback = useRef(onPose);
@@ -47,14 +49,20 @@ export function DriveRig({ world, sky, fog, onPose, children }: DriveRigProps) {
   }, [reducedMotion, onPose]);
 
   useEffect(() => {
-    const s = new DrivingSession(spec, world, camera);
+    const s = new DrivingSession(resolveActiveSpec(), world, camera);
     s.attach(window, gl.domElement);
     session.current = s;
     return () => {
       s.dispose(window);
       session.current = null;
     };
-  }, [spec, world, camera, gl]);
+  }, [world, camera, gl]);
+
+  // Garage changes land immediately: retune the live sim and, if the cabin height
+  // differs, rebuild the first-person rig around the new eye.
+  useEffect(() => {
+    session.current?.setSpec(spec);
+  }, [spec]);
 
   useFrame((state, dt) => {
     const s = session.current;

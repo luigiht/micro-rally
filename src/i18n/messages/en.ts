@@ -65,7 +65,7 @@ export const en = {
   garage: {
     button: 'Garage',
     title: 'Garage',
-    hint: 'Changes apply on your next run.',
+    hint: 'Changes apply right away, even mid-stage.',
     tabs: { upgrades: 'Upgrades', dealership: 'Dealership' },
     buy: 'Buy',
     maxed: 'Maxed out',

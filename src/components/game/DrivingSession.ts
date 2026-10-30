@@ -43,7 +43,7 @@ export class DrivingSession {
   private readonly keyboard: KeyboardControls;
   private readonly coast = createControlInput();
   private readonly merged = createControlInput();
-  private readonly cabinDrop: number;
+  private cabinDrop: number;
   private readonly respawn: SpawnPose = { x: 0, z: 0, yaw: 0 };
   private rig: CameraRig;
   private readonly frame: CameraRigFrame;
@@ -120,6 +120,21 @@ export class DrivingSession {
     this.canvas?.removeEventListener('wheel', this.handleWheel);
     this.canvas = null;
     this.rig.dispose();
+  }
+
+  /** Swap the car mid-run (garage purchase or selection); the stage clock keeps running. */
+  setSpec(spec: CarSpec): void {
+    this.sim.retune(spec);
+    if (spec.cabinDrop === this.cabinDrop) return;
+    this.cabinDrop = spec.cabinDrop;
+    this.rig.dispose();
+    this.rig = createCameraRig(
+      this.rig.mode,
+      this.world.terrain,
+      this.world.spawn.yaw,
+      this.cabinDrop,
+    );
+    this.needsSnap = true;
   }
 
   /** The active view; DriveRig hides the car's cabin while it's the cockpit. */
