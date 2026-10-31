@@ -11,15 +11,7 @@ export interface FirstPersonView {
   tiltDown: number;
 }
 
-/** Bonnet cam: high under the roofline; the car hides its cabin. */
-export const CAB_VIEW: FirstPersonView = {
-  mode: 'cockpit',
-  eye: new Vector3(0.34, 1.36, 0.05),
-  fov: 72,
-  tiltDown: 0.05,
-};
-
-/** Behind the wheel, inside the modelled interior. */
+/** Behind the wheel, inside the modelled interior; the car hides its roof and glass. */
 export const INTERIOR_VIEW: FirstPersonView = {
   mode: 'interior',
   eye: new Vector3(0.34, 1.2, -0.33),

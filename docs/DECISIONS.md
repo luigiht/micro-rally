@@ -449,3 +449,71 @@ Newest at the bottom. Format: date — decision — why.
       cross-references by `@id`. No visible splash copy was added: decision
       37 keeps the splash to the logo, and the description already reaches
       crawlers through the meta tags and structured data.
+56. **2026-10-30 — Stage history in the Game panel.** Finished stages were
+    already persisted per Game ID as `records[index]` (best time, splits),
+    and every stage is deterministic from `(gameSeed, index)`, so the save
+    schema is unchanged: the list is regenerated, not stored. The generator
+    is split so `stageBrief` draws name, surface, weather, length and par
+    from the first RNG calls and `generateStage` continues the same stream
+    for the road, keeping existing worlds identical (pinned by a test). The
+    "current" stage is the frontier, derived by `frontierStage` as the
+    larger of the driven index and one past the highest record, so
+    `stageIndex` can point at an older stage while replaying without a new
+    field. `driveStage(index)` refuses anything past the frontier and bumps
+    `attempt`, so `DrivingScene` remounts exactly as on Restart; "Next
+    stage" after a replay simply advances by one. The panel lists stages as
+    wrapping pixel buttons (surface glyph + place name; the driven one is
+    filled and `aria-current`, the frontier is announced as "Current
+    stage", surface and best time sit in the tooltip and screen-reader
+    text). Stages list newest first (the current one leads, then the latest
+    completed); long histories show the newest six plus the stage being
+    driven, with a quiet underlined "Show n more" text link after the oldest
+    shown rather than another pixel button (`stageWindow`, pure). Five new
+    8×8 glyphs: road with dashed centre line, pebbles, puddle, snowflake,
+    grass blades. Buttons are compact (stage number + glyph) and widen on
+    hover or keyboard focus to reveal the name (the glyph alone carries the
+    surface; its label stays in screen-reader text and the tooltip), collapsed with
+    `max-width` rather than `display` so the accessible name is always the
+    full one. Widening in flow made a button at the end of a row wrap away
+    from under the pointer and flicker, so each item reserves a fixed slot
+    and the button widens over its neighbours (raised z-index); items in
+    the right half open leftwards (measured on pointer enter / focus) so
+    they stay inside the panel. The transition is off under reduced motion,
+    and touch devices, having no hover, use in-flow buttons with the detail
+    always open.
+57. **2026-10-30 — Three cameras, tyre marks always on, quieter Settings.**
+    By request the Cab (bonnet) view is gone: `CAMERA_MODES` is chase →
+    interior → isometric, `CAB_VIEW` and its factory case are removed, and
+    the car hides its roof and glass only for the interior. The "Tyre marks"
+    toggle left Settings and `settingsStore`; `DriveRig` always builds
+    `SkidMarks`, so this visual extra is no longer individually toggleable
+    (rule 4 is relaxed here on purpose; the quality tiers of milestone 7 can
+    reintroduce a switch if low-end devices need one). The Settings dialog
+    drops the "Paused while this panel is open" subtitle; the Game panel
+    keeps it. Settings are not persisted, so no saved `cockpit` value needs
+    migrating.
+58. **2026-10-31 — Alpine region: asphalt under snow, sharper bends.** The
+    progression loop is now forest ×3 → alpine ×3 (`REGION_ORDER`). Alpine
+    stages roll `snow` three times out of four (else cleared `tarmac`) with
+    `snow` off-road, a snowfield palette (near-white ground, grey-blue
+    shoulder and rock, frosted pine and bare broadleaf tints, pale sky and
+    fog), larger hills (amplitude 34, frequency 1/230), shorter base length
+    (1.5 km) and twistiness 1.4 against the forest's 0.9, which the
+    centreline builder turns into tighter bend curvature; a test checks the
+    mean heading change per sample is at least 15 % above the forest's over
+    six seeds. The `snow` surface keeps its physics (grip 0.42, par factor
+    0.82, prize ×1.35) but is drawn differently: `RoadBuilder` tints snow
+    stages per sample from tarmac toward the snow colour by a patch signal
+    (hashed knots every ~28 m, smoothstep across a wide 0.3–0.7 band for
+    long run-ins), to 45 % cover, the same across the full width: clear
+    stretches are bare out to the edge lines and snowy ones are even from
+    side to side. Earlier iterations tried heavier verges than the wheel
+    lanes; by request the cover is uniform. A first attempt lerped the whole
+    ribbon by a smooth 25–85 % noise and looked flat grey: the gradient was
+    gentle and the scene lighting compresses light tones, so patches now
+    switch via a short smoothstep and the lanes stay near bare. The
+    per-sample jitter hash moved from a multiply-mod (which ramps for
+    consecutive indices) to an integer mix. Because stage seeds hash the
+    region, existing games' stages at indices 3–5, 9–11, … regenerate as
+    alpine stages (records stay keyed by index); forest
+    indices keep their exact stages.

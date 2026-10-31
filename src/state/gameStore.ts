@@ -7,6 +7,7 @@ import {
   type UpgradeLevels,
 } from '@/game/economy/upgrades';
 import { SAVE_VERSION, type SaveFile, type StageRecord } from '@/game/save/SaveFile';
+import { frontierStage } from '@/game/stage/StageHistory';
 
 export type { StageRecord };
 
@@ -40,6 +41,8 @@ interface GameState {
   completeStage: (r: Omit<StageResult, 'newRecord' | 'previousBest'>) => StageResult;
   retry: () => void;
   nextStage: () => void;
+  /** Drive a completed stage again (or the current one); false if it isn't unlocked yet. */
+  driveStage: (index: number) => boolean;
   /** Garage: each returns false when the player can't afford it (or it's maxed / owned). */
   buyUpgrade: (id: UpgradeId) => boolean;
   buyCar: (id: CatalogCarId) => boolean;
@@ -97,6 +100,13 @@ export const useGameStore = create<GameState>()((set, get) => ({
   },
   retry: () => set((s) => ({ attempt: s.attempt + 1 })),
   nextStage: () => set((s) => ({ stageIndex: s.stageIndex + 1, attempt: s.attempt + 1 })),
+  driveStage: (index) => {
+    const s = get();
+    if (!Number.isInteger(index) || index < 0) return false;
+    if (index > frontierStage(s.stageIndex, s.records)) return false;
+    set({ stageIndex: index, attempt: s.attempt + 1 });
+    return true;
+  },
   buyUpgrade: (id) => {
     const s = get();
     const price = nextUpgradePrice(s.upgrades, id);

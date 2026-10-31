@@ -4,7 +4,6 @@ import type { TerrainQuery } from '@/game/vehicle/Terrain';
 import { createVehiclePose } from '@/game/vehicle/interpolatePose';
 import { CAMERA_MODES, isCameraMode, nextCameraMode } from '@/lib/cameraMode';
 import {
-  CAB_VIEW,
   FirstPersonCameraRig,
   INTERIOR_VIEW,
 } from '@/components/game/cameras/FirstPersonCameraRig';
@@ -33,8 +32,9 @@ function alignment(camera: PerspectiveCamera, point: Vector3): number {
 }
 
 describe('camera modes', () => {
-  it('cycle chase → cockpit → iso → chase', () => {
-    expect(CAMERA_MODES.map(nextCameraMode)).toEqual(['cockpit', 'interior', 'iso', 'chase']);
+  it('cycle chase → interior → iso → chase', () => {
+    expect(CAMERA_MODES.map(nextCameraMode)).toEqual(['interior', 'iso', 'chase']);
+    expect(isCameraMode('cockpit')).toBe(false);
     expect(isCameraMode('iso')).toBe(true);
     expect(isCameraMode('drone')).toBe(false);
   });
@@ -79,17 +79,17 @@ describe('IsometricCameraRig', () => {
 });
 
 describe('FirstPersonCameraRig', () => {
-  it('puts the cab eye in the left seat and looks along the car heading', () => {
-    const rig = new FirstPersonCameraRig(CAB_VIEW);
+  it('puts the eye in the left seat and looks along the car heading', () => {
+    const rig = new FirstPersonCameraRig(INTERIOR_VIEW);
     const f = frame(3, -2, 0);
     rig.snap(f);
     expect(f.camera.position.x).toBeCloseTo(3.34, 2);
-    expect(f.camera.position.y).toBeCloseTo(1.36, 2);
-    expect(f.camera.position.z).toBeCloseTo(-1.95, 2);
+    expect(f.camera.position.y).toBeCloseTo(1.2, 2);
+    expect(f.camera.position.z).toBeCloseTo(-2.33, 2);
     const ahead = f.camera.getWorldDirection(new Vector3());
     expect(ahead.z).toBeGreaterThan(0.99);
     expect(ahead.y).toBeLessThan(0); // slight tilt toward the road
-    expect(f.camera.fov).toBe(72);
+    expect(f.camera.fov).toBe(70);
 
     const turned = frame(0, 0, Math.PI / 2);
     rig.snap(turned);
@@ -100,7 +100,7 @@ describe('FirstPersonCameraRig', () => {
   });
 
   it('keeps the head level under reduced motion', () => {
-    const rig = new FirstPersonCameraRig(CAB_VIEW);
+    const rig = new FirstPersonCameraRig(INTERIOR_VIEW);
     const f = frame(0, 0, 0);
     rig.snap(f);
     f.target.steerAngle = 0.5;

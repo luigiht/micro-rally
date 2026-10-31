@@ -88,6 +88,42 @@ describe('StageGenerator', () => {
     }
   });
 
+  it('alternates three forest stages with three alpine ones', () => {
+    expect([0, 2, 3, 5, 6, 9].map((i) => stageRegion(i).region)).toEqual([
+      'forest',
+      'forest',
+      'alpine',
+      'alpine',
+      'forest',
+      'alpine',
+    ]);
+    for (let seed = 1; seed <= 6; seed++) {
+      const alpine = generateStage(seed, 3);
+      expect(['snow', 'tarmac']).toContain(alpine.surface);
+      expect(alpine.region).toBe('alpine');
+    }
+  });
+
+  it('alpine roads bend more sharply than forest roads', () => {
+    const curvature = (index: number) => {
+      let total = 0;
+      let n = 0;
+      for (let seed = 1; seed <= 6; seed++) {
+        const { headings } = generateStage(seed, index).path;
+        let sum = 0;
+        for (let i = 1; i < headings.length; i++) {
+          let d = headings[i]! - headings[i - 1]!;
+          d = Math.atan2(Math.sin(d), Math.cos(d));
+          sum += Math.abs(d);
+        }
+        total += sum / headings.length;
+        n++;
+      }
+      return total / n;
+    };
+    expect(curvature(3)).toBeGreaterThan(curvature(0) * 1.15);
+  });
+
   it('loops regions and grows stages on later loops', () => {
     expect(stageRegion(0)).toEqual({ region: 'forest', loop: 0 });
     const later = stageRegion(30);

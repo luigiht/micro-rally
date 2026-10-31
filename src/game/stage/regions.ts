@@ -71,15 +71,53 @@ const FOREST: RegionDef = {
   parSpeed: 15,
 };
 
+/**
+ * Mountain passes: asphalt under patchy snow (the `snow` surface, drawn as
+ * dusted tarmac by the road builder) or cleared tarmac, snowfields either
+ * side, frosted pines and bare broadleaves, bigger hills and sharper,
+ * closer bends.
+ */
+const ALPINE: RegionDef = {
+  id: 'alpine',
+  surfaces: [
+    ['snow', 3],
+    ['tarmac', 1],
+  ],
+  offroad: 'snow',
+  weathers: [
+    ['overcast', 2],
+    ['clear', 1],
+  ],
+  palette: {
+    sky: '#dde5ec',
+    fog: '#e3e9ee',
+    grassLow: '#e4eaef',
+    grassHigh: '#f5f7f9',
+    rock: '#7b7f88',
+    shoulder: '#d6dce2',
+    foliage: '#3a6451',
+    foliageAlt: '#6a8c82',
+    canopy: '#b8c4cb',
+    canopyAlt: '#d5dce1',
+    trunk: '#4e3a2b',
+    boulder: '#8b9098',
+  },
+  terrain: { amplitude: 34, frequency: 1 / 230 },
+  twistiness: 1.4,
+  baseLength: 1500,
+  scenery: { trees: 55, broadleaf: 4, bushes: 6, rocks: 14 },
+  parSpeed: 14,
+};
+
 export const REGIONS: Readonly<Record<RegionId, RegionDef>> = {
   forest: FOREST,
+  alpine: ALPINE,
   // Forest clones until milestone 8 gives each region its own look; not yet in REGION_ORDER.
   coast: { ...FOREST, id: 'coast' },
   desert: { ...FOREST, id: 'desert' },
-  alpine: { ...FOREST, id: 'alpine' },
   night: { ...FOREST, id: 'night' },
 };
 
-/** Regions currently in the progression loop. */
-export const REGION_ORDER: readonly RegionId[] = ['forest'];
+/** Regions currently in the progression loop, `STAGES_PER_REGION` stages each. */
+export const REGION_ORDER: readonly RegionId[] = ['forest', 'alpine'];
 export const STAGES_PER_REGION = 3;

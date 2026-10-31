@@ -17,14 +17,62 @@ const ROAD_COLORS: Readonly<Record<Surface, string>> = {
   tarmac: '#55565e',
   gravel: '#a98e68',
   mud: '#6b4d33',
+  /** Snow stages are asphalt under drifting snow: this is the dusting, blended over tarmac. */
   snow: '#e9eef2',
   grass: '#8fbf6a',
 };
+/**
+ * Snow stages: asphalt with snow lying in patches every ~28 m, the same cover
+ * across the full width, so a clear stretch is bare out to the edge lines
+ * and a snowy one is even from side to side. The wide threshold band gives
+ * each patch a long run-in and run-out rather than a cut.
+ */
+const PATCH_PERIOD = 14;
+/** Noise thresholds where a patch starts and saturates. */
+const PATCH_FROM = 0.3;
+const PATCH_TO = 0.7;
+const SNOW_COVER = 0.45;
 const LINE_COLOR = '#f4f1e8';
 const SAMPLES_PER_PIECE = 100;
 const LINE_LIFT = 0.1;
 const LINE_WIDTH = 0.22;
 const MARKER_SPACING = 20;
+
+/** Integer mix hash to 0..1; a plain multiply-mod ramps instead of scattering. */
+function hash01(k: number): number {
+  let h = Math.imul(k ^ 0x9e3779b9, 374761393);
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+
+function smoothstep(e0: number, e1: number, x: number): number {
+  const t = Math.min(1, Math.max(0, (x - e0) / (e1 - e0)));
+  return t * t * (3 - 2 * t);
+}
+
+/** Patch noise 0..1 along the road, smooth between hashed knots. */
+function patchNoise(i: number): number {
+  const c = i / PATCH_PERIOD;
+  const k = Math.floor(c);
+  const f = c - k;
+  const a = hash01(k);
+  return a + (hash01(k + 1) - a) * (f * f * (3 - 2 * f));
+}
+
+/** Snow cover at road sample `i`: zero in clear stretches, rising to `SNOW_COVER` inside a patch. */
+function snowCover(i: number): number {
+  return SNOW_COVER * smoothstep(PATCH_FROM, PATCH_TO, patchNoise(i));
+}
+
+/** One ribbon strip: lateral extent, lift, flat colour, optional snow cover and tarmac shade jitter. */
+interface Strip {
+  a: number;
+  b: number;
+  lift: number;
+  color: Color;
+  cover?: (i: number) => number;
+  shaded: boolean;
+}
 
 /** Ribbon road split into pieces for frustum culling, plus edge lines and marker posts. */
 export class RoadBuilder {
@@ -64,19 +112,29 @@ export class RoadBuilder {
   private buildPiece(stage: StageDef, field: TerrainField, s0: number, s1: number): BufferGeometry {
     const path = stage.path;
     const hw = stage.halfWidth;
-    const road = new Color(ROAD_COLORS[stage.surface]);
+    const snowy = stage.surface === 'snow';
+    const road = new Color(snowy ? ROAD_COLORS.tarmac : ROAD_COLORS[stage.surface]);
+    const dust = new Color(ROAD_COLORS.snow);
+    const tint = new Color();
     const line = new Color(LINE_COLOR);
     const n = s1 - s0 + 1;
-    // Three strips (road, left line, right line), two verts per sample each.
-    const pos = new Float32Array(n * 6 * 3);
-    const col = new Float32Array(n * 6 * 3);
-    const strips: [number, number, number, Color][] = [
-      [-hw, hw, ROAD_LIFT, road],
-      [hw - 0.35 - LINE_WIDTH, hw - 0.35, LINE_LIFT, line],
-      [-hw + 0.35, -hw + 0.35 + LINE_WIDTH, LINE_LIFT, line],
+    // Road and two edge lines; two verts per sample each. Snow stages tint the road per sample.
+    const strips: Strip[] = [
+      {
+        a: -hw,
+        b: hw,
+        lift: ROAD_LIFT,
+        color: road,
+        cover: snowy ? snowCover : undefined,
+        shaded: true,
+      },
+      { a: hw - 0.35 - LINE_WIDTH, b: hw - 0.35, lift: LINE_LIFT, color: line, shaded: false },
+      { a: -hw + 0.35, b: -hw + 0.35 + LINE_WIDTH, lift: LINE_LIFT, color: line, shaded: false },
     ];
+    const pos = new Float32Array(n * strips.length * 2 * 3);
+    const col = new Float32Array(n * strips.length * 2 * 3);
     const index: number[] = [];
-    strips.forEach(([a, b, lift, color], strip) => {
+    strips.forEach(({ a, b, lift, color, cover, shaded }, strip) => {
       const base = strip * n * 2;
       for (let k = 0; k < n; k++) {
         const i = s0 + k;
@@ -86,20 +144,11 @@ export class RoadBuilder {
         const lx = Math.cos(h);
         const lz = -Math.sin(h);
         const y = field.roadHeightAt(i * path.spacing) + lift;
-        const shade = strip === 0 ? 0.96 + (((i * 2654435761) % 997) / 997) * 0.08 : 1;
+        const shade = shaded ? 0.96 + hash01(i) * 0.08 : 1;
+        const c = cover ? tint.copy(color).lerp(dust, cover(i)) : color;
         const v = (base + k * 2) * 3;
         pos.set([x + lx * a, y, z + lz * a, x + lx * b, y, z + lz * b], v);
-        col.set(
-          [
-            color.r * shade,
-            color.g * shade,
-            color.b * shade,
-            color.r * shade,
-            color.g * shade,
-            color.b * shade,
-          ],
-          v,
-        );
+        col.set([c.r * shade, c.g * shade, c.b * shade, c.r * shade, c.g * shade, c.b * shade], v);
         if (k > 0) {
           const p = base + (k - 1) * 2;
           const q = base + k * 2;

@@ -139,7 +139,7 @@ export class DrivingSession {
     this.needsSnap = true;
   }
 
-  /** The active view; DriveRig hides the car's cabin while it's the cockpit. */
+  /** The active view; DriveRig hides the car's cabin while it's the interior. */
   get cameraMode(): CameraMode {
     return this.rig.mode;
   }

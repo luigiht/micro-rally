@@ -75,6 +75,8 @@ Status legend: [x] done · [~] in progress · [ ] not started
 
 ## 8. Regions, weather, night, polish, smoke tests, screenshot script — [ ]
 
+- [x] Alpine region in the loop: snow-dusted asphalt (or cleared tarmac), snowfields, frosted pines, bigger hills, sharper bends
+
 - [x] Deploy-ready for Vercel: Supabase Postgres save store (migration in `supabase/`), URL resolution from Vercel env, security headers, `docs/DEPLOY.md`
 
 ## 9. Capacitor iOS/Android, docs/ANDROID.md — [ ]

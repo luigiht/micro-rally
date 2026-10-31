@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { CANVAS, startGame } from './helpers';
 
-test('C cycles the four cameras and Settings shows and sets the same view', async ({ page }) => {
+test('C cycles the three cameras and Settings shows and sets the same view', async ({ page }) => {
   await startGame(page);
   const openSettings = async () => {
     await page.getByRole('button', { name: 'Settings' }).click();
@@ -11,7 +11,7 @@ test('C cycles the four cameras and Settings shows and sets the same view', asyn
   await expect(await openSettings()).toHaveValue('chase');
   await page.keyboard.press('Escape');
 
-  for (const expected of ['cockpit', 'interior', 'iso']) {
+  for (const expected of ['interior', 'iso']) {
     await page.keyboard.press('KeyC');
     await expect(await openSettings()).toHaveValue(expected);
     await page.keyboard.press('Escape');
@@ -22,7 +22,7 @@ test('C cycles the four cameras and Settings shows and sets the same view', asyn
   await page.keyboard.press('Escape');
   await expect(page.locator(CANVAS)).toBeVisible();
 
-  for (let i = 0; i < 4; i++) await page.keyboard.press('KeyC');
+  for (let i = 0; i < 3; i++) await page.keyboard.press('KeyC');
   await expect(await openSettings()).toHaveValue('interior');
   await page.keyboard.press('Escape');
 });

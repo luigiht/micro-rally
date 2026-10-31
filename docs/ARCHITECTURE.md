@@ -63,6 +63,11 @@ flowchart LR
   publishes telemetry/HUD snapshots to Zustand at 10 Hz.
 - `StageRenderer` owns every three.js object for a stage and disposes them
   together; chunk managers stream around the car via `ChunkStreamer`.
+- `stageBrief` draws a stage's name, surface, length and par from the same
+  RNG stream `generateStage` uses, without building the road; `StageHistory`
+  derives the frontier (first unfinished stage) from `records` and picks the
+  window the Game panel's `StageList` shows. `gameStore.driveStage` re-drives
+  any stage up to the frontier.
 
 ## Save pipeline (milestone 6)
 

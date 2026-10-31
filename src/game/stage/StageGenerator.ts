@@ -58,7 +58,8 @@ const NAME_TAILS = [
   'mere',
 ];
 
-export interface StageDef {
+/** The cheap part of a stage, drawn from the RNG before the road: enough to list it. */
+export interface StageBrief {
   seed: number;
   index: number;
   region: RegionId;
@@ -70,11 +71,14 @@ export interface StageDef {
   weather: Weather;
   /** Start line to finish line, metres. */
   length: number;
+  parTime: number;
+}
+
+export interface StageDef extends StageBrief {
   halfWidth: number;
   startDistance: number;
   path: RoadPath;
   gates: Gate[];
-  parTime: number;
   spawn: SpawnPose;
 }
 
@@ -161,19 +165,40 @@ function buildCentreline(rand: () => number, total: number, twist: number): Road
   return RoadPath.fromPolyline(dense, ROAD_SPACING);
 }
 
-/** Deterministic stage from (game seed, global stage index). */
-export function generateStage(gameSeed: number, index: number): StageDef {
-  const { region, loop } = stageRegion(index);
+/** Draws the brief in RNG order; `generateStage` continues with the same stream. */
+function drawBrief(
+  rand: () => number,
+  seed: number,
+  index: number,
+  region: RegionId,
+  loop: number,
+): StageBrief {
   const def = REGIONS[region];
-  const seed = hashSeed(gameSeed, region, index);
-  const rand = mulberry32(seed);
-
   const surface = pickWeighted(rand, def.surfaces);
   const weather = pickWeighted(rand, def.weathers);
   const name =
     NAME_HEADS[Math.floor(rand() * NAME_HEADS.length)]! +
     NAME_TAILS[Math.floor(rand() * NAME_TAILS.length)]!;
   const length = Math.round(def.baseLength * (1 + 0.25 * loop) * (0.85 + rand() * 0.3));
+  const parTime = Math.round(length / (def.parSpeed * SURFACE_PAR[surface]));
+  return { seed, index, region, loop, name, surface, weather, length, parTime };
+}
+
+/** Name, surface, length and par of a stage without building its road (for lists). */
+export function stageBrief(gameSeed: number, index: number): StageBrief {
+  const { region, loop } = stageRegion(index);
+  const seed = hashSeed(gameSeed, region, index);
+  return drawBrief(mulberry32(seed), seed, index, region, loop);
+}
+
+/** Deterministic stage from (game seed, global stage index). */
+export function generateStage(gameSeed: number, index: number): StageDef {
+  const { region, loop } = stageRegion(index);
+  const def = REGIONS[region];
+  const seed = hashSeed(gameSeed, region, index);
+  const rand = mulberry32(seed);
+  const brief = drawBrief(rand, seed, index, region, loop);
+  const { surface, length } = brief;
   const twist = def.twistiness * (1 + 0.15 * Math.min(loop, 4));
   const path = buildCentreline(rand, START_DISTANCE + length + RUNOUT, twist);
   const halfWidth = surface === 'tarmac' ? 4.5 : 4;
@@ -196,19 +221,11 @@ export function generateStage(gameSeed: number, index: number): StageDef {
 
   path.sample(START_DISTANCE - 4, sample);
   return {
-    seed,
-    index,
-    region,
-    loop,
-    name,
-    surface,
-    weather,
-    length,
+    ...brief,
     halfWidth,
     startDistance: START_DISTANCE,
     path,
     gates,
-    parTime: Math.round(length / (def.parSpeed * SURFACE_PAR[surface])),
     spawn: { x: sample.x, z: sample.z, yaw: sample.heading },
   };
 }

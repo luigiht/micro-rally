@@ -1,4 +1,8 @@
-/** 8×8 one-bit glyphs drawn as crisp SVG rects in the current text colour. `garage` is a car seen head-on. */
+/**
+ * 8×8 one-bit glyphs drawn as crisp SVG rects in the current text colour.
+ * `garage` is a car seen head-on; the surface glyphs are a road with a
+ * dashed centre line, pebbles, a puddle, a snowflake and grass blades.
+ */
 export type PixelIconName =
   | 'restart'
   | 'settings'
@@ -10,7 +14,12 @@ export type PixelIconName =
   | 'handbrake'
   | 'pointer'
   | 'help'
-  | 'garage';
+  | 'garage'
+  | 'tarmac'
+  | 'gravel'
+  | 'mud'
+  | 'snow'
+  | 'grass';
 
 const GLYPHS: Record<PixelIconName, readonly string[]> = {
   restart: [
@@ -122,6 +131,56 @@ const GLYPHS: Record<PixelIconName, readonly string[]> = {
     '########',
     '.##..##.',
     '........',
+  ],
+  tarmac: [
+    '#..##..#',
+    '#..##..#',
+    '#......#',
+    '#..##..#',
+    '#..##..#',
+    '#......#',
+    '#..##..#',
+    '#..##..#',
+  ],
+  gravel: [
+    '........',
+    '.##...#.',
+    '.##..###',
+    '......#.',
+    '..#.....',
+    '.###.##.',
+    '..#..##.',
+    '........',
+  ],
+  mud: [
+    '..#.....',
+    '.....#..',
+    '..####..',
+    '.######.',
+    '########',
+    '.######.',
+    '..####..',
+    '........',
+  ],
+  snow: [
+    '...#....',
+    '.#.#.#..',
+    '..###...',
+    '#######.',
+    '..###...',
+    '.#.#.#..',
+    '...#....',
+    '........',
+  ],
+  grass: [
+    '........',
+    '.#......',
+    '.#..#..#',
+    '#.#.#.#.',
+    '#.#.##.#',
+    '.##.#.##',
+    '.#..#.#.',
+    '########',
   ],
 };
 

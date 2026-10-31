@@ -1,5 +1,5 @@
 /** Camera views, in the order the C key cycles them. */
-export const CAMERA_MODES = ['chase', 'cockpit', 'interior', 'iso'] as const;
+export const CAMERA_MODES = ['chase', 'interior', 'iso'] as const;
 export type CameraMode = (typeof CAMERA_MODES)[number];
 export const DEFAULT_CAMERA: CameraMode = 'chase';
 

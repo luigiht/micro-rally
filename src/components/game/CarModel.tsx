@@ -16,7 +16,7 @@ import { Box, CAR_COLORS as C } from './CarParts';
 
 export interface CarModelHandle {
   apply(pose: Readonly<VehiclePose>): void;
-  /** Show the right parts for a camera: cab and interior views hide the roof and glass; interior shows the cabin fittings. */
+  /** Show the right parts for a camera: the interior view hides the roof and glass and shows the cabin fittings. */
   setView(mode: CameraMode): void;
 }
 
@@ -113,7 +113,7 @@ export function CarModel({ spec, ref }: { spec: CarSpec; ref: Ref<CarModelHandle
       interior.current?.apply(pose);
     },
     setView(mode) {
-      if (cabin.current) cabin.current.visible = mode !== 'cockpit' && mode !== 'interior';
+      if (cabin.current) cabin.current.visible = mode !== 'interior';
       interior.current?.setVisible(mode === 'interior');
     },
   }));

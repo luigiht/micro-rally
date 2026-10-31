@@ -10,7 +10,6 @@ import { createWheelContacts, wheelContacts } from '@/game/vehicle/wheelContacts
 import type { CameraMode } from '@/lib/cameraMode';
 import { SkidMarks } from '@/render/effects/SkidMarks';
 import { useGameStore } from '@/state/gameStore';
-import { useSettingsStore } from '@/state/settingsStore';
 import { CarModel, type CarModelHandle } from './CarModel';
 import { DrivingSession, type DriveWorld } from './DrivingSession';
 import { followSun, SceneLights } from './SceneLights';
@@ -37,7 +36,6 @@ export function DriveRig({ world, sky, fog, onPose, children }: DriveRigProps) {
   const gl = useThree((s) => s.gl);
   const scene = useThree((s) => s.scene);
   const carId = useGameStore((s) => s.carId);
-  const skidMarks = useSettingsStore((s) => s.skidMarks);
   const upgrades = useGameStore((s) => s.upgrades);
   const spec = useMemo(() => applyUpgrades(CAR_SPECS[carId], upgrades), [carId, upgrades]);
   const reducedMotion = usePrefersReducedMotion();
@@ -65,9 +63,8 @@ export function DriveRig({ world, sky, fog, onPose, children }: DriveRigProps) {
     };
   }, [world, camera, gl]);
 
-  // Tyre marks are a toggleable extra; the mesh lives in the scene, not the React tree.
+  // Tyre marks; the mesh lives in the scene, not the React tree.
   useEffect(() => {
-    if (!skidMarks) return;
     const m = new SkidMarks();
     scene.add(m.mesh);
     marks.current = m;
@@ -75,7 +72,7 @@ export function DriveRig({ world, sky, fog, onPose, children }: DriveRigProps) {
       m.dispose();
       marks.current = null;
     };
-  }, [skidMarks, scene, world]);
+  }, [scene, world]);
 
   // Garage changes land immediately: retune the live sim and, if the cabin height
   // differs, rebuild the first-person rig around the new eye.

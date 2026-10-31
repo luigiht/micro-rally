@@ -159,13 +159,10 @@ export const it: Messages = {
     cameraHint: 'Premi C mentre guidi per cambiare.',
     cameras: {
       chase: 'Inseguimento',
-      cockpit: 'Abitacolo',
       interior: 'Interni',
       iso: 'Isometrica',
     },
     languages: { en: 'English', es: 'Español', it: 'Italiano' },
-    skidMarks: 'Segni di pneumatici',
-    skidMarksHint: 'Tracce di gomma e ghiaia lasciate dalle ruote in derapata.',
     close: 'Chiudi',
   },
   game: {
@@ -182,6 +179,9 @@ export const it: Messages = {
     par: 'Tempo di riferimento',
     best: 'Il tuo record',
     none: '—',
+    stagesSection: 'Prove',
+    showMore: 'Mostra altre {n}',
+    currentStage: 'Prova attuale',
     driverSection: 'Pilota',
     driver: 'Nome',
     gameId: 'ID partita',
@@ -207,7 +207,7 @@ export const it: Messages = {
     { keys: 'R', action: 'Torna all’ultimo controllo' },
     {
       keys: 'C · V',
-      action: 'Cambia telecamera (inseguimento / abitacolo / interni / isometrica)',
+      action: 'Cambia telecamera (inseguimento / interni / isometrica)',
     },
     { keys: 'Rotella del mouse', action: 'Zoom della telecamera' },
     { keys: '`', action: 'Pannello di debug' },

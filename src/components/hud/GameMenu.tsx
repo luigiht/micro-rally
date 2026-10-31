@@ -10,6 +10,7 @@ import { useStageHudStore } from '@/state/stageHudStore';
 import { useUiStore } from '@/state/uiStore';
 import { HudDialog } from './HudDialog';
 import { PixelIcon } from './PixelIcon';
+import { StageList } from './StageList';
 
 const COPIED_MS = 1500;
 
@@ -26,7 +27,7 @@ function Rows({ rows }: { rows: [string, string][] }) {
   );
 }
 
-/** The Game panel: this stage, and the driver's name + Game ID. */
+/** The Game panel: this stage, every stage so far, and the driver's name + Game ID. */
 export function GamePanel() {
   const m = useMessages();
   const stage = useStageHudStore((s) => s.stage);
@@ -92,6 +93,8 @@ export function GamePanel() {
           </button>
         </>
       )}
+
+      <StageList />
 
       <h3 className="mt-5 font-pixel text-xs">{m.game.driverSection}</h3>
       <dl className="mt-2 grid grid-cols-[1fr_auto] gap-y-1 text-sm">

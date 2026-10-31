@@ -2,7 +2,7 @@ import type { TerrainQuery } from '@/game/vehicle/Terrain';
 import type { CameraMode } from '@/lib/cameraMode';
 import type { CameraRig } from './CameraRig';
 import { ChaseCameraRig } from './ChaseCameraRig';
-import { CAB_VIEW, FirstPersonCameraRig, INTERIOR_VIEW } from './FirstPersonCameraRig';
+import { FirstPersonCameraRig, INTERIOR_VIEW } from './FirstPersonCameraRig';
 import { IsometricCameraRig } from './IsometricCameraRig';
 
 /**
@@ -16,8 +16,6 @@ export function createCameraRig(
   eyeDrop = 0,
 ): CameraRig {
   switch (mode) {
-    case 'cockpit':
-      return new FirstPersonCameraRig(CAB_VIEW, eyeDrop);
     case 'interior':
       return new FirstPersonCameraRig(INTERIOR_VIEW, eyeDrop);
     case 'iso':

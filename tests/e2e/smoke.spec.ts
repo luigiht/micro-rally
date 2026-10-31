@@ -42,6 +42,19 @@ test('the Game button shows stage info and the driver, Esc closes it', async ({ 
   await expect(dialog).toBeHidden();
 });
 
+test('the Game panel lists the stages so far and drives one from the list', async ({ page }) => {
+  await startGame(page);
+  await page.getByRole('button', { name: 'Game' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Game' });
+  const list = dialog.getByTestId('stage-list');
+  const buttons = list.getByRole('button');
+  await expect(buttons).toHaveCount(1);
+  const current = list.locator('[aria-current="true"]');
+  await expect(current).toHaveText(/, Current stage$/);
+  await current.click();
+  await expect(dialog).toBeHidden();
+});
+
 test('Restart stage in the Game panel puts the clock back to zero', async ({ page }) => {
   await startGame(page);
   const timer = page.getByTestId('stage-timer');
