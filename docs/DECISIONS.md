@@ -981,8 +981,9 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
     with it, and a rally-raid kit (`raidKit`, `RaidConsole.tsx`) adds a
     centre console with a toggle bank, push buttons, a GPS repeater and
     knobs, a round gauge pod beside the binnacle and a rocker row across the
-    binnacle top. Two wiper arms (`wipers`) park diagonally across the screen
-    just outside the culled glass. Rim thickness and hub now scale with the
+    binnacle top. Two wiper arms parked diagonally across the screen just
+    outside the culled glass, later removed by request as they cut across
+    the driver's view. Rim thickness and hub now scale with the
     rim radius so the truck's wheel reads heavier. A second pass filled the
     remaining slab: the console grew taller so nothing sits below the dash
     top (its knobs had been cropped by it) and moved inboard with the gauge
@@ -993,4 +994,31 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
     ahead of the wheel were then removed by request, and the truck wheel
     moved forward to 0.45 m so its rim meets the binnacle face and the hub
     sits at the dash top right in front of it, closing the bare stretch of
-    dash between the two.
+    dash between the two. The dash depth is then per car (`dashDepth`,
+    default 0.4): the truck's is 0.16 so, from its high seat, the dash face
+    with the centre-stack switches and knobs comes into frame under the
+    console and the wheel's hub no longer floats on a dark shelf. The
+    steering column now runs from the hub into the dash face along the
+    wheel's axis instead of a fixed stub. Because the first-person camera
+    glances into corners, the lower shell is now closed everywhere: door
+    cards run from the cowl to the rear bulkhead and a front wall stands
+    below the dash from floor to dash top, so no cabin shows the outside
+    through the footwell or door when the view swings.
+
+80. **2026-11-01 — Dakar truck exterior detail pass.** From two reference
+    photos of the MAN Repsol rally-raid truck. The cab is navy from the floor
+    to the belt (the band wraps the nose as the grille surround) and orange
+    above, under an orange tubular roof frame on short uprights carrying
+    four lamps, with an orange sun strip and a white sponsor bar laid on the
+    screen top, orange mirror arms and housings with a wide-angle glass
+    below, orange door-edge strips, handles, two steps a side and front
+    mudguards, a door number plate and a small sponsor plate. The nose gets
+    a grille recess with three steel bars, a badge plate and a lion disc, a
+    bar of six chrome spot lamps at the screen base, and the orange bumper
+    gets rectangular headlamps at its ends, a dark mesh with two fog lamps,
+    a number plate and red tow hooks. Behind the cab the exhaust wears a
+    heat shield and chrome cap with a snorkel opposite; the box carries six
+    red letter blocks for the big REPSOL on its white band, sponsor plates
+    on the orange and navy bands, a rear plate, a ladder beside the spare
+    wheel. `Tube` moved from the interior parts to `CarParts` so bodies can
+    use it; the interior re-exports it.

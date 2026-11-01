@@ -1,31 +1,13 @@
 'use client';
 
-import { useImperativeHandle, useMemo, useRef, type Ref } from 'react';
-import { Quaternion, Vector3, type Group } from 'three';
-import { Box, type V3 } from '../CarParts';
+import { useImperativeHandle, useRef, type Ref } from 'react';
+import type { Group } from 'three';
+import { Box, Tube, type V3 } from '../CarParts';
 import type { InteriorPalette, InteriorSpec, LeverStyle } from './interiorSpecs';
 
-const UP = new Vector3(0, 1, 0);
+export { Tube };
 /** Where the main hoop stands (just behind the seats, at the B-pillar). */
 export const HOOP_Z = -0.78;
-
-/** Straight tube between two points: cage bars, lever shafts, harness rails. */
-export function Tube({ a, b, r, c }: { a: V3; b: V3; r: number; c: string }) {
-  const { mid, len, quat } = useMemo(() => {
-    const va = new Vector3(a[0], a[1], a[2]);
-    const vb = new Vector3(b[0], b[1], b[2]);
-    const dir = vb.clone().sub(va);
-    const len = dir.length();
-    const quat = new Quaternion().setFromUnitVectors(UP, dir.normalize());
-    return { mid: va.add(vb).multiplyScalar(0.5), len, quat };
-  }, [a, b]);
-  return (
-    <mesh position={mid} quaternion={quat}>
-      <cylinderGeometry args={[r, r, len, 6]} />
-      <meshStandardMaterial color={c} flatShading />
-    </mesh>
-  );
-}
 
 /**
  * Welded-in roll cage: A-pillar bars, roof rails, a main hoop behind the
@@ -123,7 +105,9 @@ export function BucketSeat({ x, p }: { x: number; p: InteriorPalette }) {
 
 /** Steering wheel on its column; `rimRef` is the group the session turns. */
 export function SteeringWheel({ spec, rimRef }: { spec: InteriorSpec; rimRef: Ref<Group> }) {
-  const { wheelRadius: r, wheelRake, palette: p, wheelY, wheelZ } = spec;
+  const { wheelRadius: r, wheelRake, palette: p, wheelY, wheelZ, cowlZ, dashDepth } = spec;
+  // Column runs from the hub into the dash face along the wheel's axis.
+  const column = (cowlZ - dashDepth - wheelZ) / Math.cos(wheelRake) + 0.06;
   return (
     <group position={[0.34, wheelY, wheelZ]} rotation={[wheelRake, 0, 0]}>
       <group ref={rimRef}>
@@ -137,8 +121,8 @@ export function SteeringWheel({ spec, rimRef }: { spec: InteriorSpec; rimRef: Re
         <Box p={[0, 0, 0]} s={[r * 0.55, r * 0.55, 0.03]} c="#2b2a33" />
         <Box p={[0, r - 0.01, -0.015]} s={[0.05, 0.03, 0.006]} c={p.accent} />
       </group>
-      <mesh position={[0, 0, 0.11]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.03, 0.03, 0.22, 10]} />
+      <mesh position={[0, 0, column / 2]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[r * 0.18, r * 0.18, column, 10]} />
         <meshStandardMaterial color="#2b2a33" flatShading />
       </mesh>
     </group>

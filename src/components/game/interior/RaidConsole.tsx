@@ -2,7 +2,6 @@
 
 import { Box, Disc, type V3 } from '../CarParts';
 import { Dial, hoodWidth } from './InteriorDash';
-import { Tube } from './InteriorParts';
 import { EYE, type InteriorSpec } from './interiorSpecs';
 
 const CHROME = '#d9d4c7';
@@ -37,11 +36,7 @@ function CentreConsole({ spec }: { spec: InteriorSpec }) {
   const podX = cx + 0.12;
   return (
     <group>
-      <Box
-        p={[cx, (d - 0.02 + top) / 2, mid]}
-        s={[0.45, top - d + 0.02, cowlZ - rear]}
-        c={p.dash}
-      />
+      <Box p={[cx, (d + top) / 2, mid]} s={[0.45, top - d, cowlZ - rear]} c={p.dash} />
       <ToggleRow p={[cx, top - 0.025, rear - 0.004]} count={6} />
       {/* Push buttons and a rotary knob */}
       <Box p={[cx, top - 0.062, rear - 0.004]} s={[0.4, 0.03, 0.008]} c={PANEL} />
@@ -126,34 +121,6 @@ export function RaidKit({ spec }: { spec: InteriorSpec }) {
       <CentreConsole spec={spec} />
       <SideBlock spec={spec} />
       <Box p={[0, d + 0.003, cowlZ - 0.03]} s={[halfWidth * 2 - 0.3, 0.006, 0.05]} c={PANEL} />
-    </group>
-  );
-}
-
-/** Two wiper arms with blades parked diagonally across the screen, just outside the glass (culled from inside). */
-export function Wipers({ spec }: { spec: InteriorSpec }) {
-  const { cowlZ, cowlY, screenTopZ, roofY } = spec;
-  const slope = (cowlZ - screenTopZ) / (roofY - cowlY);
-  const at = (x: number, h: number): V3 => [x, cowlY + h, cowlZ - h * slope + 0.03];
-  const arms: [V3, V3][] = [
-    [at(0.3, 0.03), at(-0.3, 0.7)],
-    [at(-0.4, 0.03), at(-1.0, 0.7)],
-  ];
-  return (
-    <group>
-      {arms.map(([a, b], i) => {
-        const blade: V3 = [
-          a[0] + (b[0] - a[0]) * 0.4,
-          a[1] + (b[1] - a[1]) * 0.4,
-          a[2] + (b[2] - a[2]) * 0.4,
-        ];
-        return (
-          <group key={i}>
-            <Tube a={a} b={b} r={0.012} c="#2b2a33" />
-            <Tube a={blade} b={b} r={0.02} c={PANEL} />
-          </group>
-        );
-      })}
     </group>
   );
 }

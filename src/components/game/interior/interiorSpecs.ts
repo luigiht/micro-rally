@@ -41,6 +41,8 @@ export interface InteriorSpec {
   clusterRise: number;
   /** How far the binnacle sits toward the cowl from its usual spot just behind the dash face. */
   clusterForward: number;
+  /** Depth of the dash slab back from the cowl; a shallow dash shows its face and centre stack from a high seat. */
+  dashDepth: number;
   /** Where the roof lining starts over the screen. */
   screenTopZ: number;
   /** Rear bulkhead or rear glass base. */
@@ -59,8 +61,6 @@ export interface InteriorSpec {
   extinguisher: boolean;
   /** Rally-raid centre console with its gauge pod and the outboard tyre-pressure block (see `RaidKit`). */
   raidKit: boolean;
-  /** Wiper arms parked across the screen. */
-  wipers: boolean;
   palette: InteriorPalette;
 }
 
@@ -77,6 +77,7 @@ const DEFAULTS: Omit<InteriorSpec, 'palette' | 'wheelY' | 'wheelZ'> = {
   cowlY: 0.8,
   clusterRise: 0,
   clusterForward: 0,
+  dashDepth: 0.4,
   screenTopZ: 0.45,
   rearZ: -1.15,
   coDriverX: -EYE.x,
@@ -88,7 +89,6 @@ const DEFAULTS: Omit<InteriorSpec, 'palette' | 'wheelY' | 'wheelZ'> = {
   tripMeter: true,
   extinguisher: true,
   raidKit: false,
-  wipers: false,
 };
 
 /** Fill a cabin from the defaults; unless placed, the hub sits 9 cm under the dash top and 37 cm ahead of the eye. */
@@ -285,8 +285,7 @@ export const INTERIORS: Readonly<Record<CarId, InteriorSpec>> = {
    * dash with a raid console and gauge pod inboard and a tyre-pressure block
    * outboard, a big flat wheel 0.45 m ahead with its hub at the dash top and
    * its rim meeting the tall binnacle, whose display is read through the
-   * upper half of the rim, and wipers parked across the screen. Orange cage,
-   * co-driver far right.
+   * upper half of the rim. Orange cage, co-driver far right.
    */
   dakar: base({
     halfWidth: 1.14,
@@ -297,6 +296,7 @@ export const INTERIORS: Readonly<Record<CarId, InteriorSpec>> = {
     cowlY: 0.6,
     clusterRise: 0.075,
     clusterForward: 0.28,
+    dashDepth: 0.16,
     screenTopZ: 0.35,
     rearZ: -1.25,
     coDriverX: -0.76,
@@ -306,7 +306,6 @@ export const INTERIORS: Readonly<Record<CarId, InteriorSpec>> = {
     wheelY: 0.85,
     dash: 'digital',
     raidKit: true,
-    wipers: true,
     palette: {
       dash: BLACK,
       lining: '#5f5f66',

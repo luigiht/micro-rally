@@ -19,7 +19,7 @@ import {
   type GearLeverHandle,
 } from './interior/InteriorParts';
 import { EYE, INTERIORS } from './interior/interiorSpecs';
-import { RaidKit, Wipers } from './interior/RaidConsole';
+import { RaidKit } from './interior/RaidConsole';
 
 export interface CarInteriorHandle {
   apply(pose: Readonly<VehiclePose>): void;
@@ -56,10 +56,11 @@ export function CarInterior({ ref, spec }: { ref: Ref<CarInteriorHandle>; spec: 
     },
   }));
 
-  const { halfWidth: hw, roofY, floorY, dashTopY, cowlZ, cowlY, screenTopZ, rearZ } = s;
+  const { halfWidth: hw, roofY, floorY, dashTopY, cowlZ, cowlY, dashDepth, screenTopZ, rearZ } = s;
   const beltY = dashTopY - 0.06;
-  const doorZ0 = cowlZ - 0.2;
-  const doorZ1 = HOOP_Z - 0.1;
+  // Door cards run the whole side, cowl to rear bulkhead, so a glance into a corner never finds a hole.
+  const doorZ0 = cowlZ;
+  const doorZ1 = rearZ;
   // A-pillar from the dash corner up to the header.
   const pillarLen = Math.hypot(roofY - dashTopY, cowlZ - screenTopZ);
   const pillarTilt = -Math.atan2(cowlZ - screenTopZ, roofY - dashTopY);
@@ -67,6 +68,12 @@ export function CarInterior({ ref, spec }: { ref: Ref<CarInteriorHandle>; spec: 
     <group ref={root} visible={false}>
       {/* Floor, roof lining (self-lit a little so the ground light doesn't tint it), header, sun strip, mirror, map light */}
       <Box p={[0, floorY, (cowlZ + rearZ) / 2]} s={[hw * 2, 0.01, cowlZ - rearZ]} c="#2b2a33" />
+      {/* Front wall below the dash (firewall and kick panels): a shallow dash must not show the outside */}
+      <Box
+        p={[0, (floorY + dashTopY) / 2, cowlZ - 0.01]}
+        s={[hw * 2, dashTopY - floorY, 0.02]}
+        c={p.door}
+      />
       <Box
         p={[0, roofY, (screenTopZ + rearZ) / 2]}
         s={[hw * 2, 0.02, screenTopZ - rearZ]}
@@ -113,8 +120,16 @@ export function CarInterior({ ref, spec }: { ref: Ref<CarInteriorHandle>; spec: 
         />
       )}
       {/* Dash and knee roll, then the cluster */}
-      <Box p={[0, dashTopY - 0.09, cowlZ - 0.2]} s={[hw * 2, 0.18, 0.4]} c={p.dash} />
-      <Box p={[0, dashTopY - 0.24, cowlZ - 0.1]} s={[hw * 2, 0.12, 0.2]} c={p.dash} />
+      <Box
+        p={[0, dashTopY - 0.09, cowlZ - dashDepth / 2]}
+        s={[hw * 2, 0.18, dashDepth]}
+        c={p.dash}
+      />
+      <Box
+        p={[0, dashTopY - 0.24, cowlZ - dashDepth / 4]}
+        s={[hw * 2, 0.12, dashDepth / 2]}
+        c={p.dash}
+      />
       {/* Scuttle ledge up to the screen base, with a demister slot, where the hull's cowl sits above the dash */}
       {cowlY > dashTopY - 0.01 && (
         <>
@@ -128,7 +143,6 @@ export function CarInterior({ ref, spec }: { ref: Ref<CarInteriorHandle>; spec: 
       )}
       <DashCluster ref={dash} spec={s} redlineRpm={spec.redlineRpm} />
       {s.raidKit && <RaidKit spec={s} />}
-      {s.wipers && <Wipers spec={s} />}
       <RollCage spec={s} />
       <SteeringWheel spec={s} rimRef={rim} />
       {/* Transmission tunnel with the gear lever, handbrake and intercom; seats; co-driver kit */}

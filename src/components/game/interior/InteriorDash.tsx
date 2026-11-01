@@ -96,7 +96,18 @@ export function DashCluster({
   spec: InteriorSpec;
   redlineRpm: number;
 }) {
-  const { dash, dashTopY, cowlZ, clusterRise, clusterForward, palette: p } = spec;
+  const {
+    dash,
+    dashTopY,
+    cowlZ,
+    clusterRise,
+    clusterForward,
+    dashDepth,
+    raidKit,
+    palette: p,
+  } = spec;
+  // Dash face the centre stack is set into.
+  const face = cowlZ - dashDepth;
   const speedo = useRef<Group>(null);
   const tacho = useRef<Group>(null);
   const shift = useRef<(MeshStandardMaterial | null)[]>([]);
@@ -184,21 +195,22 @@ export function DashCluster({
       />
       {/* Centre stack set into the dash face: switch panel, knobs, a vent each side */}
       <SwitchPanel
-        p={[STACK_X, yc - 0.04, cowlZ - 0.405]}
+        p={[STACK_X, yc - 0.04, face - 0.005]}
         count={dash === 'period' ? 4 : dash === 'analogue' ? 6 : 8}
         accent={p.accent}
       />
       {[-0.05, 0.05].map((dx) => (
         <Disc
           key={dx}
-          p={[STACK_X + dx, yc - 0.1, cowlZ - 0.405]}
+          p={[STACK_X + dx, yc - 0.1, face - 0.005]}
           radius={0.016}
           depth={0.014}
           c={CHROME}
         />
       ))}
-      {[STACK_X - 0.22, x + hoodW / 2 + 0.06].map((vx) => (
-        <Box key={vx} p={[vx, yc + 0.02, cowlZ - 0.403]} s={[0.07, 0.03, 0.01]} c="#15141a" />
+      {/* The raid console takes the inboard vent's place */}
+      {(raidKit ? [x + hoodW / 2 + 0.06] : [STACK_X - 0.22, x + hoodW / 2 + 0.06]).map((vx) => (
+        <Box key={vx} p={[vx, yc + 0.02, face - 0.003]} s={[0.07, 0.03, 0.01]} c="#15141a" />
       ))}
     </group>
   );

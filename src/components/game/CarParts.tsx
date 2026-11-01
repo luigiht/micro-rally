@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import type { BufferGeometry } from 'three';
+import { Quaternion, Vector3, type BufferGeometry } from 'three';
 
 /** Shared palette and primitives for the procedural car models. */
 export const CAR_COLORS = {
@@ -19,6 +19,26 @@ export const CAR_COLORS = {
 } as const;
 
 export type V3 = readonly [number, number, number];
+
+const UP = new Vector3(0, 1, 0);
+
+/** Straight tube between two points: cage bars, roof frames, lever shafts, wiper arms. */
+export function Tube({ a, b, r, c }: { a: V3; b: V3; r: number; c: string }) {
+  const { mid, len, quat } = useMemo(() => {
+    const va = new Vector3(a[0], a[1], a[2]);
+    const vb = new Vector3(b[0], b[1], b[2]);
+    const dir = vb.clone().sub(va);
+    const len = dir.length();
+    const quat = new Quaternion().setFromUnitVectors(UP, dir.normalize());
+    return { mid: va.add(vb).multiplyScalar(0.5), len, quat };
+  }, [a, b]);
+  return (
+    <mesh position={mid} quaternion={quat}>
+      <cylinderGeometry args={[r, r, len, 6]} />
+      <meshStandardMaterial color={c} flatShading />
+    </mesh>
+  );
+}
 
 export interface BoxProps {
   p: V3;

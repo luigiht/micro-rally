@@ -32,8 +32,8 @@ describe('interior specs', () => {
     const dashes = new Set(Object.values(INTERIORS).map((s) => s.dash));
     expect(cages.size).toBeGreaterThanOrEqual(4);
     expect(dashes.size).toBe(3);
-    // The raid kit and wipers belong to the truck alone.
-    expect(INTERIORS.dakar.raidKit && INTERIORS.dakar.wipers).toBe(true);
+    // The raid kit belongs to the truck alone.
+    expect(INTERIORS.dakar.raidKit).toBe(true);
     expect(Object.values(INTERIORS).filter((s) => s.raidKit)).toHaveLength(1);
   });
 
@@ -45,6 +45,9 @@ describe('interior specs', () => {
       expect(rimTopZ, id).toBeLessThan(hoodRearZ - 0.02);
       expect(s.wheelZ, id).toBeGreaterThan(EYE.z + 0.2);
       expect(s.wheelY, id).toBeLessThan(s.dashTopY + 0.05);
+      // The dash has some depth and the binnacle hood stands on it, at most 5 cm proud of its face.
+      expect(s.dashDepth, id).toBeGreaterThan(0.1);
+      expect(hoodRearZ, id).toBeGreaterThanOrEqual(s.cowlZ - s.dashDepth - 0.05);
     }
   });
 
