@@ -115,7 +115,10 @@ describe('StageGenerator', () => {
       let total = 0;
       let n = 0;
       for (let seed = 1; seed <= 6; seed++) {
-        const { headings } = generateStage(seed, index).path;
+        const stage = generateStage(seed, index);
+        // Open-road tuning only: a stage with a town is a different kind of road.
+        if (stage.town) continue;
+        const { headings } = stage.path;
         let sum = 0;
         for (let i = 1; i < headings.length; i++) {
           let d = headings[i]! - headings[i - 1]!;

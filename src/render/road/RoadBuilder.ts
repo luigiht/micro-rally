@@ -12,9 +12,10 @@ import {
 import type { StageDef } from '@/game/stage/StageGenerator';
 import { markerDistances } from '@/game/stage/RoadMarkers';
 import { ROAD_LIFT, TRENCH_OUT, type TerrainField } from '@/game/stage/TerrainField';
+import { KERB_LIFT } from '@/game/stage/Town';
 import type { Surface } from '@/game/vehicle/surfaces';
 
-const ROAD_COLORS: Readonly<Record<Surface, string>> = {
+export const ROAD_COLORS: Readonly<Record<Surface, string>> = {
   tarmac: '#55565e',
   gravel: '#a98e68',
   mud: '#6b4d33',
@@ -45,8 +46,7 @@ const SAMPLES_PER_PIECE = 100;
 const LINE_LIFT = 0.1;
 const LINE_WIDTH = 0.22;
 /** Through a town the verges become pavements: pale concrete standing a kerb's height above the road. */
-const PAVEMENT_COLOR = '#a6a39b';
-const KERB_LIFT = 0.04;
+export const PAVEMENT_COLOR = '#a6a39b';
 
 /** Integer mix hash to 0..1; a plain multiply-mod ramps instead of scattering. */
 function hash01(k: number): number {
@@ -83,6 +83,8 @@ interface Strip {
   cover?: (i: number) => number;
   shaded: boolean;
   town?: { color: Color; lift: number };
+  /** Which verge this strip lies on (+1 left, -1 right); such strips open up across side-street mouths. */
+  side?: number;
 }
 
 /** Ribbon road split into pieces for frustum culling, plus verges, edge lines and marker posts. */
@@ -135,6 +137,20 @@ export class RoadBuilder {
     const paved = { color: new Color(ROAD_COLORS.tarmac), lift: ROAD_LIFT };
     const pavement = { color: new Color(PAVEMENT_COLOR), lift: ROAD_LIFT + KERB_LIFT };
     const town = stage.town;
+    // Side streets leave the route here: the kerb drops and the edge line stops across each mouth.
+    const mouths = (town?.streets ?? [])
+      .filter((st) => !st.route)
+      .map((st) => ({
+        x: st.x0,
+        z: st.z0,
+        reach: st.halfWidth + 0.3,
+        dx: st.x1 - st.x0,
+        dz: st.z1 - st.z0,
+      }));
+    const openOn = (x: number, z: number, lx: number, lz: number, side: number) =>
+      mouths.some(
+        (m) => Math.hypot(x - m.x, z - m.z) < m.reach && Math.sign(m.dx * lx + m.dz * lz) === side,
+      );
     const n = s1 - s0 + 1;
     // Road, two verges and two edge lines; two verts per sample each. Snow stages tint the road.
     const strips: Strip[] = [
@@ -154,6 +170,7 @@ export class RoadBuilder {
         color: this.verge,
         shaded: true,
         town: pavement,
+        side: 1,
       },
       {
         a: -hw - VERGE_WIDTH,
@@ -162,14 +179,29 @@ export class RoadBuilder {
         color: this.verge,
         shaded: true,
         town: pavement,
+        side: -1,
       },
-      { a: hw - 0.35 - LINE_WIDTH, b: hw - 0.35, lift: LINE_LIFT, color: line, shaded: false },
-      { a: -hw + 0.35, b: -hw + 0.35 + LINE_WIDTH, lift: LINE_LIFT, color: line, shaded: false },
+      {
+        a: hw - 0.35 - LINE_WIDTH,
+        b: hw - 0.35,
+        lift: LINE_LIFT,
+        color: line,
+        shaded: false,
+        side: 1,
+      },
+      {
+        a: -hw + 0.35,
+        b: -hw + 0.35 + LINE_WIDTH,
+        lift: LINE_LIFT,
+        color: line,
+        shaded: false,
+        side: -1,
+      },
     ];
     const pos = new Float32Array(n * strips.length * 2 * 3);
     const col = new Float32Array(n * strips.length * 2 * 3);
     const index: number[] = [];
-    strips.forEach(({ a, b, lift, color, cover, shaded, town: inTown }, strip) => {
+    strips.forEach(({ a, b, lift, color, cover, shaded, town: inTown, side }, strip) => {
       const base = strip * n * 2;
       for (let k = 0; k < n; k++) {
         const i = s0 + k;
@@ -180,9 +212,16 @@ export class RoadBuilder {
         const lz = -Math.sin(h);
         const d = i * path.spacing;
         const urban = inTown !== undefined && town !== undefined && d >= town.from && d <= town.to;
-        const y = field.roadHeightAt(d) + (urban ? inTown.lift : lift);
+        const mouth = side !== undefined && mouths.length > 0 && openOn(x, z, lx, lz, side);
+        const y = field.roadHeightAt(d) + (mouth ? ROAD_LIFT : urban ? inTown.lift : lift);
         const shade = shaded ? 0.96 + hash01(i) * 0.08 : 1;
-        const c = urban ? inTown.color : cover ? tint.copy(color).lerp(dust, cover(i)) : color;
+        const c = mouth
+          ? paved.color
+          : urban
+            ? inTown.color
+            : cover
+              ? tint.copy(color).lerp(dust, cover(i))
+              : color;
         const v = (base + k * 2) * 3;
         pos.set([x + lx * a, y, z + lz * a, x + lx * b, y, z + lz * b], v);
         col.set([c.r * shade, c.g * shade, c.b * shade, c.r * shade, c.g * shade, c.b * shade], v);

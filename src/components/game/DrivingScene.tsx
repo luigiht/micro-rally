@@ -14,17 +14,30 @@ import { TestTrackView } from './TestTrackView';
 
 const TEST_WORLD: DriveWorld = { terrain: testTrackTerrain, spawn: TEST_TRACK.spawn };
 
+/**
+ * Development aid: `?spawn=<metres>` starts the car that far along the road
+ * (for inspecting a stretch). Read once when the module loads, before the
+ * app rewrites the URL with the Game ID.
+ */
+const DEV_SPAWN: number | null = (() => {
+  if (process.env.NODE_ENV === 'production' || typeof window === 'undefined') return null;
+  const raw = new URLSearchParams(window.location.search).get('spawn');
+  const d = raw === null ? Number.NaN : Number(raw);
+  return Number.isFinite(d) && d > 0 ? d : null;
+})();
+
 function StageDrive({ gameSeed, stageIndex }: { gameSeed: number; stageIndex: number }) {
   const world = useMemo(() => createStageWorld(gameSeed, stageIndex), [gameSeed, stageIndex]);
-  const drive = useMemo<DriveWorld>(
-    () => ({
-      terrain: world.field,
-      spawn: world.stage.spawn,
-      obstacles: world.obstacles,
-      stage: world.stage,
-    }),
-    [world],
-  );
+  const drive = useMemo<DriveWorld>(() => {
+    const at = DEV_SPAWN;
+    let spawn = world.stage.spawn;
+    if (at !== null) {
+      const s = { x: 0, z: 0, heading: 0 };
+      world.stage.path.sample(at, s);
+      spawn = { x: s.x, z: s.z, yaw: s.heading };
+    }
+    return { terrain: world.field, spawn, obstacles: world.obstacles, stage: world.stage };
+  }, [world]);
   const group = useRef<Group>(null);
   const renderer = useRef<StageRenderer | null>(null);
 

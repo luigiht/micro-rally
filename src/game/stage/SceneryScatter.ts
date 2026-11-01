@@ -3,9 +3,22 @@ import type { Obstacle } from '../vehicle/Collisions';
 import { REGIONS } from './regions';
 import { createRoadHit, type RoadSample } from './RoadPath';
 import type { TerrainField } from './TerrainField';
-import { plateauDistance } from './Town';
+import { plateauDistance, townProps } from './Town';
 
-export type PropKind = 'tree' | 'broadleaf' | 'bush' | 'rock' | 'house';
+export type PropKind =
+  | 'tree'
+  | 'broadleaf'
+  | 'bush'
+  | 'rock'
+  | 'house'
+  | 'townhouse'
+  | 'shop'
+  | 'tower'
+  | 'hall'
+  | 'barrier'
+  | 'arrowLeft'
+  | 'arrowRight'
+  | 'lamp';
 
 export interface Prop {
   kind: PropKind;
@@ -86,12 +99,21 @@ class CanopyGrid {
   }
 }
 
+/** Buildings and barriers collide as oriented boxes (see `townObstacles`), so only the lamp posts get a circle here. */
 const COLLIDER_RADIUS: Readonly<Record<PropKind, number>> = {
   tree: 0.45,
   broadleaf: 0.4,
   bush: 0,
   rock: 0.85,
   house: 0,
+  townhouse: 0,
+  shop: 0,
+  tower: 0,
+  hall: 0,
+  barrier: 0,
+  arrowLeft: 0,
+  arrowRight: 0,
+  lamp: 0.15,
 };
 
 /** Deterministic roadside scenery along the stage. */
@@ -159,6 +181,7 @@ export function scatterScenery(field: TerrainField): Prop[] {
     houses.every((h) => Math.hypot(h.x - p.x, h.z - p.z) >= HOUSE_CLEAR_RADIUS * h.scale),
   );
   kept.push(...houses);
+  if (stage.town) kept.push(...townProps(stage.town, field.townY));
   return kept;
 }
 

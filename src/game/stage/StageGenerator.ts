@@ -5,12 +5,18 @@ import type { Gate } from './Checkpoints';
 import { REGION_ORDER, REGIONS, STAGES_PER_REGION, type RegionId, type Weather } from './regions';
 import { RoadPath, type RoadSample } from './RoadPath';
 import type { TownDef } from './Town';
+import { hasTown, layoutTown, planTown, type TownPlan, type TownTrace } from './TownGenerator';
 
 export const ROAD_SPACING = 2;
 const CONTROL_STEP = 20;
 const START_DISTANCE = 30;
 const RUNOUT = 140;
 const MAX_DEVIATION = 1.25;
+/** Straight run into a town so the first corner is seen coming. */
+const TOWN_APPROACH = 60;
+/** Checkpoint boards keep this far clear of a town's route interval. */
+const TOWN_GATE_CLEARANCE = 40;
+const MIN_GATE_GAP = 60;
 
 const SURFACE_PAR: Readonly<Record<Surface, number>> = {
   tarmac: 1.12,
@@ -104,7 +110,19 @@ function catmullRom(p0: number, p1: number, p2: number, p3: number, t: number): 
   );
 }
 
-function buildCentreline(rand: () => number, total: number, twist: number): RoadPath {
+/**
+ * Heading random walk on a 20 m control polygon, smoothed with Catmull-Rom.
+ * With a town plan the walk straightens for `TOWN_APPROACH`, then lays the
+ * town's legs on the grid (one block, a right-angle turn at each corner, one
+ * block out) and resumes on the heading it arrived with; `trace` records
+ * where that happened.
+ */
+function buildCentreline(
+  rand: () => number,
+  total: number,
+  twist: number,
+  plan: TownPlan | null,
+): { path: RoadPath; trace: TownTrace | null } {
   const theta0 = rand() * Math.PI * 2;
   let heading = theta0;
   let curv = 0;
@@ -113,6 +131,7 @@ function buildCentreline(rand: () => number, total: number, twist: number): Road
   let bendSign = rand() < 0.5 ? -1 : 1;
   let x = 0;
   let z = 0;
+  let trace: TownTrace | null = null;
   const ctrl: number[] = [
     x - Math.sin(heading) * CONTROL_STEP,
     z - Math.cos(heading) * CONTROL_STEP,
@@ -120,7 +139,34 @@ function buildCentreline(rand: () => number, total: number, twist: number): Road
     z,
   ];
   for (let d = 0; d < total + CONTROL_STEP * 3; d += CONTROL_STEP) {
-    if (d > START_DISTANCE + CONTROL_STEP) {
+    if (plan && d === plan.entryAt) {
+      trace = { entry: { x, z, heading }, corners: [], exit: { x, z } };
+      let h = heading;
+      for (let leg = 0; leg <= plan.turns.length; leg++) {
+        for (let k = 0; k < plan.block / CONTROL_STEP; k++) {
+          x += Math.sin(h) * CONTROL_STEP;
+          z += Math.cos(h) * CONTROL_STEP;
+          ctrl.push(x, z);
+        }
+        if (leg < plan.turns.length) {
+          trace.corners.push({ x, z });
+          h += (plan.turns[leg]! * Math.PI) / 2;
+        }
+      }
+      trace.exit = { x, z };
+      d += plan.block * (plan.turns.length + 1) - CONTROL_STEP;
+      curv = 0;
+      bendCurv = 0;
+      bendLeft = 1;
+      continue;
+    }
+    const approaching = plan !== null && d >= plan.entryAt - TOWN_APPROACH && d < plan.entryAt;
+    if (approaching) {
+      bendCurv = 0;
+      curv = 0;
+      bendLeft = 1;
+    }
+    if (d > START_DISTANCE + CONTROL_STEP && !approaching) {
       if (bendLeft <= 0) {
         if (rand() < 0.2) {
           bendCurv = 0;
@@ -165,7 +211,47 @@ function buildCentreline(rand: () => number, total: number, twist: number): Road
       );
     }
   }
-  return RoadPath.fromPolyline(dense, ROAD_SPACING);
+  return { path: RoadPath.fromPolyline(dense, ROAD_SPACING), trace };
+}
+
+/** Keep checkpoint boards out of the town and in order; the finish stays where the brief put it. */
+function placeGates(
+  path: RoadPath,
+  length: number,
+  halfWidth: number,
+  town: TownDef | undefined,
+): Gate[] {
+  const sample: RoadSample = { x: 0, z: 0, heading: 0 };
+  const checkpoints = Math.min(6, Math.max(2, Math.round(length / 450)));
+  const finish = START_DISTANCE + length;
+  const distances: number[] = [];
+  for (let k = 1; k <= checkpoints; k++) {
+    let distance = START_DISTANCE + (length * k) / (checkpoints + 1);
+    if (
+      town &&
+      distance > town.from - TOWN_GATE_CLEARANCE &&
+      distance < town.to + TOWN_GATE_CLEARANCE
+    )
+      distance =
+        distance < (town.from + town.to) / 2
+          ? town.from - TOWN_GATE_CLEARANCE
+          : town.to + TOWN_GATE_CLEARANCE;
+    const prev = distances[distances.length - 1];
+    if (prev !== undefined && distance < prev + MIN_GATE_GAP) distance = prev + MIN_GATE_GAP;
+    if (distance <= finish - MIN_GATE_GAP) distances.push(distance);
+  }
+  distances.push(finish);
+  return distances.map((distance, i) => {
+    path.sample(distance, sample);
+    return {
+      kind: i === distances.length - 1 ? 'finish' : 'checkpoint',
+      distance,
+      x: sample.x,
+      z: sample.z,
+      heading: sample.heading,
+      halfWidth: halfWidth + 3,
+    };
+  });
 }
 
 /** Draws the brief in RNG order; `generateStage` continues with the same stream. */
@@ -203,25 +289,14 @@ export function generateStage(gameSeed: number, index: number): StageDef {
   const brief = drawBrief(rand, seed, index, region, loop);
   const { surface, length } = brief;
   const twist = def.twistiness * (1 + 0.15 * Math.min(loop, 4));
-  const path = buildCentreline(rand, START_DISTANCE + length + RUNOUT, twist);
   const halfWidth = surface === 'tarmac' ? 4.5 : 4;
+  // The town draws from its own seed so the brief and the walk keep their streams.
+  const plan = hasTown(seed, index) ? planTown(seed, START_DISTANCE, length) : null;
+  const { path, trace } = buildCentreline(rand, START_DISTANCE + length + RUNOUT, twist, plan);
+  const town = plan && trace ? layoutTown(plan, trace, path, halfWidth, seed) : undefined;
+  const gates = placeGates(path, length, halfWidth, town);
 
   const sample: RoadSample = { x: 0, z: 0, heading: 0 };
-  const checkpoints = Math.min(6, Math.max(2, Math.round(length / 450)));
-  const gates: Gate[] = [];
-  for (let k = 1; k <= checkpoints + 1; k++) {
-    const distance = START_DISTANCE + (length * k) / (checkpoints + 1);
-    path.sample(distance, sample);
-    gates.push({
-      kind: k === checkpoints + 1 ? 'finish' : 'checkpoint',
-      distance,
-      x: sample.x,
-      z: sample.z,
-      heading: sample.heading,
-      halfWidth: halfWidth + 3,
-    });
-  }
-
   path.sample(START_DISTANCE - 4, sample);
   return {
     ...brief,
@@ -230,5 +305,6 @@ export function generateStage(gameSeed: number, index: number): StageDef {
     path,
     gates,
     spawn: { x: sample.x, z: sample.z, yaw: sample.heading },
+    ...(town ? { town } : {}),
   };
 }

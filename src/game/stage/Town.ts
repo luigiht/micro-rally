@@ -1,4 +1,6 @@
 import type { BoxObstacle } from '../vehicle/Collisions';
+import type { Prop } from './SceneryScatter';
+import { ROAD_LIFT } from './TerrainField';
 
 /**
  * A town section on a stage: a level plateau carrying a street grid the route
@@ -102,6 +104,88 @@ export function onTownStreet(town: TownDef, x: number, z: number): boolean {
 
 /** Depth of a barrier row (half), along its facing axis. */
 export const BARRIER_HALF_DEPTH = 0.4;
+/** Length of one barrier element along the row. */
+export const BARRIER_ELEMENT = 1.2;
+/** Pavements stand this far above the road deck. */
+export const KERB_LIFT = 0.04;
+/** Lamp posts along the route's pavements, every `LAMP_SPACING` metres, alternating sides. */
+const LAMP_SPACING = 30;
+const LAMP_OFFSET = 1.0;
+
+/**
+ * Render props for the town: one per building, one per barrier element, a
+ * direction board per turn and lamp posts along the route's pavements.
+ * `groundY` is the plateau height; streets sit `ROAD_LIFT` above it and
+ * pavements a kerb higher.
+ */
+export function townProps(town: TownDef, groundY: number): Prop[] {
+  const out: Prop[] = [];
+  const street = groundY + ROAD_LIFT;
+  const pavement = street + KERB_LIFT;
+  for (const b of town.buildings)
+    out.push({
+      kind: b.style,
+      x: b.x,
+      y: groundY,
+      z: b.z,
+      scale: 1,
+      rotation: b.yaw,
+      variant: b.variant,
+    });
+  for (const r of town.barriers) {
+    const n = Math.max(2, Math.round((2 * r.halfLength) / BARRIER_ELEMENT));
+    const lx = Math.cos(r.yaw);
+    const lz = -Math.sin(r.yaw);
+    const span = (n - 1) * BARRIER_ELEMENT;
+    for (let i = 0; i < n; i++) {
+      const o = -span / 2 + i * BARRIER_ELEMENT;
+      out.push({
+        kind: 'barrier',
+        x: r.x + lx * o,
+        y: street,
+        z: r.z + lz * o,
+        scale: 1,
+        rotation: r.yaw,
+        variant: i % 2,
+      });
+    }
+  }
+  for (const a of town.arrows)
+    out.push({
+      kind: a.turn > 0 ? 'arrowLeft' : 'arrowRight',
+      x: a.x,
+      y: pavement,
+      z: a.z,
+      scale: 1,
+      rotation: a.yaw,
+      variant: 0,
+    });
+  let side = 1;
+  for (const s of town.streets) {
+    if (!s.route) continue;
+    const dx = s.x1 - s.x0;
+    const dz = s.z1 - s.z0;
+    const len = Math.hypot(dx, dz);
+    const heading = Math.atan2(dx, dz);
+    const lx = Math.cos(heading);
+    const lz = -Math.sin(heading);
+    for (let d = LAMP_SPACING / 2; d < len - 8; d += LAMP_SPACING) {
+      const off = (s.halfWidth + LAMP_OFFSET) * side;
+      // The arm (local -x) reaches back over the street from whichever pavement the post stands on.
+      out.push({
+        kind: 'lamp',
+        x: s.x0 + (dx / len) * d + lx * off,
+        y: pavement,
+        z: s.z0 + (dz / len) * d + lz * off,
+        scale: 1,
+        rotation: side > 0 ? heading : heading + Math.PI,
+        variant: 0,
+      });
+      side = -side;
+    }
+  }
+  return out;
+}
 
 /** Oriented-box colliders for every building and barrier row in the town. */
 export function townObstacles(town: TownDef): BoxObstacle[] {
