@@ -32,8 +32,9 @@ Read that first, then the documents below as the task needs them.
 - Player-facing strings go in `src/i18n/messages/{en,es,it}.ts`; every locale
   must carry the same keys.
 - Dev-only URL flags: `/?track=test` opens the flat proving ground;
-  `/?spawn=<metres>` starts a stage that far along its road (handy for
-  screenshotting a town section without driving to it).
+  `/?spawn=<metres>` starts a stage that far along its road and
+  `/?spawn=town` 120 m before its town (handy for screenshotting a town
+  section without driving to it).
 - No external copyrighted assets. Liveries and models are colour-blocked
   originals; anything CC0 that is added goes in `CREDITS.md`. The `context/`
   folder holds reference material only and is excluded from Prettier.

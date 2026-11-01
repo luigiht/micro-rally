@@ -3,21 +3,19 @@ import type { Surface } from '../vehicle/surfaces';
 import type { SpawnPose } from '../vehicle/VehicleSim';
 import type { Gate } from './Checkpoints';
 import { REGION_ORDER, REGIONS, STAGES_PER_REGION, type RegionId, type Weather } from './regions';
-import { RoadPath, type RoadSample } from './RoadPath';
+import type { RoadPath, RoadSample } from './RoadPath';
 import type { TownDef } from './Town';
-import { buildWidths, hasTown, layoutTown, type TownTrace } from './TownGenerator';
-import { planTown, townSpan, type TownPlan } from './TownPlan';
+import { buildCentreline, RUNOUT, selfApproachOk, START_DISTANCE } from './Centreline';
+import { buildWidths } from './RoadWidth';
+import { layoutTown } from './TownGenerator';
+import { hasTown, planTown } from './TownPlan';
 
-export const ROAD_SPACING = 2;
-const CONTROL_STEP = 20;
-const START_DISTANCE = 30;
-const RUNOUT = 140;
-const MAX_DEVIATION = 1.25;
-/** Straight run into a town so the first corner is seen coming. */
-const TOWN_APPROACH = 60;
+export { ROAD_SPACING } from './Centreline';
 /** Checkpoint boards keep this far clear of a town's route interval. */
 const TOWN_GATE_CLEARANCE = 40;
 const MIN_GATE_GAP = 60;
+/** Four slow corners and narrow streets cost about this much against par. */
+const TOWN_PAR_SECONDS = 12;
 
 const SURFACE_PAR: Readonly<Record<Surface, number>> = {
   tarmac: 1.12,
@@ -101,148 +99,6 @@ export function stageRegion(index: number): { region: RegionId; loop: number } {
   return { region, loop };
 }
 
-function catmullRom(p0: number, p1: number, p2: number, p3: number, t: number): number {
-  const t2 = t * t;
-  const t3 = t2 * t;
-  return (
-    0.5 *
-    (2 * p1 +
-      (-p0 + p2) * t +
-      (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 +
-      (-p0 + 3 * p1 - 3 * p2 + p3) * t3)
-  );
-}
-
-/**
- * Heading random walk on a 20 m control polygon, smoothed with Catmull-Rom.
- * With a town plan the walk straightens for `TOWN_APPROACH`, then lays the
- * town's legs on the grid (one block, a right-angle turn at each corner, one
- * block out) and resumes on the heading it arrived with; `trace` records
- * where that happened.
- */
-function buildCentreline(
-  rand: () => number,
-  total: number,
-  twist: number,
-  plan: TownPlan | null,
-): { path: RoadPath; trace: TownTrace | null } {
-  const theta0 = rand() * Math.PI * 2;
-  let heading = theta0;
-  let curv = 0;
-  let bendCurv = 0;
-  let bendLeft = 0;
-  let bendSign = rand() < 0.5 ? -1 : 1;
-  let x = 0;
-  let z = 0;
-  let trace: TownTrace | null = null;
-  const ctrl: number[] = [
-    x - Math.sin(heading) * CONTROL_STEP,
-    z - Math.cos(heading) * CONTROL_STEP,
-    x,
-    z,
-  ];
-  for (let d = 0; d < total + CONTROL_STEP * 3; d += CONTROL_STEP) {
-    if (plan && d === plan.entryAt) {
-      trace = { entry: { x, z, heading }, legs: [], exit: { x, z } };
-      let h = heading;
-      for (const leg of plan.legs) {
-        const points = [{ x, z }];
-        const headingIn = h;
-        if (leg.kind === 'straight') {
-          for (let k = 0; k < leg.length / CONTROL_STEP; k++) {
-            x += Math.sin(h) * CONTROL_STEP;
-            z += Math.cos(h) * CONTROL_STEP;
-            ctrl.push(x, z);
-          }
-          points.push({ x, z });
-        } else {
-          // Arc as short chords so the spline hugs the bend and no chord turns more than ~20°.
-          const steps = Math.max(5, Math.ceil(leg.length / 5));
-          const dA = leg.sweep / steps;
-          const chord = 2 * leg.radius * Math.sin(Math.abs(dA) / 2);
-          for (let k = 0; k < steps; k++) {
-            x += Math.sin(h + dA / 2) * chord;
-            z += Math.cos(h + dA / 2) * chord;
-            h += dA;
-            ctrl.push(x, z);
-            points.push({ x, z });
-          }
-        }
-        trace.legs.push({
-          kind: leg.kind,
-          points,
-          headingIn,
-          headingOut: h,
-          turn: leg.turn,
-          halfWidth: leg.halfWidth,
-          radius: leg.radius,
-          sweep: leg.sweep,
-          length: leg.length,
-        });
-        h += leg.turn;
-      }
-      trace.exit = { x, z };
-      heading = h;
-      d += townSpan(plan) - CONTROL_STEP;
-      curv = 0;
-      bendCurv = 0;
-      bendLeft = 1;
-      continue;
-    }
-    const approaching = plan !== null && d >= plan.entryAt - TOWN_APPROACH && d < plan.entryAt;
-    if (approaching) {
-      bendCurv = 0;
-      curv = 0;
-      bendLeft = 1;
-    }
-    if (d > START_DISTANCE + CONTROL_STEP && !approaching) {
-      if (bendLeft <= 0) {
-        if (rand() < 0.2) {
-          bendCurv = 0;
-          bendLeft = 1 + Math.floor(rand() * 2);
-        } else {
-          // Mostly alternate direction so bends chain into S-curves.
-          if (rand() < 0.7) bendSign = -bendSign;
-          bendCurv = bendSign * (0.18 + Math.pow(rand(), 0.7) * 0.55) * (0.5 + twist * 0.6);
-          bendLeft = 1 + Math.floor(rand() * 3);
-        }
-      }
-      bendLeft--;
-      curv += (bendCurv - curv) * 0.85;
-      heading += curv;
-      const dev = heading - theta0;
-      if (Math.abs(dev) > MAX_DEVIATION) {
-        heading = theta0 + Math.sign(dev) * MAX_DEVIATION;
-        curv = 0;
-        bendSign = -Math.sign(dev);
-        bendLeft = 0;
-      }
-    }
-    x += Math.sin(heading) * CONTROL_STEP;
-    z += Math.cos(heading) * CONTROL_STEP;
-    ctrl.push(x, z);
-  }
-
-  const dense: number[] = [];
-  const n = ctrl.length / 2;
-  for (let i = 1; i < n - 2; i++) {
-    for (let s = 0; s < 12; s++) {
-      const t = s / 12;
-      dense.push(
-        catmullRom(ctrl[(i - 1) * 2]!, ctrl[i * 2]!, ctrl[(i + 1) * 2]!, ctrl[(i + 2) * 2]!, t),
-        catmullRom(
-          ctrl[(i - 1) * 2 + 1]!,
-          ctrl[i * 2 + 1]!,
-          ctrl[(i + 1) * 2 + 1]!,
-          ctrl[(i + 2) * 2 + 1]!,
-          t,
-        ),
-      );
-    }
-  }
-  return { path: RoadPath.fromPolyline(dense, ROAD_SPACING), trace };
-}
-
 /** Keep checkpoint boards out of the town and in order; the finish stays where the brief put it. */
 function placeGates(
   path: RoadPath,
@@ -290,6 +146,7 @@ function drawBrief(
   index: number,
   region: RegionId,
   loop: number,
+  town: boolean,
 ): StageBrief {
   const def = REGIONS[region];
   const surface = pickWeighted(rand, def.surfaces);
@@ -298,7 +155,8 @@ function drawBrief(
     NAME_HEADS[Math.floor(rand() * NAME_HEADS.length)]! +
     NAME_TAILS[Math.floor(rand() * NAME_TAILS.length)]!;
   const length = Math.round(def.baseLength * (1 + 0.25 * loop) * (0.85 + rand() * 0.3));
-  const parTime = Math.round(length / (def.parSpeed * SURFACE_PAR[surface]));
+  const parTime =
+    Math.round(length / (def.parSpeed * SURFACE_PAR[surface])) + (town ? TOWN_PAR_SECONDS : 0);
   return { seed, index, region, loop, name, surface, weather, length, parTime };
 }
 
@@ -306,7 +164,14 @@ function drawBrief(
 export function stageBrief(gameSeed: number, index: number): StageBrief {
   const { region, loop } = stageRegion(index);
   const seed = hashSeed(gameSeed, region, index);
-  return drawBrief(mulberry32(seed), seed, index, region, loop);
+  return drawBrief(mulberry32(seed), seed, index, region, loop, hasTown(gameSeed, index));
+}
+
+/** The stage's RNG stream positioned after the brief's five draws, where the walk starts. */
+function resume(seed: number): () => number {
+  const rand = mulberry32(seed);
+  for (let i = 0; i < 5; i++) rand();
+  return rand;
 }
 
 /** Deterministic stage from (game seed, global stage index). */
@@ -314,14 +179,25 @@ export function generateStage(gameSeed: number, index: number): StageDef {
   const { region, loop } = stageRegion(index);
   const def = REGIONS[region];
   const seed = hashSeed(gameSeed, region, index);
-  const rand = mulberry32(seed);
-  const brief = drawBrief(rand, seed, index, region, loop);
+  const withTown = hasTown(gameSeed, index);
+  const brief = drawBrief(mulberry32(seed), seed, index, region, loop, withTown);
   const { surface, length } = brief;
   const twist = def.twistiness * (1 + 0.15 * Math.min(loop, 4));
   const halfWidth = surface === 'tarmac' ? 4.5 : 4;
-  // The town draws from its own seed so the brief and the walk keep their streams.
-  const plan = hasTown(seed, index) ? planTown(seed, START_DISTANCE, length, halfWidth) : null;
-  const { path, trace } = buildCentreline(rand, START_DISTANCE + length + RUNOUT, twist, plan);
+  const total = START_DISTANCE + length + RUNOUT;
+  // The town draws from its own seed so the brief and the walk keep their streams. The walk is
+  // rebuilt with the plan mirrored if the town fouls the open road around it, and without a town
+  // if that fails too, so the stage's own invariants always hold.
+  const plan = withTown ? planTown(seed, START_DISTANCE, length, halfWidth) : null;
+  let built = buildCentreline(resume(seed), total, twist, plan);
+  const fouls = (c: typeof built) => {
+    if (!c.trace) return false;
+    const t = layoutTown(c.trace, c.path, seed);
+    return !selfApproachOk(c.path, t.from - 420, t.to + 420);
+  };
+  if (plan && fouls(built)) built = buildCentreline(resume(seed), total, twist, plan, true);
+  if (plan && fouls(built)) built = buildCentreline(resume(seed), total, twist, null);
+  const { path, trace } = built;
   const town = trace ? layoutTown(trace, path, seed) : undefined;
   const widths = town ? buildWidths(path, town, halfWidth) : undefined;
   const gates = placeGates(path, length, halfWidth, town);

@@ -35,7 +35,7 @@ const PATCH_PERIOD = 14;
 const PATCH_FROM = 0.3;
 const PATCH_TO = 0.7;
 const SNOW_COVER = 0.45;
-const LINE_COLOR = '#f4f1e8';
+export const LINE_COLOR = '#f4f1e8';
 /**
  * Terrain-coloured verge strips either side of the ribbon, built from the
  * same samples, so road and verge share their edge vertices and meet flush;
@@ -44,7 +44,7 @@ const LINE_COLOR = '#f4f1e8';
  */
 const VERGE_WIDTH = 2;
 const SAMPLES_PER_PIECE = 100;
-const LINE_LIFT = 0.1;
+export const LINE_LIFT = 0.1;
 const LINE_WIDTH = 0.22;
 /** Through a town the verges become pavements: pale concrete standing a kerb's height above the road. */
 export const PAVEMENT_COLOR = '#a6a39b';
@@ -139,19 +139,29 @@ export class RoadBuilder {
     const pavement = { color: new Color(PAVEMENT_COLOR), lift: ROAD_LIFT + KERB_LIFT };
     const town = stage.town;
     // Side streets leave the route here: the kerb drops and the edge line stops across each mouth.
+    // A stub starts at the polygon corner, which the route's arc cuts, so the mouth is found by
+    // projecting the verge point onto the stub's line rather than by distance to its start.
     const mouths = (town?.streets ?? [])
       .filter((st) => !st.route)
-      .map((st) => ({
-        x: st.x0,
-        z: st.z0,
-        reach: st.halfWidth + 0.3,
-        dx: st.x1 - st.x0,
-        dz: st.z1 - st.z0,
-      }));
-    const openOn = (x: number, z: number, lx: number, lz: number, side: number) =>
-      mouths.some(
-        (m) => Math.hypot(x - m.x, z - m.z) < m.reach && Math.sign(m.dx * lx + m.dz * lz) === side,
-      );
+      .map((st) => {
+        const len = Math.hypot(st.x1 - st.x0, st.z1 - st.z0) || 1;
+        return {
+          x: st.x0,
+          z: st.z0,
+          ux: (st.x1 - st.x0) / len,
+          uz: (st.z1 - st.z0) / len,
+          reach: st.halfWidth + 0.3,
+        };
+      });
+    const openOn = (x: number, z: number, lx: number, lz: number, side: number, hw: number) =>
+      mouths.some((m) => {
+        if (Math.sign(m.ux * lx + m.uz * lz) !== side) return false;
+        const rx = x - m.x;
+        const rz = z - m.z;
+        const along = rx * m.ux + rz * m.uz;
+        const across = Math.abs(rx * m.uz - rz * m.ux);
+        return along > -(hw + 8) && along < 14 && across < m.reach;
+      });
     const n = s1 - s0 + 1;
     // Road, two verges and two edge lines, two verts per sample each; lateral extents follow the local half width.
     const strips: Strip[] = [
@@ -214,7 +224,10 @@ export class RoadBuilder {
         const d = i * path.spacing;
         const hw = halfWidthAt(stage, d);
         const urban = inTown !== undefined && town !== undefined && d >= town.from && d <= town.to;
-        const mouth = side !== undefined && mouths.length > 0 && openOn(x, z, lx, lz, side);
+        const mouth =
+          side !== undefined &&
+          mouths.length > 0 &&
+          openOn(x + lx * side * hw, z + lz * side * hw, lx, lz, side, hw);
         const y = field.roadHeightAt(d) + (mouth ? ROAD_LIFT : urban ? inTown.lift : lift);
         const shade = shaded ? 0.96 + hash01(i) * 0.08 : 1;
         const c = mouth

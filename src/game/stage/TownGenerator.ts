@@ -1,5 +1,6 @@
 import { hashSeed, mulberry32 } from '../rng';
 import { createRoadHit, type RoadPath } from './RoadPath';
+import { tangentLength } from './TownPlan';
 import {
   streetDistance,
   type Arrow,
@@ -10,8 +11,6 @@ import {
   type TownDef,
 } from './Town';
 
-/** Share of stages (after the first) whose route threads a town. */
-export const TOWN_CHANCE = 0.35;
 /** Blocked side streets reach this far from the intersection; the barrier row stands part-way down. */
 export const STUB_LENGTH = 32;
 export const BARRIER_DISTANCE = 14;
@@ -31,8 +30,6 @@ export const STREET_CLEARANCE = 2.5;
 /** Plateau margin beyond the street grid: along the route (room for the approach ramps) and across. */
 const MARGIN_U = 70;
 const MARGIN_V = 40;
-/** Narrow streets widen back to the stage road over this distance beyond their ends. */
-const WIDTH_TAPER = 24;
 
 /** Footprint half extents per style: `hx` across the front, `hz` deep. */
 export const BUILDING_SIZE: Readonly<Record<BuildingStyle, { hx: number; hz: number }>> = {
@@ -53,10 +50,10 @@ interface Pt {
   z: number;
 }
 
-/** One leg of the route as the centreline builder laid it in the world. */
+/** One leg of the route as the centreline builder laid it in the world; corners are the arcs between straights. */
 export interface TracedLeg {
-  kind: 'straight' | 'curve';
-  /** Two points for a straight; the arc's chord points for a curve. */
+  kind: 'straight' | 'curve' | 'corner';
+  /** Two points for a straight; the arc's chord points for a curve or corner. */
   points: Pt[];
   headingIn: number;
   /** Heading at the leg's end, before its corner. */
@@ -65,8 +62,10 @@ export interface TracedLeg {
   halfWidth: number;
   radius: number;
   sweep: number;
-  /** Straight length, or arc length. */
+  /** Straight length (after its corner tangents), or arc length. */
   length: number;
+  /** Corners: the polygon corner the arc cuts, where the side streets meet. */
+  corner?: Pt;
 }
 
 /** Where the builder laid the town: entry point and heading, every leg, the exit point. */
@@ -74,34 +73,6 @@ export interface TownTrace {
   entry: Pt & { heading: number };
   legs: TracedLeg[];
   exit: Pt;
-}
-
-/** Deterministic per stage seed; never on a game's first stage (the splash demo and the smoke tests drive it). */
-export function hasTown(seed: number, index: number): boolean {
-  return index > 0 && (hashSeed(seed, 'town') % 1000) / 1000 < TOWN_CHANCE;
-}
-
-/** Per-sample half widths when any route street is narrower than the stage road; undefined when none is. */
-export function buildWidths(path: RoadPath, town: TownDef, base: number): Float64Array | undefined {
-  const narrow = town.streets.filter((s) => s.route && s.halfWidth < base - 1e-6);
-  if (narrow.length === 0) return undefined;
-  const w = new Float64Array(path.count).fill(base);
-  const hit = createRoadHit();
-  for (const s of narrow) {
-    path.nearest(s.x0, s.z0, 30, hit);
-    const a0 = hit.along;
-    path.nearest(s.x1, s.z1, 30, hit);
-    const a1 = hit.along;
-    const lo = Math.min(a0, a1);
-    const hi = Math.max(a0, a1);
-    for (let i = 0; i < path.count; i++) {
-      const d = i * path.spacing;
-      const out = d < lo ? lo - d : d > hi ? d - hi : 0;
-      const t = Math.min(1, out / WIDTH_TAPER);
-      w[i] = Math.min(w[i]!, s.halfWidth + (base - s.halfWidth) * t);
-    }
-  }
-  return w;
 }
 
 function forward(heading: number): Pt {
@@ -210,17 +181,31 @@ function sideStreet(
   streets: Street[],
   barriers: Barrier[],
   buildings: Building[],
+  endStyle: BuildingStyle = rand() < 0.5 ? 'townhouse' : 'shop',
 ): void {
   const f = forward(heading);
   const end = { x: at.x + f.x * STUB_LENGTH, z: at.z + f.z * STUB_LENGTH };
   streets.push(street(at, end, halfWidth, false));
+  // The row reaches the building line so the pavement cannot be used to squeeze past.
   barriers.push({
     x: at.x + f.x * BARRIER_DISTANCE,
     z: at.z + f.z * BARRIER_DISTANCE,
     yaw: heading,
-    halfLength: halfWidth + 0.6,
+    halfLength: halfWidth + FRONT_SETBACK - 0.6,
   });
   lineStreet(rand, at, heading, CORNER_SETBACK, STUB_LENGTH, halfWidth, buildings);
+  // A building closes the dead end, facing back down the street.
+  const { hx, hz } = BUILDING_SIZE[endStyle];
+  const back = STUB_LENGTH + FRONT_SETBACK - 0.5 + hz;
+  buildings.push({
+    style: endStyle,
+    x: at.x + f.x * back,
+    z: at.z + f.z * back,
+    yaw: heading + Math.PI,
+    hx,
+    hz,
+    variant: rand() < 0.5 ? 0 : 1,
+  });
 }
 
 /** World corners of a footprint. */
@@ -265,28 +250,67 @@ export function layoutTown(trace: TownTrace, path: RoadPath, seed: number): Town
   const candidates: Building[] = [];
   const arrows: Arrow[] = [];
   const legs = trace.legs;
+  let cornersSeen = 0;
   legs.forEach((leg, i) => {
     const first = i === 0;
     const last = i === legs.length - 1;
-    const prev = legs[i - 1];
-    if (leg.kind === 'curve') {
+    if (leg.kind === 'curve' || leg.kind === 'corner') {
       for (let k = 0; k < leg.points.length - 1; k++)
         streets.push(street(leg.points[k]!, leg.points[k + 1]!, leg.halfWidth, true));
-      lineCurve(rand, leg, candidates);
+      if (leg.kind === 'curve') {
+        lineCurve(rand, leg, candidates);
+        return;
+      }
+      // Straight on and the far side are blocked at the polygon corner; a board ahead of the
+      // straight-on barrier shows the turn. The first corner's blocked straight is closed by the
+      // town hall, the landmark the driver brakes toward.
+      const c = leg.corner!;
+      const hin = leg.headingIn;
+      const hout = leg.headingOut;
+      sideStreet(
+        rand,
+        c,
+        hin,
+        leg.halfWidth,
+        streets,
+        barriers,
+        candidates,
+        cornersSeen === 0 ? 'hall' : undefined,
+      );
+      sideStreet(rand, c, hout + Math.PI, leg.halfWidth, streets, barriers, candidates);
+      const f = forward(hin);
+      arrows.push({
+        x: c.x + f.x * (BARRIER_DISTANCE - ARROW_AHEAD_OF_BARRIER),
+        z: c.z + f.z * (BARRIER_DISTANCE - ARROW_AHEAD_OF_BARRIER),
+        yaw: hin,
+        turn: leg.turn > 0 ? 1 : -1,
+      });
+      cornersSeen++;
       return;
     }
     const a = leg.points[0]!;
     const b = leg.points[1]!;
     const h = leg.headingIn;
     streets.push(street(a, b, leg.halfWidth, true));
+    // Setbacks are measured from the polygon corners, a tangent length beyond the straight's ends.
+    const prev = legs[i - 1];
+    const next = legs[i + 1];
+    const inTangent = prev?.kind === 'corner' ? tangentLength(prev.turn) : 0;
+    const outTangent = next?.kind === 'corner' ? tangentLength(next.turn) : 0;
     const from = first
       ? EDGE_SETBACK
-      : prev && prev.kind === 'straight'
-        ? setbackFor(prev.turn)
+      : prev?.kind === 'corner'
+        ? Math.max(0, setbackFor(prev.turn) - inTangent)
         : EDGE_SETBACK;
     const to =
-      leg.length - (last ? EDGE_SETBACK : leg.turn !== 0 ? setbackFor(leg.turn) : EDGE_SETBACK);
-    if ((first || last) && leg.length >= CROSSROADS_BLOCK) {
+      leg.length -
+      (last
+        ? EDGE_SETBACK
+        : next?.kind === 'corner'
+          ? Math.max(0, setbackFor(next.turn) - outTangent)
+          : EDGE_SETBACK);
+    const planned = leg.length + inTangent + outTangent;
+    if ((first || last) && planned >= CROSSROADS_BLOCK) {
       // A crossroads halfway along the entry and exit legs where the route goes straight on.
       const f = forward(h);
       const mid = { x: a.x + (f.x * leg.length) / 2, z: a.z + (f.z * leg.length) / 2 };
@@ -305,21 +329,13 @@ export function layoutTown(trace: TownTrace, path: RoadPath, seed: number): Town
     } else {
       lineStreet(rand, a, h, from, to, leg.halfWidth, candidates);
     }
-    if (leg.turn !== 0) {
-      // Straight on and the far side are blocked; a board just in front of the straight-on barrier shows the turn.
-      const hout = leg.headingOut;
-      sideStreet(rand, b, hout, leg.halfWidth, streets, barriers, candidates);
-      sideStreet(rand, b, hout + leg.turn + Math.PI, leg.halfWidth, streets, barriers, candidates);
-      const f = forward(hout);
-      arrows.push({
-        x: b.x + f.x * (BARRIER_DISTANCE - ARROW_AHEAD_OF_BARRIER),
-        z: b.z + f.z * (BARRIER_DISTANCE - ARROW_AHEAD_OF_BARRIER),
-        yaw: hout,
-        turn: leg.turn > 0 ? 1 : -1,
-      });
-    }
   });
-  const buildings = settle(candidates, streets);
+  // The hall and the end buildings were pushed by the side streets; settle them before the rows so they survive.
+  const ordered = [
+    ...candidates.filter((b) => b.style === 'hall'),
+    ...candidates.filter((b) => b.style !== 'hall'),
+  ];
+  const buildings = settle(ordered, streets);
 
   // Footprint: the bounding box of everything in the town frame, with ramp room along the route.
   const h0 = trace.entry.heading;

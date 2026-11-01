@@ -1,14 +1,14 @@
 import { BufferAttribute, BufferGeometry, Color, Group, Mesh, MeshStandardMaterial } from 'three';
-import { KERB_LIFT, type GroundQuery, type TownDef } from '@/game/stage/Town';
-import { PAVEMENT_COLOR, ROAD_COLORS } from '../road/RoadBuilder';
+import { JUNCTION_REACH, KERB_LIFT, type GroundQuery, type TownDef } from '@/game/stage/Town';
+import { LINE_COLOR, LINE_LIFT, PAVEMENT_COLOR, ROAD_COLORS } from '../road/RoadBuilder';
 
 /** Side-street plates sit this far under the deck the field reports, so the route ribbon wins where they overlap. */
 const PLATE_DROP = 0.005;
 /** Intersection plates are sampled on a grid, so they sit a little lower still to stay under the ribbon between samples. */
 const JUNCTION_DROP = 0.02;
 const PAVEMENT_WIDTH = 2;
-/** Intersection plates reach this far beyond the carriageway edge (under the pavements), where the side-street plates begin. */
-const PLATE_REACH = 2.3;
+/** A white stop line across each blocked arm, just past the junction plate. */
+const STOP_LINE = 0.4;
 const STRIP_STEP = 4;
 const GRID_STEP = 2;
 
@@ -31,14 +31,27 @@ export class TownStreetBuilder {
     this.group.name = 'town-streets';
     const tarmac = new Color(ROAD_COLORS.tarmac);
     const pavement = new Color(PAVEMENT_COLOR);
+    const line = new Color(LINE_COLOR);
     const seen = new Set<string>();
     for (const s of town.streets) {
       if (s.route) continue;
       const heading = Math.atan2(s.x1 - s.x0, s.z1 - s.z0);
       const len = Math.hypot(s.x1 - s.x0, s.z1 - s.z0);
-      const start = halfWidth + PLATE_REACH;
+      const start = halfWidth + JUNCTION_REACH;
       const deck = (a: number) =>
         field.heightAt(s.x0 + Math.sin(heading) * a, s.z0 + Math.cos(heading) * a);
+      // Stop line: the arm reads as closed before the barrier resolves.
+      this.strip(
+        s.x0,
+        s.z0,
+        heading,
+        start + 0.2,
+        start + 0.2 + STOP_LINE,
+        -s.halfWidth,
+        s.halfWidth,
+        (a) => deck(a) + LINE_LIFT,
+        line,
+      );
       this.strip(
         s.x0,
         s.z0,
@@ -75,7 +88,7 @@ export class TownStreetBuilder {
       const key = `${s.x0.toFixed(1)}|${s.z0.toFixed(1)}`;
       if (seen.has(key)) continue;
       seen.add(key);
-      this.plate(s.x0, s.z0, heading, halfWidth + PLATE_REACH, field, tarmac);
+      this.plate(s.x0, s.z0, heading, halfWidth + JUNCTION_REACH, field, tarmac);
     }
     this.geometry = new BufferGeometry();
     this.geometry.setAttribute('position', new BufferAttribute(Float32Array.from(this.pos), 3));

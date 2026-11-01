@@ -116,6 +116,12 @@ export function townObstacles(town: TownDef): BoxObstacle[] {
 export const BARRIER_ELEMENT = 1.2;
 /** Pavements stand this far above the road deck. */
 export const KERB_LIFT = 0.04;
+/**
+ * Junction plates reach this far beyond the carriageway edge around the
+ * polygon corner the route's arc cuts; side-street plates begin there, and
+ * side-street decks follow the route's deck within it.
+ */
+export const JUNCTION_REACH = 6;
 /** Lamp posts along the route's pavements, every `LAMP_SPACING` metres, alternating sides. */
 const LAMP_SPACING = 30;
 const LAMP_OFFSET = 1.0;

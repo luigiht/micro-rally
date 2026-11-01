@@ -16,12 +16,14 @@ const TEST_WORLD: DriveWorld = { terrain: testTrackTerrain, spawn: TEST_TRACK.sp
 
 /**
  * Development aid: `?spawn=<metres>` starts the car that far along the road
- * (for inspecting a stretch). Read once when the module loads, before the
- * app rewrites the URL with the Game ID.
+ * and `?spawn=town` 120 m before the stage's town (for inspecting a stretch).
+ * Read once when the module loads, before the app rewrites the URL with the
+ * Game ID.
  */
-const DEV_SPAWN: number | null = (() => {
+const DEV_SPAWN: number | 'town' | null = (() => {
   if (process.env.NODE_ENV === 'production' || typeof window === 'undefined') return null;
   const raw = new URLSearchParams(window.location.search).get('spawn');
+  if (raw === 'town') return 'town';
   const d = raw === null ? Number.NaN : Number(raw);
   return Number.isFinite(d) && d > 0 ? d : null;
 })();
@@ -29,9 +31,9 @@ const DEV_SPAWN: number | null = (() => {
 function StageDrive({ gameSeed, stageIndex }: { gameSeed: number; stageIndex: number }) {
   const world = useMemo(() => createStageWorld(gameSeed, stageIndex), [gameSeed, stageIndex]);
   const drive = useMemo<DriveWorld>(() => {
-    const at = DEV_SPAWN;
+    const at = DEV_SPAWN === 'town' ? (world.stage.town?.from ?? 120) - 120 : DEV_SPAWN;
     let spawn = world.stage.spawn;
-    if (at !== null) {
+    if (at !== null && at > 0) {
       const s = { x: 0, z: 0, heading: 0 };
       world.stage.path.sample(at, s);
       spawn = { x: s.x, z: s.z, yaw: s.heading };

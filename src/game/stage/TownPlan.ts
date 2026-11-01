@@ -1,4 +1,29 @@
 import { hashSeed, mulberry32 } from '../rng';
+import { REGION_ORDER, STAGES_PER_REGION } from './regions';
+
+/** Corner arcs: 12 m, or 10 m on the sharpest (over 95°) corners. */
+export function cornerRadius(turn: number): number {
+  return Math.abs(turn) > (19 * Math.PI) / 36 ? 10 : 12;
+}
+
+/** How far before and after the polygon corner the arc starts and ends. */
+export function tangentLength(turn: number): number {
+  return cornerRadius(turn) * Math.tan(Math.abs(turn) / 2);
+}
+
+/**
+ * Exactly one town per trio of stages (a region's run), never the trio's
+ * first stage, so never index 0 (the splash demo and the smoke tests drive
+ * it) nor index 3 (the alpine stage the curvature test compares), and never
+ * two in a row; which of the other two carries it varies per game and loop.
+ */
+export function hasTown(gameSeed: number, index: number): boolean {
+  const perLoop = STAGES_PER_REGION * REGION_ORDER.length;
+  const loop = Math.floor(index / perLoop);
+  const region = REGION_ORDER[Math.floor((index % perLoop) / STAGES_PER_REGION)]!;
+  const slot = 1 + (hashSeed(gameSeed, region, loop, 'town') % (STAGES_PER_REGION - 1));
+  return index % STAGES_PER_REGION === slot;
+}
 
 /** Half width of the narrow old-town streets some towns have through their middle. */
 export const NARROW_HALF_WIDTH = 3.2;
@@ -124,32 +149,54 @@ function samplePoints(legs: readonly TownLeg[]): Pt[] {
     x += Math.sin(heading) * dist;
     z += Math.cos(heading) * dist;
   };
-  walk(RUN_IN, 0);
-  for (const leg of legs) {
-    if (leg.kind === 'straight') walk(leg.length, h);
-    else {
-      const steps = Math.ceil(leg.length / 2);
-      const dA = leg.sweep / steps;
-      const chord = 2 * leg.radius * Math.sin(Math.abs(dA) / 2);
-      for (let k = 0; k < steps; k++) {
-        pts.push({ x, z });
-        x += Math.sin(h + dA / 2) * chord;
-        z += Math.cos(h + dA / 2) * chord;
-        h += dA;
-      }
+  const arc = (radius: number, sweep: number) => {
+    const steps = Math.ceil((radius * Math.abs(sweep)) / 2);
+    const dA = sweep / steps;
+    const chord = 2 * radius * Math.sin(Math.abs(dA) / 2);
+    for (let k = 0; k < steps; k++) {
+      pts.push({ x, z });
+      x += Math.sin(h + dA / 2) * chord;
+      z += Math.cos(h + dA / 2) * chord;
+      h += dA;
     }
-    h += leg.turn;
+  };
+  walk(RUN_IN, 0);
+  let carry = 0;
+  for (const leg of legs) {
+    if (leg.kind === 'curve') {
+      arc(leg.radius, leg.sweep);
+      carry = 0;
+      continue;
+    }
+    const out = leg.turn !== 0 ? tangentLength(leg.turn) : 0;
+    walk(leg.length - carry - out, h);
+    if (leg.turn !== 0) arc(cornerRadius(leg.turn), leg.turn);
+    carry = out;
   }
   walk(RUN_IN, h);
   pts.push({ x, z });
   return pts;
 }
 
-/** Every corner is a real corner, the route comes out ahead on roughly its heading, and it never doubles back on itself. */
+/**
+ * Every corner is a real corner followed by a straight with room left after
+ * the corner arcs, the route comes out ahead on roughly its heading, and it
+ * never doubles back on itself.
+ */
 function validLegs(legs: readonly TownLeg[]): boolean {
-  for (const leg of legs) {
+  let carry = 0;
+  for (let i = 0; i < legs.length; i++) {
+    const leg = legs[i]!;
     const t = Math.abs(leg.turn);
     if (t > 0 && (t < Math.PI / 4 || t > (5 * Math.PI) / 8)) return false;
+    if (leg.kind === 'curve') {
+      carry = 0;
+      continue;
+    }
+    const out = t > 0 ? tangentLength(leg.turn) : 0;
+    if (leg.length - carry - out < 8) return false;
+    if (t > 0 && legs[i + 1]?.kind !== 'straight') return false;
+    carry = out;
   }
   const net = legs.reduce((a, l) => a + l.turn + l.sweep, 0);
   if (Math.abs(net) > MAX_NET_TURN) return false;

@@ -6,7 +6,7 @@ import { REGIONS } from './regions';
 import { createRoadHit } from './RoadPath';
 import { halfWidthAt } from './RoadWidth';
 import type { StageDef } from './StageGenerator';
-import { PLATEAU_BLEND, plateauDistance, type TownDef } from './Town';
+import { JUNCTION_REACH, PLATEAU_BLEND, plateauDistance, type TownDef } from './Town';
 
 const FLAT_MARGIN = 3;
 const BLEND_WIDTH = 16;
@@ -39,11 +39,14 @@ const MAX_GRADE = 0.12;
  */
 export const TOWN_RELIEF_METRES = 8;
 export const TOWN_RELIEF_MAX = 0.4;
-/** Side streets climb no faster than this, after a level run out of the junction. */
+/** Side streets climb no faster than this, beyond the junction zone where they follow the route's deck. */
 const STUB_GRADE = 0.08;
-const STUB_FLAT = 2;
 
-/** A blocked side street's deck: linear from the route's height at the junction toward the ground at its end. */
+/**
+ * A blocked side street's deck: the route's own deck through the junction
+ * zone, then a straight climb from the deck at the zone's end (`yZone`)
+ * toward the ground at the stub's end (`y1`).
+ */
 interface StubDeck {
   x0: number;
   z0: number;
@@ -51,7 +54,7 @@ interface StubDeck {
   dz: number;
   len: number;
   hw: number;
-  y0: number;
+  yZone: number;
   y1: number;
 }
 
@@ -174,19 +177,27 @@ export class TerrainField implements TerrainQuery {
       const dx = s.x1 - s.x0;
       const dz = s.z1 - s.z0;
       const len = Math.hypot(dx, dz);
-      const y0 = this.stage.path.nearest(s.x0, s.z0, 30, this.hit)
+      const zoneEnd = Math.min(len, s.halfWidth + JUNCTION_REACH);
+      const zx = s.x0 + (dx / len) * zoneEnd;
+      const zz = s.z0 + (dz / len) * zoneEnd;
+      const yZone = this.stage.path.nearest(zx, zz, this.corridor, this.hit)
         ? this.roadHeightAt(this.hit.along)
-        : this.groundHeight(s.x0, s.z0);
+        : this.groundHeight(zx, zz);
       const end = this.groundHeight(s.x1, s.z1);
-      const climb = Math.max(0, len - s.halfWidth - STUB_FLAT);
-      const rise = Math.max(-climb * STUB_GRADE, Math.min(climb * STUB_GRADE, end - y0));
-      out.push({ x0: s.x0, z0: s.z0, dx, dz, len, hw: s.halfWidth, y0, y1: y0 + rise });
+      const climb = Math.max(0, len - zoneEnd);
+      const rise = Math.max(-climb * STUB_GRADE, Math.min(climb * STUB_GRADE, end - yZone));
+      out.push({ x0: s.x0, z0: s.z0, dx, dz, len, hw: s.halfWidth, yZone, y1: yZone + rise });
     }
     return out;
   }
 
-  /** Nearest side street to (x, z) by distance beyond its edge; false when the town has none in reach. */
-  private stubHit(x: number, z: number, out: StreetHit): boolean {
+  /**
+   * Nearest side street to (x, z) by distance beyond its edge; false when the
+   * town has none in reach. `routeDeck` is the route's deck at this point when
+   * the route is in reach: within the junction zone the stub follows it, so
+   * plates and the ribbon meet without a step; beyond, it climbs on its own.
+   */
+  private stubHit(x: number, z: number, routeDeck: number | null, out: StreetHit): boolean {
     let best = Infinity;
     let found = false;
     for (const s of this.stubs) {
@@ -197,10 +208,12 @@ export class TerrainField implements TerrainQuery {
       if (distance - s.hw >= best) continue;
       best = distance - s.hw;
       found = true;
-      // Level across the junction, then a straight climb to the end.
-      const flat = (s.hw + STUB_FLAT) / s.len;
-      const ramp = flat >= 1 ? 0 : Math.max(0, (t - flat) / (1 - flat));
-      out.deck = s.y0 + (s.y1 - s.y0) * ramp;
+      const zone = (s.hw + JUNCTION_REACH) / s.len;
+      if (t <= zone && routeDeck !== null) out.deck = routeDeck;
+      else {
+        const ramp = zone >= 1 ? 0 : Math.max(0, (t - zone) / (1 - zone));
+        out.deck = s.yZone + (s.y1 - s.yZone) * ramp;
+      }
       out.distance = distance;
       out.hw = s.hw;
     }
@@ -222,7 +235,10 @@ export class TerrainField implements TerrainQuery {
     }
     if (this.stubs.length > 0 && plateauDistance(this.town!, x, z) < this.corridor) {
       const s = this.stubScratch;
-      if (this.stubHit(x, z, s) && (!found || s.distance - s.hw < out.distance - out.hw)) {
+      if (
+        this.stubHit(x, z, found ? out.deck : null, s) &&
+        (!found || s.distance - s.hw < out.distance - out.hw)
+      ) {
         out.deck = s.deck;
         out.distance = s.distance;
         out.hw = s.hw;
@@ -320,7 +336,7 @@ export class TerrainField implements TerrainQuery {
     }
     if (
       this.stubs.length > 0 &&
-      this.stubHit(x, z, this.stubScratch) &&
+      this.stubHit(x, z, null, this.stubScratch) &&
       this.stubScratch.distance <= this.stubScratch.hw
     )
       return 'tarmac';

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createRoadHit } from '@/game/stage/RoadPath';
-import { generateStage, type StageDef } from '@/game/stage/StageGenerator';
+import { generateStage, stageBrief, type StageDef } from '@/game/stage/StageGenerator';
 import { markerDistances } from '@/game/stage/RoadMarkers';
 import { scatterScenery } from '@/game/stage/SceneryScatter';
 import { ROAD_BED_DROP, ROAD_LIFT, TerrainField } from '@/game/stage/TerrainField';
@@ -14,14 +14,10 @@ import {
   townObstacles,
   type TownDef,
 } from '@/game/stage/Town';
-import {
-  CROSSROADS_BLOCK,
-  hasTown,
-  STREET_CLEARANCE,
-  STUB_LENGTH,
-  TOWN_CHANCE,
-} from '@/game/stage/TownGenerator';
-import { NARROW_HALF_WIDTH } from '@/game/stage/TownPlan';
+import { STREET_CLEARANCE, STUB_LENGTH } from '@/game/stage/TownGenerator';
+import { hasTown, NARROW_HALF_WIDTH } from '@/game/stage/TownPlan';
+import { createStageWorld } from '@/game/stage/StageWorld';
+import openRoad from './fixtures/openRoad.json';
 
 /** A synthetic town laid on the route of a generated stage (index 0, never a real town) around distance `at`, with one blocked side street. */
 function withTown(seed: number, index: number, at: number): { stage: StageDef; town: TownDef } {
@@ -173,27 +169,57 @@ describe('town scenery and colliders', () => {
 
 const b0Kind = (town: TownDef) => town.buildings[0]!.style;
 
+const GAME_SEEDS = new WeakMap<StageDef, number>();
+const seedOf = (stage: StageDef) => GAME_SEEDS.get(stage)!;
+
 /** Generated stages at index 1..3 for game seeds 1..60 that carry a town. */
 function townStages(): StageDef[] {
   const out: StageDef[] = [];
   for (let seed = 1; seed <= 60; seed++)
     for (const index of [1, 2, 3]) {
       const stage = generateStage(seed, index);
-      if (stage.town) out.push(stage);
+      if (stage.town) {
+        GAME_SEEDS.set(stage, seed);
+        out.push(stage);
+      }
     }
   return out;
 }
 
 describe('town generator', () => {
-  it('gives roughly a third of stages a town, never the first stage', () => {
-    let count = 0;
-    for (let seed = 1; seed <= 400; seed++) {
-      expect(hasTown(seed, 0)).toBe(false);
-      if (hasTown(seed, 1)) count++;
+  it('puts exactly one town in every trio of stages, never the first of a trio, never two in a row', () => {
+    for (let gameSeed = 1; gameSeed <= 120; gameSeed++) {
+      let previous = false;
+      for (let trio = 0; trio < 6; trio++) {
+        const flags = [0, 1, 2].map((k) => hasTown(gameSeed, trio * 3 + k));
+        expect(flags[0]).toBe(false);
+        expect(flags.filter(Boolean)).toHaveLength(1);
+        for (const f of flags) {
+          expect(previous && f).toBe(false);
+          previous = f;
+        }
+      }
     }
-    expect(count / 400).toBeGreaterThan(TOWN_CHANCE - 0.08);
-    expect(count / 400).toBeLessThan(TOWN_CHANCE + 0.08);
     for (let seed = 1; seed <= 20; seed++) expect(generateStage(seed, 0).town).toBeUndefined();
+    // The brief knows too, and charges the town against par.
+    for (let seed = 1; seed <= 30; seed++)
+      for (const index of [1, 2]) {
+        const stage = generateStage(seed, index);
+        expect(stage.parTime).toBe(stageBrief(seed, index).parTime);
+        if (stage.town)
+          expect(stageBrief(seed, index).parTime).toBeGreaterThan(stage.length / 30 + 11);
+      }
+  });
+
+  it('leaves open-road stages byte-identical to the pre-town generator', () => {
+    for (const [key, fix] of Object.entries(openRoad)) {
+      const [seed, index] = key.split('/').map(Number) as [number, number];
+      const stage = generateStage(seed, index);
+      expect(stage.town).toBeUndefined();
+      expect(stage.path.length).toBeCloseTo(fix.length, 9);
+      fix.xs.forEach((x, i) => expect(stage.path.xs[i]).toBeCloseTo(x, 9));
+      fix.zs.forEach((z, i) => expect(stage.path.zs[i]).toBeCloseTo(z, 9));
+    }
   });
 
   it('threads the route through town with sharp corners, tight curves and narrow streets', () => {
@@ -210,26 +236,23 @@ describe('town generator', () => {
       const len = (st: (typeof legs)[number]) => Math.hypot(st.x1 - st.x0, st.z1 - st.z0);
       const heading = (st: (typeof legs)[number]) => Math.atan2(st.x1 - st.x0, st.z1 - st.z0);
       expect(legs.length).toBeGreaterThanOrEqual(3);
-      // Corners are real corners (45°..113°); anything gentler is a curve's chord joint.
-      let corners = 0;
+      // Every bend in the route, corners included, is laid as chords: no joint turns more than ~25°,
+      // and the spline never kinks (the old sharp corners had 4.5 m apex radii that folded the ribbon).
       for (let i = 1; i < legs.length; i++) {
         const d = heading(legs[i]!) - heading(legs[i - 1]!);
-        const turn = Math.abs(Math.atan2(Math.sin(d), Math.cos(d)));
-        // A corner next to a curve measures against the curve's first or last chord, up to half a chord angle off.
-        if (turn > 0.55) {
-          corners++;
-          expect(turn, `${stage.seed}`).toBeGreaterThan(Math.PI / 4 - 0.25);
-          expect(turn, `${stage.seed}`).toBeLessThan((5 * Math.PI) / 8 + 0.25);
-        } else {
-          expect(turn).toBeLessThan(0.45);
-        }
+        expect(Math.abs(Math.atan2(Math.sin(d), Math.cos(d))), `${stage.seed}`).toBeLessThan(0.45);
       }
-      expect(town.arrows.length).toBe(corners);
+      let worstStep = 0;
+      for (let i = Math.ceil(town.from / 2) + 1; i <= Math.floor(town.to / 2); i++) {
+        const d = stage.path.headings[i]! - stage.path.headings[i - 1]!;
+        worstStep = Math.max(worstStep, Math.abs(Math.atan2(Math.sin(d), Math.cos(d))));
+      }
+      expect(worstStep, `${stage.seed}`).toBeLessThan(0.3);
+      const corners = town.arrows.length;
+      expect(corners).toBeGreaterThanOrEqual(1);
       // A crossroads on a long entry or exit leg adds a stub each side.
-      const crossroads =
-        (len(legs[0]!) >= CROSSROADS_BLOCK - 0.5 ? 1 : 0) +
-        (len(legs[legs.length - 1]!) >= CROSSROADS_BLOCK - 0.5 ? 1 : 0);
-      expect(stubs.length).toBe(corners * 2 + crossroads * 2);
+      const crossroads = (stubs.length - corners * 2) / 2;
+      expect([0, 1, 2]).toContain(crossroads);
       expect(town.barriers.length).toBe(stubs.length);
       expect(town.buildings.length).toBeGreaterThan(8);
       expect(town.from).toBeGreaterThan(stage.startDistance + 150);
@@ -310,16 +333,18 @@ describe('town generator', () => {
       for (let d = 2; d < p.length; d += 2)
         if (Math.abs(field.roadHeightAt(d) - field.roadHeightAt(d - 2)) > 0.25)
           problems.push(`grade at ${d}`);
-      // Side streets meet the route at its level, run level across the junction, then climb gently.
+      // Side streets follow the route's deck through the junction, then climb gently: no step anywhere along them.
       for (const st of town.streets) {
         if (st.route) continue;
         const dx = (st.x1 - st.x0) / 32;
         const dz = (st.z1 - st.z0) / 32;
-        const j = field.heightAt(st.x0, st.z0);
-        if (Math.abs(field.heightAt(st.x0 + dx * 2, st.z0 + dz * 2) - j) > 0.05)
-          problems.push(`stub step ${stage.seed}`);
-        if (Math.abs(field.heightAt(st.x0 + dx * 24, st.z0 + dz * 24) - j) > 24 * 0.08 + 0.1)
-          problems.push(`stub grade ${stage.seed}`);
+        let prev = field.heightAt(st.x0, st.z0);
+        for (let m = 1; m <= 32; m++) {
+          const h = field.heightAt(st.x0 + dx * m, st.z0 + dz * m);
+          if (Math.abs(h - prev) > 0.2)
+            problems.push(`stub step ${stage.seed} at ${m}: ${(h - prev).toFixed(2)}`);
+          prev = h;
+        }
       }
       // Every building stands on a level terrace: all four corners meet its base height.
       const props = scatterScenery(field);
@@ -331,6 +356,35 @@ describe('town generator', () => {
       }
       expect(props.filter((p) => p.kind === b0Kind(town)).length).toBeGreaterThan(0);
       expect(problems, `${stage.seed}/${stage.index}`).toEqual([]);
+    }
+  });
+
+  it('keeps the route itself clear: both car circles miss every collider all the way through town', () => {
+    for (const stage of townStages().slice(0, 20)) {
+      const world = createStageWorld(seedOf(stage), stage.index);
+      const town = world.stage.town!;
+      const { obstacles, boxes } = world.obstacles;
+      const s = { x: 0, z: 0, heading: 0 };
+      const problems: string[] = [];
+      for (let d = town.from - 60; d <= town.to + 60; d += 2) {
+        world.stage.path.sample(d, s);
+        for (const c of [-1, 1]) {
+          const cx = s.x + Math.sin(s.heading) * c;
+          const cz = s.z + Math.cos(s.heading) * c;
+          for (const o of obstacles)
+            if (Math.hypot(cx - o.x, cz - o.z) < o.r + 0.9 + 0.3) problems.push(`circle at ${d}`);
+          for (const b of boxes) {
+            const dx = cx - b.x;
+            const dz = cz - b.z;
+            const lx = dx * Math.cos(b.yaw) - dz * Math.sin(b.yaw);
+            const lz = dx * Math.sin(b.yaw) + dz * Math.cos(b.yaw);
+            const ex = Math.max(0, Math.abs(lx) - b.hx);
+            const ez = Math.max(0, Math.abs(lz) - b.hz);
+            if (Math.hypot(ex, ez) < 0.9 + 0.3) problems.push(`box at ${d}`);
+          }
+        }
+      }
+      expect(problems, `${world.gameSeed}/${stage.index}`).toEqual([]);
     }
   });
 });

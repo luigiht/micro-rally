@@ -60,11 +60,12 @@ flowchart LR
   Renderer --> Streets[TownStreetBuilder]
 ```
 
-- Towns (`game/stage/Town.ts`, `TownPlan.ts`, `TownGenerator.ts`): on about
-  a third of stages after the first, `planTown` draws the route through a
-  hill town as legs (straights with 60°–105° corners, tight curves, a narrow
-  old-town section), validated against the self-approach rule; the
-  centreline builder lays them and resumes on the arrival heading, and
+- Towns (`game/stage/Town.ts`, `TownPlan.ts`, `TownGenerator.ts`): one stage
+  in every trio of a region's run, never the trio's first, `planTown` draws
+  the route through a hill town as legs (straights with 60°–105° corners laid
+  as 12 m arcs, tight curves, a narrow old-town section), validated against
+  the self-approach rule; the centreline builder (`Centreline.ts`) steers
+  onto the stage axis, lays them and resumes on the arrival heading, and
   `layoutTown` derives streets, blocked side stubs with barrier rows,
   direction boards, buildings and the footprint. `TerrainField` tames the
   hills inside the footprint (streets still climb and dip), cuts side streets
