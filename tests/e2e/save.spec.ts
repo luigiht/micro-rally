@@ -115,8 +115,9 @@ test('the Garage sells upgrades and the coupé, and the purchase is saved', asyn
   await expect(dialog).toContainText('$5,100');
   // The purchase lands on track immediately, before the panel closes.
   await expect(page.getByTestId('game-canvas')).toHaveAttribute('data-car', 'coupe');
+  // The Sochaux T16 sits between the coupé and the saloon in the catalog.
   await dialog.getByRole('button', { name: 'Next car' }).click();
-  await expect(details).toContainText('Boreal Saloon');
+  await expect(details).toContainText('Sochaux T16');
 
   await expect
     .poll(async () => (await (await request.get(`/api/games/${gameId}`)).json()) as unknown, {
