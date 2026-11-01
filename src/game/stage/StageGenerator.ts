@@ -5,14 +5,8 @@ import type { Gate } from './Checkpoints';
 import { REGION_ORDER, REGIONS, STAGES_PER_REGION, type RegionId, type Weather } from './regions';
 import { RoadPath, type RoadSample } from './RoadPath';
 import type { TownDef } from './Town';
-import {
-  buildWidths,
-  hasTown,
-  layoutTown,
-  planTown,
-  type TownPlan,
-  type TownTrace,
-} from './TownGenerator';
+import { buildWidths, hasTown, layoutTown, type TownTrace } from './TownGenerator';
+import { planTown, townSpan, type TownPlan } from './TownPlan';
 
 export const ROAD_SPACING = 2;
 const CONTROL_STEP = 20;
@@ -149,21 +143,47 @@ function buildCentreline(
   ];
   for (let d = 0; d < total + CONTROL_STEP * 3; d += CONTROL_STEP) {
     if (plan && d === plan.entryAt) {
-      trace = { entry: { x, z, heading }, corners: [], exit: { x, z } };
+      trace = { entry: { x, z, heading }, legs: [], exit: { x, z } };
       let h = heading;
-      for (let leg = 0; leg <= plan.turns.length; leg++) {
-        for (let k = 0; k < plan.block / CONTROL_STEP; k++) {
-          x += Math.sin(h) * CONTROL_STEP;
-          z += Math.cos(h) * CONTROL_STEP;
-          ctrl.push(x, z);
+      for (const leg of plan.legs) {
+        const points = [{ x, z }];
+        const headingIn = h;
+        if (leg.kind === 'straight') {
+          for (let k = 0; k < leg.length / CONTROL_STEP; k++) {
+            x += Math.sin(h) * CONTROL_STEP;
+            z += Math.cos(h) * CONTROL_STEP;
+            ctrl.push(x, z);
+          }
+          points.push({ x, z });
+        } else {
+          // Arc as short chords so the spline hugs the bend and no chord turns more than ~20°.
+          const steps = Math.max(5, Math.ceil(leg.length / 5));
+          const dA = leg.sweep / steps;
+          const chord = 2 * leg.radius * Math.sin(Math.abs(dA) / 2);
+          for (let k = 0; k < steps; k++) {
+            x += Math.sin(h + dA / 2) * chord;
+            z += Math.cos(h + dA / 2) * chord;
+            h += dA;
+            ctrl.push(x, z);
+            points.push({ x, z });
+          }
         }
-        if (leg < plan.turns.length) {
-          trace.corners.push({ x, z });
-          h += (plan.turns[leg]! * Math.PI) / 2;
-        }
+        trace.legs.push({
+          kind: leg.kind,
+          points,
+          headingIn,
+          headingOut: h,
+          turn: leg.turn,
+          halfWidth: leg.halfWidth,
+          radius: leg.radius,
+          sweep: leg.sweep,
+          length: leg.length,
+        });
+        h += leg.turn;
       }
       trace.exit = { x, z };
-      d += plan.block * (plan.turns.length + 1) - CONTROL_STEP;
+      heading = h;
+      d += townSpan(plan) - CONTROL_STEP;
       curv = 0;
       bendCurv = 0;
       bendLeft = 1;
@@ -300,9 +320,9 @@ export function generateStage(gameSeed: number, index: number): StageDef {
   const twist = def.twistiness * (1 + 0.15 * Math.min(loop, 4));
   const halfWidth = surface === 'tarmac' ? 4.5 : 4;
   // The town draws from its own seed so the brief and the walk keep their streams.
-  const plan = hasTown(seed, index) ? planTown(seed, START_DISTANCE, length) : null;
+  const plan = hasTown(seed, index) ? planTown(seed, START_DISTANCE, length, halfWidth) : null;
   const { path, trace } = buildCentreline(rand, START_DISTANCE + length + RUNOUT, twist, plan);
-  const town = plan && trace ? layoutTown(plan, trace, path, halfWidth, seed) : undefined;
+  const town = trace ? layoutTown(trace, path, seed) : undefined;
   const widths = town ? buildWidths(path, town, halfWidth) : undefined;
   const gates = placeGates(path, length, halfWidth, town);
 

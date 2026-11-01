@@ -1,35 +1,36 @@
 import { hashSeed, mulberry32 } from '../rng';
 import { createRoadHit, type RoadPath } from './RoadPath';
-import type { Arrow, Barrier, Building, BuildingStyle, Street, TownDef } from './Town';
+import {
+  streetDistance,
+  type Arrow,
+  type Barrier,
+  type Building,
+  type BuildingStyle,
+  type Street,
+  type TownDef,
+} from './Town';
 
 /** Share of stages (after the first) whose route threads a town. */
 export const TOWN_CHANCE = 0.35;
-/** Control-point spacing of the centreline builder; blocks are whole multiples of it. */
-const STEP = 20;
 /** Blocked side streets reach this far from the intersection; the barrier row stands part-way down. */
 export const STUB_LENGTH = 32;
 export const BARRIER_DISTANCE = 14;
+/** Entry and exit legs at least this long get a crossroads halfway along. */
+export const CROSSROADS_BLOCK = 80;
 /** Building fronts stand this far beyond the street edge: a pavement plus a strip. */
 const FRONT_SETBACK = 3;
-/** No building starts closer than this to an intersection, so facades on crossing streets never meet. */
+/** No building starts closer than this to an intersection (more on sharp corners), so facades on crossing streets never meet. */
 const CORNER_SETBACK = 18;
+const SHARP_SETBACK = 24;
 /** Buildings may start this close to the town's entry and exit points. */
 const EDGE_SETBACK = 4;
-/** Blocks at least this long get a crossroads halfway along the entry and exit legs. */
-export const CROSSROADS_BLOCK = 80;
+/** Footprint corners stay this far outside every street's carriageway: the pavement and a strip, like their own front. */
+export const STREET_CLEARANCE = 2.5;
 /** Plateau margin beyond the street grid: along the route (room for the approach ramps) and across. */
 const MARGIN_U = 70;
 const MARGIN_V = 40;
-
-/** Turn sequences; every one sums to zero so the route leaves the town on the heading it arrived with. */
-const PATTERNS: readonly (readonly (1 | -1)[])[] = [
-  [1, -1],
-  [-1, 1],
-  [1, -1, 1, -1],
-  [-1, 1, -1, 1],
-  [1, -1, -1, 1],
-  [-1, 1, 1, -1],
-];
+/** Narrow streets widen back to the stage road over this distance beyond their ends. */
+const WIDTH_TAPER = 24;
 
 /** Footprint half extents per style: `hx` across the front, `hz` deep. */
 export const BUILDING_SIZE: Readonly<Record<BuildingStyle, { hx: number; hz: number }>> = {
@@ -45,43 +46,38 @@ const STYLE_WEIGHTS: readonly (readonly [BuildingStyle, number])[] = [
   ['hall', 1],
 ];
 
-/** What the centreline builder needs: where the town's entry leg starts, how long a block is, which way each corner turns. */
-export interface TownPlan {
-  /** Control distance at which the entry leg (one block before the first corner) begins. */
-  entryAt: number;
-  block: number;
-  turns: readonly (1 | -1)[];
-}
-
-/** Where the builder actually laid the town: entry point and heading, each corner, the exit point. */
-export interface TownTrace {
-  entry: { x: number; z: number; heading: number };
-  corners: { x: number; z: number }[];
-  exit: { x: number; z: number };
-}
-
 interface Pt {
   x: number;
   z: number;
+}
+
+/** One leg of the route as the centreline builder laid it in the world. */
+export interface TracedLeg {
+  kind: 'straight' | 'curve';
+  /** Two points for a straight; the arc's chord points for a curve. */
+  points: Pt[];
+  headingIn: number;
+  /** Heading at the leg's end, before its corner. */
+  headingOut: number;
+  turn: number;
+  halfWidth: number;
+  radius: number;
+  sweep: number;
+  /** Straight length, or arc length. */
+  length: number;
+}
+
+/** Where the builder laid the town: entry point and heading, every leg, the exit point. */
+export interface TownTrace {
+  entry: Pt & { heading: number };
+  legs: TracedLeg[];
+  exit: Pt;
 }
 
 /** Deterministic per stage seed; never on a game's first stage (the splash demo and the smoke tests drive it). */
 export function hasTown(seed: number, index: number): boolean {
   return index > 0 && (hashSeed(seed, 'town') % 1000) / 1000 < TOWN_CHANCE;
 }
-
-/** The town's shape and where it sits: first corner between 30% and 55% of the stage, snapped to the control grid. */
-export function planTown(seed: number, startDistance: number, length: number): TownPlan {
-  const rand = mulberry32(hashSeed(seed, 'town'));
-  const block = rand() < 0.5 ? 60 : 80;
-  const patterns = length < 1500 ? PATTERNS.slice(0, 2) : PATTERNS;
-  const turns = patterns[Math.floor(rand() * patterns.length)]!;
-  const corner = startDistance + length * (0.3 + 0.25 * rand());
-  return { entryAt: Math.max(STEP * 3, Math.round((corner - block) / STEP) * STEP), block, turns };
-}
-
-/** Narrow streets widen back to the stage road over this distance beyond their ends. */
-const WIDTH_TAPER = 24;
 
 /** Per-sample half widths when any route street is narrower than the stage road; undefined when none is. */
 export function buildWidths(path: RoadPath, town: TownDef, base: number): Float64Array | undefined {
@@ -106,13 +102,12 @@ export function buildWidths(path: RoadPath, town: TownDef, base: number): Float6
   return w;
 }
 
-/** Control distance the town occupies: entry leg, one leg per corner, exit leg. */
-export function townSpan(plan: TownPlan): number {
-  return plan.block * (plan.turns.length + 2);
-}
-
 function forward(heading: number): Pt {
   return { x: Math.sin(heading), z: Math.cos(heading) };
+}
+
+function left(heading: number): Pt {
+  return { x: Math.cos(heading), z: -Math.sin(heading) };
 }
 
 function street(a: Pt, b: Pt, halfWidth: number, route: boolean): Street {
@@ -130,11 +125,7 @@ function pickStyle(rand: () => number): BuildingStyle {
   return 'townhouse';
 }
 
-/**
- * Buildings along one straight street between `from` and `to` along it, on
- * both sides, fronts `FRONT_SETBACK` beyond the edge, doors (local -z) facing
- * the street. `heading` is the street's direction from its start point.
- */
+/** Buildings along one straight street between `from` and `to` along it, both sides, doors (local -z) facing the street. */
 function lineStreet(
   rand: () => number,
   start: Pt,
@@ -145,7 +136,7 @@ function lineStreet(
   out: Building[],
 ): void {
   const f = forward(heading);
-  const left = { x: Math.cos(heading), z: -Math.sin(heading) };
+  const l = left(heading);
   for (const side of [1, -1] as const) {
     let cursor = from + 1.5 + rand() * 2.5;
     while (cursor < to) {
@@ -156,10 +147,49 @@ function lineStreet(
       const off = (halfWidth + FRONT_SETBACK + hz) * side;
       out.push({
         style,
-        x: start.x + f.x * along + left.x * off,
-        z: start.z + f.z * along + left.z * off,
+        x: start.x + f.x * along + l.x * off,
+        z: start.z + f.z * along + l.z * off,
         // The door side faces the street: local +z points away from it.
         yaw: heading + (side * Math.PI) / 2,
+        hx,
+        hz,
+        variant: rand() < 0.5 ? 0 : 1,
+      });
+      cursor += 2 * hx + 1.5 + rand() * 2.5;
+    }
+  }
+}
+
+/** Buildings around a curved leg on both sides of the arc, fronts following the bend. */
+function lineCurve(rand: () => number, leg: TracedLeg, out: Building[]): void {
+  const start = leg.points[0]!;
+  const bend = Math.sign(leg.sweep) || 1;
+  const l = left(leg.headingIn);
+  const centre = { x: start.x + l.x * bend * leg.radius, z: start.z + l.z * bend * leg.radius };
+  // Angle of the start point about the centre; the arc sweeps `leg.sweep` from there.
+  const a0 = Math.atan2(start.x - centre.x, start.z - centre.z);
+  for (const side of [1, -1] as const) {
+    const style0 = pickStyle(rand);
+    const r =
+      leg.radius + side * bend * -1 * (leg.halfWidth + FRONT_SETBACK + BUILDING_SIZE[style0].hz);
+    if (r < 5) continue;
+    const total = r * Math.abs(leg.sweep);
+    let cursor = 3 + rand() * 2;
+    while (cursor < total - 3) {
+      const style = pickStyle(rand);
+      const { hx, hz } = BUILDING_SIZE[style];
+      if (cursor + 2 * hx > total - 3) break;
+      const rr = leg.radius + side * bend * -1 * (leg.halfWidth + FRONT_SETBACK + hz);
+      const theta = a0 + (bend * (cursor + hx)) / rr;
+      const x = centre.x + Math.sin(theta) * rr;
+      const z = centre.z + Math.cos(theta) * rr;
+      // Tangent heading at this angle, then the door faces the street.
+      const tangent = theta + (bend * Math.PI) / 2;
+      out.push({
+        style,
+        x,
+        z,
+        yaw: tangent + (side * Math.PI) / 2,
         hx,
         hz,
         variant: rand() < 0.5 ? 0 : 1,
@@ -191,63 +221,106 @@ function sideStreet(
   lineStreet(rand, at, heading, CORNER_SETBACK, STUB_LENGTH, halfWidth, buildings);
 }
 
-/** Lay the town's streets, barriers, direction boards, buildings and plateau around the route the builder traced. */
-export function layoutTown(
-  plan: TownPlan,
-  trace: TownTrace,
-  path: RoadPath,
-  halfWidth: number,
-  seed: number,
-): TownDef {
+/** World corners of a footprint. */
+function corners(b: Building): Pt[] {
+  const sy = Math.sin(b.yaw);
+  const cy = Math.cos(b.yaw);
+  return (
+    [
+      [b.hx, b.hz],
+      [-b.hx, b.hz],
+      [b.hx, -b.hz],
+      [-b.hx, -b.hz],
+    ] as const
+  ).map(([u, v]) => ({ x: b.x + u * cy + v * sy, z: b.z - u * sy + v * cy }));
+}
+
+/** Drop any building whose footprint reaches a street or an earlier building. */
+function settle(candidates: readonly Building[], streets: readonly Street[]): Building[] {
+  const kept: Building[] = [];
+  for (const b of candidates) {
+    const clear = corners(b).every((c) =>
+      streets.every((s) => streetDistance(s, c.x, c.z) >= s.halfWidth + STREET_CLEARANCE),
+    );
+    if (!clear) continue;
+    const rb = Math.hypot(b.hx, b.hz);
+    // Room for both terraces: neighbours stay apart by most of their diagonals.
+    if (kept.some((k) => Math.hypot(k.x - b.x, k.z - b.z) < 0.95 * (rb + Math.hypot(k.hx, k.hz))))
+      continue;
+    kept.push(b);
+  }
+  return kept;
+}
+
+const setbackFor = (turn: number) =>
+  Math.abs(turn) > (19 * Math.PI) / 36 ? SHARP_SETBACK : CORNER_SETBACK;
+
+/** Lay the town's streets, barriers, direction boards, buildings and footprint around the route the builder traced. */
+export function layoutTown(trace: TownTrace, path: RoadPath, seed: number): TownDef {
   const rand = mulberry32(hashSeed(seed, 'town-layout'));
   const streets: Street[] = [];
   const barriers: Barrier[] = [];
-  const buildings: Building[] = [];
+  const candidates: Building[] = [];
   const arrows: Arrow[] = [];
-  const h0 = trace.entry.heading;
-  // Headings of each leg: entry, after each corner, exit (back on h0).
-  const headings = [h0];
-  for (const t of plan.turns) headings.push(headings[headings.length - 1]! + (t * Math.PI) / 2);
-  const points: Pt[] = [trace.entry, ...trace.corners, trace.exit];
-
-  for (let leg = 0; leg < points.length - 1; leg++) {
-    const a = points[leg]!;
-    const b = points[leg + 1]!;
-    const h = headings[leg]!;
-    streets.push(street(a, b, halfWidth, true));
-    const first = leg === 0;
-    const last = leg === points.length - 2;
-    const from = first ? EDGE_SETBACK : CORNER_SETBACK;
-    const to = plan.block - (last ? EDGE_SETBACK : CORNER_SETBACK);
-    if ((first || last) && plan.block >= CROSSROADS_BLOCK) {
-      // A crossroads halfway along the entry and exit legs where the route goes straight on;
-      // only on long blocks, where its building rows clear the corner stubs' rows.
-      const f = forward(h);
-      const mid = { x: a.x + (f.x * plan.block) / 2, z: a.z + (f.z * plan.block) / 2 };
-      for (const side of [1, -1] as const)
-        sideStreet(rand, mid, h + (side * Math.PI) / 2, halfWidth, streets, barriers, buildings);
-      lineStreet(rand, a, h, from, plan.block / 2 - CORNER_SETBACK, halfWidth, buildings);
-      lineStreet(rand, a, h, plan.block / 2 + CORNER_SETBACK, to, halfWidth, buildings);
-    } else {
-      lineStreet(rand, a, h, from, to, halfWidth, buildings);
+  const legs = trace.legs;
+  legs.forEach((leg, i) => {
+    const first = i === 0;
+    const last = i === legs.length - 1;
+    const prev = legs[i - 1];
+    if (leg.kind === 'curve') {
+      for (let k = 0; k < leg.points.length - 1; k++)
+        streets.push(street(leg.points[k]!, leg.points[k + 1]!, leg.halfWidth, true));
+      lineCurve(rand, leg, candidates);
+      return;
     }
-  }
-  trace.corners.forEach((c, k) => {
-    const hin = headings[k]!;
-    const hout = headings[k + 1]!;
-    // Straight on and the far side are blocked; a board across the junction shows the turn.
-    sideStreet(rand, c, hin, halfWidth, streets, barriers, buildings);
-    sideStreet(rand, c, hout + Math.PI, halfWidth, streets, barriers, buildings);
-    const f = forward(hin);
-    arrows.push({
-      x: c.x + f.x * (halfWidth + 2.2),
-      z: c.z + f.z * (halfWidth + 2.2),
-      yaw: hin,
-      turn: plan.turns[k]!,
-    });
+    const a = leg.points[0]!;
+    const b = leg.points[1]!;
+    const h = leg.headingIn;
+    streets.push(street(a, b, leg.halfWidth, true));
+    const from = first
+      ? EDGE_SETBACK
+      : prev && prev.kind === 'straight'
+        ? setbackFor(prev.turn)
+        : EDGE_SETBACK;
+    const to =
+      leg.length - (last ? EDGE_SETBACK : leg.turn !== 0 ? setbackFor(leg.turn) : EDGE_SETBACK);
+    if ((first || last) && leg.length >= CROSSROADS_BLOCK) {
+      // A crossroads halfway along the entry and exit legs where the route goes straight on.
+      const f = forward(h);
+      const mid = { x: a.x + (f.x * leg.length) / 2, z: a.z + (f.z * leg.length) / 2 };
+      for (const side of [1, -1] as const)
+        sideStreet(
+          rand,
+          mid,
+          h + (side * Math.PI) / 2,
+          leg.halfWidth,
+          streets,
+          barriers,
+          candidates,
+        );
+      lineStreet(rand, a, h, from, leg.length / 2 - CORNER_SETBACK, leg.halfWidth, candidates);
+      lineStreet(rand, a, h, leg.length / 2 + CORNER_SETBACK, to, leg.halfWidth, candidates);
+    } else {
+      lineStreet(rand, a, h, from, to, leg.halfWidth, candidates);
+    }
+    if (leg.turn !== 0) {
+      // Straight on and the far side are blocked; a board across the junction shows the turn.
+      const hout = leg.headingOut;
+      sideStreet(rand, b, hout, leg.halfWidth, streets, barriers, candidates);
+      sideStreet(rand, b, hout + leg.turn + Math.PI, leg.halfWidth, streets, barriers, candidates);
+      const f = forward(hout);
+      arrows.push({
+        x: b.x + f.x * (leg.halfWidth + 2.2),
+        z: b.z + f.z * (leg.halfWidth + 2.2),
+        yaw: hout,
+        turn: leg.turn > 0 ? 1 : -1,
+      });
+    }
   });
+  const buildings = settle(candidates, streets);
 
-  // Plateau: the bounding box of everything in the town frame, with ramp room along the route.
+  // Footprint: the bounding box of everything in the town frame, with ramp room along the route.
+  const h0 = trace.entry.heading;
   const sy = Math.sin(h0);
   const cy = Math.cos(h0);
   let uMin = Infinity;

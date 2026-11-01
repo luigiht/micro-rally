@@ -148,7 +148,7 @@ export function buildingBaseHeight(b: Building, ground: GroundQuery): number {
 
 /** Terrace pads reach this far beyond a building's footprint and blend out over `TERRACE_BLEND`. */
 export const TERRACE_MARGIN = 0.3;
-export const TERRACE_BLEND = 0.7;
+export const TERRACE_BLEND = 0.5;
 
 /**
  * Render props for the town: one per building, one per barrier element, a

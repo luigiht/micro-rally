@@ -14,9 +14,16 @@ import {
   townObstacles,
   type TownDef,
 } from '@/game/stage/Town';
-import { CROSSROADS_BLOCK, hasTown, STUB_LENGTH, TOWN_CHANCE } from '@/game/stage/TownGenerator';
+import {
+  CROSSROADS_BLOCK,
+  hasTown,
+  STREET_CLEARANCE,
+  STUB_LENGTH,
+  TOWN_CHANCE,
+} from '@/game/stage/TownGenerator';
+import { NARROW_HALF_WIDTH } from '@/game/stage/TownPlan';
 
-/** A synthetic town laid on the route of a generated stage around distance `at`, with one blocked side street. */
+/** A synthetic town laid on the route of a generated stage (index 0, never a real town) around distance `at`, with one blocked side street. */
 function withTown(seed: number, index: number, at: number): { stage: StageDef; town: TownDef } {
   const stage = generateStage(seed, index);
   const s = { x: 0, z: 0, heading: 0 };
@@ -60,7 +67,7 @@ function withTown(seed: number, index: number, at: number): { stage: StageDef; t
 
 describe('town plateau', () => {
   it('measures distance to the plateau rectangle in the town frame', () => {
-    const town = withTown(7, 1, 600).town;
+    const town = withTown(7, 0, 600).town;
     expect(plateauDistance(town, town.x, town.z)).toBe(0);
     const lx = Math.cos(town.heading);
     const lz = -Math.sin(town.heading);
@@ -77,7 +84,7 @@ describe('town plateau', () => {
 
   it('tames the hills under the town instead of flattening them', () => {
     for (const seed of [3, 11, 27]) {
-      const { stage, town } = withTown(seed, 1, 700);
+      const { stage, town } = withTown(seed, 0, 700);
       const field = new TerrainField(stage);
       const lx = Math.cos(town.heading);
       const lz = -Math.sin(town.heading);
@@ -100,7 +107,7 @@ describe('town plateau', () => {
     }
   });
   it('keeps the route trench and verge rules inside the town and still limits the grade', () => {
-    const { stage, town } = withTown(5, 2, 650);
+    const { stage, town } = withTown(5, 0, 650);
     const field = new TerrainField(stage);
     const s = { x: 0, z: 0, heading: 0 };
     const bed = { height: 0, roadBlend: 0, roadDistance: 0 };
@@ -120,7 +127,7 @@ describe('town plateau', () => {
   });
 
   it('cuts side streets into the slope, level with the route where they meet it', () => {
-    const { stage, town } = withTown(9, 1, 600);
+    const { stage, town } = withTown(9, 0, 600);
     const field = new TerrainField(stage);
     const lx = Math.cos(town.heading);
     const lz = -Math.sin(town.heading);
@@ -139,7 +146,7 @@ describe('town plateau', () => {
 
 describe('town scenery and colliders', () => {
   it('keeps wild scenery and farmhouses off the plateau', () => {
-    const { stage, town } = withTown(99, 1, 700);
+    const { stage, town } = withTown(99, 0, 700);
     const field = new TerrainField(stage);
     const props = scatterScenery(field);
     expect(props.length).toBeGreaterThan(200);
@@ -156,7 +163,7 @@ describe('town scenery and colliders', () => {
   });
 
   it('turns buildings and barrier rows into oriented box colliders', () => {
-    const { town } = withTown(99, 1, 700);
+    const { town } = withTown(99, 0, 700);
     const boxes = townObstacles(town);
     expect(boxes).toHaveLength(2);
     expect(boxes[0]).toMatchObject({ hx: 4, hz: 3, yaw: town.heading });
@@ -189,44 +196,63 @@ describe('town generator', () => {
     for (let seed = 1; seed <= 20; seed++) expect(generateStage(seed, 0).town).toBeUndefined();
   });
 
-  it('threads the route through the grid with right-angle turns at every corner', () => {
+  it('threads the route through town with sharp corners, tight curves and narrow streets', () => {
     const stages = townStages();
     expect(stages.length).toBeGreaterThan(30);
     const s = { x: 0, z: 0, heading: 0 };
     const hit = createRoadHit();
+    let curved = 0;
+    let narrow = 0;
     for (const stage of stages) {
       const town = stage.town!;
       const legs = town.streets.filter((st) => st.route);
       const stubs = town.streets.filter((st) => !st.route);
+      const len = (st: (typeof legs)[number]) => Math.hypot(st.x1 - st.x0, st.z1 - st.z0);
+      const heading = (st: (typeof legs)[number]) => Math.atan2(st.x1 - st.x0, st.z1 - st.z0);
       expect(legs.length).toBeGreaterThanOrEqual(3);
-      expect(town.arrows.length).toBe(legs.length - 1);
-      const block = Math.hypot(legs[1]!.x1 - legs[1]!.x0, legs[1]!.z1 - legs[1]!.z0);
-      expect(stubs.length).toBe(town.arrows.length * 2 + (block > CROSSROADS_BLOCK - 1 ? 4 : 0));
-      expect(town.barriers.length).toBe(stubs.length);
-      expect(town.buildings.length).toBeGreaterThan(12);
-      expect(town.from).toBeGreaterThan(stage.startDistance + 150);
-      expect(town.to).toBeLessThan(stage.startDistance + stage.length - 100);
-      // Every leg lies on the centreline and consecutive legs meet at right angles.
-      for (let i = 0; i < legs.length; i++) {
-        const leg = legs[i]!;
-        expect(stage.path.nearest(leg.x0, leg.z0, 1, hit), `${stage.seed} leg ${i}`).toBe(true);
-        expect(stage.path.nearest(leg.x1, leg.z1, 1, hit)).toBe(true);
-        if (i > 0) {
-          const prev = legs[i - 1]!;
-          const a = Math.atan2(prev.x1 - prev.x0, prev.z1 - prev.z0);
-          const b = Math.atan2(leg.x1 - leg.x0, leg.z1 - leg.z0);
-          const turn = Math.atan2(Math.sin(b - a), Math.cos(b - a));
-          expect(Math.abs(Math.abs(turn) - Math.PI / 2)).toBeLessThan(1e-9);
+      // Corners are real corners (45°..113°); anything gentler is a curve's chord joint.
+      let corners = 0;
+      for (let i = 1; i < legs.length; i++) {
+        const d = heading(legs[i]!) - heading(legs[i - 1]!);
+        const turn = Math.abs(Math.atan2(Math.sin(d), Math.cos(d)));
+        // A corner next to a curve measures against the curve's first or last chord, up to half a chord angle off.
+        if (turn > 0.55) {
+          corners++;
+          expect(turn, `${stage.seed}`).toBeGreaterThan(Math.PI / 4 - 0.25);
+          expect(turn, `${stage.seed}`).toBeLessThan((5 * Math.PI) / 8 + 0.25);
+        } else {
+          expect(turn).toBeLessThan(0.45);
         }
       }
-      // The route arrives and leaves on the same heading (measured where the spline is still on the straight legs).
+      expect(town.arrows.length).toBe(corners);
+      // A crossroads on a long entry or exit leg adds a stub each side.
+      const crossroads =
+        (len(legs[0]!) >= CROSSROADS_BLOCK - 0.5 ? 1 : 0) +
+        (len(legs[legs.length - 1]!) >= CROSSROADS_BLOCK - 0.5 ? 1 : 0);
+      expect(stubs.length).toBe(corners * 2 + crossroads * 2);
+      expect(town.barriers.length).toBe(stubs.length);
+      expect(town.buildings.length).toBeGreaterThan(8);
+      expect(town.from).toBeGreaterThan(stage.startDistance + 150);
+      expect(town.to).toBeLessThan(stage.startDistance + stage.length - 100);
+      if (legs.some((st) => len(st) < 15)) curved++;
+      if (legs.some((st) => st.halfWidth < 4)) narrow++;
+      if (stage.widths)
+        expect(Math.min(...stage.widths)).toBeGreaterThanOrEqual(NARROW_HALF_WIDTH - 1e-9);
+      // Every leg lies on the centreline.
+      for (const leg of legs) {
+        expect(stage.path.nearest(leg.x0, leg.z0, 1.5, hit), `${stage.seed}`).toBe(true);
+        expect(stage.path.nearest(leg.x1, leg.z1, 1.5, hit)).toBe(true);
+      }
+      // The route leaves roughly on the heading it arrived with (measured on the straight legs).
       stage.path.sample(town.from - 10, s);
       const inHeading = s.heading;
       stage.path.sample(town.to - 30, s);
       expect(
         Math.abs(Math.atan2(Math.sin(s.heading - inHeading), Math.cos(s.heading - inHeading))),
-      ).toBeLessThan(0.02);
+      ).toBeLessThan(0.5);
     }
+    expect(curved).toBeGreaterThan(5);
+    expect(narrow).toBeGreaterThan(5);
   });
 
   it('keeps buildings off every street and apart, barriers across the stubs, posts and gates out of town', () => {
@@ -234,10 +260,11 @@ describe('town generator', () => {
       const town = stage.town!;
       const problems: string[] = [];
       for (const b of town.buildings) {
-        // Front face sits beyond the pavement of its own street, and the whole footprint is clear of all streets.
-        const nearest = Math.min(...town.streets.map((st) => streetDistance(st, b.x, b.z)));
-        if (nearest < stage.halfWidth + 3 + Math.min(b.hx, b.hz) - 1e-6)
-          problems.push(`building in street ${stage.seed}`);
+        // Every footprint corner keeps the pavement-and-strip clearance from every street's carriageway.
+        for (const [x, z] of buildingCorners(b))
+          for (const st of town.streets)
+            if (streetDistance(st, x, z) < st.halfWidth + STREET_CLEARANCE - 1e-6)
+              problems.push(`building in street ${stage.seed}`);
         if (plateauDistance(town, b.x, b.z) !== 0)
           problems.push(`building off plateau ${stage.seed}`);
       }
