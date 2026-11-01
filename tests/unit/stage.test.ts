@@ -217,15 +217,19 @@ describe('TerrainField', () => {
   it('keeps tree canopies from overlapping while staying dense', () => {
     const trees = scatterScenery(field).filter((p) => p.kind === 'tree' || p.kind === 'broadleaf');
     expect(trees.length).toBeGreaterThan(400);
+    // Plain arithmetic over every pair, one assertion at the end: an expect per
+    // pair is ~150k assertions and times out on slow CI runners.
+    const overlaps: string[] = [];
     for (let i = 0; i < trees.length; i++) {
       const a = trees[i]!;
       const ra = CANOPY_RADIUS[a.kind]! * a.scale;
       for (let j = i + 1; j < trees.length; j++) {
         const b = trees[j]!;
         const r = ra + CANOPY_RADIUS[b.kind]! * b.scale;
-        expect((a.x - b.x) ** 2 + (a.z - b.z) ** 2).toBeGreaterThanOrEqual(r * r - 1e-6);
+        if ((a.x - b.x) ** 2 + (a.z - b.z) ** 2 < r * r - 1e-6) overlaps.push(`${i}-${j}`);
       }
     }
+    expect(overlaps).toEqual([]);
   });
 
   it('dots houses well back from the road, apart from each other, with footprint colliders', () => {
