@@ -3,7 +3,13 @@ import type { Obstacle } from '../vehicle/Collisions';
 import { REGIONS } from './regions';
 import { createRoadHit, type RoadSample } from './RoadPath';
 import type { TerrainField } from './TerrainField';
-import { plateauDistance, townProps } from './Town';
+import {
+  buildingBaseHeight,
+  plateauDistance,
+  TERRACE_BLEND,
+  TERRACE_MARGIN,
+  townProps,
+} from './Town';
 
 export type PropKind =
   | 'tree'
@@ -167,21 +173,33 @@ export function scatterScenery(field: TerrainField): Prop[] {
     }
   }
   const houses = scatterHouses(field);
-  // Flatten a pad under each house so the slab, door sill and step meet level ground.
-  field.setPads(
-    houses.map((h) => ({
+  // Flatten a pad under each house so the slab, door sill and step meet level ground,
+  // and a terrace under each town building so it steps down the hill on level footing.
+  const terraces = (stage.town?.buildings ?? []).map((b) => ({
+    x: b.x,
+    z: b.z,
+    y: buildingBaseHeight(b, field),
+    radius: Math.hypot(b.hx, b.hz) + TERRACE_MARGIN,
+    hx: b.hx + TERRACE_MARGIN,
+    hz: b.hz + TERRACE_MARGIN,
+    yaw: b.yaw,
+    blend: TERRACE_BLEND,
+  }));
+  field.setPads([
+    ...houses.map((h) => ({
       x: h.x,
       z: h.z,
       y: h.y + HOUSE_SLAB_TOP,
       radius: HOUSE_PAD_RADIUS * h.scale,
     })),
-  );
+    ...terraces,
+  ]);
   // Nothing grows through a house: drop trees, bushes and rocks inside its footprint.
   const kept = props.filter((p) =>
     houses.every((h) => Math.hypot(h.x - p.x, h.z - p.z) >= HOUSE_CLEAR_RADIUS * h.scale),
   );
   kept.push(...houses);
-  if (stage.town) kept.push(...townProps(stage.town, field.townY));
+  if (stage.town) kept.push(...townProps(stage.town, field));
   return kept;
 }
 

@@ -5,7 +5,14 @@ import type { Gate } from './Checkpoints';
 import { REGION_ORDER, REGIONS, STAGES_PER_REGION, type RegionId, type Weather } from './regions';
 import { RoadPath, type RoadSample } from './RoadPath';
 import type { TownDef } from './Town';
-import { hasTown, layoutTown, planTown, type TownPlan, type TownTrace } from './TownGenerator';
+import {
+  buildWidths,
+  hasTown,
+  layoutTown,
+  planTown,
+  type TownPlan,
+  type TownTrace,
+} from './TownGenerator';
 
 export const ROAD_SPACING = 2;
 const CONTROL_STEP = 20;
@@ -89,6 +96,8 @@ export interface StageDef extends StageBrief {
   spawn: SpawnPose;
   /** Town section the route threads through, on some stages. */
   town?: TownDef;
+  /** Half width per path sample where it varies from `halfWidth` (narrow town streets); absent when constant. */
+  widths?: Float64Array;
 }
 
 export function stageRegion(index: number): { region: RegionId; loop: number } {
@@ -294,6 +303,7 @@ export function generateStage(gameSeed: number, index: number): StageDef {
   const plan = hasTown(seed, index) ? planTown(seed, START_DISTANCE, length) : null;
   const { path, trace } = buildCentreline(rand, START_DISTANCE + length + RUNOUT, twist, plan);
   const town = plan && trace ? layoutTown(plan, trace, path, halfWidth, seed) : undefined;
+  const widths = town ? buildWidths(path, town, halfWidth) : undefined;
   const gates = placeGates(path, length, halfWidth, town);
 
   const sample: RoadSample = { x: 0, z: 0, heading: 0 };
@@ -306,5 +316,6 @@ export function generateStage(gameSeed: number, index: number): StageDef {
     gates,
     spawn: { x: sample.x, z: sample.z, yaw: sample.heading },
     ...(town ? { town } : {}),
+    ...(widths ? { widths } : {}),
   };
 }

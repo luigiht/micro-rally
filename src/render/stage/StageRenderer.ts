@@ -52,7 +52,7 @@ export class StageRenderer {
     this.road = new RoadBuilder(world.stage, world.field, region.palette.shoulder);
     this.gates = new GateBuilder(world.stage, world.field);
     this.town = world.stage.town
-      ? new TownStreetBuilder(world.stage.town, world.field.townY, world.stage.halfWidth)
+      ? new TownStreetBuilder(world.stage.town, world.field, world.stage.halfWidth)
       : null;
     this.group.add(this.terrain.group, this.scenery.group, this.road.group, this.gates.group);
     if (this.town) this.group.add(this.town.group);

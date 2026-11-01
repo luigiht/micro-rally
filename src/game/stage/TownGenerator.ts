@@ -80,6 +80,32 @@ export function planTown(seed: number, startDistance: number, length: number): T
   return { entryAt: Math.max(STEP * 3, Math.round((corner - block) / STEP) * STEP), block, turns };
 }
 
+/** Narrow streets widen back to the stage road over this distance beyond their ends. */
+const WIDTH_TAPER = 24;
+
+/** Per-sample half widths when any route street is narrower than the stage road; undefined when none is. */
+export function buildWidths(path: RoadPath, town: TownDef, base: number): Float64Array | undefined {
+  const narrow = town.streets.filter((s) => s.route && s.halfWidth < base - 1e-6);
+  if (narrow.length === 0) return undefined;
+  const w = new Float64Array(path.count).fill(base);
+  const hit = createRoadHit();
+  for (const s of narrow) {
+    path.nearest(s.x0, s.z0, 30, hit);
+    const a0 = hit.along;
+    path.nearest(s.x1, s.z1, 30, hit);
+    const a1 = hit.along;
+    const lo = Math.min(a0, a1);
+    const hi = Math.max(a0, a1);
+    for (let i = 0; i < path.count; i++) {
+      const d = i * path.spacing;
+      const out = d < lo ? lo - d : d > hi ? d - hi : 0;
+      const t = Math.min(1, out / WIDTH_TAPER);
+      w[i] = Math.min(w[i]!, s.halfWidth + (base - s.halfWidth) * t);
+    }
+  }
+  return w;
+}
+
 /** Control distance the town occupies: entry leg, one leg per corner, exit leg. */
 export function townSpan(plan: TownPlan): number {
   return plan.block * (plan.turns.length + 2);

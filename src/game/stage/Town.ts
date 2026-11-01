@@ -1,6 +1,5 @@
 import type { BoxObstacle } from '../vehicle/Collisions';
 import type { Prop } from './SceneryScatter';
-import { ROAD_LIFT } from './TerrainField';
 
 /**
  * A town section on a stage: a level plateau carrying a street grid the route
@@ -104,6 +103,15 @@ export function onTownStreet(town: TownDef, x: number, z: number): boolean {
 
 /** Depth of a barrier row (half), along its facing axis. */
 export const BARRIER_HALF_DEPTH = 0.4;
+
+/** Oriented-box colliders for every building and barrier row in the town. */
+export function townObstacles(town: TownDef): BoxObstacle[] {
+  const out: BoxObstacle[] = [];
+  for (const b of town.buildings) out.push({ x: b.x, z: b.z, hx: b.hx, hz: b.hz, yaw: b.yaw });
+  for (const r of town.barriers)
+    out.push({ x: r.x, z: r.z, hx: r.halfLength, hz: BARRIER_HALF_DEPTH, yaw: r.yaw });
+  return out;
+}
 /** Length of one barrier element along the row. */
 export const BARRIER_ELEMENT = 1.2;
 /** Pavements stand this far above the road deck. */
@@ -112,21 +120,49 @@ export const KERB_LIFT = 0.04;
 const LAMP_SPACING = 30;
 const LAMP_OFFSET = 1.0;
 
+/** Whatever answers the driving-surface height, usually the stage's `TerrainField`. */
+export interface GroundQuery {
+  heightAt(x: number, z: number): number;
+}
+
+/** World positions of a building's four footprint corners (local x is the left axis (cos, -sin), local z forward (sin, cos)). */
+export function buildingCorners(b: Building): [number, number][] {
+  const sy = Math.sin(b.yaw);
+  const cy = Math.cos(b.yaw);
+  return (
+    [
+      [b.hx, b.hz],
+      [-b.hx, b.hz],
+      [b.hx, -b.hz],
+      [-b.hx, -b.hz],
+    ] as const
+  ).map(([u, v]) => [b.x + u * cy + v * sy, b.z - u * sy + v * cy]);
+}
+
+/** Mean ground height under a building's corners: its terrace is levelled here and its origin sits on it. */
+export function buildingBaseHeight(b: Building, ground: GroundQuery): number {
+  let sum = 0;
+  for (const [x, z] of buildingCorners(b)) sum += ground.heightAt(x, z);
+  return sum / 4;
+}
+
+/** Terrace pads reach this far beyond a building's footprint and blend out over `TERRACE_BLEND`. */
+export const TERRACE_MARGIN = 0.3;
+export const TERRACE_BLEND = 0.7;
+
 /**
  * Render props for the town: one per building, one per barrier element, a
- * direction board per turn and lamp posts along the route's pavements.
- * `groundY` is the plateau height; streets sit `ROAD_LIFT` above it and
- * pavements a kerb higher.
+ * direction board per turn and lamp posts along the route's pavements, each
+ * standing on the ground the field reports there (streets at deck height,
+ * pavements a kerb higher).
  */
-export function townProps(town: TownDef, groundY: number): Prop[] {
+export function townProps(town: TownDef, ground: GroundQuery): Prop[] {
   const out: Prop[] = [];
-  const street = groundY + ROAD_LIFT;
-  const pavement = street + KERB_LIFT;
   for (const b of town.buildings)
     out.push({
       kind: b.style,
       x: b.x,
-      y: groundY,
+      y: buildingBaseHeight(b, ground),
       z: b.z,
       scale: 1,
       rotation: b.yaw,
@@ -139,11 +175,13 @@ export function townProps(town: TownDef, groundY: number): Prop[] {
     const span = (n - 1) * BARRIER_ELEMENT;
     for (let i = 0; i < n; i++) {
       const o = -span / 2 + i * BARRIER_ELEMENT;
+      const x = r.x + lx * o;
+      const z = r.z + lz * o;
       out.push({
         kind: 'barrier',
-        x: r.x + lx * o,
-        y: street,
-        z: r.z + lz * o,
+        x,
+        y: ground.heightAt(x, z),
+        z,
         scale: 1,
         rotation: r.yaw,
         variant: i % 2,
@@ -154,7 +192,7 @@ export function townProps(town: TownDef, groundY: number): Prop[] {
     out.push({
       kind: a.turn > 0 ? 'arrowLeft' : 'arrowRight',
       x: a.x,
-      y: pavement,
+      y: ground.heightAt(a.x, a.z) + KERB_LIFT,
       z: a.z,
       scale: 1,
       rotation: a.yaw,
@@ -171,12 +209,14 @@ export function townProps(town: TownDef, groundY: number): Prop[] {
     const lz = -Math.sin(heading);
     for (let d = LAMP_SPACING / 2; d < len - 8; d += LAMP_SPACING) {
       const off = (s.halfWidth + LAMP_OFFSET) * side;
+      const x = s.x0 + (dx / len) * d + lx * off;
+      const z = s.z0 + (dz / len) * d + lz * off;
       // The arm (local -x) reaches back over the street from whichever pavement the post stands on.
       out.push({
         kind: 'lamp',
-        x: s.x0 + (dx / len) * d + lx * off,
-        y: pavement,
-        z: s.z0 + (dz / len) * d + lz * off,
+        x,
+        y: ground.heightAt(x, z) + KERB_LIFT,
+        z,
         scale: 1,
         rotation: side > 0 ? heading : heading + Math.PI,
         variant: 0,
@@ -184,14 +224,5 @@ export function townProps(town: TownDef, groundY: number): Prop[] {
       side = -side;
     }
   }
-  return out;
-}
-
-/** Oriented-box colliders for every building and barrier row in the town. */
-export function townObstacles(town: TownDef): BoxObstacle[] {
-  const out: BoxObstacle[] = [];
-  for (const b of town.buildings) out.push({ x: b.x, z: b.z, hx: b.hx, hz: b.hz, yaw: b.yaw });
-  for (const r of town.barriers)
-    out.push({ x: r.x, z: r.z, hx: r.halfLength, hz: BARRIER_HALF_DEPTH, yaw: r.yaw });
   return out;
 }

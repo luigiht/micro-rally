@@ -15,6 +15,7 @@ import type { RegionPalette } from '@/game/stage/regions';
 import type { Prop, PropKind } from '@/game/stage/SceneryScatter';
 import { ChunkStreamer, chunkKey } from '../ChunkStreamer';
 import { houseRoofGeometry, houseWallsGeometry } from './HouseGeometry';
+import { arrowBoardGeometry, barrierGeometry, lampPostGeometry } from './StreetFurnitureGeometry';
 
 interface KindKit {
   sources: readonly PropKind[];
@@ -130,6 +131,22 @@ export class SceneryChunkManager {
         castShadow: shadows,
         vertexColors: true,
       },
+      // Town street furniture keeps its own painted colours.
+      ...(
+        [
+          ['barrier', barrierGeometry()],
+          ['arrowLeft', arrowBoardGeometry('left')],
+          ['arrowRight', arrowBoardGeometry('right')],
+          ['lamp', lampPostGeometry()],
+        ] as const
+      ).map(([kind, geometry]): KindKit => ({
+        sources: [kind],
+        geometry,
+        material: mat('#ffffff', true),
+        tint: null,
+        castShadow: shadows,
+        vertexColors: true,
+      })),
     ];
     for (const p of props) {
       const key = chunkKey(Math.floor(p.x / size), Math.floor(p.z / size));

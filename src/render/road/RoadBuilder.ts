@@ -12,6 +12,7 @@ import {
 import type { StageDef } from '@/game/stage/StageGenerator';
 import { markerDistances } from '@/game/stage/RoadMarkers';
 import { ROAD_LIFT, TRENCH_OUT, type TerrainField } from '@/game/stage/TerrainField';
+import { halfWidthAt } from '@/game/stage/RoadWidth';
 import { KERB_LIFT } from '@/game/stage/Town';
 import type { Surface } from '@/game/vehicle/surfaces';
 
@@ -76,8 +77,9 @@ function snowCover(i: number): number {
 
 /** One ribbon strip: lateral extent, lift, flat colour, optional snow cover and tarmac shade jitter; `town` overrides inside a town. */
 interface Strip {
-  a: number;
-  b: number;
+  /** Lateral extents as functions of the local half width. */
+  a: (hw: number) => number;
+  b: (hw: number) => number;
   lift: number;
   color: Color;
   cover?: (i: number) => number;
@@ -128,7 +130,6 @@ export class RoadBuilder {
 
   private buildPiece(stage: StageDef, field: TerrainField, s0: number, s1: number): BufferGeometry {
     const path = stage.path;
-    const hw = stage.halfWidth;
     const snowy = stage.surface === 'snow';
     const road = new Color(snowy ? ROAD_COLORS.tarmac : ROAD_COLORS[stage.surface]);
     const dust = new Color(ROAD_COLORS.snow);
@@ -152,11 +153,11 @@ export class RoadBuilder {
         (m) => Math.hypot(x - m.x, z - m.z) < m.reach && Math.sign(m.dx * lx + m.dz * lz) === side,
       );
     const n = s1 - s0 + 1;
-    // Road, two verges and two edge lines; two verts per sample each. Snow stages tint the road.
+    // Road, two verges and two edge lines, two verts per sample each; lateral extents follow the local half width.
     const strips: Strip[] = [
       {
-        a: -hw,
-        b: hw,
+        a: (hw) => -hw,
+        b: (hw) => hw,
         lift: ROAD_LIFT,
         color: road,
         cover: snowy ? snowCover : undefined,
@@ -164,8 +165,8 @@ export class RoadBuilder {
         town: paved,
       },
       {
-        a: hw,
-        b: hw + VERGE_WIDTH,
+        a: (hw) => hw,
+        b: (hw) => hw + VERGE_WIDTH,
         lift: ROAD_LIFT,
         color: this.verge,
         shaded: true,
@@ -173,8 +174,8 @@ export class RoadBuilder {
         side: 1,
       },
       {
-        a: -hw - VERGE_WIDTH,
-        b: -hw,
+        a: (hw) => -hw - VERGE_WIDTH,
+        b: (hw) => -hw,
         lift: ROAD_LIFT,
         color: this.verge,
         shaded: true,
@@ -182,16 +183,16 @@ export class RoadBuilder {
         side: -1,
       },
       {
-        a: hw - 0.35 - LINE_WIDTH,
-        b: hw - 0.35,
+        a: (hw) => hw - 0.35 - LINE_WIDTH,
+        b: (hw) => hw - 0.35,
         lift: LINE_LIFT,
         color: line,
         shaded: false,
         side: 1,
       },
       {
-        a: -hw + 0.35,
-        b: -hw + 0.35 + LINE_WIDTH,
+        a: (hw) => -hw + 0.35,
+        b: (hw) => -hw + 0.35 + LINE_WIDTH,
         lift: LINE_LIFT,
         color: line,
         shaded: false,
@@ -211,6 +212,7 @@ export class RoadBuilder {
         const lx = Math.cos(h);
         const lz = -Math.sin(h);
         const d = i * path.spacing;
+        const hw = halfWidthAt(stage, d);
         const urban = inTown !== undefined && town !== undefined && d >= town.from && d <= town.to;
         const mouth = side !== undefined && mouths.length > 0 && openOn(x, z, lx, lz, side);
         const y = field.roadHeightAt(d) + (mouth ? ROAD_LIFT : urban ? inTown.lift : lift);
@@ -223,7 +225,9 @@ export class RoadBuilder {
               ? tint.copy(color).lerp(dust, cover(i))
               : color;
         const v = (base + k * 2) * 3;
-        pos.set([x + lx * a, y, z + lz * a, x + lx * b, y, z + lz * b], v);
+        const ea = a(hw);
+        const eb = b(hw);
+        pos.set([x + lx * ea, y, z + lz * ea, x + lx * eb, y, z + lz * eb], v);
         col.set([c.r * shade, c.g * shade, c.b * shade, c.r * shade, c.g * shade, c.b * shade], v);
         if (k > 0) {
           const p = base + (k - 1) * 2;
@@ -265,7 +269,7 @@ export class RoadBuilder {
     for (const d of distances) {
       path.sample(d, sample);
       for (const side of [-1, 1]) {
-        const off = (stage.halfWidth + 1.4) * side;
+        const off = (halfWidthAt(stage, d) + 1.4) * side;
         const x = sample.x + Math.cos(sample.heading) * off;
         const z = sample.z - Math.sin(sample.heading) * off;
         dummy.position.set(x, field.heightAt(x, z), z);

@@ -6,6 +6,8 @@ import { scatterScenery } from '@/game/stage/SceneryScatter';
 import { ROAD_BED_DROP, ROAD_LIFT, TerrainField } from '@/game/stage/TerrainField';
 import {
   BARRIER_HALF_DEPTH,
+  buildingBaseHeight,
+  buildingCorners,
   onTownStreet,
   plateauDistance,
   streetDistance,
@@ -73,31 +75,38 @@ describe('town plateau', () => {
     ).toBe(false);
   });
 
-  it('levels the road and the ground onto one plateau inside the town', () => {
+  it('tames the hills under the town instead of flattening them', () => {
     for (const seed of [3, 11, 27]) {
       const { stage, town } = withTown(seed, 1, 700);
       const field = new TerrainField(stage);
-      // The route is flat across the whole town interval, at the plateau height.
-      for (let d = town.from; d <= town.to; d += 2)
-        expect(Math.abs(field.roadHeightAt(d) - field.townY), `${seed}@${d}`).toBeLessThan(0.02);
-      // Ground away from any street inside the footprint sits exactly on the plateau.
       const lx = Math.cos(town.heading);
       const lz = -Math.sin(town.heading);
-      const sample = { height: 0, roadBlend: 0, roadDistance: 0 };
-      field.sample(town.x - lx * 50, town.z - lz * 50, sample);
-      expect(sample.height).toBeCloseTo(field.townY, 6);
+      // Inside the footprint the ground keeps a share of the hills' relief around the town's reference height.
+      let relief = 0;
+      for (let v = -60; v <= 60; v += 20) {
+        const x = town.x + lx * v;
+        const z = town.z + lz * v;
+        const g = field.groundHeight(x, z) - field.townY;
+        const h = field.baseHeight(x, z) - field.townY;
+        expect(Math.abs(g), `${seed}@${v}`).toBeLessThanOrEqual(
+          field.townRelief * Math.abs(h) + 1e-6,
+        );
+        relief = Math.max(relief, Math.abs(g));
+      }
+      expect(relief).toBeGreaterThan(0);
       // The hills take over again well beyond the blend.
       const far = { x: town.x - lx * 200, z: town.z - lz * 200 };
       expect(field.groundHeight(far.x, far.z)).toBeCloseTo(field.baseHeight(far.x, far.z), 6);
     }
   });
-
   it('keeps the route trench and verge rules inside the town and still limits the grade', () => {
     const { stage, town } = withTown(5, 2, 650);
     const field = new TerrainField(stage);
     const s = { x: 0, z: 0, heading: 0 };
     const bed = { height: 0, roadBlend: 0, roadDistance: 0 };
     for (let d = town.from + 10; d <= town.to - 10; d += 7) {
+      // Where a side street leaves the route its verge becomes the street, so skip the junction itself.
+      if (Math.abs(d - 650) < 12) continue;
       stage.path.sample(d, s);
       const road = field.roadHeightAt(d);
       field.sample(s.x, s.z, bed);
@@ -110,20 +119,21 @@ describe('town plateau', () => {
       expect(Math.abs(field.roadHeightAt(d) - field.roadHeightAt(d - 2))).toBeLessThanOrEqual(0.25);
   });
 
-  it('drives side streets as paved plates at deck level', () => {
+  it('cuts side streets into the slope, level with the route where they meet it', () => {
     const { stage, town } = withTown(9, 1, 600);
     const field = new TerrainField(stage);
     const lx = Math.cos(town.heading);
     const lz = -Math.sin(town.heading);
-    const x = town.x + lx * 20;
-    const z = town.z + lz * 20;
-    expect(field.heightAt(x, z)).toBeCloseTo(field.townY + ROAD_LIFT, 6);
-    expect(field.surfaceAt(x, z)).toBe('tarmac');
+    const junction = field.heightAt(town.x, town.z);
+    expect(field.heightAt(town.x + lx * 1, town.z + lz * 1)).toBeCloseTo(junction, 1);
+    // Out along the stub the deck follows the ground, gently.
+    const far = field.heightAt(town.x + lx * 25, town.z + lz * 25);
+    expect(Math.abs(far - junction)).toBeLessThanOrEqual(25 * 0.08 + ROAD_LIFT);
+    expect(field.surfaceAt(town.x + lx * 20, town.z + lz * 20)).toBe('tarmac');
     // On the route inside the town the surface is paved too, whatever the stage is made of.
-    stage.path.sample(600, { x: 0, z: 0, heading: 0 });
     expect(field.surfaceAt(town.x, town.z)).toBe('tarmac');
-    // Off every street the plateau is the region's off-road surface.
-    expect(field.surfaceAt(town.x + lx * 40, town.z + lz * 40)).not.toBe('tarmac');
+    // Off every street the ground is the region's off-road surface.
+    expect(field.surfaceAt(town.x + lx * 45, town.z + lz * 45)).not.toBe('tarmac');
   });
 });
 
@@ -153,6 +163,8 @@ describe('town scenery and colliders', () => {
     expect(boxes[1]).toMatchObject({ hx: 4, hz: BARRIER_HALF_DEPTH });
   });
 });
+
+const b0Kind = (town: TownDef) => town.buildings[0]!.style;
 
 /** Generated stages at index 1..3 for game seeds 1..60 that carry a town. */
 function townStages(): StageDef[] {
@@ -257,7 +269,7 @@ describe('town generator', () => {
     }
   });
 
-  it('keeps the generator invariants: no self-approach, dead-level route through the town', () => {
+  it('keeps the generator invariants: no self-approach, grade-limited streets, buildings on the ground', () => {
     for (const stage of townStages().slice(0, 12)) {
       const p = stage.path;
       let minSep = Infinity;
@@ -267,14 +279,31 @@ describe('town generator', () => {
       expect(minSep, `${stage.seed}/${stage.index}`).toBeGreaterThan(50);
       const field = new TerrainField(stage);
       const town = stage.town!;
-      let worst = 0;
-      for (let d = town.from; d <= town.to; d += 2)
-        worst = Math.max(worst, Math.abs(field.roadHeightAt(d) - field.townY));
-      expect(worst, `${stage.seed}/${stage.index}`).toBeLessThan(0.02);
+      const problems: string[] = [];
       for (let d = 2; d < p.length; d += 2)
-        expect(Math.abs(field.roadHeightAt(d) - field.roadHeightAt(d - 2))).toBeLessThanOrEqual(
-          0.25,
-        );
+        if (Math.abs(field.roadHeightAt(d) - field.roadHeightAt(d - 2)) > 0.25)
+          problems.push(`grade at ${d}`);
+      // Side streets meet the route at its level, run level across the junction, then climb gently.
+      for (const st of town.streets) {
+        if (st.route) continue;
+        const dx = (st.x1 - st.x0) / 32;
+        const dz = (st.z1 - st.z0) / 32;
+        const j = field.heightAt(st.x0, st.z0);
+        if (Math.abs(field.heightAt(st.x0 + dx * 2, st.z0 + dz * 2) - j) > 0.05)
+          problems.push(`stub step ${stage.seed}`);
+        if (Math.abs(field.heightAt(st.x0 + dx * 24, st.z0 + dz * 24) - j) > 24 * 0.08 + 0.1)
+          problems.push(`stub grade ${stage.seed}`);
+      }
+      // Every building stands on a level terrace: all four corners meet its base height.
+      const props = scatterScenery(field);
+      for (const b of town.buildings) {
+        const base = buildingBaseHeight(b, field);
+        for (const [x, z] of buildingCorners(b))
+          if (Math.abs(field.heightAt(x, z) - base) > 0.03)
+            problems.push(`terrace ${stage.seed}: ${(field.heightAt(x, z) - base).toFixed(2)}`);
+      }
+      expect(props.filter((p) => p.kind === b0Kind(town)).length).toBeGreaterThan(0);
+      expect(problems, `${stage.seed}/${stage.index}`).toEqual([]);
     }
   });
 });

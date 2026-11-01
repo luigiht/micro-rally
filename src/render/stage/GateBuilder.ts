@@ -49,7 +49,7 @@ export class GateBuilder {
     for (const g of stage.gates) {
       if (g.kind === 'finish')
         this.addArch('finish', g.x, g.z, g.heading, g.halfWidth - 0.8, field);
-      else this.addControlBoards(g.x, g.z, g.heading, stage.halfWidth + 1.2, field);
+      else this.addControlBoards(g.x, g.z, g.heading, g.halfWidth - 3 + 1.2, field);
     }
   }
 
