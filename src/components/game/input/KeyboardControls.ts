@@ -5,7 +5,6 @@ export type KeyAction = 'reset' | 'camera' | 'debug' | 'pause';
 const ACTIONS: Readonly<Record<string, KeyAction>> = {
   KeyR: 'reset',
   KeyC: 'camera',
-  KeyV: 'camera',
   Backquote: 'debug',
   Escape: 'pause',
 };
@@ -54,6 +53,11 @@ export class KeyboardControls {
   }
 
   private readonly handleDown = (e: KeyboardEvent): void => {
+    // Esc closes panels even when a form control inside one has focus.
+    if (e.code === 'Escape' && !e.repeat) {
+      this.onAction('pause');
+      return;
+    }
     if (isTyping(e.target)) return;
     if (DRIVING_KEYS.has(e.code)) {
       e.preventDefault();

@@ -84,8 +84,8 @@ describe('FirstPersonCameraRig', () => {
     const f = frame(3, -2, 0);
     rig.snap(f);
     expect(f.camera.position.x).toBeCloseTo(3.34, 2);
-    expect(f.camera.position.y).toBeCloseTo(1.2, 2);
-    expect(f.camera.position.z).toBeCloseTo(-2.33, 2);
+    expect(f.camera.position.y).toBeCloseTo(1.24, 2);
+    expect(f.camera.position.z).toBeCloseTo(-2.15, 2);
     const ahead = f.camera.getWorldDirection(new Vector3());
     expect(ahead.z).toBeGreaterThan(0.99);
     expect(ahead.y).toBeLessThan(0); // slight tilt toward the road
@@ -119,8 +119,8 @@ describe('FirstPersonCameraRig', () => {
     rig.snap(f);
     expect(rig.mode).toBe('interior');
     expect(f.camera.position.x).toBeCloseTo(0.34, 2);
-    expect(f.camera.position.y).toBeCloseTo(1.2, 2);
-    expect(f.camera.position.z).toBeCloseTo(-0.33, 2);
+    expect(f.camera.position.y).toBeCloseTo(1.24, 2);
+    expect(f.camera.position.z).toBeCloseTo(-0.15, 2);
     expect(f.camera.fov).toBe(70);
     expect(f.camera.getWorldDirection(new Vector3()).z).toBeGreaterThan(0.99);
   });

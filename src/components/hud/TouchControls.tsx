@@ -36,7 +36,7 @@ function PadButton({ icon, label, onPress }: PadButtonProps) {
   );
 }
 
-/** Steer pad (left) and pedals (right), shown on coarse-pointer devices only. */
+/** Steer pad (left); handbrake over the pedals (right). Shown on coarse-pointer devices only. */
 export function TouchControls() {
   const m = useMessages();
   const steer = useRef({ left: false, right: false });
@@ -49,28 +49,28 @@ export function TouchControls() {
 
   return (
     <>
-      <div className="absolute bottom-4 left-4 hidden flex-col items-start gap-3 coarse:flex">
+      <div className="absolute bottom-4 left-4 hidden gap-3 coarse:flex">
+        <PadButton icon="left" label={m.touch.left} onPress={(d) => setSteer('left', d)} />
+        <PadButton icon="right" label={m.touch.right} onPress={(d) => setSteer('right', d)} />
+      </div>
+      <div className="absolute right-4 bottom-4 hidden flex-col items-end gap-3 coarse:flex">
         <PadButton
           icon="handbrake"
           label={m.touch.handbrake}
           onPress={(d) => (TOUCH_INPUT.handbrake = d)}
         />
         <div className="flex gap-3">
-          <PadButton icon="left" label={m.touch.left} onPress={(d) => setSteer('left', d)} />
-          <PadButton icon="right" label={m.touch.right} onPress={(d) => setSteer('right', d)} />
+          <PadButton
+            icon="down"
+            label={m.touch.brake}
+            onPress={(d) => (TOUCH_INPUT.brake = d ? 1 : 0)}
+          />
+          <PadButton
+            icon="up"
+            label={m.touch.gas}
+            onPress={(d) => (TOUCH_INPUT.throttle = d ? 1 : 0)}
+          />
         </div>
-      </div>
-      <div className="absolute right-4 bottom-4 hidden gap-3 coarse:flex">
-        <PadButton
-          icon="down"
-          label={m.touch.brake}
-          onPress={(d) => (TOUCH_INPUT.brake = d ? 1 : 0)}
-        />
-        <PadButton
-          icon="up"
-          label={m.touch.gas}
-          onPress={(d) => (TOUCH_INPUT.throttle = d ? 1 : 0)}
-        />
       </div>
     </>
   );

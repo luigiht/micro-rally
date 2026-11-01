@@ -75,7 +75,6 @@ export function GamePanel() {
     <HudDialog
       id="game-panel"
       title={m.game.title}
-      subtitle={m.game.paused}
       closeLabel={m.game.close}
       onClose={() => useUiStore.getState().closePanel()}
     >

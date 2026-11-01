@@ -11,7 +11,7 @@ import { useUiStore } from '@/state/uiStore';
 import { PixelIcon, type PixelIconName } from './PixelIcon';
 
 /** Stages listed before "show more" has been pressed. */
-const PAGE_SIZE = 6;
+const PAGE_SIZE = 4;
 
 const SURFACE_ICON: Readonly<Record<Surface, PixelIconName>> = {
   tarmac: 'tarmac',
@@ -27,10 +27,10 @@ const SURFACE_ICON: Readonly<Record<Surface, PixelIconName>> = {
  * reflows under the pointer. Touch devices have no hover: there the button
  * flows normally with the detail always open.
  */
-const SLOT = 'relative h-9 w-[4.5rem] coarse:h-auto coarse:w-auto';
+const SLOT = 'relative h-9 w-[4.5rem] coarse:h-auto coarse:w-full';
 const BUTTON =
   'group absolute inset-y-0 inline-flex min-w-full items-center justify-center px-3 py-2 ' +
-  'hover:z-10 focus-visible:z-10 coarse:static coarse:min-w-0';
+  'hover:z-10 focus-visible:z-10 coarse:static coarse:w-full coarse:min-w-0 coarse:justify-start';
 /** Collapsed with max-width, not display, so the accessible name keeps the stage name. */
 const DETAIL =
   'max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-[max-width,opacity,margin] duration-300 ease-out ' +
@@ -83,7 +83,10 @@ export function StageList() {
   return (
     <>
       <h3 className="mt-5 font-pixel text-xs">{m.game.stagesSection}</h3>
-      <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-5 px-1 pb-2" data-testid="stage-list">
+      <ul
+        className="mt-3 flex flex-wrap gap-x-4 gap-y-5 px-1 pb-2 coarse:gap-y-3"
+        data-testid="stage-list"
+      >
         {briefs.map((b) => {
           const driving = b.index === stageIndex;
           const best = records[b.index]?.best;
@@ -114,7 +117,7 @@ export function StageList() {
           );
         })}
         {hidden > 0 && (
-          <li className="flex">
+          <li className="flex coarse:w-full coarse:justify-center">
             <button
               type="button"
               onClick={() => setRevealed((n) => n + PAGE_SIZE)}

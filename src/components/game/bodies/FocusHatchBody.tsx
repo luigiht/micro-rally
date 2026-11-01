@@ -221,7 +221,7 @@ export function FocusHatchBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Re
         <Lamp key={x} p={[x, 0.82, 2.26]} radius={0.12} c={K.head} glow={0.55} />
       ))}
       <Box p={[0, 1.45, 0.3]} s={[0.36, 0.06, 0.3]} c={K.trim} />
-      <Box p={[-0.5, 1.56, -0.7]} s={[0.02, 0.3, 0.02]} c={K.trim} r={[-0.3, 0, 0]} />
+      <Box p={[-0.5, 1.59, -0.7]} s={[0.02, 0.3, 0.02]} c={K.trim} r={[-0.3, 0, 0]} />
       <Box p={[0.45, 1.52, 0.5]} s={[0.02, 0.22, 0.02]} c={K.trim} r={[-0.2, 0, 0]} />
       {/* Black wing: short uprights from the base of the rear glass at the tail's top edge; blade about roof height */}
       <Box p={[0.48, 1.17, -1.96]} s={[0.05, 0.4, 0.14]} c={K.trim} />

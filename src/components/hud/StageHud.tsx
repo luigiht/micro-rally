@@ -120,7 +120,7 @@ export function StageHud() {
       {/* Centred on desktop; on touch devices the stack hugs the top-left and money joins it. */}
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center p-4 font-pixel text-ink coarse:items-start coarse:pl-14">
         <p
-          className="pixel-box px-4 py-2 text-xl leading-none md:text-2xl coarse:text-lg"
+          className="pixel-box px-4 py-2 text-xl leading-none md:text-2xl coarse:flex coarse:h-14 coarse:items-center coarse:px-3 coarse:text-2xl"
           data-testid="stage-timer"
         >
           {formatTime(time)}

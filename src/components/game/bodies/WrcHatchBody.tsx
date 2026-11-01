@@ -155,7 +155,7 @@ export function WrcHatchBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Ref<
       {/* Roof scoop and antenna */}
       <Box p={[0, 1.45, 0.2]} s={[0.4, 0.07, 0.3]} c={K.navy} />
       <Box p={[0, 1.46, 0.36]} s={[0.34, 0.05, 0.02]} c={K.trim} />
-      <Box p={[-0.5, 1.56, -0.7]} s={[0.02, 0.3, 0.02]} c={K.trim} r={[-0.3, 0, 0]} />
+      <Box p={[-0.5, 1.59, -0.7]} s={[0.02, 0.3, 0.02]} c={K.trim} r={[-0.3, 0, 0]} />
       {/* Two-tier wing on the roof's trailing edge, over the top of the rear glass */}
       <Box p={[0.5, 1.47, -1.26]} s={[0.05, 0.16, 0.22]} c={K.trim} r={[0.15, 0, 0]} />
       <Box p={[-0.5, 1.47, -1.26]} s={[0.05, 0.16, 0.22]} c={K.trim} r={[0.15, 0, 0]} />

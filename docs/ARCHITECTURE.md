@@ -63,6 +63,10 @@ flowchart LR
   publishes telemetry/HUD snapshots to Zustand at 10 Hz.
 - `StageRenderer` owns every three.js object for a stage and disposes them
   together; chunk managers stream around the car via `ChunkStreamer`.
+  `CarInterior` (components/game) assembles the first-person cabin from
+  `interior/interiorSpecs.ts` (per-car envelope, kit and palette) using
+  `interior/InteriorParts.tsx` and `interior/InteriorDash.tsx`; the pose
+  carries gear and turbo state so levers and lamps animate per frame.
   `SceneryScatter` also dots houses (kind `house`, three-circle colliders)
   well back from the road; `HouseGeometry` builds the two vertex-coloured
   instanced parts. `GateBuilder` draws start/finish gantries and, at

@@ -21,3 +21,6 @@ blob-report/
 # os / editor
 .DS_Store
 *.log
+
+# Reference photos and 3D models used only for measuring, never shipped
+context/

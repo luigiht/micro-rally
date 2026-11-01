@@ -11,12 +11,12 @@ export interface FirstPersonView {
   tiltDown: number;
 }
 
-/** Behind the wheel, inside the modelled interior; the car hides its roof and glass. */
+/** Behind the wheel, inside the modelled interior: eye high and close to the rim so the road fills the frame. */
 export const INTERIOR_VIEW: FirstPersonView = {
   mode: 'interior',
-  eye: new Vector3(0.34, 1.2, -0.33),
+  eye: new Vector3(0.34, 1.24, -0.15),
   fov: 70,
-  tiltDown: 0.07,
+  tiltDown: 0.02,
 };
 
 const LOOK_AHEAD = 12;

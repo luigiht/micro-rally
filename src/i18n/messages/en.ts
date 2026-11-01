@@ -113,6 +113,9 @@ export const en = {
     coupe: {
       name: 'Tricolore Coupé',
     },
+    t16: {
+      name: 'Sochaux T16',
+    },
     saloon: {
       name: 'Boreal Saloon',
     },
@@ -143,6 +146,9 @@ export const en = {
     label: 'Game menu',
     settings: 'Settings',
     game: 'Game',
+    pause: 'Pause',
+    pauseTitle: 'Paused',
+    resume: 'Resume',
   },
   settings: {
     title: 'Settings',
@@ -157,7 +163,6 @@ export const en = {
   game: {
     title: 'Game',
     restartStage: 'Restart stage',
-    paused: 'Paused while this panel is open.',
     close: 'Close',
     stageSection: 'This stage',
     stageName: 'Stage',
@@ -194,10 +199,17 @@ export const en = {
     { keys: 'Space', action: 'Handbrake' },
     { keys: 'Shift', action: 'Turbo (when fitted)' },
     { keys: 'R', action: 'Back to the last checkpoint' },
-    { keys: 'C · V', action: 'Switch camera (chase / interior / isometric)' },
+    { keys: 'C', action: 'Switch camera (chase / interior / isometric)' },
     { keys: 'Mouse wheel', action: 'Zoom the camera' },
     { keys: '`', action: 'Debug overlay' },
-    { keys: 'Esc', action: 'Open / close the Game panel' },
+    { keys: 'Esc', action: 'Close any panel, or open the Game panel' },
+  ],
+  controlsTouch: [
+    { keys: '◀ ▶', action: 'Steer (bottom left)' },
+    { keys: '▼ ▲', action: 'Brake / gas (bottom right), hold brake to reverse' },
+    { keys: 'Pedal button', action: 'Handbrake' },
+    { keys: 'Pause', action: 'Pause menu: Game, Garage and Settings' },
+    { keys: 'Settings › Camera', action: 'Switch camera (chase / interior / isometric)' },
   ],
   debug: {
     title: 'Debug',

@@ -2,8 +2,24 @@
 
 import { useImperativeHandle, useRef, type Ref } from 'react';
 import type { Group } from 'three';
+import type { CarSpec } from '@/game/vehicle/CarSpec';
 import type { VehiclePose } from '@/game/vehicle/interpolatePose';
-import { Box, CAR_COLORS as C, Disc } from './CarParts';
+import { Box } from './CarParts';
+import { DashCluster, type DashHandle } from './interior/InteriorDash';
+import {
+  BucketSeat,
+  CoDriverKit,
+  Extinguisher,
+  GearLever,
+  Handbrake,
+  HOOP_Z,
+  RollCage,
+  SEAT_BASE,
+  SteeringWheel,
+  type GearLeverHandle,
+} from './interior/InteriorParts';
+import { EYE, INTERIORS } from './interior/interiorSpecs';
+import { RaidKit, Wipers } from './interior/RaidConsole';
 
 export interface CarInteriorHandle {
   apply(pose: Readonly<VehiclePose>): void;
@@ -12,134 +28,127 @@ export interface CarInteriorHandle {
 
 /** Steering wheel turn per radian of road-wheel angle (≈160° at full lock). */
 const WHEEL_RATIO = 4.5;
-const SPEEDO_MAX_KMH = 240;
-/** Needles sweep clockwise from about 7 o'clock to 5 o'clock. */
-const NEEDLE_MIN = -2.36;
-const NEEDLE_SWEEP = 4.72;
-const SEAT_X = 0.34;
-
-function Gauge({ x, needleRef }: { x: number; needleRef: Ref<Group> }) {
-  return (
-    <group position={[x, 0.98, 0.175]}>
-      <Disc p={[0, 0, 0]} radius={0.045} depth={0.01} c={C.livery} />
-      <group ref={needleRef} position={[0, 0, -0.008]}>
-        <Box p={[0, 0.02, 0]} s={[0.006, 0.04, 0.004]} c={C.tail} />
-      </group>
-      <Disc p={[0, 0, -0.009]} radius={0.008} depth={0.006} c={C.trim} />
-    </group>
-  );
-}
-
-function Seat({ x }: { x: number }) {
-  return (
-    <group position={[x, 0, 0]}>
-      <Box p={[0, 0.86, -0.4]} s={[0.5, 0.12, 0.5]} c={C.seat} />
-      <Box p={[0, 1.06, -0.6]} s={[0.5, 0.36, 0.1]} c={C.seat} r={[-0.12, 0, 0]} />
-      <Box p={[0, 1.06, -0.545]} s={[0.12, 0.3, 0.006]} c={C.paint} r={[-0.12, 0, 0]} />
-      <Box p={[0, 1.23, -0.64]} s={[0.22, 0.1, 0.08]} c={C.seat} />
-    </group>
-  );
-}
 
 /**
- * Cabin interior seen from the driver's seat: dash with working speedo and
- * tacho, steering wheel that turns with the input, seats, pillars and roof.
- * Lives inside the leaning body group; shown only in the interior view.
+ * Cabin interior seen from the driver's seat, built from the car's
+ * `InteriorSpec`: envelope (floor, lining, pillars, door cards, bulkhead),
+ * roll cage, dash cluster, wheel, levers, bucket seats and the co-driver's
+ * kit. Lives inside the leaning body group; shown only in the interior view.
  */
-export function CarInterior({
-  ref,
-  redlineRpm,
-}: {
-  ref: Ref<CarInteriorHandle>;
-  redlineRpm: number;
-}) {
+export function CarInterior({ ref, spec }: { ref: Ref<CarInteriorHandle>; spec: CarSpec }) {
+  const s = INTERIORS[spec.id];
+  const p = s.palette;
   const root = useRef<Group>(null);
-  const wheel = useRef<Group>(null);
-  const speedo = useRef<Group>(null);
-  const tacho = useRef<Group>(null);
+  const rim = useRef<Group>(null);
+  const dash = useRef<DashHandle>(null);
+  const lever = useRef<GearLeverHandle>(null);
 
   useImperativeHandle(ref, () => ({
     apply(pose) {
       if (!root.current?.visible) return;
       // A right turn is a negative road-wheel angle; the rim turns clockwise for the driver.
-      if (wheel.current) wheel.current.rotation.z = -pose.steerAngle * WHEEL_RATIO;
-      const kmh = Math.min(1, (Math.abs(pose.speed) * 3.6) / SPEEDO_MAX_KMH);
-      if (speedo.current) speedo.current.rotation.z = NEEDLE_MIN + NEEDLE_SWEEP * kmh;
-      const revs = Math.min(1, pose.rpm / (redlineRpm * 1.05));
-      if (tacho.current) tacho.current.rotation.z = NEEDLE_MIN + NEEDLE_SWEEP * revs;
+      if (rim.current) rim.current.rotation.z = -pose.steerAngle * WHEEL_RATIO;
+      dash.current?.apply(pose);
+      lever.current?.setGear(pose.gear);
     },
     setVisible(visible) {
       if (root.current) root.current.visible = visible;
     },
   }));
 
+  const { halfWidth: hw, roofY, floorY, dashTopY, cowlZ, cowlY, screenTopZ, rearZ } = s;
+  const beltY = dashTopY - 0.06;
+  const doorZ0 = cowlZ - 0.2;
+  const doorZ1 = HOOP_Z - 0.1;
+  // A-pillar from the dash corner up to the header.
+  const pillarLen = Math.hypot(roofY - dashTopY, cowlZ - screenTopZ);
+  const pillarTilt = -Math.atan2(cowlZ - screenTopZ, roofY - dashTopY);
   return (
     <group ref={root} visible={false}>
-      {/* Floor, roof lining (a touch higher than the outside roof: nobody can compare),
-          windscreen header and rear-view mirror. The lining self-lights a little so the
-          green hemisphere ground light doesn't tint it olive. */}
-      <Box p={[0, 0.805, -0.25]} s={[1.46, 0.01, 1.8]} c={C.trim} />
-      <Box p={[0, 1.38, -0.25]} s={[1.46, 0.02, 1.7]} c={C.lining} glow={0.45} />
-      <Box p={[0, 1.36, 0.57]} s={[1.46, 0.045, 0.14]} c={C.lining} glow={0.2} />
-      <Box p={[0, 1.31, 0.53]} s={[0.02, 0.06, 0.02]} c={C.trim} />
-      <Box p={[0, 1.26, 0.5]} s={[0.26, 0.07, 0.02]} c={C.glass} />
-      {/* Pillars and door cards, both sides */}
+      {/* Floor, roof lining (self-lit a little so the ground light doesn't tint it), header, sun strip, mirror, map light */}
+      <Box p={[0, floorY, (cowlZ + rearZ) / 2]} s={[hw * 2, 0.01, cowlZ - rearZ]} c="#2b2a33" />
+      <Box
+        p={[0, roofY, (screenTopZ + rearZ) / 2]}
+        s={[hw * 2, 0.02, screenTopZ - rearZ]}
+        c={p.lining}
+        glow={0.45}
+      />
+      <Box p={[0, roofY - 0.02, screenTopZ]} s={[hw * 2, 0.045, 0.14]} c={p.lining} glow={0.2} />
+      <Box p={[0, roofY - 0.075, screenTopZ + 0.1]} s={[hw * 2 - 0.1, 0.06, 0.012]} c="#2b2a33" />
+      <Box p={[0, roofY - 0.108, screenTopZ + 0.1]} s={[hw * 2 - 0.1, 0.008, 0.014]} c={p.accent} />
+      <Box p={[0, roofY - 0.07, screenTopZ - 0.04]} s={[0.02, 0.06, 0.02]} c="#2b2a33" />
+      <Box p={[0, roofY - 0.12, screenTopZ - 0.07]} s={[0.26, 0.07, 0.02]} c="#4d6f8c" />
+      <Box p={[0.12, roofY - 0.015, -0.2]} s={[0.08, 0.02, 0.1]} c="#2b2a33" />
+      <Box p={[0.12, roofY - 0.027, -0.2]} s={[0.04, 0.006, 0.05]} c="#f4f1ea" glow={0.3} />
+      {/* Pillars, door cards with pull straps and arm rests, both sides */}
       {([1, -1] as const).map((side) => (
         <group key={side}>
           <Box
-            p={[0.71 * side, 1.08, 0.675]}
-            s={[0.07, 0.6, 0.07]}
-            c={C.lining}
-            r={[-0.35, 0, 0]}
+            p={[(hw - 0.03) * side, (dashTopY + roofY) / 2, (cowlZ + screenTopZ) / 2]}
+            s={[0.06, pillarLen, 0.07]}
+            c={p.lining}
+            r={[pillarTilt, 0, 0]}
           />
-          <Box p={[0.725 * side, 1.21, -0.45]} s={[0.04, 0.36, 0.07]} c={C.lining} />
-          <Box p={[0.725 * side, 0.92, -0.25]} s={[0.03, 0.24, 1.75]} c={C.seat} />
-          <Box p={[0.7 * side, 1.0, -0.25]} s={[0.06, 0.04, 0.5]} c={C.trim} />
+          <Box
+            p={[(hw - 0.025) * side, (beltY + roofY) / 2, HOOP_Z]}
+            s={[0.05, roofY - beltY, 0.08]}
+            c={p.lining}
+          />
+          <Box
+            p={[hw * side, (floorY + beltY) / 2, (doorZ0 + doorZ1) / 2]}
+            s={[0.03, beltY - floorY, doorZ0 - doorZ1]}
+            c={p.door}
+          />
+          <Box p={[(hw - 0.03) * side, beltY - 0.1, -0.15]} s={[0.06, 0.04, 0.5]} c="#2b2a33" />
+          <Box p={[(hw - 0.02) * side, beltY - 0.3, 0.1]} s={[0.012, 0.03, 0.18]} c={p.accent} />
         </group>
       ))}
-      {/* Dash, binnacle and gauges */}
-      <Box p={[0, 0.9, 0.42]} s={[1.46, 0.18, 0.4]} c={C.trim} />
-      <Box p={[SEAT_X, 0.98, 0.26]} s={[0.4, 0.12, 0.16]} c={C.trim} />
-      <Gauge x={SEAT_X + 0.075} needleRef={speedo} />
-      <Gauge x={SEAT_X - 0.075} needleRef={tacho} />
-      {/* Centre knobs, pace-note pad, console and gear lever */}
-      {[-0.07, 0, 0.07].map((x, i) => (
-        <Disc
-          key={x}
-          p={[x, 0.92, 0.215]}
-          radius={0.018}
-          depth={0.012}
-          c={i === 1 ? C.paint : C.livery}
+      {/* Rear bulkhead with a shelf where the cabin runs back */}
+      <Box p={[0, (floorY + beltY) / 2, rearZ]} s={[hw * 2, beltY - floorY, 0.02]} c={p.lining} />
+      {rearZ < HOOP_Z - 0.35 && (
+        <Box
+          p={[0, beltY, (HOOP_Z - 0.1 + rearZ) / 2]}
+          s={[hw * 2, 0.02, HOOP_Z - 0.1 - rearZ]}
+          c={p.door}
         />
-      ))}
-      <Box p={[-SEAT_X, 1.0, 0.3]} s={[0.22, 0.03, 0.15]} c={C.livery} />
-      <Box p={[-SEAT_X, 1.016, 0.32]} s={[0.14, 0.004, 0.012]} c={C.trim} />
-      <Box p={[-SEAT_X - 0.02, 1.016, 0.285]} s={[0.1, 0.004, 0.012]} c={C.trim} />
-      <Box p={[0, 0.86, -0.05]} s={[0.26, 0.12, 0.5]} c={C.trim} />
-      <mesh position={[0, 0.99, -0.02]}>
-        <cylinderGeometry args={[0.012, 0.012, 0.14, 8]} />
-        <meshStandardMaterial color={C.trim} flatShading />
-      </mesh>
-      <Box p={[0, 1.07, -0.02]} s={[0.04, 0.04, 0.04]} c={C.livery} />
-      {/* Steering wheel on its raked column */}
-      <group position={[SEAT_X, 0.9, 0.08]} rotation={[0.35, 0, 0]}>
-        <group ref={wheel}>
-          <mesh>
-            <torusGeometry args={[0.17, 0.016, 8, 24]} />
-            <meshStandardMaterial color={C.tyre} flatShading />
-          </mesh>
-          <Box p={[0, -0.01, 0]} s={[0.31, 0.028, 0.02]} c={C.trim} />
-          <Box p={[0, -0.0875, 0]} s={[0.028, 0.155, 0.02]} c={C.trim} />
-          <Disc p={[0, 0, 0]} radius={0.045} depth={0.03} c={C.trim} />
-          <Box p={[0, 0, -0.017]} s={[0.03, 0.03, 0.004]} c={C.paint} />
-        </group>
-        <mesh position={[0, 0, 0.11]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.03, 0.03, 0.22, 10]} />
-          <meshStandardMaterial color={C.trim} flatShading />
-        </mesh>
-      </group>
-      <Seat x={SEAT_X} />
-      <Seat x={-SEAT_X} />
+      )}
+      {/* Dash and knee roll, then the cluster */}
+      <Box p={[0, dashTopY - 0.09, cowlZ - 0.2]} s={[hw * 2, 0.18, 0.4]} c={p.dash} />
+      <Box p={[0, dashTopY - 0.24, cowlZ - 0.1]} s={[hw * 2, 0.12, 0.2]} c={p.dash} />
+      {/* Scuttle ledge up to the screen base, with a demister slot, where the hull's cowl sits above the dash */}
+      {cowlY > dashTopY - 0.01 && (
+        <>
+          <Box
+            p={[0, (dashTopY - 0.02 + cowlY + 0.01) / 2, cowlZ - 0.1]}
+            s={[hw * 2, cowlY + 0.03 - dashTopY, 0.2]}
+            c={p.dash}
+          />
+          <Box p={[0, cowlY + 0.012, cowlZ - 0.08]} s={[hw * 2 - 0.4, 0.006, 0.08]} c="#15141a" />
+        </>
+      )}
+      <DashCluster ref={dash} spec={s} redlineRpm={spec.redlineRpm} />
+      {s.raidKit && <RaidKit spec={s} />}
+      {s.wipers && <Wipers spec={s} />}
+      <RollCage spec={s} />
+      <SteeringWheel spec={s} rimRef={rim} />
+      {/* Transmission tunnel with the gear lever, handbrake and intercom; seats; co-driver kit */}
+      <Box p={[0, floorY + 0.06, -0.05]} s={[0.26, 0.12, 0.5]} c="#2b2a33" />
+      <GearLever ref={lever} style={s.lever} p={p} position={[-0.04, floorY + 0.12, 0.12]} />
+      <Handbrake position={[0.09, floorY + 0.12, -0.02]} />
+      <BucketSeat x={EYE.x} p={p} />
+      <BucketSeat x={s.coDriverX} p={p} />
+      {/* Suspended seats stand on pedestals where the floor sits well below the cushions (the truck) */}
+      {SEAT_BASE - floorY > 0.03 &&
+        [EYE.x, s.coDriverX].map((x) => (
+          <Box
+            key={x}
+            p={[x, (floorY + SEAT_BASE) / 2, -0.4]}
+            s={[0.34, SEAT_BASE - floorY, 0.4]}
+            c="#2b2a33"
+          />
+        ))}
+      <CoDriverKit spec={s} x={s.coDriverX} />
+      {s.extinguisher && <Extinguisher x={s.coDriverX} floorY={floorY} z={cowlZ - 0.55} />}
     </group>
   );
 }

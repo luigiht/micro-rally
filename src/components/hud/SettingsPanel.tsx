@@ -52,7 +52,7 @@ export function SettingsPanel() {
           </option>
         ))}
       </select>
-      <p className="mt-2 text-xs text-ink/70">{m.settings.cameraHint}</p>
+      <p className="mt-2 text-xs text-ink/70 coarse:hidden">{m.settings.cameraHint}</p>
 
       <h3 className="mt-6 font-pixel text-xs">{m.settings.controls}</h3>
       <ControlsTable />

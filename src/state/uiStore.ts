@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
-/** Modal HUD panels. Driving pauses while one is open. */
-export type HudPanel = 'game' | 'settings' | 'garage';
+/** Modal HUD panels. Driving pauses while one is open; `menu` is the touch-device pause menu that opens the others. */
+export type HudPanel = 'menu' | 'game' | 'settings' | 'garage';
 
 interface UiState {
   panel: HudPanel | null;

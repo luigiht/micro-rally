@@ -30,13 +30,17 @@ test('phone landscape: HUD pieces do not overlap and touch pads are shown', asyn
   expect(overlaps(bar, timer)).toBe(false);
   expect(overlaps(bar, money)).toBe(false);
   expect(overlaps(bar, handbrake)).toBe(false);
-  // Labels collapse to icons but stay in the accessible name.
-  await expect(page.getByRole('button', { name: 'Settings' })).toBeVisible();
-  // On touch devices the Garage button moves up into the toolbar, beside Settings.
-  const garage = await box(page.getByRole('navigation').getByRole('button', { name: 'Garage' }));
-  expect(garage.x).toBeLessThan(toolbar.x + toolbar.width);
-  expect(garage.y).toBeGreaterThanOrEqual(toolbar.y);
-  await expect(page.getByRole('button', { name: 'Garage' })).toHaveCount(1);
+  // Desktop toolbar buttons are hidden on touch; the Pause button carries its label for assistive tech.
+  await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
+  // On touch devices the toolbar is a single Pause button whose menu opens Game, Garage and Settings.
+  await expect(page.getByRole('navigation').getByRole('button')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Pause' }).click();
+  const menu = page.getByRole('dialog', { name: 'Paused' });
+  for (const name of ['Game', 'Garage', 'Settings'])
+    await expect(menu.getByRole('button', { name })).toBeVisible();
+  await menu.getByRole('button', { name: 'Garage' }).click();
+  await expect(page.getByRole('dialog', { name: 'Garage' })).toBeVisible();
+  await expect(menu).toBeHidden();
 });
 
 test('holding the on-screen gas pedal drives the car', async ({ page }) => {

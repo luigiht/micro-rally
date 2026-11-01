@@ -117,6 +117,9 @@ export const it: Messages = {
     coupe: {
       name: 'Tricolore Coupé',
     },
+    t16: {
+      name: 'Sochaux T16',
+    },
     saloon: {
       name: 'Boreal Saloon',
     },
@@ -147,6 +150,9 @@ export const it: Messages = {
     label: 'Menu di gioco',
     settings: 'Impostazioni',
     game: 'Gioco',
+    pause: 'Pausa',
+    pauseTitle: 'In pausa',
+    resume: 'Riprendi',
   },
   settings: {
     title: 'Impostazioni',
@@ -165,7 +171,6 @@ export const it: Messages = {
   game: {
     title: 'Gioco',
     restartStage: 'Ricomincia la prova',
-    paused: 'In pausa finché questo pannello è aperto.',
     close: 'Chiudi',
     stageSection: 'Questa prova',
     stageName: 'Prova',
@@ -203,12 +208,25 @@ export const it: Messages = {
     { keys: 'Maiusc', action: 'Turbo (se montato)' },
     { keys: 'R', action: 'Torna all’ultimo controllo' },
     {
-      keys: 'C · V',
+      keys: 'C',
       action: 'Cambia telecamera (inseguimento / interni / isometrica)',
     },
     { keys: 'Rotella del mouse', action: 'Zoom della telecamera' },
     { keys: '`', action: 'Pannello di debug' },
-    { keys: 'Esc', action: 'Apri / chiudi il pannello Gioco' },
+    { keys: 'Esc', action: 'Chiudi qualsiasi pannello, o apri il pannello Gioco' },
+  ],
+  controlsTouch: [
+    { keys: '◀ ▶', action: 'Sterzo (in basso a sinistra)' },
+    {
+      keys: '▼ ▲',
+      action: 'Freno / acceleratore (in basso a destra), tieni il freno per la retro',
+    },
+    { keys: 'Pulsante pedale', action: 'Freno a mano' },
+    { keys: 'Pausa', action: 'Menu di pausa: Gioco, Garage e Impostazioni' },
+    {
+      keys: 'Impostazioni › Telecamera',
+      action: 'Cambia telecamera (inseguimento / interni / isometrica)',
+    },
   ],
   debug: {
     title: 'Debug',

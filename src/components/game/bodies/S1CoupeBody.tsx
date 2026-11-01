@@ -152,7 +152,7 @@ export function S1CoupeBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Ref<G
       <Box p={[0, 0.95, 0.72]} s={[0.7, 0.05, 0.26]} c={K.body} />
       <Box p={[0, 0.96, 0.85]} s={[0.6, 0.04, 0.02]} c={K.trim} />
       <Box p={[0.2, ROOF + 0.02, -0.2]} s={[0.22, 0.05, 0.2]} c={K.trim} />
-      <Box p={[0.5, ROOF + 0.15, 0.0]} s={[0.02, 0.34, 0.02]} c={K.trim} r={[-0.2, 0, 0]} />
+      <Box p={[0.5, ROOF + 0.19, 0.0]} s={[0.02, 0.34, 0.02]} c={K.trim} r={[-0.2, 0, 0]} />
       {([1, -1] as const).map((side) => (
         <group key={side}>
           {/* Flank: black sill blade with a yellow edge between the arches; door plate with numeral; arch lips */}

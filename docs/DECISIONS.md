@@ -802,3 +802,195 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
     the trunk's shadow lay entirely inside the canopy's. The foliage cones
     now start at 1.3 m (tree top 4.85) and the trunk is 1.6 m, so pines show
     a trunk and their shadows a stem.
+71. **2026-11-01 — Stage list: four by default, full-width rows on touch.**
+    The Game panel lists the newest four stages (was six) before the "Show
+    more" link, and on coarse-pointer devices each stage button spans the
+    panel width as its own row with the label left-aligned (the hover
+    overlay layout is desktop-only), with the link centred beneath.
+72. **2026-11-01 — Handbrake on the right, drawn as a pedal pad.** On touch
+    devices the handbrake button moved from above the steer pad to above
+    the brake/gas pedals on the right, so all three pedals sit under one
+    thumb and the left is steering only, and its glyph changed from a "P"
+    to a pedal pad with grip ridges. `PixelIcon` now sizes its viewBox from
+    the glyph, so the pedal is a 12×14 glyph in two-pixel strokes
+    (bevelled pad, two ridges, arm and foot) while the rest stay 8×8.
+73. **2026-11-01 — Touch pause menu.** On coarse-pointer devices the
+    top-right toolbar collapses to one Pause button (new `pause` glyph)
+    that opens a `menu` panel (`HudPanel` gained the value): a `HudDialog`
+    titled "Paused" listing Game, Garage and Settings as full-width buttons,
+    each swapping in its panel, with a "Resume" close button. Desktop keeps
+    Settings and Game in the toolbar and the Garage button beside Money;
+    the earlier touch-only Garage toolbar button (decision 54) is replaced
+    by the menu. Esc still toggles the Game panel directly. The Pause button
+    is a 56 px square with a 24 px glyph, matching the touch pedals
+    (`ToolbarButton` `pad` mode), and the stage timer box is the same 56 px
+    tall on touch devices so the top strip lines up, with the digits at the
+    desktop 24 px size so they fill it.
+74. **2026-11-01 — No "paused" subtitle anywhere.** The Game dialog lost its
+    "Paused while this panel is open" line (Settings lost it in decision 57) and the string was removed from all locales; the Garage keeps its
+    money balance and "changes apply right away" hint as its subtitle.
+75. **2026-11-01 — Touch controls in Settings; C only; Esc everywhere.** The
+    Settings controls table now has a touch variant (`controlsTouch`:
+    steer pads, pedals, pedal button for the handbrake, Pause menu, camera
+    via Settings) shown on coarse-pointer devices, with the keyboard table
+    hidden there. The V key no longer cycles the camera (C only). Esc was
+    already wired to close any open panel, but the keyboard handler dropped
+    every key while a form control had focus, so after touching a Settings
+    select Esc did nothing; Escape is now handled before that check.
+76. **2026-11-01 — Sochaux T16 (205 T16-style Group B hatch).** New `t16` car
+    at 6 500, between the coupé and the saloon. Proportions from the
+    reference model's silhouette (3.82 m, 1.7 m over the arches, roof 1.33):
+    a short three-door cabin set forward with a steep screen, a
+    rear window sloping from the roof straight to the tail face with no
+    deck at all (by request, after a short-deck pass: tail at z −1.62,
+    wheelbase 2.42, rear overhang 0.47; the black-and-blue intake scoops
+    that stood proud of the rear flares were removed by request), box
+    flares (0.86 front, 0.88 rear) over a 0.78 body, and a roof-mounted
+    black wing (`Prism` blade on two struts, white end plates) over the
+    deck. Livery from the photos, colour-blocked: white, the red / yellow /
+    blue stripe set low on the doors (hull band) and stepping up the left
+    bonnet corner (deck decals), bonnet vent grid, blue sill skirts, blue
+    scoops on the rear flares' leading faces, rectangular headlamps and
+    amber indicators, a black tail panel with a striped centre grille and
+    red/amber lamp pairs, blue lower bumper, red mud flaps, twin exhausts,
+    white wheels. Spec: 940 kg mid-engined rear-biased 4WD with a short
+    turbo, between the coupé and saloon in power.
+77. **2026-11-01 — Tricolore Coupé rebuilt as a Stratos-shaped Group 4 wedge.**
+    The reference GLB holds only 565 control vertices, so the hull follows
+    the photos and the car's known dimensions (3.71 × 1.75 × 1.11 m): a
+    wide low nose dipping to the splitter, a wraparound screen far forward
+    onto a short 1.0 m-wide roof, a long rear clamshell with four louvres
+    falling to a flat tail, and haunches at 0.88 half-width over both axles
+    with a 0.78 body between. Airline-style livery, colour-blocked: white
+    shell, green / white / red 4 cm bands under the belt crease, a green /
+    white / red band across the left bonnet corner, green / red diagonals
+    on the clamshell, red roof with a white centre stripe and a green
+    trailing-edge lip, a three-hoop spoiler over the clamshell with red and
+    green blade panels, pop-up lamp lids as dark deck decals over the
+    headlamp slots, a four-lamp pod on the lip, round tail lamps in dark
+    bezels, intakes on the haunches, white door plates and a green band on
+    the tail panel. Spec unchanged (rear-drive, 2.16 m wheelbase). From the
+    user's projection sheet: no rear glass — the panel behind the roof is a
+    painted engine cover (station unflagged) carrying the red centre band
+    with white pinstripes and green flanks that also runs down the bonnet,
+    nine dark louvre slats and two vertical rib strips between the hoops;
+    the roof is green with a red centre and white pinstripes; the nose pod
+    carries four smaller centre fog lamps and a larger main beam at each
+    end. The green band between the tail lamps was then removed by request;
+    the tail panel is plain white over the black bumper. Then, by request,
+    the dark pop-up lid decals left the bonnet and a small white ducktail
+    (1.6 m wide, 0.22 deep, tilted up 0.18 rad) sits on the tail's top edge
+    with green / white / red bands across its upper face. The black intake
+    boxes on the haunches' leading faces were removed as not part of the
+    body.
+78. **2026-11-01 — Boreal Saloon rebuilt on the Impreza S6 WRC.** Hull from
+    the reference GLB's body-panel silhouette (scene transforms applied,
+    scaled to 4.34 m): 1.86 m over the arches (0.93 half) with a 0.86/0.88
+    shouldered body between, roof 1.2 flat from z −0.8 to −0.2, fast screen
+    to a 0.9 cowl at z 0.43, long low bonnet to a 0.56 nose, fast rear glass
+    onto a 0.9 boot deck. Livery from the photos, colour-blocked: blue with
+    the yellow swoosh built as seven stepped flank boxes rising from the
+    front arch, over the star disc and onto the rear quarter (the last on
+    the flare face), a yellow disc on the rear door ahead of the arch with
+    six blue star squares, a white door plate, and a yellow swoosh across the boot (deck
+    decals). Lamps as photographed: four round pod lamps on the bonnet lip
+    above the grille and two round lamps low in the bumper. Also a big
+    central bonnet scoop, two vent slots, roof vent, twin antennas, a tall
+    blue wing on uprights with end plates, yellow number plates. The gold
+    pinstripes and roundel of the previous design are gone. Follow-up: the
+    nose stations were widened to the model's 0.86–0.9 half-width right to
+    the tip with a 0.6 m nose face (it had tapered to 0.84 / 0.56 and read
+    thin), and the yellow disc was dropped so the six stars sit as yellow
+    squares directly on the blue door. Then, by request, the nose went
+    taller rather than wider: the bonnet now falls only 0.14 from the cowl
+    to a 0.72 m nose face (was 0.6), with the scoop, lamp pod, headlamps and
+    bumper raised to suit. Then the cabin moved forward: the roof now runs to
+    z 0.25 and the cowl sits at z 0.85 (was 0.43), so the bonnet is 1.3 m
+    and the nose face 0.8 m, with scoop, vents, pod, mirrors and door plate
+    moved to match. Finally the whole body was narrowed about 6 %: 0.8 /
+    0.82 / 0.88 half-widths (1.76 m over the arches, roof panel 0.54), with
+    mirrors, wing, bumpers and lamps brought in to suit; the 1.5 m track is
+    unchanged so the wheels still sit under the arches. The flank vinyls
+    then floated below the belt (the shouldered side leans inward toward
+    the sill), so each box's x is now computed from the flank slope at its
+    height (`flankAt`), and the six-star cluster is repeated on the tail
+    panel between the brake lights.
+79. **2026-11-01 — Per-car rally interiors.** The single shared cabin is
+    replaced by a data-driven one: `interior/interiorSpecs.ts` holds an
+    `InteriorSpec` per `CarId` (cabin envelope derived from each hull's roof,
+    width, cowl and rear-glass stations in the interior frame, where the
+    first-person eye is always at (0.34, 1.1, −0.33); dash style; lever
+    style; cage extent; co-driver kit; palette). `InteriorParts.tsx` builds
+    the kit — a `Tube` helper for the welded roll cage (A-bars, roof rails,
+    main hoop at the B-pillar, front bar; full cages add crossed door bars,
+    a roof diagonal and rear stays), bucket seats with shoulder slots and a
+    six-point harness in the team colour, a round or flat-bottom wheel with
+    a top marker, an H-pattern lever that moves to the gate of the current
+    gear or a tall sequential stick, an upright hydraulic handbrake, the
+    co-driver's open pace-note book, trip meter, intercom amp and footrest,
+    and a fire extinguisher. `InteriorDash.tsx` builds the cluster in three
+    styles (period: three chrome dials and one shift light; analogue: two
+    dials and a five-lamp shift pod; digital: a display with a ten-segment
+    rev bar, shift pod and two small dials) plus a switch panel with a kill
+    switch and a turbo lamp. `VehiclePose` gained `gear` and `turboActive`
+    so the lever, shift lights, rev bar and turbo lamp work from the pose at
+    frame rate without touching stores. Each car differs in envelope,
+    colours and kit: grey-caged converted hatch; white-caged tan-lined
+    Stratos with period dials; white-caged blue T16; blue-caged digital
+    Impreza with a sequential stick; navy-caged red-seated WRC; bare
+    grey-caged Group B; white-caged grey-and-yellow S1; blue-caged lime
+    Focus; and an orange-caged truck cab with the co-driver 0.76 m out and a
+    big wheel. A test pins every envelope around the eye and that the
+    cabins actually vary. By request the interior eye then moved from
+    (0.34, 1.2, −0.33) to (0.34, 1.24, −0.15) with the downward tilt cut
+    from 0.07 to 0.02 rad, so the driver sits high and close to the rim
+    and the road fills the frame; the saloon and T16 cabins dropped
+    (`cabinDrop` −0.22 / −0.12) to keep headroom over the raised eye; every
+    wheel is a full torus (the flat-bottom option was removed); and the
+    levers moved forward on the tunnel so the gear knob no longer looms at
+    the frame's edge. With the eye raised, the Impreza's nose-pod lamps
+    showed as white blocks over the bonnet, so `Lamp` became a short lens in
+    a dark housing: lamps now read as lamps from behind and from the cabin.
+    The truck's cabin and eye then moved forward (`cabinForward` 1.6 →
+    2.1, so the eye sits 0.8 m behind the screen like a real cab-over, with
+    the interior envelope re-derived) with a lower dash (0.9) so the big
+    flat-raked wheel stays under the eye line; the wheel placement rule
+    gained a floor of 0.3 m ahead of the eye. Each spec also records the
+    hull's screen-base height (`cowlY`): where it sits above the dash top a
+    scuttle ledge closes the gap, because the shell is back-face culled and
+    the Impreza's nose lamps and grille were showing through it from the
+    seat. The binnacle can be lifted (`clusterRise`) or pushed toward the
+    cowl (`clusterForward`). Roof antennas now start above the roof skin so
+    their feet can't poke into the cabin. The wheel hub is then placed
+    explicitly per car (`wheelZ`/`wheelY`, default 0.22 m and 9 cm under the
+    dash top) after the rim was found passing through the binnacle hood in
+    the Stratos and the truck: the Stratos wheel comes back to 0.23 m from
+    the eye with the binnacle sunk 3 cm so the rim arcs above the hood, and
+    the truck cab becomes a real cab-over layout: floor 0.74 m under the eye
+    with the seats on pedestals, dash top at 0.8, the big flat wheel 0.4 m
+    ahead with its hub level with the dash top, and the binnacle 0.28 m
+    forward on a tall hood so the display reads through the upper half of
+    the rim. Unit tests pin both: rim clear of the hood in 3D for every car,
+    and the rim arcing above the hood top on screen in those two cockpits.
+    The centre stack moved 10 cm toward the co-driver and is
+    set into the dash face rather than floating ahead of it, the turbo lamp
+    joined the shift-light row on the hood, and the digital hood is wider so
+    its small dials sit inside it. A reference cab-over cockpit then reshaped
+    the truck: its mid-grey dash read as a box, so the dash, hood and lining
+    went dark like the cars', the dash top rose to 0.84 with the hub level
+    with it, and a rally-raid kit (`raidKit`, `RaidConsole.tsx`) adds a
+    centre console with a toggle bank, push buttons, a GPS repeater and
+    knobs, a round gauge pod beside the binnacle and a rocker row across the
+    binnacle top. Two wiper arms (`wipers`) park diagonally across the screen
+    just outside the culled glass. Rim thickness and hub now scale with the
+    rim radius so the truck's wheel reads heavier. A second pass filled the
+    remaining slab: the console grew taller so nothing sits below the dash
+    top (its knobs had been cropped by it) and moved inboard with the gauge
+    pod mounted on it, a switch tray with rockers, warning lamps, start
+    button and key sits between the wheel and the binnacle, a tyre-pressure
+    block with gauges and toggles plus a radio handset sits outboard, and a
+    demister slot runs along the cowl. The switch tray and the rocker row
+    ahead of the wheel were then removed by request, and the truck wheel
+    moved forward to 0.45 m so its rim meets the binnacle face and the hub
+    sits at the dash top right in front of it, closing the bare stretch of
+    dash between the two.

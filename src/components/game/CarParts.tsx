@@ -85,13 +85,19 @@ export function ArchLip({
   );
 }
 
-/** Round lamp lens facing forward (+z). */
+/** Round lamp: a glowing lens facing forward (+z) in a dark housing, so it reads as a lamp from behind too. */
 export function Lamp({ p, radius, c, glow }: { p: V3; radius: number; c: string; glow: number }) {
   return (
-    <mesh position={p} rotation={[Math.PI / 2, 0, 0]}>
-      <cylinderGeometry args={[radius, radius, 0.08, 10]} />
-      <meshStandardMaterial color={c} emissive={c} emissiveIntensity={glow} />
-    </mesh>
+    <group position={p} rotation={[Math.PI / 2, 0, 0]}>
+      <mesh position={[0, 0.02, 0]}>
+        <cylinderGeometry args={[radius, radius, 0.04, 10]} />
+        <meshStandardMaterial color={c} emissive={c} emissiveIntensity={glow} />
+      </mesh>
+      <mesh position={[0, -0.025, 0]}>
+        <cylinderGeometry args={[radius + 0.012, radius + 0.012, 0.06, 10]} />
+        <meshStandardMaterial color={CAR_COLORS.trim} flatShading />
+      </mesh>
+    </group>
   );
 }
 

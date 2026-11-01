@@ -120,6 +120,9 @@ export const es: Messages = {
     coupe: {
       name: 'Tricolore Coupé',
     },
+    t16: {
+      name: 'Sochaux T16',
+    },
     saloon: {
       name: 'Boreal Saloon',
     },
@@ -150,6 +153,9 @@ export const es: Messages = {
     label: 'Menú del juego',
     settings: 'Ajustes',
     game: 'Juego',
+    pause: 'Pausa',
+    pauseTitle: 'En pausa',
+    resume: 'Continuar',
   },
   settings: {
     title: 'Ajustes',
@@ -164,7 +170,6 @@ export const es: Messages = {
   game: {
     title: 'Juego',
     restartStage: 'Reiniciar tramo',
-    paused: 'En pausa mientras este panel esté abierto.',
     close: 'Cerrar',
     stageSection: 'Este tramo',
     stageName: 'Tramo',
@@ -201,10 +206,20 @@ export const es: Messages = {
     { keys: 'Espacio', action: 'Freno de mano' },
     { keys: 'Mayús', action: 'Turbo (si está instalado)' },
     { keys: 'R', action: 'Volver al último control' },
-    { keys: 'C · V', action: 'Cambiar de cámara (persecución / interior / isométrica)' },
+    { keys: 'C', action: 'Cambiar de cámara (persecución / interior / isométrica)' },
     { keys: 'Rueda del ratón', action: 'Zoom de cámara' },
     { keys: '`', action: 'Panel de depuración' },
-    { keys: 'Esc', action: 'Abrir / cerrar el panel Juego' },
+    { keys: 'Esc', action: 'Cerrar cualquier panel, o abrir el panel Juego' },
+  ],
+  controlsTouch: [
+    { keys: '◀ ▶', action: 'Girar (abajo a la izquierda)' },
+    {
+      keys: '▼ ▲',
+      action: 'Frenar / acelerar (abajo a la derecha), mantén el freno para marcha atrás',
+    },
+    { keys: 'Botón de pedal', action: 'Freno de mano' },
+    { keys: 'Pausa', action: 'Menú de pausa: Juego, Garaje y Ajustes' },
+    { keys: 'Ajustes › Cámara', action: 'Cambiar de cámara (persecución / interior / isométrica)' },
   ],
   debug: {
     title: 'Depuración',

@@ -76,6 +76,7 @@ describe('cars', () => {
     expect(CAR_CATALOG.map((c) => c.id)).toEqual([
       'hatchback',
       'coupe',
+      't16',
       'saloon',
       'wrc',
       'groupb',

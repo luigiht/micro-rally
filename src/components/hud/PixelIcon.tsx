@@ -1,7 +1,8 @@
 /**
- * 8×8 one-bit glyphs drawn as crisp SVG rects in the current text colour.
- * `garage` is a car seen head-on; the surface glyphs are a road with a
- * dashed centre line, pebbles, a puddle, a snowflake and grass blades.
+ * One-bit glyphs (8×8 unless noted) drawn as crisp SVG rects in the current text colour.
+ * `garage` is a car seen head-on; `handbrake` is a pedal pad with grip
+ * ridges; the surface glyphs are a road with a dashed centre line, pebbles,
+ * a puddle, a snowflake and grass blades.
  */
 export type PixelIconName =
   | 'restart'
@@ -14,6 +15,7 @@ export type PixelIconName =
   | 'handbrake'
   | 'pointer'
   | 'help'
+  | 'pause'
   | 'garage'
   | 'tarmac'
   | 'gravel'
@@ -92,15 +94,22 @@ const GLYPHS: Record<PixelIconName, readonly string[]> = {
     '..###...',
     '...#....',
   ],
+  // 12×14, two-pixel strokes: a bevelled pedal pad with two grip ridges on its arm and foot.
   handbrake: [
-    '.#####..',
-    '.#....#.',
-    '.#....#.',
-    '.#####..',
-    '.#......',
-    '.#......',
-    '.#......',
-    '........',
+    '..########..',
+    '.##########.',
+    '##........##',
+    '##.######.##',
+    '##.######.##',
+    '##........##',
+    '##.######.##',
+    '##.######.##',
+    '##........##',
+    '.##########.',
+    '..########..',
+    '....####....',
+    '....####....',
+    '...######...',
   ],
   pointer: [
     '.......#',
@@ -121,6 +130,16 @@ const GLYPHS: Record<PixelIconName, readonly string[]> = {
     '...##...',
     '........',
     '...##...',
+  ],
+  pause: [
+    '........',
+    '.##..##.',
+    '.##..##.',
+    '.##..##.',
+    '.##..##.',
+    '.##..##.',
+    '.##..##.',
+    '........',
   ],
   garage: [
     '........',
@@ -191,9 +210,10 @@ interface PixelIconProps {
 
 export function PixelIcon({ name, className }: PixelIconProps) {
   const rows = GLYPHS[name];
+  const cols = rows[0]!.length;
   return (
     <svg
-      viewBox="0 0 8 8"
+      viewBox={`0 0 ${cols} ${rows.length}`}
       width="16"
       height="16"
       aria-hidden="true"

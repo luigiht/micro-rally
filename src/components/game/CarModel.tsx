@@ -12,6 +12,7 @@ import { GroupBBody } from './bodies/GroupBBody';
 import { HatchbackBody } from './bodies/HatchbackBody';
 import { S1CoupeBody } from './bodies/S1CoupeBody';
 import { SaloonBody } from './bodies/SaloonBody';
+import { T16HatchBody } from './bodies/T16HatchBody';
 import { WrcHatchBody } from './bodies/WrcHatchBody';
 import { CarInterior, type CarInteriorHandle } from './CarInterior';
 import { Box, CAR_COLORS as C } from './CarParts';
@@ -27,6 +28,7 @@ const MAX_WHEEL_LIFT = 0.35;
 
 /** Wheel rim colour per car; cream by default. */
 const RIM: Partial<Record<CarId, string>> = {
+  t16: '#f4f1ea',
   saloon: '#e9b949',
   wrc: '#f4f1ea',
   s1: '#f4f1ea',
@@ -68,6 +70,8 @@ function BodyFor({ spec, cabinRef }: { spec: CarSpec; cabinRef: Ref<Group> }) {
   switch (spec.id) {
     case 'coupe':
       return <CoupeBody spec={spec} cabinRef={cabinRef} />;
+    case 't16':
+      return <T16HatchBody spec={spec} cabinRef={cabinRef} />;
     case 'saloon':
       return <SaloonBody spec={spec} cabinRef={cabinRef} />;
     case 'wrc':
@@ -137,7 +141,7 @@ export function CarModel({ spec, ref }: { spec: CarSpec; ref: Ref<CarModelHandle
     <group ref={root}>
       <group ref={body} position={[0, 0.1, 0]}>
         <group position={[0, spec.cabinDrop, spec.cabinForward]}>
-          <CarInterior ref={interior} redlineRpm={spec.redlineRpm} />
+          <CarInterior ref={interior} spec={spec} />
         </group>
         <BodyFor spec={spec} cabinRef={cabin} />
       </group>

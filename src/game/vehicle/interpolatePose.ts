@@ -20,6 +20,9 @@ export interface VehiclePose {
   wheelAngle: number;
   rpm: number;
   grounded: boolean;
+  /** Current gear (1..n, −1 reverse) and whether the turbo is boosting; drive cabin fittings. */
+  gear: number;
+  turboActive: boolean;
 }
 
 export function createVehiclePose(): VehiclePose {
@@ -40,6 +43,8 @@ export function createVehiclePose(): VehiclePose {
     wheelAngle: 0,
     rpm: 0,
     grounded: true,
+    gear: 1,
+    turboActive: false,
   };
 }
 
@@ -76,5 +81,7 @@ export function interpolatePose(
   out.wheelAngle = lerpAngle(prev.wheelAngle, curr.wheelAngle, alpha);
   out.rpm = lerp(prev.rpm, curr.rpm, alpha);
   out.grounded = curr.grounded;
+  out.gear = curr.gear;
+  out.turboActive = curr.turboActive;
   return out;
 }

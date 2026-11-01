@@ -1,6 +1,7 @@
 export type CarId =
   | 'hatchback'
   | 'coupe'
+  | 't16'
   | 'saloon'
   | 'wrc'
   | 'groupb'
@@ -133,6 +134,26 @@ export const CAR_SPECS: Readonly<Record<CarId, CarSpec>> = {
     maxSteer: 0.5,
     cabinDrop: -0.3,
   },
+  /** Mid-engined Group B hatch: 2.42 m wheelbase, 1.5 m track, rear-biased 4WD, quick to rotate. */
+  t16: {
+    ...BASE,
+    id: 't16',
+    mass: 940,
+    cgToFront: 1.27,
+    cgToRear: 1.15,
+    cgHeight: 0.46,
+    trackWidth: 1.5,
+    wheelRadius: 0.32,
+    peakTorque: 330,
+    dragCoeff: 0.72,
+    frontDrive: 0.35,
+    brakeDecel: 10,
+    yawInertiaScale: 1.2,
+    maxSteer: 0.52,
+    turboForce: 0.25,
+    turboDuration: 2.5,
+    cabinDrop: -0.12,
+  },
   /** Turbocharged all-wheel-drive saloon: 2.5 m wheelbase, planted and forgiving. */
   saloon: {
     ...BASE,
@@ -149,7 +170,7 @@ export const CAR_SPECS: Readonly<Record<CarId, CarSpec>> = {
     brakeDecel: 10,
     yawInertiaScale: 1.7,
     turboForce: 0.2,
-    cabinDrop: -0.1,
+    cabinDrop: -0.22,
   },
   /** Mid-engined Group B machine: 2.58 m wheelbase, huge power, lively tail. */
   groupb: {
@@ -269,7 +290,7 @@ export const CAR_SPECS: Readonly<Record<CarId, CarSpec>> = {
     turboForce: 0.2,
     turboDuration: 4,
     cabinDrop: 1.25,
-    cabinForward: 1.6,
+    cabinForward: 2.1,
     bodyScale: 2.0,
   },
   pickup: {
