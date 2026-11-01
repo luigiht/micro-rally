@@ -8,14 +8,18 @@ import {
   BARRIER_HALF_DEPTH,
   buildingBaseHeight,
   buildingCorners,
+  FRONT_SETBACK,
   onTownStreet,
   plateauDistance,
   streetDistance,
+  townBlocks,
   townObstacles,
   type TownDef,
 } from '@/game/stage/Town';
-import { STREET_CLEARANCE, STUB_LENGTH } from '@/game/stage/TownGenerator';
+import { STUB_LENGTH } from '@/game/stage/TownGenerator';
+import { apart } from '@/game/stage/TownTerraces';
 import { hasTown, NARROW_HALF_WIDTH } from '@/game/stage/TownPlan';
+import { halfWidthAt } from '@/game/stage/RoadWidth';
 import { createStageWorld } from '@/game/stage/StageWorld';
 import openRoad from './fixtures/openRoad.json';
 
@@ -54,6 +58,8 @@ function withTown(seed: number, index: number, at: number): { stage: StageDef; t
     ],
     barriers: [{ x: s.x + lx * 28, z: s.z + lz * 28, yaw: s.heading + Math.PI / 2, halfLength: 4 }],
     arrows: [],
+    junctions: [],
+    walls: [],
   };
   stage.town = town;
   void fx;
@@ -141,14 +147,15 @@ describe('town plateau', () => {
 });
 
 describe('town scenery and colliders', () => {
-  it('keeps wild scenery and farmhouses off the plateau', () => {
+  it('keeps wild scenery off the streets and buildings but lets it fill the rest of the village', () => {
     const { stage, town } = withTown(99, 0, 700);
     const field = new TerrainField(stage);
     const props = scatterScenery(field);
     expect(props.length).toBeGreaterThan(200);
-    const wild = new Set(['tree', 'broadleaf', 'bush', 'rock', 'house']);
-    const inside = props.filter((p) => wild.has(p.kind) && plateauDistance(town, p.x, p.z) < 10);
-    expect(inside).toEqual([]);
+    const wild = new Set(['tree', 'broadleaf', 'bush', 'rock']);
+    const inside = props.filter((p) => wild.has(p.kind) && plateauDistance(town, p.x, p.z) === 0);
+    expect(inside.length).toBeGreaterThan(5);
+    expect(inside.filter((p) => townBlocks(town, p.x, p.z))).toEqual([]);
     // The town's own props are there instead.
     expect(props.some((p) => p.kind === 'shop')).toBe(true);
     expect(props.filter((p) => p.kind === 'barrier').length).toBeGreaterThanOrEqual(2);
@@ -282,22 +289,37 @@ describe('town generator', () => {
     for (const stage of townStages()) {
       const town = stage.town!;
       const problems: string[] = [];
+      // Behind the pavement of every street: the route's actual (tapered) edge, each side street's nominal one.
+      const hit = createRoadHit();
+      const intrudes = (x: number, z: number, slack: number) => {
+        if (
+          stage.path.nearest(x, z, 20, hit) &&
+          hit.distance < halfWidthAt(stage, hit.along) + FRONT_SETBACK - slack
+        )
+          return true;
+        return town.streets.some(
+          (st) => !st.route && streetDistance(st, x, z) < st.halfWidth + FRONT_SETBACK - slack,
+        );
+      };
       for (const b of town.buildings) {
-        // Every footprint corner keeps the pavement-and-strip clearance from every street's carriageway.
         for (const [x, z] of buildingCorners(b))
-          for (const st of town.streets)
-            if (streetDistance(st, x, z) < st.halfWidth + STREET_CLEARANCE - 1e-6)
-              problems.push(`building in street ${stage.seed}`);
+          if (intrudes(x, z, 0.06)) problems.push(`building in street ${stage.seed}`);
         if (plateauDistance(town, b.x, b.z) !== 0)
           problems.push(`building off plateau ${stage.seed}`);
       }
+      // Terraces stand a party wall apart, never overlapping.
       for (let i = 0; i < town.buildings.length; i++)
-        for (let j = i + 1; j < town.buildings.length; j++) {
-          const a = town.buildings[i]!;
-          const b = town.buildings[j]!;
-          if (Math.hypot(a.x - b.x, a.z - b.z) < Math.min(a.hx, a.hz) + Math.min(b.hx, b.hz))
+        for (let j = i + 1; j < town.buildings.length; j++)
+          if (!apart(town.buildings[i]!, town.buildings[j]!, 0.3))
             problems.push(`buildings overlap ${stage.seed}`);
-        }
+      // Garden walls stay behind the pavements; every junction has four arms.
+      for (const w of town.walls)
+        if (intrudes(w.x0, w.z0, 0.15) || intrudes(w.x1, w.z1, 0.15))
+          problems.push(`wall in street ${stage.seed}`);
+      expect(town.walls.length).toBeGreaterThan(4);
+      const stubs = town.streets.filter((st) => !st.route).length;
+      expect(town.junctions.length).toBe(stubs / 2);
+      for (const j of town.junctions) expect(j.arms).toHaveLength(4);
       for (const st of town.streets)
         if (plateauDistance(town, st.x0, st.z0) !== 0 || plateauDistance(town, st.x1, st.z1) !== 0)
           problems.push(`street off plateau ${stage.seed}`);
@@ -346,13 +368,18 @@ describe('town generator', () => {
           prev = h;
         }
       }
-      // Every building stands on a level terrace: all four corners meet its base height.
+      // Every building stands on a terrace levelled with the pavement at its door: the back corners
+      // meet the base height exactly, the front corners sit on the pavement's edge.
       const props = scatterScenery(field);
       for (const b of town.buildings) {
         const base = buildingBaseHeight(b, field);
-        for (const [x, z] of buildingCorners(b))
+        const [br, bl, fr, fl] = buildingCorners(b);
+        for (const [x, z] of [br!, bl!])
           if (Math.abs(field.heightAt(x, z) - base) > 0.03)
             problems.push(`terrace ${stage.seed}: ${(field.heightAt(x, z) - base).toFixed(2)}`);
+        for (const [x, z] of [fr!, fl!])
+          if (Math.abs(field.heightAt(x, z) - base) > 0.12)
+            problems.push(`door step ${stage.seed}: ${(field.heightAt(x, z) - base).toFixed(2)}`);
       }
       expect(props.filter((p) => p.kind === b0Kind(town)).length).toBeGreaterThan(0);
       expect(problems, `${stage.seed}/${stage.index}`).toEqual([]);

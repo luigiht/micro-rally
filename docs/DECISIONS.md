@@ -1096,3 +1096,63 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
     the route. The alpine-vs-forest curvature test still skips town stages
     (none can occur there now). A dev-only `?spawn=` flag places the car
     along the road, `?spawn=town` just before the town.
+
+82. **2026-11-01 — Villages: unbroken facades, kerbed junctions, trees in
+    the gaps.** The town pass is reworked so a stage's town reads as a
+    lived-in village rather than houses scattered round a grid. Facades:
+    `layoutTown` lays every street and junction first, then builds a facade
+    polyline per side of the route (`routeFacade`) a pavement's width
+    (`FRONT_SETBACK`, 2 m) beyond the carriageway's actual, tapered edge at
+    every path vertex (offset along the vertex heading, which bisects its two
+    segments), simplified by Ramer–Douglas–Peucker. `TownTerraces.row` walks
+    a facade placing houses a party wall (0.4 m) apart, each front a chord of
+    the facade with its corners on the line (on an outer bend a front may
+    stand over the pavement by 0.8 m; inside bends it recesses), accepted
+    only when every footprint corner is clear of every carriageway (the
+    route by its real width) and a separating-axis test keeps 0.4 m from
+    every other building; wherever no house fits, a garden wall (`Wall`,
+    0.3 m thick, an oriented box collider) runs along the facade, trimmed
+    where another street crosses it. Blocked side streets get terraces both
+    sides from 16 m, an end building facing the junction (the first corner's
+    straight-on street still ends in the hall) and walls closing the end
+    corners. Junction wedges (`TownJunctions.wedges`: arms sorted by heading,
+    each with a `role` of in, out or blocked) get an L of wall from one arm's
+    row start to the facade corner and on to the next; where a wedge meets
+    the route, its corner is where the side street's facade line crosses the
+    route facade (`Facade.cross`) and the route's terrace is interrupted
+    between the two crossings. The inner corner of a turn has no side
+    streets, so its facade simply follows the arc. Terrace pads are levelled
+    at the pavement by the door (`buildingBaseHeight` is the mean front
+    corner height) and start 0.2 m behind the facade with a 0.1 m margin and
+    0.2 m blend, so no pad reaches the pavement and no neighbour tilts
+    another. Rejected: facades at each leg's nominal width (the 24 m width
+    taper put them up to 1.3 m into the real pavement) and mean-of-corners
+    base heights (doors floated or sank beside the kerb). Junctions:
+    `TownJunctionBuilder` cuts each junction's surface from a signed-distance
+    field, the union of the route's carriageway (`path.nearest` and
+    `halfWidthAt`), each blocked arm's half-strip and a core disc, rounded at
+    every concave corner into a `FILLET` 3 m kerb return
+    (f = r − √Σ max(0, r − dᵢ)²), on a 0.5 m grid: tarmac fills f ≤ 0 (2 cm
+    under the ribbon), the pavement is the band 0..2 m and the edge line the
+    band −0.57..−0.35 m, both 5 mm under the ribbon's own so they show only
+    where the ribbon opens. Cells are clipped as polygons (`Isobands`), and
+    each blocked arm's cut (`stubCut`: past its kerb returns, at least
+    `JUNCTION_REACH`, now 8 m) hands over to the straight plates of
+    `TownStreetBuilder`, which gained edge lines and a pavement across the
+    end. The ribbon opens its verge and line across a mouth out to the
+    stub's half width plus 3 (1 + cos φ) m, φ being the angle the street
+    meets the route at. Rejected: analytic fillets between straight arm
+    lines (at a corner the route is an arc, so that model put the kerb in
+    the wrong place against the ribbon). Vegetation: `SceneryScatter` no
+    longer clears the footprint; `townBlocks` keeps wild scenery only off
+    streets (half width + 5 m), buildings (+ 2 m) and walls (+ 1.5 m), so
+    trees fill yards and corners and run up to the village edge; farmhouses
+    still keep 40 m. Spline: the uniform Catmull-Rom kinked by about 25°
+    where a corner's 3.7 m arc chords met the 20 m straight controls;
+    `Centreline` now evaluates uneven spans in the centripetal form
+    (Barry–Goldman), which equals the uniform spline on even spans, so
+    open-road stages stay byte-identical. Walls render as one merged box
+    mesh (`TownWallBuilder`). Tests cover wedges and cuts, facade placement
+    and bulge, isoband clipping, every building and wall end behind the real
+    pavement, terraces level at the back and at the kerb in front, and wild
+    scenery inside the footprint but never on a street or a building.

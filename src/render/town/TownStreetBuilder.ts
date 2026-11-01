@@ -1,23 +1,23 @@
 import { BufferAttribute, BufferGeometry, Color, Group, Mesh, MeshStandardMaterial } from 'three';
-import { JUNCTION_REACH, KERB_LIFT, type GroundQuery, type TownDef } from '@/game/stage/Town';
+import { KERB_LIFT, PAVEMENT_WIDTH, type GroundQuery, type TownDef } from '@/game/stage/Town';
+import { stubCut } from '@/game/stage/TownJunctions';
+import { BARRIER_DISTANCE, STUB_LENGTH } from '@/game/stage/TownSideStreets';
 import { LINE_COLOR, LINE_LIFT, PAVEMENT_COLOR, ROAD_COLORS } from '../road/RoadBuilder';
 
-/** Side-street plates sit this far under the deck the field reports, so the route ribbon wins where they overlap. */
+/** Side-street plates sit this far under the deck the field reports, so the junction surface and ribbon win where they overlap. */
 const PLATE_DROP = 0.005;
-/** Intersection plates are sampled on a grid, so they sit a little lower still to stay under the ribbon between samples. */
-const JUNCTION_DROP = 0.02;
-const PAVEMENT_WIDTH = 2;
-/** A white stop line across each blocked arm, just past the junction plate. */
+/** A white stop line across each blocked arm where its plate begins, when that is still short of the barrier. */
 const STOP_LINE = 0.4;
 const STRIP_STEP = 4;
-const GRID_STEP = 2;
+const LINE_INSET = 0.35;
+const LINE_WIDTH = 0.22;
 
 /**
- * The town's paved ground that the route ribbon does not draw: a plate over
- * every intersection (filling the inner corners the spline cuts) and, for
- * each blocked side street, a tarmac plate with pavements either side. Every
- * vertex takes its height from the field, so the plates climb and dip with
- * the streets. One merged mesh.
+ * The straight part of every blocked side street, from the junction's cut
+ * to its end: a tarmac plate, pavements and white edge lines either side, a
+ * stop line, and a pavement across the end under the building that closes
+ * it. Every vertex takes its height from the field, so the plates climb and
+ * dip with the streets. One merged mesh.
  */
 export class TownStreetBuilder {
   readonly group = new Group();
@@ -32,63 +32,37 @@ export class TownStreetBuilder {
     const tarmac = new Color(ROAD_COLORS.tarmac);
     const pavement = new Color(PAVEMENT_COLOR);
     const line = new Color(LINE_COLOR);
-    const seen = new Set<string>();
-    for (const s of town.streets) {
-      if (s.route) continue;
-      const heading = Math.atan2(s.x1 - s.x0, s.z1 - s.z0);
-      const len = Math.hypot(s.x1 - s.x0, s.z1 - s.z0);
-      const start = halfWidth + JUNCTION_REACH;
-      const deck = (a: number) =>
-        field.heightAt(s.x0 + Math.sin(heading) * a, s.z0 + Math.cos(heading) * a);
-      // Stop line: the arm reads as closed before the barrier resolves.
-      this.strip(
-        s.x0,
-        s.z0,
-        heading,
-        start + 0.2,
-        start + 0.2 + STOP_LINE,
-        -s.halfWidth,
-        s.halfWidth,
-        (a) => deck(a) + LINE_LIFT,
-        line,
-      );
-      this.strip(
-        s.x0,
-        s.z0,
-        heading,
-        start,
-        len,
-        -s.halfWidth,
-        s.halfWidth,
-        (a) => deck(a) - PLATE_DROP,
-        tarmac,
-      );
-      this.strip(
-        s.x0,
-        s.z0,
-        heading,
-        start,
-        len,
-        s.halfWidth,
-        s.halfWidth + PAVEMENT_WIDTH,
-        (a) => deck(a) + KERB_LIFT,
-        pavement,
-      );
-      this.strip(
-        s.x0,
-        s.z0,
-        heading,
-        start,
-        len,
-        -s.halfWidth - PAVEMENT_WIDTH,
-        -s.halfWidth,
-        (a) => deck(a) + KERB_LIFT,
-        pavement,
-      );
-      const key = `${s.x0.toFixed(1)}|${s.z0.toFixed(1)}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      this.plate(s.x0, s.z0, heading, halfWidth + JUNCTION_REACH, field, tarmac);
+    for (const j of town.junctions) {
+      for (const a of j.arms) {
+        if (a.role !== 'blocked') continue;
+        const cut = stubCut(j, a, halfWidth);
+        const h = a.heading;
+        const hw = a.halfWidth;
+        const deck = (al: number) => field.heightAt(j.x + Math.sin(h) * al, j.z + Math.cos(h) * al);
+        const strip = (a0: number, a1: number, l0: number, l1: number, lift: number, c: Color) =>
+          this.strip(j.x, j.z, h, a0, a1, l0, l1, (al) => deck(al) + lift, c);
+        if (cut + STOP_LINE + 0.2 < BARRIER_DISTANCE - 1)
+          strip(cut + 0.2, cut + 0.2 + STOP_LINE, -hw, hw, LINE_LIFT, line);
+        strip(cut, STUB_LENGTH, -hw, hw, -PLATE_DROP, tarmac);
+        for (const side of [1, -1] as const) {
+          const lo = Math.min(side * hw, side * (hw + PAVEMENT_WIDTH));
+          strip(cut, STUB_LENGTH, lo, lo + PAVEMENT_WIDTH, KERB_LIFT, pavement);
+          const inner = Math.min(side * (hw - LINE_INSET), side * (hw - LINE_INSET - LINE_WIDTH));
+          strip(cut, STUB_LENGTH, inner, inner + LINE_WIDTH, LINE_LIFT, line);
+        }
+        const end = deck(STUB_LENGTH) + KERB_LIFT;
+        this.strip(
+          j.x,
+          j.z,
+          h,
+          STUB_LENGTH,
+          STUB_LENGTH + PAVEMENT_WIDTH,
+          -hw - PAVEMENT_WIDTH,
+          hw + PAVEMENT_WIDTH,
+          () => end,
+          pavement,
+        );
+      }
     }
     this.geometry = new BufferGeometry();
     this.geometry.setAttribute('position', new BufferAttribute(Float32Array.from(this.pos), 3));
@@ -151,45 +125,6 @@ export class TownStreetBuilder {
         ],
         c,
       );
-    }
-  }
-
-  /** Square plate over an intersection on a grid of cells, each vertex on the field's deck. */
-  private plate(
-    cx: number,
-    cz: number,
-    heading: number,
-    r: number,
-    field: GroundQuery,
-    c: Color,
-  ): void {
-    const fx = Math.sin(heading);
-    const fz = Math.cos(heading);
-    const lx = Math.cos(heading);
-    const lz = -Math.sin(heading);
-    const y = (a: number, l: number) =>
-      field.heightAt(cx + fx * a + lx * l, cz + fz * a + lz * l) - JUNCTION_DROP;
-    const cells = Math.ceil((2 * r) / GRID_STEP);
-    const step = (2 * r) / cells;
-    for (let i = 0; i < cells; i++) {
-      for (let j = 0; j < cells; j++) {
-        const a0 = -r + i * step;
-        const a1 = a0 + step;
-        const l0 = -r + j * step;
-        const l1 = l0 + step;
-        this.quad(
-          cx,
-          cz,
-          heading,
-          [
-            [a0, l0, y(a0, l0)],
-            [a1, l0, y(a1, l0)],
-            [a1, l1, y(a1, l1)],
-            [a0, l1, y(a0, l1)],
-          ],
-          c,
-        );
-      }
     }
   }
 

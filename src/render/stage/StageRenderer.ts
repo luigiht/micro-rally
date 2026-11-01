@@ -5,7 +5,9 @@ import { RoadBuilder } from '../road/RoadBuilder';
 import { SceneryChunkManager } from '../scenery/SceneryChunkManager';
 import { terrainColors } from '../terrain/meshTerrainChunk';
 import { TerrainChunkManager } from '../terrain/TerrainChunkManager';
+import { TownJunctionBuilder } from '../town/TownJunctionBuilder';
 import { TownStreetBuilder } from '../town/TownStreetBuilder';
+import { TownWallBuilder } from '../town/TownWallBuilder';
 import { GateBuilder } from './GateBuilder';
 
 export interface StageRenderOptions {
@@ -30,6 +32,8 @@ export class StageRenderer {
   private readonly road: RoadBuilder;
   private readonly gates: GateBuilder;
   private readonly town: TownStreetBuilder | null;
+  private readonly junctions: TownJunctionBuilder | null;
+  private readonly walls: TownWallBuilder | null;
 
   constructor(world: StageWorld, opts: StageRenderOptions = DEFAULT_STAGE_RENDER) {
     const region = REGIONS[world.stage.region];
@@ -51,11 +55,14 @@ export class StageRenderer {
     );
     this.road = new RoadBuilder(world.stage, world.field, region.palette.shoulder);
     this.gates = new GateBuilder(world.stage, world.field);
-    this.town = world.stage.town
-      ? new TownStreetBuilder(world.stage.town, world.field, world.stage.halfWidth)
-      : null;
+    const town = world.stage.town;
+    this.town = town ? new TownStreetBuilder(town, world.field, world.stage.halfWidth) : null;
+    this.junctions = town ? new TownJunctionBuilder(world.stage, world.field) : null;
+    this.walls = town ? new TownWallBuilder(town, world.field) : null;
     this.group.add(this.terrain.group, this.scenery.group, this.road.group, this.gates.group);
     if (this.town) this.group.add(this.town.group);
+    if (this.junctions) this.group.add(this.junctions.group);
+    if (this.walls) this.group.add(this.walls.group);
   }
 
   update(x: number, z: number): void {
@@ -70,5 +77,7 @@ export class StageRenderer {
     this.road.dispose();
     this.gates.dispose();
     this.town?.dispose();
+    this.junctions?.dispose();
+    this.walls?.dispose();
   }
 }

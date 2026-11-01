@@ -27,7 +27,42 @@ export interface TownDef {
   barriers: Barrier[];
   /** Direction boards at the route's turns. */
   arrows: Arrow[];
+  /** Every crossroads: the polygon corners and the mid-leg crossings, with the arms that meet there. */
+  junctions: Junction[];
+  /** Low garden walls that carry the facade line wherever no building stands behind the pavement. */
+  walls: Wall[];
 }
+
+/** One arm of a junction: a street leaving the junction centre on `heading`. */
+export interface Arm {
+  heading: number;
+  halfWidth: number;
+  /** The route arriving ('in', pointing back the way the car came), leaving ('out'), or a blocked side street. */
+  role: 'in' | 'out' | 'blocked';
+}
+
+export interface Junction {
+  x: number;
+  z: number;
+  arms: Arm[];
+}
+
+/** Garden wall segment along a facade line. */
+export interface Wall {
+  x0: number;
+  z0: number;
+  x1: number;
+  z1: number;
+}
+
+/** Facades (and garden walls) stand right behind the pavement: this far beyond the carriageway edge. */
+export const FRONT_SETBACK = 2;
+/** Pavement width, matching the ribbon's verge strips. */
+export const PAVEMENT_WIDTH = 2;
+/** Kerb return radius where two arms of a junction meet. */
+export const FILLET = 3;
+/** Garden walls: half thickness for colliders and render. */
+export const WALL_HALF = 0.15;
 
 /** Straight street centreline segment between two world points. */
 export interface Street {
@@ -110,7 +145,41 @@ export function townObstacles(town: TownDef): BoxObstacle[] {
   for (const b of town.buildings) out.push({ x: b.x, z: b.z, hx: b.hx, hz: b.hz, yaw: b.yaw });
   for (const r of town.barriers)
     out.push({ x: r.x, z: r.z, hx: r.halfLength, hz: BARRIER_HALF_DEPTH, yaw: r.yaw });
+  for (const w of town.walls) {
+    const dx = w.x1 - w.x0;
+    const dz = w.z1 - w.z0;
+    out.push({
+      x: (w.x0 + w.x1) / 2,
+      z: (w.z0 + w.z1) / 2,
+      hx: WALL_HALF,
+      hz: Math.hypot(dx, dz) / 2,
+      yaw: Math.atan2(dx, dz),
+    });
+  }
   return out;
+}
+
+/**
+ * True where wild scenery must not grow: on or beside a street (pavement
+ * and a strip), inside or against a building, or against a wall. The rest
+ * of the town, yards behind the terraces and open corners, stays green.
+ */
+export function townBlocks(town: TownDef, x: number, z: number): boolean {
+  for (const s of town.streets)
+    if (streetDistance(s, x, z) < s.halfWidth + PAVEMENT_WIDTH + 3) return true;
+  for (const b of town.buildings)
+    if (Math.hypot(b.x - x, b.z - z) < Math.hypot(b.hx, b.hz) + 2) return true;
+  for (const w of town.walls) if (segmentDistance(w.x0, w.z0, w.x1, w.z1, x, z) < 1.5) return true;
+  return false;
+}
+
+function segmentDistance(x0: number, z0: number, x1: number, z1: number, x: number, z: number) {
+  const dx = x1 - x0;
+  const dz = z1 - z0;
+  const len2 = dx * dx + dz * dz;
+  let t = len2 > 0 ? ((x - x0) * dx + (z - z0) * dz) / len2 : 0;
+  t = t < 0 ? 0 : t > 1 ? 1 : t;
+  return Math.hypot(x - (x0 + dx * t), z - (z0 + dz * t));
 }
 /** Length of one barrier element along the row. */
 export const BARRIER_ELEMENT = 1.2;
@@ -121,7 +190,7 @@ export const KERB_LIFT = 0.04;
  * polygon corner the route's arc cuts; side-street plates begin there, and
  * side-street decks follow the route's deck within it.
  */
-export const JUNCTION_REACH = 6;
+export const JUNCTION_REACH = 8;
 /** Lamp posts along the route's pavements, every `LAMP_SPACING` metres, alternating sides. */
 const LAMP_SPACING = 30;
 const LAMP_OFFSET = 1.0;
@@ -145,16 +214,25 @@ export function buildingCorners(b: Building): [number, number][] {
   ).map(([u, v]) => [b.x + u * cy + v * sy, b.z - u * sy + v * cy]);
 }
 
-/** Mean ground height under a building's corners: its terrace is levelled here and its origin sits on it. */
+/**
+ * Ground height at a building's front: the pavement its door opens onto.
+ * Its terrace is levelled here, so the sill meets the street whatever the
+ * hill does behind.
+ */
 export function buildingBaseHeight(b: Building, ground: GroundQuery): number {
-  let sum = 0;
-  for (const [x, z] of buildingCorners(b)) sum += ground.heightAt(x, z);
-  return sum / 4;
+  const [, , fr, fl] = buildingCorners(b);
+  return (ground.heightAt(fr![0], fr![1]) + ground.heightAt(fl![0], fl![1])) / 2;
 }
 
-/** Terrace pads reach this far beyond a building's footprint and blend out over `TERRACE_BLEND`. */
-export const TERRACE_MARGIN = 0.3;
-export const TERRACE_BLEND = 0.5;
+/**
+ * Terrace pads reach a little beyond a building's footprint (less along the
+ * terrace, where the next house is only a party wall away) and blend out
+ * over `TERRACE_BLEND`, short enough never to reach a neighbour's corner.
+ */
+export const TERRACE_MARGIN = 0.1;
+export const TERRACE_BLEND = 0.2;
+/** The pad starts this far behind the facade, so its blend never reaches the pavement. */
+export const TERRACE_FRONT = 0.2;
 
 /**
  * Render props for the town: one per building, one per barrier element, a

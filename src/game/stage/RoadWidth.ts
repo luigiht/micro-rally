@@ -22,7 +22,11 @@ export function halfWidthAt(stage: RoadWidthSource, along: number): number {
 }
 
 /** Per-sample half widths when any route street is narrower than the stage road; undefined when none is. */
-export function buildWidths(path: RoadPath, town: TownDef, base: number): Float64Array | undefined {
+export function buildWidths(
+  path: RoadPath,
+  town: Pick<TownDef, 'streets'>,
+  base: number,
+): Float64Array | undefined {
   const narrow = town.streets.filter((s) => s.route && s.halfWidth < base - 1e-6);
   if (narrow.length === 0) return undefined;
   const w = new Float64Array(path.count).fill(base);

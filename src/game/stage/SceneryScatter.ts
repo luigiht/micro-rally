@@ -7,7 +7,9 @@ import {
   buildingBaseHeight,
   plateauDistance,
   TERRACE_BLEND,
+  TERRACE_FRONT,
   TERRACE_MARGIN,
+  townBlocks,
   townProps,
 } from './Town';
 
@@ -61,8 +63,7 @@ const HOUSE_CLEAR_RADIUS = 5;
 /** House footprint as three circles along its long (local x) axis, in metres at scale 1. */
 export const HOUSE_COLLIDER = { radius: 2.4, spread: 1.8 } as const;
 
-/** Wild scenery stays this far outside a town plateau; farmhouses much further, so the town stands alone. */
-const TOWN_CLEARANCE = 10;
+/** Farmhouses stay this far outside a town's footprint; wild scenery only keeps off its streets, buildings and walls. */
 const TOWN_HOUSE_CLEARANCE = 40;
 
 /** Canopy radius (× scale) used to keep trees from growing into each other. */
@@ -162,7 +163,7 @@ export function scatterScenery(field: TerrainField): Prop[] {
         const variant = rand() < 0.5 ? 0 : 1;
         // Keep every part of the road (including other bends) clear, and the town plateau.
         if (path.nearest(x, z, stage.halfWidth + MIN_CLEARANCE, hit)) continue;
-        if (stage.town && plateauDistance(stage.town, x, z) < TOWN_CLEARANCE) continue;
+        if (stage.town && townBlocks(stage.town, x, z)) continue;
         // Trees keep their canopies apart; a rejected spot is simply skipped.
         const canopy = CANOPY_RADIUS[kind];
         if (canopy !== undefined && canopies.overlaps(x, z, canopy * scale)) continue;
@@ -175,13 +176,15 @@ export function scatterScenery(field: TerrainField): Prop[] {
   const houses = scatterHouses(field);
   // Flatten a pad under each house so the slab, door sill and step meet level ground,
   // and a terrace under each town building so it steps down the hill on level footing.
+  // The pad is pulled back from the facade (local -z) so its blend stops at the pavement's edge.
+  const inset = (TERRACE_FRONT - TERRACE_MARGIN) / 2;
   const terraces = (stage.town?.buildings ?? []).map((b) => ({
-    x: b.x,
-    z: b.z,
+    x: b.x + Math.sin(b.yaw) * inset,
+    z: b.z + Math.cos(b.yaw) * inset,
     y: buildingBaseHeight(b, field),
     radius: Math.hypot(b.hx, b.hz) + TERRACE_MARGIN,
     hx: b.hx + TERRACE_MARGIN,
-    hz: b.hz + TERRACE_MARGIN,
+    hz: b.hz - inset + TERRACE_MARGIN,
     yaw: b.yaw,
     blend: TERRACE_BLEND,
   }));

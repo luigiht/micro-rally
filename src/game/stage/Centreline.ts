@@ -26,6 +26,36 @@ function catmullRom(p0: number, p1: number, p2: number, p3: number, t: number): 
   );
 }
 
+/**
+ * Centripetal Catmull-Rom (Barry–Goldman form) through p1..p2 for control
+ * points at uneven spacing: the knot steps follow the square roots of the
+ * chord lengths, so the curve neither kinks nor loops where short arc chords
+ * meet long straight steps. With even spacing it is the uniform spline.
+ */
+function centripetal(
+  xs: readonly [number, number, number, number],
+  zs: readonly [number, number, number, number],
+  s: number,
+  out: [number, number],
+): void {
+  const knot = (i: number) =>
+    Math.max(1e-6, Math.sqrt(Math.hypot(xs[i + 1]! - xs[i]!, zs[i + 1]! - zs[i]!)));
+  const t1 = knot(0);
+  const t2 = t1 + knot(1);
+  const t3 = t2 + knot(2);
+  const t = t1 + (t2 - t1) * s;
+  const mix = (a: number, b: number, ta: number, tb: number) =>
+    ((tb - t) * a + (t - ta) * b) / (tb - ta);
+  for (const [k, p] of [xs, zs].entries()) {
+    const a1 = mix(p[0], p[1], 0, t1);
+    const a2 = mix(p[1], p[2], t1, t2);
+    const a3 = mix(p[2], p[3], t2, t3);
+    const b1 = mix(a1, a2, 0, t2);
+    const b2 = mix(a2, a3, t1, t3);
+    out[k as 0 | 1] = mix(b1, b2, t1, t2);
+  }
+}
+
 const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
 
 export interface Centreline {
@@ -201,19 +231,31 @@ export function buildCentreline(
 
   const dense: number[] = [];
   const n = ctrl.length / 2;
+  const pt: [number, number] = [0, 0];
   for (let i = 1; i < n - 2; i++) {
+    const xs = [ctrl[(i - 1) * 2]!, ctrl[i * 2]!, ctrl[(i + 1) * 2]!, ctrl[(i + 2) * 2]!] as const;
+    const zs = [
+      ctrl[(i - 1) * 2 + 1]!,
+      ctrl[i * 2 + 1]!,
+      ctrl[(i + 1) * 2 + 1]!,
+      ctrl[(i + 2) * 2 + 1]!,
+    ] as const;
+    // The open-road walk steps evenly, where the uniform spline is exact and cheap; town
+    // legs mix short arc chords with long steps and take the centripetal form.
+    const even = [0, 1, 2].every(
+      (k) => Math.abs(Math.hypot(xs[k + 1]! - xs[k]!, zs[k + 1]! - zs[k]!) - CONTROL_STEP) < 1e-6,
+    );
     for (let s = 0; s < 12; s++) {
       const t = s / 12;
-      dense.push(
-        catmullRom(ctrl[(i - 1) * 2]!, ctrl[i * 2]!, ctrl[(i + 1) * 2]!, ctrl[(i + 2) * 2]!, t),
-        catmullRom(
-          ctrl[(i - 1) * 2 + 1]!,
-          ctrl[i * 2 + 1]!,
-          ctrl[(i + 1) * 2 + 1]!,
-          ctrl[(i + 2) * 2 + 1]!,
-          t,
-        ),
-      );
+      if (even) {
+        dense.push(
+          catmullRom(xs[0], xs[1], xs[2], xs[3], t),
+          catmullRom(zs[0], zs[1], zs[2], zs[3], t),
+        );
+      } else {
+        centripetal(xs, zs, t, pt);
+        dense.push(pt[0], pt[1]);
+      }
     }
   }
   return { path: RoadPath.fromPolyline(dense, ROAD_SPACING), trace };

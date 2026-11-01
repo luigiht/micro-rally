@@ -192,13 +192,13 @@ export function generateStage(gameSeed: number, index: number): StageDef {
   let built = buildCentreline(resume(seed), total, twist, plan);
   const fouls = (c: typeof built) => {
     if (!c.trace) return false;
-    const t = layoutTown(c.trace, c.path, seed);
+    const t = layoutTown(c.trace, c.path, seed, halfWidth);
     return !selfApproachOk(c.path, t.from - 420, t.to + 420);
   };
   if (plan && fouls(built)) built = buildCentreline(resume(seed), total, twist, plan, true);
   if (plan && fouls(built)) built = buildCentreline(resume(seed), total, twist, null);
   const { path, trace } = built;
-  const town = trace ? layoutTown(trace, path, seed) : undefined;
+  const town = trace ? layoutTown(trace, path, seed, halfWidth) : undefined;
   const widths = town ? buildWidths(path, town, halfWidth) : undefined;
   const gates = placeGates(path, length, halfWidth, town);
 

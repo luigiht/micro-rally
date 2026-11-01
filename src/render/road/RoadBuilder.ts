@@ -13,7 +13,7 @@ import type { StageDef } from '@/game/stage/StageGenerator';
 import { markerDistances } from '@/game/stage/RoadMarkers';
 import { ROAD_LIFT, TRENCH_OUT, type TerrainField } from '@/game/stage/TerrainField';
 import { halfWidthAt } from '@/game/stage/RoadWidth';
-import { KERB_LIFT } from '@/game/stage/Town';
+import { FILLET, KERB_LIFT } from '@/game/stage/Town';
 import type { Surface } from '@/game/vehicle/surfaces';
 
 export const ROAD_COLORS: Readonly<Record<Surface, string>> = {
@@ -150,7 +150,7 @@ export class RoadBuilder {
           z: st.z0,
           ux: (st.x1 - st.x0) / len,
           uz: (st.z1 - st.z0) / len,
-          reach: st.halfWidth + 0.3,
+          hw: st.halfWidth,
         };
       });
     const openOn = (x: number, z: number, lx: number, lz: number, side: number, hw: number) =>
@@ -160,7 +160,10 @@ export class RoadBuilder {
         const rz = z - m.z;
         const along = rx * m.ux + rz * m.uz;
         const across = Math.abs(rx * m.uz - rz * m.ux);
-        return along > -(hw + 8) && along < 14 && across < m.reach;
+        // The kerb returns reach further along the route's edge the more acutely the street meets it;
+        // the junction surface draws the pavement and line around them.
+        const skew = Math.abs(m.ux * -lz + m.uz * lx);
+        return along > -(hw + 8) && along < 14 && across < m.hw + FILLET * (1 + skew) + 0.6;
       });
     const n = s1 - s0 + 1;
     // Road, two verges and two edge lines, two verts per sample each; lateral extents follow the local half width.

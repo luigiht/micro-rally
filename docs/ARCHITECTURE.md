@@ -48,7 +48,7 @@ flowchart TD
 ```mermaid
 flowchart LR
   Seed[gameSeed + index] --> Gen[StageGenerator\nroad, gates, par]
-  Gen --> Town[TownGenerator\ngrid, streets, buildings, barriers]
+  Gen --> Town[TownGenerator\nstreets, junctions, terraces, walls]
   Gen & Town --> Field[TerrainField\nheights, plateau, surfaces]
   Field --> Scatter[SceneryScatter\nprops + colliders]
   Gen & Field & Scatter --> World[StageWorld]
@@ -57,7 +57,7 @@ flowchart LR
   Renderer --> Terrain[TerrainChunkManager] -->|seed| Worker[terrain.worker]
   Renderer --> Scenery[SceneryChunkManager]
   Renderer --> Road[RoadBuilder + GateBuilder]
-  Renderer --> Streets[TownStreetBuilder]
+  Renderer --> Streets[TownStreetBuilder\nTownJunctionBuilder, TownWallBuilder]
 ```
 
 - Towns (`game/stage/Town.ts`, `TownPlan.ts`, `TownGenerator.ts`): one stage
@@ -66,17 +66,26 @@ flowchart LR
   as 12 m arcs, tight curves, a narrow old-town section), validated against
   the self-approach rule; the centreline builder (`Centreline.ts`) steers
   onto the stage axis, lays them and resumes on the arrival heading, and
-  `layoutTown` derives streets, blocked side stubs with barrier rows,
-  direction boards, buildings and the footprint. `TerrainField` tames the
-  hills inside the footprint (streets still climb and dip), cuts side streets
-  into the slope, terraces each building and treats every town street as
-  paved; `SceneryScatter` keeps wild scenery off the footprint and emits the
-  town's props; buildings and barriers collide as oriented boxes
-  (`vehicle/Collisions.ts`). Render side: `RoadBuilder` paves the route
-  through town at its per-sample width with kerbed pavements and open
-  junction mouths, `TownStreetBuilder` lays junction and side-street plates
-  on the field's heights, and `SceneryChunkManager` instances the building
-  and street-furniture kits (`render/scenery/BuildingGeometry.ts`,
+  `layoutTown` derives streets, junctions (`TownJunctions.ts`: arms, wedges,
+  side-street cuts), blocked side streets with barrier rows and end
+  buildings (`TownSideStreets.ts`), direction boards, and then the village
+  itself: facade polylines a pavement beyond the route's real edge and along
+  every side street, walked by `TownTerraces.row` to stand houses a party
+  wall apart with garden walls over every gap, L-walls round each junction
+  wedge, and the footprint. `TerrainField` tames the hills inside the
+  footprint (streets still climb and dip), cuts side streets into the slope,
+  levels a terrace under each building at its door and treats every town
+  street as paved; `SceneryScatter` keeps wild scenery only off streets,
+  buildings and walls (`townBlocks`) and emits the town's props; buildings,
+  walls and barriers collide as oriented boxes (`vehicle/Collisions.ts`).
+  Render side: `RoadBuilder` paves the route through town at its per-sample
+  width with kerbed pavements that open across junction mouths,
+  `TownJunctionBuilder` cuts each junction's tarmac, pavement band and edge
+  line from a rounded-union distance field (`Isobands.ts`) so kerb returns
+  wrap crossings at any angle, `TownStreetBuilder` lays the side-street
+  plates, lines and pavements beyond each cut, `TownWallBuilder` merges the
+  garden walls, and `SceneryChunkManager` instances the building and
+  street-furniture kits (`render/scenery/BuildingGeometry.ts`,
   `CivicGeometry.ts`, `StreetFurnitureGeometry.ts`).
 
 - `DrivingSession` (components/game) is a plain class held in a ref. It owns

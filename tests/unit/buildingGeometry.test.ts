@@ -1,7 +1,7 @@
 import { type BufferGeometry, Color } from 'three';
 import { describe, expect, it } from 'vitest';
 import type { BuildingStyle } from '@/game/stage/Town';
-import { BUILDING_SIZE } from '@/game/stage/TownGenerator';
+import { BUILDING_SIZE } from '@/game/stage/TownTerraces';
 import { buildingRoofGeometry, buildingWallsGeometry } from '@/render/scenery/BuildingGeometry';
 import { hipRoofGeometry } from '@/render/scenery/CivicGeometry';
 
