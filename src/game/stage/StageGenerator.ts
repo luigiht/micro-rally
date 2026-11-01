@@ -4,6 +4,7 @@ import type { SpawnPose } from '../vehicle/VehicleSim';
 import type { Gate } from './Checkpoints';
 import { REGION_ORDER, REGIONS, STAGES_PER_REGION, type RegionId, type Weather } from './regions';
 import { RoadPath, type RoadSample } from './RoadPath';
+import type { TownDef } from './Town';
 
 export const ROAD_SPACING = 2;
 const CONTROL_STEP = 20;
@@ -80,6 +81,8 @@ export interface StageDef extends StageBrief {
   path: RoadPath;
   gates: Gate[];
   spawn: SpawnPose;
+  /** Town section the route threads through, on some stages. */
+  town?: TownDef;
 }
 
 export function stageRegion(index: number): { region: RegionId; loop: number } {

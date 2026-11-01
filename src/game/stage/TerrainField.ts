@@ -5,6 +5,7 @@ import type { TerrainQuery } from '../vehicle/Terrain';
 import { REGIONS } from './regions';
 import { createRoadHit } from './RoadPath';
 import type { StageDef } from './StageGenerator';
+import { onTownStreet, PLATEAU_BLEND, plateauDistance, type TownDef } from './Town';
 
 const FLAT_MARGIN = 3;
 const BLEND_WIDTH = 16;
@@ -67,6 +68,9 @@ export class TerrainField implements TerrainQuery {
   private readonly offroad: Surface;
   readonly corridor: number;
   private pads: TerrainPad[] = [];
+  private readonly town: TownDef | null;
+  /** Plateau height of the town, the mean of the hills over its footprint. */
+  readonly townY: number;
 
   constructor(readonly stage: StageDef) {
     const region = REGIONS[stage.region];
@@ -75,6 +79,8 @@ export class TerrainField implements TerrainQuery {
     this.frequency = region.terrain.frequency;
     this.offroad = region.offroad;
     this.corridor = stage.halfWidth + FLAT_MARGIN + BLEND_WIDTH;
+    this.town = stage.town ?? null;
+    this.townY = this.town ? this.plateauHeight(this.town) : 0;
     this.roadHeights = this.buildRoadHeights();
   }
 
@@ -87,7 +93,7 @@ export class TerrainField implements TerrainQuery {
     this.pads = [...pads];
   }
 
-  /** The hills alone: noise, before the road bed and any pads. */
+  /** The hills alone: noise, before the town plateau, the road bed and any pads. */
   baseHeight(x: number, z: number): number {
     const f = this.frequency;
     const n = this.noise;
@@ -98,6 +104,34 @@ export class TerrainField implements TerrainQuery {
         0.11 * n(x * f * 2.3, z * f * 2.3) +
         0.04 * n(x * f * 5.1, z * f * 5.1))
     );
+  }
+
+  /**
+   * The ground the road bed and corridor are cut into: the hills, levelled
+   * onto the town plateau inside its footprint and blending back to the
+   * hills over `PLATEAU_BLEND` beyond it.
+   */
+  groundHeight(x: number, z: number): number {
+    const base = this.baseHeight(x, z);
+    if (!this.town) return base;
+    const d = plateauDistance(this.town, x, z);
+    if (d >= PLATEAU_BLEND) return base;
+    return this.townY + (base - this.townY) * smoothstep(0, PLATEAU_BLEND, d);
+  }
+
+  /** Mean hill height over the plateau footprint, sampled on a coarse grid. */
+  private plateauHeight(town: TownDef): number {
+    const sy = Math.sin(town.heading);
+    const cy = Math.cos(town.heading);
+    let sum = 0;
+    let n = 0;
+    for (let u = -town.halfU; u <= town.halfU; u += 10) {
+      for (let v = -town.halfV; v <= town.halfV; v += 10) {
+        sum += this.baseHeight(town.x + u * sy + v * cy, town.z + u * cy - v * sy);
+        n++;
+      }
+    }
+    return sum / n;
   }
 
   /** Flatten the finished height onto any pad covering (x, z); applied last so the road blend cannot tilt a pad. */
@@ -121,7 +155,7 @@ export class TerrainField implements TerrainQuery {
   }
 
   sample(x: number, z: number, out: TerrainSample): TerrainSample {
-    const base = this.baseHeight(x, z);
+    const base = this.groundHeight(x, z);
     if (!this.stage.path.nearest(x, z, this.corridor, this.hit)) {
       out.height = this.applyPads(x, z, base);
       out.roadBlend = 0;
@@ -141,23 +175,39 @@ export class TerrainField implements TerrainQuery {
   }
 
   heightAt(x: number, z: number): number {
-    const base = this.baseHeight(x, z);
-    if (!this.stage.path.nearest(x, z, this.corridor, this.hit)) return this.applyPads(x, z, base);
+    const base = this.groundHeight(x, z);
+    const onRoute = this.stage.path.nearest(x, z, this.corridor, this.hit);
+    // Side streets are flat plates on the plateau at deck level, like the route beside them.
+    if (
+      this.town &&
+      (!onRoute || this.hit.distance > this.stage.halfWidth) &&
+      onTownStreet(this.town, x, z)
+    )
+      return this.townY + ROAD_LIFT;
+    if (!onRoute) return this.applyPads(x, z, base);
     const deck = this.roadHeightAt(this.hit.along) + ROAD_LIFT;
     const hw = this.stage.halfWidth;
     const t = smoothstep(hw + FLAT_MARGIN, this.corridor, this.hit.distance);
     return this.applyPads(x, z, deck + (base - deck) * t);
   }
 
+  /** Town streets are paved whatever the stage surface; the route through the town counts as one of them. */
   surfaceAt(x: number, z: number): Surface {
     const hw = this.stage.halfWidth;
-    return this.stage.path.nearest(x, z, hw, this.hit) ? this.stage.surface : this.offroad;
+    const town = this.town;
+    if (this.stage.path.nearest(x, z, hw, this.hit)) {
+      return town && this.hit.along >= town.from && this.hit.along <= town.to
+        ? 'tarmac'
+        : this.stage.surface;
+    }
+    if (town && onTownStreet(town, x, z)) return 'tarmac';
+    return this.offroad;
   }
 
   private buildRoadHeights(): Float64Array {
     const { xs, zs, count, spacing } = this.stage.path;
     const raw = new Float64Array(count);
-    for (let i = 0; i < count; i++) raw[i] = this.baseHeight(xs[i]!, zs[i]!);
+    for (let i = 0; i < count; i++) raw[i] = this.groundHeight(xs[i]!, zs[i]!);
     // Two box-filter passes ≈ gaussian smoothing along the road.
     let a = raw;
     for (let pass = 0; pass < 2; pass++) {
@@ -174,6 +224,12 @@ export class TerrainField implements TerrainQuery {
         b[i] = sum / n;
       }
       a = b;
+    }
+    // Inside the town the route is dead level on the plateau; the grade clamps below ramp the approaches.
+    if (this.town) {
+      const i0 = Math.max(0, Math.ceil(this.town.from / spacing));
+      const i1 = Math.min(count - 1, Math.floor(this.town.to / spacing));
+      for (let i = i0; i <= i1; i++) a[i] = this.townY;
     }
     const step = MAX_GRADE * spacing;
     for (let i = 1; i < count; i++)

@@ -3,6 +3,7 @@ import type { Obstacle } from '../vehicle/Collisions';
 import { REGIONS } from './regions';
 import { createRoadHit, type RoadSample } from './RoadPath';
 import type { TerrainField } from './TerrainField';
+import { plateauDistance } from './Town';
 
 export type PropKind = 'tree' | 'broadleaf' | 'bush' | 'rock' | 'house';
 
@@ -40,6 +41,10 @@ const HOUSE_PAD_RADIUS = 4.6;
 const HOUSE_CLEAR_RADIUS = 5;
 /** House footprint as three circles along its long (local x) axis, in metres at scale 1. */
 export const HOUSE_COLLIDER = { radius: 2.4, spread: 1.8 } as const;
+
+/** Wild scenery stays this far outside a town plateau; farmhouses much further, so the town stands alone. */
+const TOWN_CLEARANCE = 10;
+const TOWN_HOUSE_CLEARANCE = 40;
 
 /** Canopy radius (× scale) used to keep trees from growing into each other. */
 export const CANOPY_RADIUS: Readonly<Partial<Record<PropKind, number>>> = {
@@ -127,8 +132,9 @@ export function scatterScenery(field: TerrainField): Prop[] {
         const scale = kind === 'rock' || kind === 'bush' ? 0.6 + rand() * 0.8 : 0.7 + rand() * 0.8;
         const rotation = rand() * Math.PI * 2;
         const variant = rand() < 0.5 ? 0 : 1;
-        // Keep every part of the road (including other bends) clear.
+        // Keep every part of the road (including other bends) clear, and the town plateau.
         if (path.nearest(x, z, stage.halfWidth + MIN_CLEARANCE, hit)) continue;
+        if (stage.town && plateauDistance(stage.town, x, z) < TOWN_CLEARANCE) continue;
         // Trees keep their canopies apart; a rejected spot is simply skipped.
         const canopy = CANOPY_RADIUS[kind];
         if (canopy !== undefined && canopies.overlaps(x, z, canopy * scale)) continue;
@@ -212,6 +218,7 @@ function scatterHouses(field: TerrainField): Prop[] {
     const jitter = (rand() - 0.5) * 0.8;
     const variant = rand() < 0.5 ? 0 : 1;
     if (path.nearest(x, z, minOffset, hit)) continue;
+    if (stage.town && plateauDistance(stage.town, x, z) < TOWN_HOUSE_CLEARANCE) continue;
     // Face the nearest stretch of road, give or take: the door is on local -z,
     // which a Y rotation of `heading ± π/2` turns back across the verge.
     path.nearest(x, z, HOUSE_MAX_OFFSET * 2, hit);

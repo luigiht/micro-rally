@@ -44,6 +44,9 @@ const VERGE_WIDTH = 2;
 const SAMPLES_PER_PIECE = 100;
 const LINE_LIFT = 0.1;
 const LINE_WIDTH = 0.22;
+/** Through a town the verges become pavements: pale concrete standing a kerb's height above the road. */
+const PAVEMENT_COLOR = '#a6a39b';
+const KERB_LIFT = 0.04;
 
 /** Integer mix hash to 0..1; a plain multiply-mod ramps instead of scattering. */
 function hash01(k: number): number {
@@ -71,7 +74,7 @@ function snowCover(i: number): number {
   return SNOW_COVER * smoothstep(PATCH_FROM, PATCH_TO, patchNoise(i));
 }
 
-/** One ribbon strip: lateral extent, lift, flat colour, optional snow cover and tarmac shade jitter. */
+/** One ribbon strip: lateral extent, lift, flat colour, optional snow cover and tarmac shade jitter; `town` overrides inside a town. */
 interface Strip {
   a: number;
   b: number;
@@ -79,6 +82,7 @@ interface Strip {
   color: Color;
   cover?: (i: number) => number;
   shaded: boolean;
+  town?: { color: Color; lift: number };
 }
 
 /** Ribbon road split into pieces for frustum culling, plus verges, edge lines and marker posts. */
@@ -128,6 +132,9 @@ export class RoadBuilder {
     const dust = new Color(ROAD_COLORS.snow);
     const tint = new Color();
     const line = new Color(LINE_COLOR);
+    const paved = { color: new Color(ROAD_COLORS.tarmac), lift: ROAD_LIFT };
+    const pavement = { color: new Color(PAVEMENT_COLOR), lift: ROAD_LIFT + KERB_LIFT };
+    const town = stage.town;
     const n = s1 - s0 + 1;
     // Road, two verges and two edge lines; two verts per sample each. Snow stages tint the road.
     const strips: Strip[] = [
@@ -138,16 +145,31 @@ export class RoadBuilder {
         color: road,
         cover: snowy ? snowCover : undefined,
         shaded: true,
+        town: paved,
       },
-      { a: hw, b: hw + VERGE_WIDTH, lift: ROAD_LIFT, color: this.verge, shaded: true },
-      { a: -hw - VERGE_WIDTH, b: -hw, lift: ROAD_LIFT, color: this.verge, shaded: true },
+      {
+        a: hw,
+        b: hw + VERGE_WIDTH,
+        lift: ROAD_LIFT,
+        color: this.verge,
+        shaded: true,
+        town: pavement,
+      },
+      {
+        a: -hw - VERGE_WIDTH,
+        b: -hw,
+        lift: ROAD_LIFT,
+        color: this.verge,
+        shaded: true,
+        town: pavement,
+      },
       { a: hw - 0.35 - LINE_WIDTH, b: hw - 0.35, lift: LINE_LIFT, color: line, shaded: false },
       { a: -hw + 0.35, b: -hw + 0.35 + LINE_WIDTH, lift: LINE_LIFT, color: line, shaded: false },
     ];
     const pos = new Float32Array(n * strips.length * 2 * 3);
     const col = new Float32Array(n * strips.length * 2 * 3);
     const index: number[] = [];
-    strips.forEach(({ a, b, lift, color, cover, shaded }, strip) => {
+    strips.forEach(({ a, b, lift, color, cover, shaded, town: inTown }, strip) => {
       const base = strip * n * 2;
       for (let k = 0; k < n; k++) {
         const i = s0 + k;
@@ -156,9 +178,11 @@ export class RoadBuilder {
         const h = path.headings[i]!;
         const lx = Math.cos(h);
         const lz = -Math.sin(h);
-        const y = field.roadHeightAt(i * path.spacing) + lift;
+        const d = i * path.spacing;
+        const urban = inTown !== undefined && town !== undefined && d >= town.from && d <= town.to;
+        const y = field.roadHeightAt(d) + (urban ? inTown.lift : lift);
         const shade = shaded ? 0.96 + hash01(i) * 0.08 : 1;
-        const c = cover ? tint.copy(color).lerp(dust, cover(i)) : color;
+        const c = urban ? inTown.color : cover ? tint.copy(color).lerp(dust, cover(i)) : color;
         const v = (base + k * 2) * 3;
         pos.set([x + lx * a, y, z + lz * a, x + lx * b, y, z + lz * b], v);
         col.set([c.r * shade, c.g * shade, c.b * shade, c.r * shade, c.g * shade, c.b * shade], v);
@@ -182,7 +206,11 @@ export class RoadBuilder {
   /** Verge posts every 20 m, except where a checkpoint board stands. */
   private buildMarkers(stage: StageDef, field: TerrainField): void {
     const path = stage.path;
-    const distances = markerDistances(path.length, stage.gates);
+    const distances = markerDistances(
+      path.length,
+      stage.gates,
+      stage.town ? [[stage.town.from, stage.town.to]] : [],
+    );
     const count = distances.length * 2;
     const postGeo = new BoxGeometry(0.14, 0.9, 0.14).translate(0, 0.45, 0);
     const capGeo = new BoxGeometry(0.16, 0.18, 0.16).translate(0, 0.98, 0);
