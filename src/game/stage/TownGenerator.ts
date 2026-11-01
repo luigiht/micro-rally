@@ -15,6 +15,8 @@ export const TOWN_CHANCE = 0.35;
 /** Blocked side streets reach this far from the intersection; the barrier row stands part-way down. */
 export const STUB_LENGTH = 32;
 export const BARRIER_DISTANCE = 14;
+/** Direction boards stand this far in front of the barrier row they belong to. */
+const ARROW_AHEAD_OF_BARRIER = 1.6;
 /** Entry and exit legs at least this long get a crossroads halfway along. */
 export const CROSSROADS_BLOCK = 80;
 /** Building fronts stand this far beyond the street edge: a pavement plus a strip. */
@@ -304,14 +306,14 @@ export function layoutTown(trace: TownTrace, path: RoadPath, seed: number): Town
       lineStreet(rand, a, h, from, to, leg.halfWidth, candidates);
     }
     if (leg.turn !== 0) {
-      // Straight on and the far side are blocked; a board across the junction shows the turn.
+      // Straight on and the far side are blocked; a board just in front of the straight-on barrier shows the turn.
       const hout = leg.headingOut;
       sideStreet(rand, b, hout, leg.halfWidth, streets, barriers, candidates);
       sideStreet(rand, b, hout + leg.turn + Math.PI, leg.halfWidth, streets, barriers, candidates);
       const f = forward(hout);
       arrows.push({
-        x: b.x + f.x * (leg.halfWidth + 2.2),
-        z: b.z + f.z * (leg.halfWidth + 2.2),
+        x: b.x + f.x * (BARRIER_DISTANCE - ARROW_AHEAD_OF_BARRIER),
+        z: b.z + f.z * (BARRIER_DISTANCE - ARROW_AHEAD_OF_BARRIER),
         yaw: hout,
         turn: leg.turn > 0 ? 1 : -1,
       });

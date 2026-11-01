@@ -7,8 +7,8 @@ const PLATE_DROP = 0.005;
 /** Intersection plates are sampled on a grid, so they sit a little lower still to stay under the ribbon between samples. */
 const JUNCTION_DROP = 0.02;
 const PAVEMENT_WIDTH = 2;
-/** Intersection plates reach this far beyond the carriageway edge, where the side-street plates begin. */
-const PLATE_REACH = 0.3;
+/** Intersection plates reach this far beyond the carriageway edge (under the pavements), where the side-street plates begin. */
+const PLATE_REACH = 2.3;
 const STRIP_STEP = 4;
 const GRID_STEP = 2;
 

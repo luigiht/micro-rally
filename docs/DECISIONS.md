@@ -1026,36 +1026,57 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
 81. **2026-11-01 — Town sections.** About a third of stages after the first
     (`hasTown(seed, index)`, a hash of the stage seed; never index 0, which
     the splash demo and the random-seed smoke tests drive) route through a
-    small town. The town draws from its own sub-seed so the brief and the
-    open-road walk keep their RNG streams and existing plain stages are
-    untouched. The centreline builder straightens for 60 m, then lays the
-    grid on its 20 m control polygon: one block (60 or 80 m) in, a 90° turn
-    at each corner (patterns L-R, R-L, L-R-L-R, R-L-R-L, L-R-R-L, R-L-L-R,
-    all summing to zero so the route leaves on its arrival heading, two-turn
-    patterns only under 1.5 km), one block out; Catmull-Rom rounds each
-    corner to a ~11 m radius, which the ribbon and its 2 m verges survive
-    without folding and which keeps the self-approach rule (legs ≥ 60 m
-    apart). Side streets are 32 m dead-end stubs: straight on and the far
-    side at every corner, plus a crossroads halfway along the entry and exit
-    legs on 80 m blocks (on 60 m blocks its building rows would meet the
-    corner stubs' rows). A barrier row stands 14 m down each stub, a yellow
-    direction board 2.2 m beyond the corner on the blocked straight. Buildings
-    (four footprints: townhouse 8×7, shop 10×8, tower 6×6, hall 12×9) line
-    every street on both sides with fronts 3 m beyond the edge, starting
-    18 m from any intersection so facades on crossing streets never meet.
-    Terrain: a level plateau is the ground the road bed is cut into
-    (`groundHeight` blends the hills to the footprint's mean height over
-    40 m, under the smoothing, trench and verge rules, so the bed tests hold
-    through town), with the route pinned dead level inside the town interval
-    and the grade clamps ramping the approaches; a pad applied last (the
-    house mechanism) was rejected because it would override the trench and
-    make the ribbon and ground disagree. Side streets are paved plates at
-    deck height and every town street counts as tarmac for grip whatever the
-    stage surface. Collisions gained oriented boxes (walls and barrier rows)
-    beside the circle grid; rows of circles were rejected for scalloped
-    walls and the 64-candidate cap. Checkpoint boards keep 40 m clear of the
-    town interval, marker posts skip it, wild scenery stays 10 m off the
-    plateau and farmhouses 40 m. The alpine-vs-forest curvature test now
-    skips town stages (its 15% margin on six seeds flipped on one town's
-    different post-town draw). A dev-only `?spawn=` flag places the car along
-    the road for inspection.
+    small hill town. The town draws from its own sub-seed so the brief and
+    the open-road walk keep their RNG streams and plain stages are untouched.
+    `TownPlan` draws the route as legs: an entry straight (60 or 80 m), two
+    to four middle legs that are either straights ending in a 60°, 90° or
+    105° corner or tight circular curves (14–19 m radius, 60°–100° sweep,
+    tangent in and out), and an exit straight; half the towns narrow the
+    middle legs to a 3.2 m half width. The last corner is adjusted so the
+    turns sum to near zero and the plan is accepted only if, sampled every
+    2 m with 80 m of run-in and run-out, no two points 196 m apart along
+    the road come within 54 m (the stage's own self-approach rule), with a
+    plain L-R fallback after 24 draws. The centreline builder straightens
+    for 60 m, lays straights on its 20 m control polygon and curves as
+    5 m chords, and resumes the walk on the heading the town hands back;
+    Catmull-Rom rounds corners to roughly 11 m, which the ribbon and its
+    verges survive without folding. Blocked side streets are 32 m stubs
+    (straight on and the far side at every corner, a crossroads halfway
+    along 80 m entry and exit legs), each with a rally barrier row 14 m in
+    and, at corners, a yellow direction board just ahead of the barrier.
+    Buildings (townhouse 8×7, shop 10×8, tower 6×6, hall 12×9) line
+    straights and arcs with fronts 3 m beyond the kerb, start 18 m (24 m on
+    sharp corners) from any junction, and are then settled: every footprint
+    corner 2.5 m clear of every street and neighbours apart by 95% of their
+    diagonals. Lamp posts alternate sides every 30 m along the route.
+    Terrain: towns sit on hills, not plateaus. Inside the footprint the
+    hills keep enough relief to swing 8 m (capped at 40% of the region's
+    amplitude), blending back over 40 m; the road bed is cut into that
+    ground by the existing smoothing, trench and verge rules so the bed
+    tests hold through town, so streets climb and dip. Side streets start
+    level with the route at the junction and climb at most 8%; every
+    building stands on its own oriented terrace pad (footprint + 0.3 m,
+    0.5 m blend) at the mean ground height of its corners, with a 1.75 m
+    foundation under the walls kit for whatever the pad does not hide. A
+    flat plateau was built first and dropped on request; a pad applied last
+    under the whole town was rejected earlier because it would override the
+    trench and desynchronise ribbon and ground. The carriageway width is now
+    per sample (`widths`, `halfWidthAt`) so narrow streets taper in over
+    24 m; every town street is tarmac for grip whatever the stage surface,
+    and the ribbon paints the town interval tarmac with pavement-coloured
+    kerbed verges that drop to road level across side-street mouths, where
+    the edge line also stops. `TownStreetBuilder` lays junction plates (on a
+    2 m grid, 2 cm under the deck) and side-street plates with pavements,
+    all on the field's heights. Collisions gained oriented boxes (walls and
+    barrier rows) beside the circle grid; circle rows were rejected for
+    scalloped walls and the 64-candidate cap. Checkpoint boards keep 40 m
+    clear of the town, marker posts skip it, wild scenery stays 10 m off the
+    footprint and farmhouses 40 m. Building kits (`BuildingGeometry.ts`,
+    civic styles in `CivicGeometry.ts`) and street furniture
+    (`StreetFurnitureGeometry.ts`: barrier element, left/right arrow boards,
+    lamp post) follow the house kit's vertex-coloured, tintable-white
+    pattern; their winding tests check each welded part against its own
+    centroid, since a whole-geometry centroid test fails even the correct
+    house kit. The alpine-vs-forest curvature test skips town stages (its
+    15% margin on six seeds flipped on one town's different post-town
+    draw). A dev-only `?spawn=` flag places the car along the road.

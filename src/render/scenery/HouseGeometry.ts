@@ -29,7 +29,7 @@ const SHUTTER = new Color('#4f6b4a');
 const BRICK = new Color('#8d5a4a');
 const CAP = new Color('#4a4744');
 
-function paint(g: BufferGeometry, color: Color): BufferGeometry {
+export function paint(g: BufferGeometry, color: Color): BufferGeometry {
   const n = g.getAttribute('position').count;
   const col = new Float32Array(n * 3);
   for (let i = 0; i < n; i++) col.set([color.r, color.g, color.b], i * 3);
@@ -37,7 +37,15 @@ function paint(g: BufferGeometry, color: Color): BufferGeometry {
   return g;
 }
 
-function box(w: number, h: number, d: number, x: number, y: number, z: number, color: Color) {
+export function box(
+  w: number,
+  h: number,
+  d: number,
+  x: number,
+  y: number,
+  z: number,
+  color: Color,
+) {
   return paint(new BoxGeometry(w, h, d).translate(x, y, z), color);
 }
 
@@ -149,7 +157,7 @@ export function gableGeometry(
 }
 
 /** Merge as non-indexed (the gable is unindexed and flat shading wants faces anyway). */
-function merge(parts: BufferGeometry[]): BufferGeometry {
+export function merge(parts: BufferGeometry[]): BufferGeometry {
   const flat = parts.map((p) => (p.index ? p.toNonIndexed() : p));
   const merged = mergeGeometries(flat);
   if (!merged) throw new Error('house geometry parts have mismatched attributes');
@@ -165,7 +173,7 @@ const DORMER = { w: 1.3, h: 1.1, d: 1.2, x: -1.5 } as const;
 const dormerBaseY = TOP - ROOF_SEAT + EAVE + ROOF_H * 0.3;
 const dormerZ = -(D / 2 + OVERHANG) * 0.55;
 
-function window(x: number, y: number, z: number, facing: 'z' | 'x', sign: 1 | -1) {
+export function window(x: number, y: number, z: number, facing: 'z' | 'x', sign: 1 | -1) {
   const out = sign * 0.02;
   const glass = sign * 0.04;
   if (facing === 'z')

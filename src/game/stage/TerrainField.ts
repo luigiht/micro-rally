@@ -37,7 +37,7 @@ const MAX_GRADE = 0.12;
  * about `TOWN_RELIEF_METRES` either side of the town's reference height,
  * capped at `TOWN_RELIEF_MAX` of the region's amplitude.
  */
-export const TOWN_RELIEF_METRES = 6;
+export const TOWN_RELIEF_METRES = 8;
 export const TOWN_RELIEF_MAX = 0.4;
 /** Side streets climb no faster than this, after a level run out of the junction. */
 const STUB_GRADE = 0.08;

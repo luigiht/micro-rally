@@ -14,6 +14,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { RegionPalette } from '@/game/stage/regions';
 import type { Prop, PropKind } from '@/game/stage/SceneryScatter';
 import { ChunkStreamer, chunkKey } from '../ChunkStreamer';
+import { buildingRoofGeometry, buildingWallsGeometry } from './BuildingGeometry';
 import { houseRoofGeometry, houseWallsGeometry } from './HouseGeometry';
 import { arrowBoardGeometry, barrierGeometry, lampPostGeometry } from './StreetFurnitureGeometry';
 
@@ -79,6 +80,13 @@ export class SceneryChunkManager {
     const roofs = snow
       ? ([new Color('#eef2f5'), new Color('#e4e9ee')] as const)
       : ([new Color('#b5523c'), new Color('#4a5160')] as const);
+    // Town buildings: warmer render than the farmhouses, slate or terracotta roofs, all under snow in alpine towns.
+    const townWalls = snow
+      ? ([new Color('#e6e2d8'), new Color('#d3c6ad')] as const)
+      : ([new Color('#f1e4c8'), new Color('#dcc8a3')] as const);
+    const townRoofs = snow
+      ? ([new Color('#eef2f5'), new Color('#e4e9ee')] as const)
+      : ([new Color('#a8503a'), new Color('#4e5668')] as const);
     this.kits = [
       {
         sources: ['tree'],
@@ -131,6 +139,25 @@ export class SceneryChunkManager {
         castShadow: shadows,
         vertexColors: true,
       },
+      // Town buildings: walls and roofs tinted per variant like the houses, in four footprints.
+      ...(['townhouse', 'shop', 'tower', 'hall'] as const).flatMap((style): KindKit[] => [
+        {
+          sources: [style],
+          geometry: buildingWallsGeometry(style),
+          material: mat('#ffffff', true),
+          tint: townWalls,
+          castShadow: shadows,
+          vertexColors: true,
+        },
+        {
+          sources: [style],
+          geometry: buildingRoofGeometry(style),
+          material: mat('#ffffff', true),
+          tint: townRoofs,
+          castShadow: shadows,
+          vertexColors: true,
+        },
+      ]),
       // Town street furniture keeps its own painted colours.
       ...(
         [

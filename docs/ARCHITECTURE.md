@@ -60,20 +60,23 @@ flowchart LR
   Renderer --> Streets[TownStreetBuilder]
 ```
 
-- Towns (`game/stage/Town.ts`, `TownGenerator.ts`): on about a third of
-  stages after the first, `generateStage` plans a street grid from a town
-  sub-seed, the centreline builder lays its legs (one block, a right-angle
-  turn per corner, one block out, back on the arrival heading) and
+- Towns (`game/stage/Town.ts`, `TownPlan.ts`, `TownGenerator.ts`): on about
+  a third of stages after the first, `planTown` draws the route through a
+  hill town as legs (straights with 60°–105° corners, tight curves, a narrow
+  old-town section), validated against the self-approach rule; the
+  centreline builder lays them and resumes on the arrival heading, and
   `layoutTown` derives streets, blocked side stubs with barrier rows,
-  direction boards, buildings and the plateau footprint. `TerrainField`
-  levels the ground onto the plateau under the road profile and treats
-  every town street as paved; `SceneryScatter` keeps wild scenery off the
-  plateau and emits the town's props; buildings and barriers collide as
-  oriented boxes (`vehicle/Collisions.ts`). Render side: `RoadBuilder`
-  paves the route through town with kerbed pavements and open junction
-  mouths, `TownStreetBuilder` lays intersection and side-street plates,
-  and `SceneryChunkManager` instances the building and street-furniture
-  kits (`render/scenery/BuildingGeometry.ts`, `StreetFurnitureGeometry.ts`).
+  direction boards, buildings and the footprint. `TerrainField` tames the
+  hills inside the footprint (streets still climb and dip), cuts side streets
+  into the slope, terraces each building and treats every town street as
+  paved; `SceneryScatter` keeps wild scenery off the footprint and emits the
+  town's props; buildings and barriers collide as oriented boxes
+  (`vehicle/Collisions.ts`). Render side: `RoadBuilder` paves the route
+  through town at its per-sample width with kerbed pavements and open
+  junction mouths, `TownStreetBuilder` lays junction and side-street plates
+  on the field's heights, and `SceneryChunkManager` instances the building
+  and street-furniture kits (`render/scenery/BuildingGeometry.ts`,
+  `CivicGeometry.ts`, `StreetFurnitureGeometry.ts`).
 
 - `DrivingSession` (components/game) is a plain class held in a ref. It owns
   the sim, the stepper, input, the camera rig and the `StageRun`, and
