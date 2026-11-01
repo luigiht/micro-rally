@@ -1,0 +1,20 @@
+import type { Gate } from './Checkpoints';
+
+export const MARKER_SPACING = 20;
+/** No marker post within this distance along the road of a checkpoint board. */
+export const MARKER_CLEARANCE = 1.2;
+
+/**
+ * Distances along the road for the paired verge marker posts: one pair every
+ * `MARKER_SPACING` metres, skipping any that would stand where a checkpoint's
+ * time-control boards are, so the board is never pierced by a post.
+ */
+export function markerDistances(pathLength: number, gates: readonly Gate[]): number[] {
+  const boards = gates.filter((g) => g.kind === 'checkpoint').map((g) => g.distance);
+  const out: number[] = [];
+  for (let d = MARKER_SPACING / 2; d < pathLength; d += MARKER_SPACING) {
+    if (boards.some((b) => Math.abs(b - d) < MARKER_CLEARANCE)) continue;
+    out.push(d);
+  }
+  return out;
+}

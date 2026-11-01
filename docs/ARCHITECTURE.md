@@ -63,6 +63,10 @@ flowchart LR
   publishes telemetry/HUD snapshots to Zustand at 10 Hz.
 - `StageRenderer` owns every three.js object for a stage and disposes them
   together; chunk managers stream around the car via `ChunkStreamer`.
+  `SceneryScatter` also dots houses (kind `house`, three-circle colliders)
+  well back from the road; `HouseGeometry` builds the two vertex-coloured
+  instanced parts. `GateBuilder` draws start/finish gantries and, at
+  checkpoints, a pair of rally time-control boards.
 - `stageBrief` draws a stage's name, surface, length and par from the same
   RNG stream `generateStage` uses, without building the road; `StageHistory`
   derives the frontier (first unfinished stage) from `records` and picks the

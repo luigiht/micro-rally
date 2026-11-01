@@ -517,3 +517,288 @@ Newest at the bottom. Format: date — decision — why.
     region, existing games' stages at indices 3–5, 9–11, … regenerate as
     alpine stages (records stay keyed by index); forest
     indices keep their exact stages.
+59. **2026-10-31 — Houses in the landscape; checkpoints as time-control
+    boards.** `SceneryScatter` gains a `house` prop kind placed by the same
+    seeded pass as trees (`REGIONS[*].scenery.houses` per 100 m: forest 0.9,
+    alpine 0.7): never within 14 m of any part of the road (`path.nearest`
+    over the whole path), at least 24 m × scale from each other, and only
+    where the ground rises less than 1.6 m × scale within 3.5 m, since the
+    terrain is not flattened under them; each turns its door toward the
+    nearest stretch of road (±0.4 rad), which a test checks.
+    Collision is three circles (r 2.4, spread 1.8, × scale) along the long
+    axis, so the existing circle grid needs no new shape. Rendering stays
+    instanced: `HouseGeometry` merges boxes and a hand-built gable prism
+    into two kits with vertex colours (slab, door, window glass and frames,
+    brick chimney on white walls; roof plus ridge), and the per-instance
+    tint — cream or ochre walls, terracotta or slate roof by `variant` —
+    multiplies them, so one draw call per kit per chunk. Checkpoint arches
+    are replaced by a pair of roadside time-control boards standing on the
+    ground with no post (as at real controls): a plain white plate 1.15 m
+    tall on each verge (a dark border was tried and dropped by request),
+    sunk 0.1 m into sloping ground, carrying a yellow clock face with a
+    black ring, hands and hub in its upper half, facing the approaching car
+    — the "start of control" (yellow clock) sign. The clock layers are 3 mm
+    apart so the face is flat with no relief, and the hands read 2:50 as the
+    driver sees them (a positive z-rotation is clockwise from the -z side).
+    Verge marker posts (every 20 m) are placed via the pure `markerDistances`,
+    which skips any pair within 1.2 m along the road of a checkpoint, so a
+    board is never pierced by a post; the board wins, the post is dropped. Start and finish
+    keep their gantries; gate crossing logic is untouched. Two lessons from
+    the first cut: `mergeGeometries` needs every part indexed or none, so
+    house parts are made non-indexed before merging (a null merge crashed
+    the scenery loader), and the hand-built gable must be wound
+    counter-clockwise seen from outside or it is back-face culled; a test
+    checks every prism face points away from the roof centre. The roof is a
+    closed pentagonal prism (flat soffit seated 0.12 m below the wall top,
+    0.22 m eave faces, slopes, gable ends) rather than an open shell, which
+    had read as a gap between wall and roof; detail added by request: front
+    dormer with its own gable, door canopy on two posts with a step, sills,
+    shutters, chimney cap.
+60. **2026-10-31 — Terrain sunk under the carriageway.** Over crests and
+    dips the terrain showed through the road: the terrain grid (2 m cells)
+    and the road ribbon (2 m samples) are both chord approximations of the
+    same smoothed, grade-limited profile but sampled at different points,
+    and the grade clamp leaves kinks where curvature spikes, so in a dip the
+    terrain's chords bowed above the ribbon's 0.08 m lift. `TerrainField.
+sample` (the mesh bed) now subtracts `ROAD_BED_DROP` (0.25 m) under the
+    carriageway, ramping to zero over the last 1.2 m before the road edge,
+    so the verge still meets the ribbon edge cleanly while anything the
+    terrain does under the road stays hidden. `heightAt` (what wheels and
+    props use) is unchanged, so physics and scenery placement are
+    untouched; tests pin the bed at road − 0.25 across the carriageway.
+    With the verge at bare road height the ribbon's 0.08 m lift then read as
+    a second layer hovering over the ground, so the verge (flat margin) now
+    sits at deck level (road + lift) and blends to the hills from there,
+    meeting the ribbon flush; `heightAt` returns the deck across road and
+    verge alike, so wheels roll off the road without a step. That still left
+    a seam: terrain triangles (2 m cells) straddling the road edge
+    interpolate between a sunk vertex and a deck vertex, so the ground at
+    the exact edge sat a few cm under the ribbon and shadows broke there.
+    The road mesh therefore carries its own 2 m verge strips either side,
+    built from the same samples as the ribbon (shared edge vertices → flush
+    by construction) and coloured with the region's shoulder colour; the
+    trench ramps closed under the strip (0.6 m inside to 0.4 m beyond the
+    edge) and the terrain's flat margin widened to 3 m, so the coarse
+    terrain only shows beyond the strip, where it is the same colour and a
+    small height difference is invisible. Tests pin the bed at deck level
+    past the ramp and at the strip's outer edge.
+61. **2026-10-31 — Impreza-shaped Boreal Saloon; Sirocco Dakar Truck.** The
+    saloon hull was reshaped in the GC8 Impreza mould: low wedge bonnet to a
+    scuttle, fast windscreen, low roof over a short four-door cabin with a
+    B-pillar, fast C-pillar onto a short high boot, blistered arches (the
+    hull steps from 0.85 to 0.92 half-width over each axle) and WR-blue over
+    gold (flank pinstripe, bonnet pinstripes, wing plates, wheels), with a
+    big bonnet scoop, roof vent, tall wing and twin round fogs. The new
+    `dakar` car (price 26 000, after the S1) is a cab-over rally-raid truck
+    built from two hulls — the cab (orange over a navy lower band, steep
+    windscreen) and the cargo box (orange top, white band, red rule, navy
+    skirt) — plus chassis rails, exhaust stack, roof light bar and rails,
+    navy grille, orange bumper with four lamps, steps, handles, big mirrors
+    and a spare on the back wall. Its spec is heavy and tall (3.2 t, cg
+    0.95 m, 0.6 m tyres, 3.9 m wheelbase) with slow-revving diesel torque
+    and low gearing. Two generic changes carry it: tyre width now scales
+    with wheel radius (0.8 ×, unchanged for cars to within 4 mm) and mud
+    flaps size with the wheel; and `cabinForward` joins `cabinDrop` on the
+    spec so the interior and the first-person eye can move along the car
+    (truck: 1.6 m forward, 1.25 m up), plumbed through `createCameraRig`
+    and `FirstPersonCameraRig`; and `bodyScale` (truck 2.0) pushes the
+    chase camera's distance and height, the isometric distance (by its
+    square root) and the showroom camera back in proportion, so a body
+    twice a car's size is framed like one. The truck keeps the dealership's
+    shared grip setup (tyres, cornering, stability, aero) like every other
+    car; it differs in mass, power, gearing, drag and suspension. A first
+    pass left the saloon's tail lamps, wing uprights, boot lip, headlamps
+    and bonnet scoop hovering over the lofted surface (parts were placed
+    for a higher deck than the stations gave); the boot and nose were
+    raised, lamps moved inside the end faces, uprights seated on the deck
+    and the scoop tilted 0.16 rad to lie along the bonnet; the boot deck
+    was then raised again (0.92–0.95 m) so the body itself forms the tail
+    edge and the separate black lip was dropped. Rule for added parts:
+    every box must overlap the hull surface it sits on.
+62. **2026-10-31 — Launch revs scale with the rev range; truck retuned for
+    agility.** The truck would not move: the clutch-slip launch model held
+    the engine at idle + 2600 rpm, sized for a 7000 rpm car, which on a
+    2600 rpm diesel sat above the redline where `torqueAt` returns zero.
+    Launch revs are now idle + 0.43 × (redline − idle) — ≈3500 rpm on the
+    cars as before, ≈1460 rpm on the truck — and a test checks every
+    dealership car pulls away from rest. The truck is also tuned for feel
+    rather than realism: 2.6 t (was 3.2), cg 0.85 m, yaw inertia 1.5 (was
+    2.2), steering lock 0.55 rad with a later speed falloff, 1500 N·m,
+    stronger brakes and a little more turbo, so it turns in far better than
+    its size suggests while keeping the shared grip setup. The hull builder
+    gained `wrapStripes`, which paints the stripe bands across the end caps
+    instead of body colour, so the truck's white/red/navy box bands and the
+    cab's navy band continue around the back and front; cars keep plain
+    noses and tails.
+63. **2026-10-31 — Albion RS Hatch (Castrol-Focus-style WRC).** New `focus`
+    car at 21 000, between the S1 and the truck. The hull is a mid-2000s
+    three-door World Rally hatch: sloping nose to a high scuttle, fast
+    screen, tall roof over a long door and quarter window with the B-pillar
+    set back, steep hatch glass onto a tall tail, box flares (0.88 → 0.97).
+    Livery after the 2006 works car: white shell, royal-blue roof (hull
+    `roof` colour), bonnet centre band with a white oval and blue dot, blue
+    hatch deck (deck decals), lime lower flanks over a blue sill (stripe
+    band `[0.56, 0.14]` as lime ×3 + blue), four-lamp pod on a blue bar
+    tilted with the bonnet, white wing on blue uprights with big blue end
+    plates, lime bumper with a white band and twin lime lamps, blue
+    splitter and rear bumper, blue mirrors and arch lips, white wheels, and
+    a numbered door plate. Spec sits beside the Riviera WRC with a little
+    more torque and turbo. No brand marks are drawn; the look is
+    colour-blocking only. By request the tail was then rebuilt as a true
+    hatchback — the rear glass falls steeply from the roof straight to a
+    flat vertical back panel at z −2.0 with no boot deck — the wing moved
+    onto the roof's trailing edge above the glass, the flank bands wrap
+    around the tail (`wrapStripes`), and the door roundel was dropped. From
+    the rear reference: the glass narrows at the tail (xRoof 0.7) so body
+    corners flank it, each carrying a tall lens that hugs the inward-leaning
+    C-pillar surface for the full height of the glass (oriented from the
+    surface's own axis and outward normal, built with a three.js basis); the wing is black, its uprights rising from the
+    base of the glass at the tail's top edge to a blade at about roof
+    height with modest plates (lowered and shrunk by request). Detail pass
+    from the photos: lamp pod moved to the bonnet's leading edge with the
+    lamps hanging over the nose, bonnet vent slots behind it, blue bumper
+    corners over the lime with a dark lower grille and a red tow strap,
+    headlamp bezel lines and a second antenna (a blue rear-quarter panel
+    was tried and removed by request; the quarter stays white).
+64. **2026-10-31 — Edelweiss S1 rebuilt on the Sport Quattro S1 E2.** From
+    the reference photos: long flat bonnet to an upright screen, tall flat
+    roof over a short cabin, near-vertical rear window onto a short boot,
+    box flares stepping straight out (0.86 → 0.99) over both axles and
+    running to the bumpers. Livery white over yellow: the flank band is
+    eight equal sub-bands (yellow pinstripe, white, red pinstripe, white,
+    solid yellow lower half to the sill) and wraps the nose and tail;
+    offset red/black/grey wedges and two louvre banks on the bonnet. Parts:
+    black sill blades with a yellow edge, door plate, black vents on the
+    rear flares, twin rectangular headlamps either side of a black grille,
+    a deep black air dam with a forward white splitter, yellow lip and white
+    side wings, two pairs of round lamps, a roof-height shelf wing on two
+    uprights with tall end plates and a red rear lip, side fins running the
+    plates forward along the rear quarters to the pillars, a black vent
+    panel between wide tail lamps, scuttle and roof vents, and twin
+    exhausts. Spec unchanged. No brand marks; colour-blocking only. To
+    read less slab-sided, the hull builder gained an optional `xBelt`
+    (belt-line half-width): the flank now leans from `xBody` at the sill
+    top out to `xBelt` at the belt, so with a tucked sill the side is a
+    convex shoulder rather than a vertical plane (S1: 0.78 → 0.86 → 0.91
+    between the arches, flares stay vertical). The S1 also got chamfered
+    nose and tail stations, black arch lips and a raised sill tuck (a
+    bonnet bulge was tried and dropped: it hid the wedges). Still too flat
+    and wide, so it was re-proportioned to the real car: body 0.8 / belt
+    0.85 / flares 0.93 half-width (1.86 m over the arches, was 1.98), roof
+    1.45 with an upright screen and a small steep rear window; and the rear
+    rebuilt from the photos — a short deck, white quarter towers rising to
+    roof height either side of the window with the shelf wing across their
+    tops (no separate uprights), tall plates and a thin red lip, a black
+    vent panel with grey insets and a white centre divider between small
+    corner tail lamps, the wrapped yellow band, a black bumper and twin
+    exhausts offset to the left. The flat tail was still wrong: the real
+    car's rear glass runs into a panel that keeps sloping down to the
+    lamps, and the wing stands on triangular plates. The stations now slope
+    the top band from the glass bottom (z −1.45, y 1.05) to the lamps
+    (z −2.05, y 0.8), with the vent panel and lamps laid on that incline;
+    `CarParts` gained a `Prism` (convex (z, y) polygon extruded along x,
+    faces wound outward, unit-tested) used for the plates — wide along the
+    wing from the roof's trailing edge to the tail, hugging the glass and
+    the slope below — with the shelf wing spanning them from the roof edge.
+    That rear still looked broken and the wing oversized, so the reference
+    GLB's mesh bounds were read (names and accessor min/max, no import):
+    wing 1.55 m wide × 0.42 m deep at the very tail, top 4 cm over the
+    roof; rear panel ~28° off vertical from a short window (top 1.2 m) down
+    to 0.7 m, with two vent openings high in it. Stations now follow that
+    (roof to z −1.58 with solid C-pillars, short steep window to −1.78,
+    steep panel to the tail), the wing and its small triangular plates are
+    sized to the model, and the lamps and vents lie on the panel. The hull
+    builder also stops painting pillar slants as glass: the side band is
+    glass only between two greenhouse stations (a real window), so A- and
+    C-pillars on every car are body-coloured, which removed the glass
+    triangles on the S1's quarters. Finally the whole hull was rebuilt
+    from the reference GLB's silhouette (max half-width per 10 cm height
+    band at 20 cm stations, decoded from the vertex buffer): roof 1.33 flat
+    from the B-pillar back to z −1.1, a 0.5 m screen rising 0.36, a steep
+    rear window into a raised ducktail deck at 1.2, a tail panel inclined
+    ~25° to a lamp bar at 0.75, 0.81 body / 0.91 flares / 0.55 roof panel
+    with real tumblehome (via `xBelt`), a nose tapering to a 0.67 half-wide
+    face over a wide splitter, flare intakes on the rear flares' leading
+    faces, and the wing (1.56 × 0.42) on inboard plates standing on the
+    deck. Stations are built by a small `st()` helper so the list reads as
+    the measured numbers. A follow-up kept the belt level (0.86–0.9) along
+    the tail so the wrapped flank stripes run straight to the back instead
+    of chevroning up the quarter, made the lamp panel vertical with the
+    incline above it, painted the rear window as a glass deck decal between
+    body-coloured C-pillars, ran the wing plates' lower edge down the
+    incline to the lamp panel, and made the air dam white with a black slot.
+    From the user's projection set (blueprint, head-on front and rear): the
+    nose is a wide upright face, not a wedge — stations now run the flares
+    to the front (0.86–0.88 half) under a slightly sloped bonnet edge, with
+    a full-width black lamp panel (rectangular headlamps at the ends, two
+    big round lamps on the grille), a white bumper with a yellow top edge,
+    mesh slot and amber corner indicators, four round lamps in front of it
+    and a deep splitter; the tail stacks a yellow lip, white mesh bumper, a
+    black band with two mesh vents and a white divider flanked by smoked
+    corner lamps with red strips, the yellow belt band from the wrapped
+    stripes, and the white plate panel on the incline between the wing
+    plates, with a single offset exhaust. The wing was then rebuilt from the
+    projections GLB (Z-up, metres; silhouette per 5 cm height band along
+    the length): the rear window is longer and shallower (0.5 m run, 0.18
+    drop) into a deck at 1.17; the blade is a `Prism` 1.56 wide × 0.6 deep
+    from z −1.7 to −2.3 (0.28 overhang), 5 cm thick and upswept from 1.28 to
+    a 1.42 trailing edge with a red lip; the side plates sit at ±0.74, tall
+    at the back (1.08–1.38) and tapering forward onto the glass at z −1.3,
+    with small end plates standing up from the blade tips. By request the
+    wing then came down and in — blade 1.22–1.33 from z −1.6 to −2.12 (0.1
+    overhang), plates 0.9–1.3 at the back running down the tail incline so
+    nothing floats — and the number plate on the incline was removed (its
+    white inset z-fought the black backing and read as a black box).
+65. **2026-10-31 — Dealership card: names only, "Special" tag.** The car
+    blurbs were removed from the dealership card and from all three
+    dictionaries (the card is name, stats, price); `CarListing` gained
+    `special`, set on the Dakar truck, which the card shows as a pixel tag
+    beside the name, and a test pins the truck as the last and only
+    special listing. The S1 also lost the grey mesh strip on its rear
+    bumper by request.
+66. **2026-10-31 — Snow-covered houses on snow stages.** `SceneryChunkManager`
+    takes a `snow` flag (`region.offroad === 'snow'`, i.e. alpine) and swaps
+    the house tints: roofs become near-white (snow lying on them, ridge
+    included since it shares the roof kit) and walls go paler and greyer,
+    so the cottages recede into the snowfield instead of standing out in
+    terracotta and ochre. Same geometry and draw calls; only the
+    per-instance tint pair changes.
+67. **2026-10-31 — Houses sit level, nothing grows through them.** Each
+    house is placed at the height of its highest slab corner (corners
+    rotated with the house, 6.6 × 5.1 m footprint) so no corner floats, and
+    the slab became a 1.4 m deep foundation that is buried on level ground
+    and shows as a stone base downhill; the allowed rise across the
+    footprint dropped to 1.0 m × scale so the foundation always reaches the
+    ground. After houses are placed, trees, bushes and rocks within 5 m ×
+    scale of a house centre are removed. A test checks all four corners and
+    the clearance on three seeds.
+68. **2026-10-31 — Level pads under houses.** Seating a house on its highest
+    corner still left the entrance hanging over falling ground, so the
+    terrain is now shaped to the house: `TerrainField.setPads` registers
+    level pads (height, radius 4.6 m × scale, 3 m blend) applied as the last
+    step of `heightAt` / `sample`, after the road blend, so a pad near the
+    corridor's outer edge is not tilted by it; `scatterScenery` sets
+    each house's origin so the slab top (`HOUSE_SLAB_TOP`, shared with the
+    geometry) lands at the footprint's mean ground height and registers a
+    pad there, so slab, door sill and step meet level ground and the
+    foundation covers the blend. The terrain worker runs `scatterScenery`
+    on its own field so its chunks carry the same pads; wheels use the same
+    field. `scatterScenery` clears the pads first so a re-run on the same
+    field is identical. The test now checks every corner is within 2 cm of
+    the slab top.
+69. **2026-10-31 — Denser, non-overlapping trees.** Forest tree density went
+    80 → 110 per 100 m (broadleaf 18 → 26) and alpine 55 → 78 (6), and the
+    scatter now keeps canopies apart: a `CanopyGrid` spatial hash (6 m
+    cells) of placed trees rejects a candidate whose canopy (pine 1.4 m,
+    broadleaf 2.2 m, × scale) would overlap one already placed. Rejected
+    spots are skipped rather than retried, so the higher densities are what
+    survive the check. Bushes and rocks are unaffected. A test checks every
+    tree pair on a stage.
+70. **2026-10-31 — Trunks cast shadows.** The trunk kit had `castShadow:
+false` (an early draw-cost saving), so a tree's shadow was a floating
+    canopy with no stem. Trunks now cast when shadows are on, like the
+    foliage; one more instanced mesh per chunk in the shadow pass. That
+    alone changed nothing visible: the pine's lower cone began 0.9 m up, so
+    the trunk's shadow lay entirely inside the canopy's. The foliage cones
+    now start at 1.3 m (tree top 4.85) and the trunk is 1.6 m, so pines show
+    a trunk and their shadows a stem.

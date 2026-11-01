@@ -1,12 +1,23 @@
 import { CAR_SPECS, type CarId, type CarSpec } from '../vehicle/CarSpec';
 
 /** Cars on sale in the dealership, in showroom order. */
-export const CATALOG_IDS = ['hatchback', 'coupe', 'saloon', 'wrc', 'groupb', 's1'] as const;
+export const CATALOG_IDS = [
+  'hatchback',
+  'coupe',
+  'saloon',
+  'wrc',
+  'groupb',
+  's1',
+  'focus',
+  'dakar',
+] as const;
 export type CatalogCarId = (typeof CATALOG_IDS)[number];
 
 export interface CarListing {
   id: CatalogCarId;
   price: number;
+  /** Shown with a "Special" tag in the dealership: a one-off outside the rally-car ladder. */
+  special?: boolean;
 }
 
 export const CAR_CATALOG: readonly CarListing[] = [
@@ -16,6 +27,8 @@ export const CAR_CATALOG: readonly CarListing[] = [
   { id: 'wrc', price: 11000 },
   { id: 'groupb', price: 14000 },
   { id: 's1', price: 18000 },
+  { id: 'focus', price: 21000 },
+  { id: 'dakar', price: 26000, special: true },
 ];
 
 export function isCatalogCar(id: string): id is CatalogCarId {

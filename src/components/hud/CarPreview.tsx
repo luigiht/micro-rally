@@ -28,21 +28,28 @@ function Turntable({ spec, spin }: { spec: CarSpec; spin: boolean }) {
   );
 }
 
-/** Showroom turntable for the dealership: the car slowly spins (still under reduced motion). */
+/**
+ * Showroom turntable for the dealership: the car slowly spins (still under
+ * reduced motion). The camera stands back in proportion to the vehicle's
+ * `bodyScale`, so the truck is framed like the cars; the canvas is keyed by
+ * car because the camera is set at creation.
+ */
 export function CarPreview({ spec }: { spec: CarSpec }) {
   const reduced = usePrefersReducedMotion();
+  const s = spec.bodyScale;
   return (
     <div className="aspect-video w-full bg-[#d9e4e8]" data-testid="car-preview">
       <Canvas
+        key={spec.id}
         dpr={[1, 1.5]}
-        camera={{ position: [3.8, 1.8, 4.75], fov: 32, near: 0.1, far: 60 }}
-        onCreated={({ camera }) => camera.lookAt(0, LOOK_AT_HEIGHT, 0)}
+        camera={{ position: [3.8 * s, 1.8 * s, 4.75 * s], fov: 32, near: 0.1, far: 60 * s }}
+        onCreated={({ camera }) => camera.lookAt(0, LOOK_AT_HEIGHT * s, 0)}
         role="presentation"
       >
         <hemisphereLight args={['#fff6e0', '#7fa05f', 1.6]} />
         <directionalLight position={[4, 6, 3]} intensity={2.2} />
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.005, 0]}>
-          <circleGeometry args={[3.2, 40]} />
+          <circleGeometry args={[3.2 * s, 40]} />
           <meshStandardMaterial color="#b9c7a1" flatShading />
         </mesh>
         <Turntable key={spec.id} spec={spec} spin={!reduced} />

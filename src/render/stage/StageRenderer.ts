@@ -45,8 +45,9 @@ export class StageRenderer {
       96,
       opts.sceneryRadius,
       opts.shadows,
+      region.offroad === 'snow',
     );
-    this.road = new RoadBuilder(world.stage, world.field);
+    this.road = new RoadBuilder(world.stage, world.field, region.palette.shoulder);
     this.gates = new GateBuilder(world.stage, world.field);
     this.group.add(this.terrain.group, this.scenery.group, this.road.group, this.gates.group);
   }

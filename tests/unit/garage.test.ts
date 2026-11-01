@@ -80,10 +80,15 @@ describe('cars', () => {
       'wrc',
       'groupb',
       's1',
+      'focus',
+      'dakar',
     ]);
     for (let i = 1; i < CAR_CATALOG.length; i++) {
       expect(CAR_CATALOG[i]!.price).toBeGreaterThan(CAR_CATALOG[i - 1]!.price);
     }
+    // The truck closes the list and is the only special listing.
+    expect(CAR_CATALOG.at(-1)!.id).toBe('dakar');
+    expect(CAR_CATALOG.filter((c) => c.special).map((c) => c.id)).toEqual(['dakar']);
   });
 });
 

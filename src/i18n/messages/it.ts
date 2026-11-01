@@ -79,6 +79,7 @@ export const it: Messages = {
     owned: 'Posseduta',
     level: 'Livello {n} di {max}',
     stats: { power: 'Potenza', grip: 'Aderenza', agility: 'Agilità' },
+    special: 'Speciale',
     prev: 'Auto precedente',
     next: 'Auto successiva',
   },
@@ -112,31 +113,27 @@ export const it: Messages = {
   cars: {
     hatchback: {
       name: 'Rally Hatch',
-      blurb: 'La compatta amichevole a trazione anteriore con cui hai iniziato.',
     },
     coupe: {
       name: 'Tricolore Coupé',
-      blurb: 'Un cuneo basso anni ’70: trazione posteriore, passo corto e coda vivace.',
     },
     saloon: {
       name: 'Boreal Saloon',
-      blurb:
-        'Una berlina turbo a trazione integrale con un grande alettone: incollata, veloce e docile.',
     },
     wrc: {
       name: 'Riviera WRC',
-      blurb:
-        'Una World Rally Car di fine secolo: compatta alta, livrea a strisce, turbo con flangia e una ripartizione 50/50 solidissima.',
     },
     groupb: {
       name: 'Tempesta Gruppo B',
-      blurb:
-        'Una macchina Gruppo B a motore centrale: alettoni enormi, potenza enorme e una coda da domare.',
     },
     s1: {
       name: 'Edelweiss S1',
-      blurb:
-        'Una coupé Gruppo B a passo corto con parafanghi squadrati e un alettone a mensola: la più potente del salone, e la più nervosa.',
+    },
+    focus: {
+      name: 'Albion RS Hatch',
+    },
+    dakar: {
+      name: 'Sirocco Dakar Truck',
     },
   },
   touch: {

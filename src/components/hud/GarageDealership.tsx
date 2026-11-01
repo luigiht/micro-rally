@@ -99,8 +99,14 @@ export function GarageDealership() {
         aria-live="polite"
         data-testid="car-details"
       >
-        <h4 className="font-pixel text-[10px] leading-snug">{text.name}</h4>
-        <p className="mt-2 text-xs text-ink/80">{text.blurb}</p>
+        <h4 className="flex flex-wrap items-center gap-2 font-pixel text-[10px] leading-snug">
+          {text.name}
+          {car.special && (
+            <span className="pixel-tag px-1.5 py-0.5 text-[8px] text-rally">
+              {m.garage.special}
+            </span>
+          )}
+        </h4>
         <div className="mt-3 space-y-1">
           <StatBar label={m.garage.stats.power} value={stats.power} />
           <StatBar label={m.garage.stats.grip} value={stats.grip} />

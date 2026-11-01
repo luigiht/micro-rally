@@ -1,5 +1,6 @@
 /// <reference lib="webworker" />
 import { REGIONS } from '@/game/stage/regions';
+import { scatterScenery } from '@/game/stage/SceneryScatter';
 import { generateStage } from '@/game/stage/StageGenerator';
 import { TerrainField } from '@/game/stage/TerrainField';
 import { meshTerrainChunk, terrainColors, type TerrainColors } from './meshTerrainChunk';
@@ -19,6 +20,8 @@ self.onmessage = (e: MessageEvent<TerrainWorkerRequest>) => {
     const stage = generateStage(msg.gameSeed, msg.stageIndex);
     const region = REGIONS[stage.region];
     field = new TerrainField(stage);
+    // Scenery placement registers the level pads under houses on the field; the props themselves are not needed here.
+    scatterScenery(field);
     colors = terrainColors(region.palette);
     amplitude = region.terrain.amplitude;
     return;

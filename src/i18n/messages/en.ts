@@ -75,6 +75,7 @@ export const en = {
     owned: 'Owned',
     level: 'Level {n} of {max}',
     stats: { power: 'Power', grip: 'Grip', agility: 'Agility' },
+    special: 'Special',
     prev: 'Previous car',
     next: 'Next car',
   },
@@ -108,30 +109,27 @@ export const en = {
   cars: {
     hatchback: {
       name: 'Rally Hatch',
-      blurb: 'The friendly, front-biased hatchback you started with.',
     },
     coupe: {
       name: 'Tricolore Coupé',
-      blurb: 'A low 1970s wedge: rear-wheel drive, short wheelbase, lively tail.',
     },
     saloon: {
       name: 'Boreal Saloon',
-      blurb:
-        'A turbocharged all-wheel-drive saloon with a tall rear wing: planted, fast and forgiving.',
     },
     wrc: {
       name: 'Riviera WRC',
-      blurb:
-        'A turn-of-the-century World Rally Car: tall hatch, striped livery, restricted turbo and a rock-steady 50/50 drive split.',
     },
     groupb: {
       name: 'Tempesta Group B',
-      blurb: 'A mid-engined Group B machine: huge wings, huge power, and a tail that needs taming.',
     },
     s1: {
       name: 'Edelweiss S1',
-      blurb:
-        'A short-wheelbase Group B coupé with box flares and a shelf of a rear wing: the most power in the shop, and the twitchiest.',
+    },
+    focus: {
+      name: 'Albion RS Hatch',
+    },
+    dakar: {
+      name: 'Sirocco Dakar Truck',
     },
   },
   touch: {

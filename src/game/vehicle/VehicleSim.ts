@@ -5,6 +5,8 @@ import { SURFACES, type Surface } from './surfaces';
 import type { TerrainQuery } from './Terrain';
 
 export const GRAVITY = 9.81;
+/** Clutch-slip launch revs as a fraction of the idle-to-redline range (≈3500 rpm on a 7000 rpm engine). */
+const LAUNCH_REV_FRACTION = 0.43;
 const STEER_RATE = 3.2;
 const STEER_RETURN = 5.5;
 const LOW_SPEED = 4;
@@ -290,11 +292,13 @@ export class VehicleSim {
     input.shiftUp = false;
     input.shiftDown = false;
 
-    // Engine: clutch slip in first/reverse keeps revs up at launch.
+    // Engine: clutch slip in first/reverse keeps revs up at launch, to a fixed
+    // fraction of the rev range so a low-revving diesel launches too.
     const lockedRpm = wheelLockedRpm(p, vLong, s.gear);
     const launching = s.gear === 1 || reversing;
+    const launchRpm = p.idleRpm + drivePedal * (p.redlineRpm - p.idleRpm) * LAUNCH_REV_FRACTION;
     const engineRpm = touching
-      ? Math.max(lockedRpm, launching ? p.idleRpm + drivePedal * 2600 : p.idleRpm)
+      ? Math.max(lockedRpm, launching ? launchRpm : p.idleRpm)
       : p.idleRpm + drivePedal * (p.redlineRpm - p.idleRpm);
     s.rpm += (Math.min(engineRpm, p.redlineRpm * 1.02) - s.rpm) * (1 - Math.exp(-18 * dt));
 

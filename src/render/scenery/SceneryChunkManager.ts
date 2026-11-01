@@ -14,6 +14,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { RegionPalette } from '@/game/stage/regions';
 import type { Prop, PropKind } from '@/game/stage/SceneryScatter';
 import { ChunkStreamer, chunkKey } from '../ChunkStreamer';
+import { houseRoofGeometry, houseWallsGeometry } from './HouseGeometry';
 
 interface KindKit {
   sources: readonly PropKind[];
@@ -22,11 +23,14 @@ interface KindKit {
   /** Per-instance colour pair (variant 0 / 1); null = material colour. */
   tint: readonly [Color, Color] | null;
   castShadow: boolean;
+  /** Geometry carries its own colours (multiplied by the tint). */
+  vertexColors?: boolean;
 }
 
 function foliageGeometry(): BufferGeometry {
-  const low = new ConeGeometry(1.35, 2.6, 7).translate(0, 2.2, 0);
-  const high = new ConeGeometry(0.95, 2.1, 7).translate(0, 3.4, 0);
+  // Foliage starts 1.3 m up so the trunk shows, in the tree and in its shadow.
+  const low = new ConeGeometry(1.35, 2.6, 7).translate(0, 2.6, 0);
+  const high = new ConeGeometry(0.95, 2.1, 7).translate(0, 3.8, 0);
   const merged = mergeGeometries([low, high])!;
   low.dispose();
   high.dispose();
@@ -44,7 +48,7 @@ function canopyGeometry(): BufferGeometry {
   return merged;
 }
 
-/** Instanced, chunked roadside props: cone pines, round broadleaf trees, blob bushes, faceted rocks. */
+/** Instanced, chunked roadside props: cone pines, round broadleaf trees, blob bushes, faceted rocks, houses. */
 export class SceneryChunkManager {
   readonly group = new Group();
   private readonly kits: KindKit[];
@@ -60,12 +64,20 @@ export class SceneryChunkManager {
     size: number,
     radius: number,
     shadows: boolean,
+    /** Snow regions: roofs under snow and paler walls, so houses sit into the white landscape. */
+    snow = false,
   ) {
     this.group.name = 'scenery';
     const pine = [new Color(palette.foliage), new Color(palette.foliageAlt)] as const;
     const leaf = [new Color(palette.canopy), new Color(palette.canopyAlt)] as const;
-    const mat = (color: string) =>
-      new MeshStandardMaterial({ color, flatShading: true, roughness: 0.9 });
+    const mat = (color: string, vertexColors = false) =>
+      new MeshStandardMaterial({ color, flatShading: true, roughness: 0.9, vertexColors });
+    const walls = snow
+      ? ([new Color('#e9e6dd'), new Color('#cfc3a8')] as const)
+      : ([new Color('#efe6cf'), new Color('#d9b26b')] as const);
+    const roofs = snow
+      ? ([new Color('#eef2f5'), new Color('#e4e9ee')] as const)
+      : ([new Color('#b5523c'), new Color('#4a5160')] as const);
     this.kits = [
       {
         sources: ['tree'],
@@ -83,10 +95,10 @@ export class SceneryChunkManager {
       },
       {
         sources: ['tree', 'broadleaf'],
-        geometry: new CylinderGeometry(0.16, 0.24, 1.4, 5).translate(0, 0.7, 0),
+        geometry: new CylinderGeometry(0.16, 0.24, 1.6, 5).translate(0, 0.8, 0),
         material: mat(palette.trunk),
         tint: null,
-        castShadow: false,
+        castShadow: shadows,
       },
       {
         sources: ['bush'],
@@ -101,6 +113,22 @@ export class SceneryChunkManager {
         material: mat(palette.boulder),
         tint: null,
         castShadow: shadows,
+      },
+      {
+        sources: ['house'],
+        geometry: houseWallsGeometry(),
+        material: mat('#ffffff', true),
+        tint: walls,
+        castShadow: shadows,
+        vertexColors: true,
+      },
+      {
+        sources: ['house'],
+        geometry: houseRoofGeometry(),
+        material: mat('#ffffff', true),
+        tint: roofs,
+        castShadow: shadows,
+        vertexColors: true,
       },
     ];
     for (const p of props) {
@@ -144,7 +172,9 @@ export class SceneryChunkManager {
         mesh.setMatrixAt(i, this.dummy.matrix);
         if (kit.tint) {
           this.color.copy(kit.tint[p.variant ? 1 : 0]);
-          this.color.multiplyScalar(0.88 + (p.rotation / (Math.PI * 2)) * 0.24);
+          // Houses keep their palette; foliage varies a little per instance.
+          if (!kit.vertexColors)
+            this.color.multiplyScalar(0.88 + (p.rotation / (Math.PI * 2)) * 0.24);
           mesh.setColorAt(i, this.color);
         }
       });

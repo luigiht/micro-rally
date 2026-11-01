@@ -6,6 +6,8 @@ import type { CarId, CarSpec } from '@/game/vehicle/CarSpec';
 import type { VehiclePose } from '@/game/vehicle/interpolatePose';
 import type { CameraMode } from '@/lib/cameraMode';
 import { CoupeBody } from './bodies/CoupeBody';
+import { DakarTruckBody } from './bodies/DakarTruckBody';
+import { FocusHatchBody } from './bodies/FocusHatchBody';
 import { GroupBBody } from './bodies/GroupBBody';
 import { HatchbackBody } from './bodies/HatchbackBody';
 import { S1CoupeBody } from './bodies/S1CoupeBody';
@@ -28,6 +30,8 @@ const RIM: Partial<Record<CarId, string>> = {
   saloon: '#e9b949',
   wrc: '#f4f1ea',
   s1: '#f4f1ea',
+  focus: '#f4f1ea',
+  dakar: '#f0741f',
 };
 
 interface WheelProps {
@@ -41,15 +45,17 @@ interface WheelProps {
 
 function Wheel({ x, z, radius, rim, steerRef, spinRef }: WheelProps) {
   const out = x > 0 ? 1 : -1;
+  // Tyre width scales with the wheel, so truck tyres are as fat as they are tall.
+  const width = radius * 0.8;
   return (
     <group position={[x, radius, z]} ref={steerRef}>
       <group ref={spinRef}>
         <mesh rotation={[0, 0, Math.PI / 2]} castShadow>
-          <cylinderGeometry args={[radius, radius, 0.26, 12]} />
+          <cylinderGeometry args={[radius, radius, width, 12]} />
           <meshStandardMaterial color={C.tyre} flatShading />
         </mesh>
         <mesh position={[0.02 * out, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[radius * 0.6, radius * 0.6, 0.26, 8]} />
+          <cylinderGeometry args={[radius * 0.6, radius * 0.6, width, 8]} />
           <meshStandardMaterial color={rim} flatShading metalness={0.3} roughness={0.5} />
         </mesh>
         <Box p={[0.15 * out, 0, 0]} s={[0.02, radius * 1.1, 0.08]} c={C.trim} />
@@ -70,6 +76,10 @@ function BodyFor({ spec, cabinRef }: { spec: CarSpec; cabinRef: Ref<Group> }) {
       return <GroupBBody spec={spec} cabinRef={cabinRef} />;
     case 's1':
       return <S1CoupeBody spec={spec} cabinRef={cabinRef} />;
+    case 'focus':
+      return <FocusHatchBody spec={spec} cabinRef={cabinRef} />;
+    case 'dakar':
+      return <DakarTruckBody spec={spec} cabinRef={cabinRef} />;
     default:
       return <HatchbackBody spec={spec} cabinRef={cabinRef} />;
   }
@@ -126,14 +136,14 @@ export function CarModel({ spec, ref }: { spec: CarSpec; ref: Ref<CarModelHandle
   return (
     <group ref={root}>
       <group ref={body} position={[0, 0.1, 0]}>
-        <group position={[0, spec.cabinDrop, 0]}>
+        <group position={[0, spec.cabinDrop, spec.cabinForward]}>
           <CarInterior ref={interior} redlineRpm={spec.redlineRpm} />
         </group>
         <BodyFor spec={spec} cabinRef={cabin} />
       </group>
-      {/* Mud flaps hang off the chassis, not the leaning body. */}
-      <Box p={[half, 0.24, rear - 0.42]} s={[0.3, 0.26, 0.03]} c={C.trim} />
-      <Box p={[-half, 0.24, rear - 0.42]} s={[0.3, 0.26, 0.03]} c={C.trim} />
+      {/* Mud flaps hang off the chassis, not the leaning body; sized to the wheel. */}
+      <Box p={[half, 0.75 * r, rear - 1.3 * r]} s={[0.9 * r, 0.8 * r, 0.03]} c={C.trim} />
+      <Box p={[-half, 0.75 * r, rear - 1.3 * r]} s={[0.9 * r, 0.8 * r, 0.03]} c={C.trim} />
       <group ref={wheels}>
         <Wheel x={half} z={front} radius={r} rim={rim} steerRef={steerFL} spinRef={spinFL} />
         <Wheel x={-half} z={front} radius={r} rim={rim} steerRef={steerFR} spinRef={spinFR} />

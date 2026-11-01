@@ -1,5 +1,8 @@
 'use client';
 
+import { useMemo } from 'react';
+import type { BufferGeometry } from 'three';
+
 /** Shared palette and primitives for the procedural car models. */
 export const CAR_COLORS = {
   paint: '#e8623a',
@@ -100,4 +103,65 @@ export function Disc({ p, radius, depth, c }: { p: V3; radius: number; depth: nu
       <meshStandardMaterial color={c} flatShading />
     </mesh>
   );
+}
+
+export interface PrismProps {
+  /** Centre of the prism along x; it extends ±thickness/2 either side. */
+  x: number;
+  /** Convex outline in the (z, y) plane, in order around the polygon. */
+  points: readonly (readonly [number, number])[];
+  thickness: number;
+  c: string;
+  shadow?: boolean;
+}
+
+/** Flat-sided prism extruded along x from a convex (z, y) polygon: wing plates, fins, wedges. */
+export function Prism({ x, points, thickness, c, shadow }: PrismProps) {
+  const positions = useMemo(() => prismPositions(points, thickness), [points, thickness]);
+  return (
+    <mesh position={[x, 0, 0]} castShadow={shadow}>
+      <bufferGeometry onUpdate={(g: BufferGeometry) => g.computeVertexNormals()}>
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+      </bufferGeometry>
+      <meshStandardMaterial color={c} flatShading />
+    </mesh>
+  );
+}
+
+/** Non-indexed triangles for `Prism`, every face wound to point away from the centroid. */
+export function prismPositions(
+  points: readonly (readonly [number, number])[],
+  thickness: number,
+): Float32Array {
+  const h = thickness / 2;
+  const n = points.length;
+  const cz = points.reduce((a, p) => a + p[0], 0) / n;
+  const cy = points.reduce((a, p) => a + p[1], 0) / n;
+  const out: number[] = [];
+  const tri = (a: number[], b: number[], c: number[]) => {
+    const ux = b[0]! - a[0]!;
+    const uy = b[1]! - a[1]!;
+    const uz = b[2]! - a[2]!;
+    const vx = c[0]! - a[0]!;
+    const vy = c[1]! - a[1]!;
+    const vz = c[2]! - a[2]!;
+    const nx = uy * vz - uz * vy;
+    const ny = uz * vx - ux * vz;
+    const nz = ux * vy - uy * vx;
+    const mx = (a[0]! + b[0]! + c[0]!) / 3;
+    const my = (a[1]! + b[1]! + c[1]!) / 3 - cy;
+    const mz = (a[2]! + b[2]! + c[2]!) / 3 - cz;
+    const flip = nx * mx + ny * my + nz * mz < 0;
+    for (const q of flip ? [a, c, b] : [a, b, c]) out.push(q[0]!, q[1]!, q[2]!);
+  };
+  const at = (i: number, sx: number) => [sx, points[i]![1], points[i]![0]];
+  for (const sx of [h, -h]) {
+    for (let i = 1; i < n - 1; i++) tri(at(0, sx), at(i, sx), at(i + 1, sx));
+  }
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n;
+    tri(at(i, h), at(j, h), at(j, -h));
+    tri(at(i, h), at(j, -h), at(i, -h));
+  }
+  return new Float32Array(out);
 }

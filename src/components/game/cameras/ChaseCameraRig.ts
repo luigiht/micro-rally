@@ -18,7 +18,11 @@ export class ChaseCameraRig implements CameraRig {
   private readonly desired = new Vector3();
   private readonly look = new Vector3();
 
-  constructor(private readonly terrain: TerrainQuery) {}
+  /** `bodyScale` stands the camera further back and higher for vehicles bigger than a car. */
+  constructor(
+    private readonly terrain: TerrainQuery,
+    private readonly bodyScale = 1,
+  ) {}
 
   snap({ camera, target }: CameraRigFrame): void {
     this.heading = target.yaw;
@@ -75,8 +79,8 @@ export class ChaseCameraRig implements CameraRig {
 
   private computeDesired(t: Readonly<VehiclePose>): void {
     const speed = Math.abs(t.speed);
-    const dist = (5.2 + speed * 0.07) * this.zoomScale;
-    const height = (1.9 + speed * 0.012) * Math.sqrt(this.zoomScale);
+    const dist = (5.2 + speed * 0.07) * this.zoomScale * this.bodyScale;
+    const height = (1.9 + speed * 0.012) * Math.sqrt(this.zoomScale) * this.bodyScale;
     this.desired.set(
       t.x - Math.sin(this.heading) * dist,
       this.baseY + height,
@@ -88,9 +92,9 @@ export class ChaseCameraRig implements CameraRig {
 
   private apply(camera: CameraRigFrame['camera'], t: Readonly<VehiclePose>): void {
     this.look.set(
-      t.x + Math.sin(this.heading) * 3,
-      this.baseY + 1.0,
-      t.z + Math.cos(this.heading) * 3,
+      t.x + Math.sin(this.heading) * 3 * this.bodyScale,
+      this.baseY + 1.0 * this.bodyScale,
+      t.z + Math.cos(this.heading) * 3 * this.bodyScale,
     );
     camera.position.copy(this.pos);
     camera.up.set(0, 1, 0);

@@ -16,6 +16,13 @@ function topSpeedKmh(id: CarId): number {
   return sim.state.speed * 3.6;
 }
 
+/** Speed (m/s) after pulling away from rest at full throttle on tarmac. */
+function launchSpeed(id: CarId, seconds: number): number {
+  const sim = makeSim(CAR_SPECS[id], tarmac);
+  run(sim, tarmac, seconds, input({ throttle: 1 }));
+  return sim.state.speed;
+}
+
 function brakingDistance(id: CarId, surface: keyof typeof SURFACES): number {
   const ground = flatTerrain(surface);
   const sim = makeSim(CAR_SPECS[id], ground, 100 / 3.6);
@@ -39,6 +46,14 @@ function skidpadLateralG(surface: keyof typeof SURFACES): number {
 }
 
 describe('Drivetrain', () => {
+  it('every dealership car pulls away from rest, including the low-revving truck', () => {
+    for (const id of CATALOG_IDS) {
+      expect(launchSpeed(id, 3), id).toBeGreaterThan(8);
+    }
+    // The truck launches at a fraction of its rev range, not a fixed 2600 rpm over idle.
+    expect(launchSpeed('dakar', 6)).toBeGreaterThan(14);
+  });
+
   it('torque curve peaks mid-range and cuts at the limiter', () => {
     const spec = CAR_SPECS.hatchback;
     expect(torqueAt(spec, spec.redlineRpm * 0.6)).toBeCloseTo(spec.peakTorque);

@@ -6,14 +6,38 @@ import { REGIONS } from './regions';
 import { createRoadHit } from './RoadPath';
 import type { StageDef } from './StageGenerator';
 
-const FLAT_MARGIN = 2.5;
+const FLAT_MARGIN = 3;
 const BLEND_WIDTH = 16;
-/** The road ribbon is drawn this far above the terrain bed; wheels rest on the ribbon, not the bed. */
+/**
+ * The road ribbon is drawn this far above the smoothed road profile; the
+ * verge (flat margin) sits at the same level, so ribbon and terrain meet
+ * flush at the road edge and wheels roll off without a step.
+ */
 export const ROAD_LIFT = 0.08;
-/** Half-width of the blend from ribbon height down to the bed, centred on the road edge. */
-const ROAD_EDGE = 0.3;
+/**
+ * Under the carriageway the terrain bed is sunk this far below the road
+ * profile (so `ROAD_LIFT + ROAD_BED_DROP` below the deck), ramping back up to
+ * deck level across the road edge (`TRENCH_IN` inside it to `TRENCH_OUT`
+ * beyond it, under the road mesh's verge strip). The terrain grid and the
+ * ribbon are both straight-line approximations of the same curved profile
+ * sampled at different points, so over crests and dips the terrain's chords
+ * can bow up through a thin lift; the trench keeps them hidden under the
+ * road, while the verge strip (terrain-coloured) hides any seam beyond.
+ */
+export const ROAD_BED_DROP = 0.25;
+const TRENCH_IN = 0.6;
+export const TRENCH_OUT = 0.4;
 const SMOOTH_WINDOW = 15;
 const MAX_GRADE = 0.12;
+
+/** A level pad flattened into the hills (under a house): height `y` within `radius`, blending out over `PAD_BLEND`. */
+export interface TerrainPad {
+  x: number;
+  z: number;
+  y: number;
+  radius: number;
+}
+const PAD_BLEND = 3;
 
 export interface TerrainSample {
   height: number;
@@ -30,9 +54,9 @@ function smoothstep(e0: number, e1: number, x: number): number {
 
 /**
  * Simplex hills with the road corridor flattened onto a smoothed, grade-limited
- * road bed. `sample` is the terrain bed the ground mesh is built from;
- * `heightAt` is the surface wheels touch, which adds the road ribbon's lift
- * across the carriageway.
+ * road bed. `sample` is the terrain bed the ground mesh is built from (sunk
+ * under the ribbon); `heightAt` is the surface wheels touch: the ribbon deck
+ * across the road and verge, blending to the hills beyond.
  */
 export class TerrainField implements TerrainQuery {
   private readonly noise: NoiseFunction2D;
@@ -42,6 +66,7 @@ export class TerrainField implements TerrainQuery {
   private readonly hit = createRoadHit();
   private readonly offroad: Surface;
   readonly corridor: number;
+  private pads: TerrainPad[] = [];
 
   constructor(readonly stage: StageDef) {
     const region = REGIONS[stage.region];
@@ -53,6 +78,16 @@ export class TerrainField implements TerrainQuery {
     this.roadHeights = this.buildRoadHeights();
   }
 
+  /**
+   * Replace the level pads (set after construction, once scenery is placed,
+   * so the road bed built in the constructor is unaffected). Pads sit well
+   * clear of the carriageway, so they only ever meet the road's outer blend.
+   */
+  setPads(pads: readonly TerrainPad[]): void {
+    this.pads = [...pads];
+  }
+
+  /** The hills alone: noise, before the road bed and any pads. */
   baseHeight(x: number, z: number): number {
     const f = this.frequency;
     const n = this.noise;
@@ -65,6 +100,19 @@ export class TerrainField implements TerrainQuery {
     );
   }
 
+  /** Flatten the finished height onto any pad covering (x, z); applied last so the road blend cannot tilt a pad. */
+  private applyPads(x: number, z: number, h: number): number {
+    for (const p of this.pads) {
+      const dx = x - p.x;
+      const dz = z - p.z;
+      const reach = p.radius + PAD_BLEND;
+      if (dx * dx + dz * dz >= reach * reach) continue;
+      const t = smoothstep(p.radius, reach, Math.hypot(dx, dz));
+      h = p.y + (h - p.y) * t;
+    }
+    return h;
+  }
+
   roadHeightAt(along: number): number {
     const s = this.stage.path.spacing;
     const f = Math.min(Math.max(along / s, 0), this.roadHeights.length - 1.000001);
@@ -75,15 +123,18 @@ export class TerrainField implements TerrainQuery {
   sample(x: number, z: number, out: TerrainSample): TerrainSample {
     const base = this.baseHeight(x, z);
     if (!this.stage.path.nearest(x, z, this.corridor, this.hit)) {
-      out.height = base;
+      out.height = this.applyPads(x, z, base);
       out.roadBlend = 0;
       out.roadDistance = Infinity;
       return out;
     }
-    const road = this.roadHeightAt(this.hit.along);
+    const deck = this.roadHeightAt(this.hit.along) + ROAD_LIFT;
     const hw = this.stage.halfWidth;
     const t = smoothstep(hw + FLAT_MARGIN, this.corridor, this.hit.distance);
-    out.height = road + (base - road) * t;
+    const trench =
+      (ROAD_LIFT + ROAD_BED_DROP) *
+      (1 - smoothstep(hw - TRENCH_IN, hw + TRENCH_OUT, this.hit.distance));
+    out.height = this.applyPads(x, z, deck + (base - deck) * t - trench);
     out.roadBlend = 1 - t;
     out.roadDistance = this.hit.distance;
     return out;
@@ -91,12 +142,11 @@ export class TerrainField implements TerrainQuery {
 
   heightAt(x: number, z: number): number {
     const base = this.baseHeight(x, z);
-    if (!this.stage.path.nearest(x, z, this.corridor, this.hit)) return base;
-    const road = this.roadHeightAt(this.hit.along);
+    if (!this.stage.path.nearest(x, z, this.corridor, this.hit)) return this.applyPads(x, z, base);
+    const deck = this.roadHeightAt(this.hit.along) + ROAD_LIFT;
     const hw = this.stage.halfWidth;
     const t = smoothstep(hw + FLAT_MARGIN, this.corridor, this.hit.distance);
-    const ribbon = 1 - smoothstep(hw - ROAD_EDGE, hw + ROAD_EDGE, this.hit.distance);
-    return road + (base - road) * t + ROAD_LIFT * ribbon;
+    return this.applyPads(x, z, deck + (base - deck) * t);
   }
 
   surfaceAt(x: number, z: number): Surface {

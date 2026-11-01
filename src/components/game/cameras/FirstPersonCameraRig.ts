@@ -37,10 +37,11 @@ export class FirstPersonCameraRig implements CameraRig {
   private readonly up = new Vector3();
   private readonly look = new Vector3();
 
-  /** `eyeDrop` lowers the eye for cars with a lower cabin than the hatchback. */
+  /** `eyeDrop` lowers (or raises) the eye for cars whose cabin sits lower (higher) than the hatchback's; `eyeForward` moves it along the car. */
   constructor(
     private readonly view: FirstPersonView,
     private readonly eyeDrop = 0,
+    private readonly eyeForward = 0,
   ) {
     this.mode = view.mode;
   }
@@ -76,6 +77,7 @@ export class FirstPersonCameraRig implements CameraRig {
     this.base.set(t.x, t.y, t.z);
     this.pos.copy(this.view.eye);
     this.pos.y += this.eyeDrop;
+    this.pos.z += this.eyeForward;
     this.pos.applyQuaternion(this.quat).add(this.base);
     // View direction uses the smoothed pitch/roll, the tilt and the glance.
     this.euler.set(this.pitch + this.view.tiltDown, t.yaw + this.glance, this.roll);

@@ -19,10 +19,11 @@ export class IsometricCameraRig implements CameraRig {
   private readonly focus = new Vector3();
   private readonly pos = new Vector3();
 
-  /** `yaw` is the world heading the camera looks along (stage axis + 45°). */
+  /** `yaw` is the world heading the camera looks along (stage axis + 45°); `distScale` stands it further back for big vehicles. */
   constructor(
     private readonly terrain: TerrainQuery,
     private readonly yaw: number,
+    private readonly distScale = 1,
   ) {}
 
   snap({ camera, target }: CameraRigFrame): void {
@@ -51,7 +52,7 @@ export class IsometricCameraRig implements CameraRig {
   dispose(): void {}
 
   private apply(camera: CameraRigFrame['camera']): void {
-    const dist = BASE_DIST * this.zoomScale;
+    const dist = BASE_DIST * this.zoomScale * this.distScale;
     const flat = Math.cos(PITCH) * dist;
     this.pos.set(
       this.focus.x - Math.sin(this.yaw) * flat,

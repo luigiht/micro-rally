@@ -44,6 +44,8 @@ export class DrivingSession {
   private readonly coast = createControlInput();
   private readonly merged = createControlInput();
   private cabinDrop: number;
+  private cabinForward: number;
+  private bodyScale: number;
   private readonly respawn: SpawnPose = { x: 0, z: 0, yaw: 0 };
   private rig: CameraRig;
   private readonly frame: CameraRigFrame;
@@ -83,6 +85,8 @@ export class DrivingSession {
   ) {
     this.sim = new VehicleSim(spec);
     this.cabinDrop = spec.cabinDrop;
+    this.cabinForward = spec.cabinForward;
+    this.bodyScale = spec.bodyScale;
     this.sim.reset(world.spawn, world.terrain);
     this.run = world.stage ? new StageRun(world.stage) : null;
     this.coast.brake = 0.35;
@@ -92,6 +96,8 @@ export class DrivingSession {
       world.terrain,
       world.spawn.yaw,
       spec.cabinDrop,
+      spec.cabinForward,
+      spec.bodyScale,
     );
     this.frame = { camera, target: this.pose, dt: 0, reducedMotion: false };
     useStageHudStore.setState({
@@ -127,14 +133,23 @@ export class DrivingSession {
   /** Swap the car mid-run (garage purchase or selection); the stage clock keeps running. */
   setSpec(spec: CarSpec): void {
     this.sim.retune(spec);
-    if (spec.cabinDrop === this.cabinDrop) return;
+    if (
+      spec.cabinDrop === this.cabinDrop &&
+      spec.cabinForward === this.cabinForward &&
+      spec.bodyScale === this.bodyScale
+    )
+      return;
     this.cabinDrop = spec.cabinDrop;
+    this.cabinForward = spec.cabinForward;
+    this.bodyScale = spec.bodyScale;
     this.rig.dispose();
     this.rig = createCameraRig(
       this.rig.mode,
       this.world.terrain,
       this.world.spawn.yaw,
       this.cabinDrop,
+      this.cabinForward,
+      this.bodyScale,
     );
     this.needsSnap = true;
   }
@@ -169,7 +184,14 @@ export class DrivingSession {
     const wanted = useSettingsStore.getState().camera;
     if (wanted === this.rig.mode) return;
     this.rig.dispose();
-    this.rig = createCameraRig(wanted, this.world.terrain, this.world.spawn.yaw, this.cabinDrop);
+    this.rig = createCameraRig(
+      wanted,
+      this.world.terrain,
+      this.world.spawn.yaw,
+      this.cabinDrop,
+      this.cabinForward,
+      this.bodyScale,
+    );
     this.needsSnap = true;
   }
 

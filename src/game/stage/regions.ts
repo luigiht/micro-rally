@@ -24,6 +24,8 @@ export interface SceneryDensity {
   broadleaf: number;
   bushes: number;
   rocks: number;
+  /** Houses per 100 m of road, well back from it. */
+  houses: number;
 }
 
 export interface RegionDef {
@@ -67,7 +69,7 @@ const FOREST: RegionDef = {
   terrain: { amplitude: 22, frequency: 1 / 260 },
   twistiness: 0.9,
   baseLength: 1800,
-  scenery: { trees: 80, broadleaf: 18, bushes: 16, rocks: 5 },
+  scenery: { trees: 110, broadleaf: 26, bushes: 16, rocks: 5, houses: 0.9 },
   parSpeed: 15,
 };
 
@@ -105,7 +107,7 @@ const ALPINE: RegionDef = {
   terrain: { amplitude: 34, frequency: 1 / 230 },
   twistiness: 1.4,
   baseLength: 1500,
-  scenery: { trees: 55, broadleaf: 4, bushes: 6, rocks: 14 },
+  scenery: { trees: 78, broadleaf: 6, bushes: 6, rocks: 14, houses: 0.7 },
   parSpeed: 14,
 };
 

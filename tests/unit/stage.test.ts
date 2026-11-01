@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { CheckpointTracker, crossesGate, type Gate } from '@/game/stage/Checkpoints';
 import { createRoadHit, RoadPath } from '@/game/stage/RoadPath';
-import { propObstacles, scatterScenery } from '@/game/stage/SceneryScatter';
+import {
+  CANOPY_RADIUS,
+  HOUSE_SLAB_TOP,
+  propObstacles,
+  scatterScenery,
+} from '@/game/stage/SceneryScatter';
+import { MARKER_CLEARANCE, MARKER_SPACING, markerDistances } from '@/game/stage/RoadMarkers';
 import { generateStage, stageRegion } from '@/game/stage/StageGenerator';
 import { StageRun, TREE_PENALTY_SECONDS } from '@/game/stage/StageRun';
-import { ROAD_LIFT, TerrainField } from '@/game/stage/TerrainField';
+import { ROAD_BED_DROP, ROAD_LIFT, TRENCH_OUT, TerrainField } from '@/game/stage/TerrainField';
 import { ObstacleGrid, resolveObstacleCollisions } from '@/game/vehicle/Collisions';
 import { createVehicleState } from '@/game/vehicle/VehicleSim';
 
@@ -164,11 +170,39 @@ describe('TerrainField', () => {
     const lx = Math.cos(g.heading);
     const lz = -Math.sin(g.heading);
     const bed = { height: 0, roadBlend: 0, roadDistance: 0 };
+    const road = field.roadHeightAt(g.distance);
     field.sample(g.x, g.z, bed);
-    expect(field.heightAt(g.x, g.z)).toBeCloseTo(bed.height + ROAD_LIFT, 6);
+    // Wheels ride the ribbon deck; the mesh bed is sunk beneath it.
+    expect(field.heightAt(g.x, g.z)).toBeCloseTo(road + ROAD_LIFT, 6);
+    expect(bed.height).toBeCloseTo(road - ROAD_BED_DROP, 6);
+    // On the verge, mesh and driving surface coincide at deck level: no step off the road.
     const off = stage.halfWidth + 1;
     field.sample(g.x + lx * off, g.z + lz * off, bed);
     expect(field.heightAt(g.x + lx * off, g.z + lz * off)).toBeCloseTo(bed.height, 6);
+    expect(bed.height).toBeCloseTo(field.roadHeightAt(g.distance) + ROAD_LIFT, 1);
+  });
+
+  it('keeps the terrain bed well under the ribbon across the whole carriageway', () => {
+    const bed = { height: 0, roadBlend: 0, roadDistance: 0 };
+    const at = { x: 0, z: 0, heading: 0 };
+    for (let d = 0; d < stage.path.length; d += 7) {
+      stage.path.sample(d, at);
+      const road = field.roadHeightAt(d);
+      for (const lateral of [-0.9, -0.5, 0, 0.5, 0.9]) {
+        const off = lateral * (stage.halfWidth - 1.2);
+        field.sample(at.x + Math.cos(at.heading) * off, at.z - Math.sin(at.heading) * off, bed);
+        // Nearest-point parameter differs a hair from `d` on bends; allow 3 cm.
+        expect(bed.height).toBeLessThanOrEqual(road - ROAD_BED_DROP + 0.03);
+      }
+      // Just past the trench ramp (under the road mesh's verge strip) and at the strip's outer
+      // edge, the terrain is at deck level, flush with the strip.
+      for (const out of [TRENCH_OUT + 0.2, 2]) {
+        const off = stage.halfWidth + out;
+        field.sample(at.x + Math.cos(at.heading) * off, at.z - Math.sin(at.heading) * off, bed);
+        // Out on the verge the nearest-point parameter shifts more on bends; 0.08 still rules out the drop.
+        expect(Math.abs(bed.height - (road + ROAD_LIFT))).toBeLessThan(0.08);
+      }
+    }
   });
 
   it('scatters scenery off the road, deterministically', () => {
@@ -178,6 +212,102 @@ describe('TerrainField', () => {
     const hit = createRoadHit();
     for (const p of props)
       expect(stage.path.nearest(p.x, p.z, stage.halfWidth + 2, hit)).toBe(false);
+  });
+
+  it('keeps tree canopies from overlapping while staying dense', () => {
+    const trees = scatterScenery(field).filter((p) => p.kind === 'tree' || p.kind === 'broadleaf');
+    expect(trees.length).toBeGreaterThan(400);
+    for (let i = 0; i < trees.length; i++) {
+      const a = trees[i]!;
+      const ra = CANOPY_RADIUS[a.kind]! * a.scale;
+      for (let j = i + 1; j < trees.length; j++) {
+        const b = trees[j]!;
+        const r = ra + CANOPY_RADIUS[b.kind]! * b.scale;
+        expect((a.x - b.x) ** 2 + (a.z - b.z) ** 2).toBeGreaterThanOrEqual(r * r - 1e-6);
+      }
+    }
+  });
+
+  it('dots houses well back from the road, apart from each other, with footprint colliders', () => {
+    const stage = generateStage(3, 0);
+    const field = new TerrainField(stage);
+    const houses = scatterScenery(field).filter((p) => p.kind === 'house');
+    expect(houses.length).toBeGreaterThan(3);
+    const hit = createRoadHit();
+    for (const h of houses) {
+      expect(stage.path.nearest(h.x, h.z, stage.halfWidth + 13, hit)).toBe(false);
+      for (const other of houses)
+        if (other !== h) expect(Math.hypot(other.x - h.x, other.z - h.z)).toBeGreaterThan(20);
+    }
+    const obstacles = propObstacles(houses);
+    expect(obstacles.length).toBe(houses.length * 3);
+    expect(obstacles.every((o) => o.r > 2)).toBe(true);
+  });
+
+  it('flattens a level pad under each house at its slab top and keeps other props out', () => {
+    for (const seed of [3, 11, 27]) {
+      const stage = generateStage(seed, 0);
+      const field = new TerrainField(stage);
+      const props = scatterScenery(field);
+      const houses = props.filter((p) => p.kind === 'house');
+      expect(houses.length).toBeGreaterThan(0);
+      for (const h of houses) {
+        const ax = Math.cos(h.rotation);
+        const az = -Math.sin(h.rotation);
+        const bx = Math.sin(h.rotation);
+        const bz = Math.cos(h.rotation);
+        for (const [u, v] of [
+          [3.3, 2.55],
+          [-3.3, 2.55],
+          [3.3, -2.55],
+          [-3.3, -2.55],
+        ]) {
+          const gx = h.x + (ax * u! + bx * v!) * h.scale;
+          const gz = h.z + (az * u! + bz * v!) * h.scale;
+          // The pad puts every corner, and the door sill, at the slab top.
+          expect(Math.abs(field.heightAt(gx, gz) - (h.y + HOUSE_SLAB_TOP))).toBeLessThan(0.02);
+        }
+        for (const p of props)
+          if (p.kind !== 'house')
+            expect(Math.hypot(p.x - h.x, p.z - h.z)).toBeGreaterThanOrEqual(5 * h.scale);
+      }
+    }
+  });
+
+  it('turns each house so its door (local -z) looks toward the road', () => {
+    const stage = generateStage(50, 0);
+    const field = new TerrainField(stage);
+    const hit = createRoadHit();
+    const sample = { x: 0, z: 0, heading: 0 };
+    for (const h of scatterScenery(field).filter((p) => p.kind === 'house')) {
+      stage.path.nearest(h.x, h.z, 400, hit);
+      stage.path.sample(hit.along, sample);
+      const toRoad = [sample.x - h.x, sample.z - h.z];
+      const len = Math.hypot(toRoad[0]!, toRoad[1]!);
+      // Local -z after a Y rotation r is (-sin r, -cos r).
+      const dot = (-Math.sin(h.rotation) * toRoad[0]! - Math.cos(h.rotation) * toRoad[1]!) / len;
+      expect(dot).toBeGreaterThan(0.5);
+    }
+  });
+});
+
+describe('markerDistances', () => {
+  it('drops the marker pair wherever a checkpoint board stands', () => {
+    const gates: Gate[] = [gate(30, 30), gate(70.5, 70), { ...gate(130, 130), kind: 'finish' }];
+    const d = markerDistances(200, gates);
+    expect(d).toEqual([10, 50, 90, 110, 130, 150, 170, 190]);
+    expect(d.every((x) => (x - MARKER_SPACING / 2) % MARKER_SPACING === 0)).toBe(true);
+  });
+
+  it('leaves every generated stage with no post inside a checkpoint board', () => {
+    for (let seed = 1; seed <= 12; seed++) {
+      const stage = generateStage(seed, seed % 4);
+      const posts = markerDistances(stage.path.length, stage.gates);
+      for (const g of stage.gates)
+        if (g.kind === 'checkpoint')
+          for (const d of posts)
+            expect(Math.abs(d - g.distance)).toBeGreaterThanOrEqual(MARKER_CLEARANCE);
+    }
   });
 });
 

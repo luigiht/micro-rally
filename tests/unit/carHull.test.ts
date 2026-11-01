@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildCarHull, wellsFor, type HullSpec } from '@/render/car/CarHull';
+import { prismPositions } from '@/components/game/CarParts';
 import { CAR_SPECS } from '@/game/vehicle/CarSpec';
 
 const spec: HullSpec = {
@@ -126,6 +127,33 @@ describe('buildCarHull', () => {
     );
   });
 
+  it('carries stripes across the end caps only when asked', () => {
+    const stripe = '0,1,0';
+    const capStripes = (m: ReturnType<typeof buildCarHull>) =>
+      triangles(m.positions).filter((t, i) => {
+        const c = centroid(t);
+        return Math.abs(Math.abs(c[2]!) - 2) < 1e-6 && colorOfTri(m.colors, i) === stripe;
+      }).length;
+    expect(capStripes(mesh)).toBe(0);
+    expect(capStripes(buildCarHull({ ...spec, wrapStripes: true }))).toBeGreaterThan(0);
+  });
+
+  it('leans the flank out to a shoulder when xBelt is wider than xBody', () => {
+    const shouldered = buildCarHull({
+      ...spec,
+      stations: spec.stations.map((s) => ({ ...s, xBelt: 1.0 })),
+    });
+    let widest = 0;
+    for (let i = 0; i < shouldered.positions.length; i += 3)
+      widest = Math.max(widest, Math.abs(shouldered.positions[i]!));
+    expect(widest).toBeCloseTo(1.0, 6);
+    // Without xBelt the hull never exceeds xBody.
+    let plain = 0;
+    for (let i = 0; i < mesh.positions.length; i += 3)
+      plain = Math.max(plain, Math.abs(mesh.positions[i]!));
+    expect(plain).toBeCloseTo(0.9, 6);
+  });
+
   it('cuts wheel wells that clear the tyres', () => {
     const car = CAR_SPECS.hatchback;
     const wells = wellsFor(car);
@@ -222,5 +250,38 @@ describe('buildCarHull', () => {
     expect(beside.length).toBeGreaterThan(0);
     expect(beside.every((f) => f.color === '1,1,1')).toBe(true);
     expect(t.length).toBeGreaterThan(tris.length);
+  });
+});
+
+describe('prismPositions', () => {
+  it('extrudes a convex polygon into closed, outward-facing faces', () => {
+    const pts = prismPositions(
+      [
+        [0, 1],
+        [1, 1],
+        [1, 0],
+      ],
+      0.2,
+    );
+    // Two triangular caps + three rectangular sides (2 triangles each) = 8 triangles.
+    expect(pts.length).toBe(8 * 9);
+    for (let t = 0; t < pts.length; t += 9) {
+      const a = [pts[t]!, pts[t + 1]!, pts[t + 2]!];
+      const b = [pts[t + 3]!, pts[t + 4]!, pts[t + 5]!];
+      const c = [pts[t + 6]!, pts[t + 7]!, pts[t + 8]!];
+      const u = [b[0]! - a[0]!, b[1]! - a[1]!, b[2]! - a[2]!];
+      const v = [c[0]! - a[0]!, c[1]! - a[1]!, c[2]! - a[2]!];
+      const n = [
+        u[1]! * v[2]! - u[2]! * v[1]!,
+        u[2]! * v[0]! - u[0]! * v[2]!,
+        u[0]! * v[1]! - u[1]! * v[0]!,
+      ];
+      const m = [
+        (a[0]! + b[0]! + c[0]!) / 3,
+        (a[1]! + b[1]! + c[1]!) / 3 - 2 / 3,
+        (a[2]! + b[2]! + c[2]!) / 3 - 2 / 3,
+      ];
+      expect(n[0]! * m[0]! + n[1]! * m[1]! + n[2]! * m[2]!).toBeGreaterThan(0);
+    }
   });
 });

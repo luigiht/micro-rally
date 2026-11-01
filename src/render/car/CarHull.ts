@@ -20,6 +20,12 @@ export interface HullStation {
   xSill: number;
   xBody: number;
   xRoof: number;
+  /**
+   * Half-width at the belt line; omitted = `xBody`. Wider than `xBody` gives
+   * the flank a shoulder (lower side leaning out to the belt, tumblehome
+   * above), so bodies read as sculpted rather than slab-sided.
+   */
+  xBelt?: number;
   /** The glass faces from this station to the next (side glass, or the screen where the roof meets the belt). */
   glass?: boolean;
 }
@@ -65,6 +71,8 @@ export interface HullSpec {
   stripeBand?: readonly [number, number];
   /** Painted onto the top faces in order; later decals win where they overlap. */
   deck?: readonly DeckDecal[];
+  /** Carry the stripe bands across the end caps (nose and tail) instead of painting them body colour. */
+  wrapStripes?: boolean;
 }
 
 export interface HullMesh {
@@ -136,6 +144,7 @@ function interpolate(stations: readonly HullStation[], z: number): HullStation {
     xSill: lerp(a.xSill, b.xSill, t),
     xBody: lerp(a.xBody, b.xBody, t),
     xRoof: lerp(a.xRoof, b.xRoof, t),
+    xBelt: lerp(a.xBelt ?? a.xBody, b.xBelt ?? b.xBody, t),
   };
 }
 
@@ -188,21 +197,28 @@ function profile(
   const sillTop = Math.max(s.sill, s.low);
   const stripeLo = Math.max(s.belt - band[0], sillTop);
   const stripeHi = Math.max(s.belt - band[1], stripeLo);
+  // The flank leans from xBody at the sill top to xBelt at the belt.
+  const xBelt = s.xBelt ?? s.xBody;
+  const flank = (y: number) =>
+    s.belt <= sillTop
+      ? xBelt
+      : lerp(s.xBody, xBelt, Math.min(1, Math.max(0, (y - sillTop) / (s.belt - sillTop))));
   const pts: V2[] = [
     [0, s.floor],
     [inner, s.floor],
     [inner, s.low],
     [s.xSill, s.low],
     [s.xBody, sillTop],
-    [s.xBody, stripeLo],
+    [flank(stripeLo), stripeLo],
   ];
   const kinds: Band[] = ['trim', 'trim', 'trim', 'trim', 'body'];
   for (let k = 0; k < stripes; k++) {
-    pts.push([s.xBody, stripeLo + ((stripeHi - stripeLo) * (k + 1)) / stripes]);
+    const y = stripeLo + ((stripeHi - stripeLo) * (k + 1)) / stripes;
+    pts.push([flank(y), y]);
     // Stripe colours are listed top to bottom; sub-band 0 is the lowest.
     kinds.push({ stripe: stripes - 1 - k });
   }
-  pts.push([s.xBody, Math.max(s.belt, stripeHi)], [s.xRoof, s.roof], [0, s.roof]);
+  pts.push([xBelt, Math.max(s.belt, stripeHi)], [s.xRoof, s.roof], [0, s.roof]);
   kinds.push('body', 'side', 'top');
   return { pts, kinds };
 }
@@ -309,7 +325,9 @@ export function buildCarHull(spec: HullSpec): HullMesh {
     const flagged = Boolean(a.glass);
     const cabin0 = isCabin(a);
     const cabin1 = isCabin(b);
-    const side = flagged && (cabin0 || cabin1) ? 'glass' : 'paint';
+    // Side glass needs a greenhouse at both ends; where the roof meets the belt
+    // (screen and rear window) the slanted side band is a pillar, so painted.
+    const side = flagged && cabin0 && cabin1 ? 'glass' : 'paint';
     // The top band is the roof over the cabin, and the windscreen / rear glass
     // where the roof meets the belt on one side of the segment only.
     const top = cabin0 && cabin1 ? 'roof' : flagged && cabin0 !== cabin1 ? 'glass' : 'paint';
@@ -366,7 +384,14 @@ export function buildCarHull(spec: HullSpec): HullMesh {
     const z = st[i]!.z;
     const expected: V3 = [0, 0, dir];
     for (let k = 0; k < bands; k++) {
-      const color = rgb(kinds[k] === 'trim' ? spec.colors.trim : spec.colors.body);
+      const kind = kinds[k]!;
+      const color = rgb(
+        kind === 'trim'
+          ? spec.colors.trim
+          : spec.wrapStripes
+            ? bandColor(spec.colors, stripes, kind, 'paint', 'paint')
+            : spec.colors.body,
+      );
       const pa: V3 = [pts[k]![0], pts[k]![1], z];
       const pb: V3 = [-pts[k]![0], pts[k]![1], z];
       const pc: V3 = [-pts[k + 1]![0], pts[k + 1]![1], z];

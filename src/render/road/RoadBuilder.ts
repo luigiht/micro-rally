@@ -10,7 +10,8 @@ import {
   Object3D,
 } from 'three';
 import type { StageDef } from '@/game/stage/StageGenerator';
-import { ROAD_LIFT, type TerrainField } from '@/game/stage/TerrainField';
+import { markerDistances } from '@/game/stage/RoadMarkers';
+import { ROAD_LIFT, TRENCH_OUT, type TerrainField } from '@/game/stage/TerrainField';
 import type { Surface } from '@/game/vehicle/surfaces';
 
 const ROAD_COLORS: Readonly<Record<Surface, string>> = {
@@ -33,10 +34,16 @@ const PATCH_FROM = 0.3;
 const PATCH_TO = 0.7;
 const SNOW_COVER = 0.45;
 const LINE_COLOR = '#f4f1e8';
+/**
+ * Terrain-coloured verge strips either side of the ribbon, built from the
+ * same samples, so road and verge share their edge vertices and meet flush;
+ * the coarse terrain mesh only takes over beyond them, where it is the same
+ * colour and any seam is invisible.
+ */
+const VERGE_WIDTH = 2;
 const SAMPLES_PER_PIECE = 100;
 const LINE_LIFT = 0.1;
 const LINE_WIDTH = 0.22;
-const MARKER_SPACING = 20;
 
 /** Integer mix hash to 0..1; a plain multiply-mod ramps instead of scattering. */
 function hash01(k: number): number {
@@ -74,15 +81,19 @@ interface Strip {
   shaded: boolean;
 }
 
-/** Ribbon road split into pieces for frustum culling, plus edge lines and marker posts. */
+/** Ribbon road split into pieces for frustum culling, plus verges, edge lines and marker posts. */
 export class RoadBuilder {
   readonly group = new Group();
   private readonly geometries: BufferGeometry[] = [];
   private readonly materials: MeshStandardMaterial[] = [];
   private readonly instanced: InstancedMesh[] = [];
+  private readonly verge: Color;
 
-  constructor(stage: StageDef, field: TerrainField) {
+  /** `shoulder` is the region palette's verge colour, so the strips match the terrain beside them. */
+  constructor(stage: StageDef, field: TerrainField, shoulder: string) {
     this.group.name = 'road';
+    this.verge = new Color(shoulder);
+    if (VERGE_WIDTH <= TRENCH_OUT) throw new Error('verge strip must cover the trench ramp');
     const roadMat = new MeshStandardMaterial({
       vertexColors: true,
       roughness: stage.surface === 'tarmac' ? 0.75 : 1,
@@ -118,7 +129,7 @@ export class RoadBuilder {
     const tint = new Color();
     const line = new Color(LINE_COLOR);
     const n = s1 - s0 + 1;
-    // Road and two edge lines; two verts per sample each. Snow stages tint the road per sample.
+    // Road, two verges and two edge lines; two verts per sample each. Snow stages tint the road.
     const strips: Strip[] = [
       {
         a: -hw,
@@ -128,6 +139,8 @@ export class RoadBuilder {
         cover: snowy ? snowCover : undefined,
         shaded: true,
       },
+      { a: hw, b: hw + VERGE_WIDTH, lift: ROAD_LIFT, color: this.verge, shaded: true },
+      { a: -hw - VERGE_WIDTH, b: -hw, lift: ROAD_LIFT, color: this.verge, shaded: true },
       { a: hw - 0.35 - LINE_WIDTH, b: hw - 0.35, lift: LINE_LIFT, color: line, shaded: false },
       { a: -hw + 0.35, b: -hw + 0.35 + LINE_WIDTH, lift: LINE_LIFT, color: line, shaded: false },
     ];
@@ -166,9 +179,11 @@ export class RoadBuilder {
     return geo;
   }
 
+  /** Verge posts every 20 m, except where a checkpoint board stands. */
   private buildMarkers(stage: StageDef, field: TerrainField): void {
     const path = stage.path;
-    const count = Math.floor(path.length / MARKER_SPACING) * 2;
+    const distances = markerDistances(path.length, stage.gates);
+    const count = distances.length * 2;
     const postGeo = new BoxGeometry(0.14, 0.9, 0.14).translate(0, 0.45, 0);
     const capGeo = new BoxGeometry(0.16, 0.18, 0.16).translate(0, 0.98, 0);
     this.geometries.push(postGeo, capGeo);
@@ -180,7 +195,7 @@ export class RoadBuilder {
     const dummy = new Object3D();
     const sample = { x: 0, z: 0, heading: 0 };
     let n = 0;
-    for (let d = MARKER_SPACING / 2; n < count; d += MARKER_SPACING) {
+    for (const d of distances) {
       path.sample(d, sample);
       for (const side of [-1, 1]) {
         const off = (stage.halfWidth + 1.4) * side;

@@ -7,20 +7,24 @@ import { IsometricCameraRig } from './IsometricCameraRig';
 
 /**
  * Build the rig for a mode. `axisYaw` is the stage's main heading (the spawn
- * yaw); `eyeDrop` lowers first-person eyes for cars with a lower cabin.
+ * yaw); `eyeDrop` / `eyeForward` move first-person eyes for cars whose cabin
+ * sits lower/higher or further forward than the hatchback's; `bodyScale`
+ * pushes the chase and isometric cameras back for bigger vehicles.
  */
 export function createCameraRig(
   mode: CameraMode,
   terrain: TerrainQuery,
   axisYaw: number,
   eyeDrop = 0,
+  eyeForward = 0,
+  bodyScale = 1,
 ): CameraRig {
   switch (mode) {
     case 'interior':
-      return new FirstPersonCameraRig(INTERIOR_VIEW, eyeDrop);
+      return new FirstPersonCameraRig(INTERIOR_VIEW, eyeDrop, eyeForward);
     case 'iso':
-      return new IsometricCameraRig(terrain, axisYaw + Math.PI / 4);
+      return new IsometricCameraRig(terrain, axisYaw + Math.PI / 4, Math.sqrt(bodyScale));
     case 'chase':
-      return new ChaseCameraRig(terrain);
+      return new ChaseCameraRig(terrain, bodyScale);
   }
 }
