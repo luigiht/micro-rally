@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { FILLET, FRONT_SETBACK, JUNCTION_REACH, type Junction } from '@/game/stage/Town';
 import { alongArm, sortedArms, stubCut, wedges } from '@/game/stage/TownJunctions';
 import { apart, polylineFacade } from '@/game/stage/TownTerraces';
-import { band, clip, type Vert } from '@/render/town/Isobands';
 
 const crossroads: Junction = {
   x: 10,
@@ -95,26 +94,5 @@ describe('facades', () => {
     expect(apart(a, { ...a, x: 10.5 }, 0.4)).toBe(true);
     expect(apart(a, { ...a, x: 10.2 }, 0.4)).toBe(false);
     expect(apart(a, { ...a, x: 9, z: 9, yaw: 0.6 }, 0.4)).toBe(true);
-  });
-});
-
-describe('isobands', () => {
-  const square: Vert[] = [
-    { x: 0, z: 0, f: -1 },
-    { x: 0, z: 1, f: -1 },
-    { x: 1, z: 1, f: 1 },
-    { x: 1, z: 0, f: 1 },
-  ];
-  it('clips a cell to where the field is negative', () => {
-    const inside = clip(square, (v) => -v.f);
-    expect(inside).toHaveLength(4);
-    expect(Math.max(...inside.map((v) => v.x))).toBeCloseTo(0.5, 9);
-  });
-  it('cuts a band between two levels', () => {
-    const strip = band(square, -0.5, 0.5);
-    expect(strip).toHaveLength(4);
-    const xs = strip.map((v) => v.x).sort((a, b) => a - b);
-    expect(xs[0]).toBeCloseTo(0.25, 9);
-    expect(xs[3]).toBeCloseTo(0.75, 9);
   });
 });

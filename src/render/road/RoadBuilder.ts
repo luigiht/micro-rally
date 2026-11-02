@@ -13,7 +13,8 @@ import type { StageDef } from '@/game/stage/StageGenerator';
 import { markerDistances } from '@/game/stage/RoadMarkers';
 import { ROAD_LIFT, TRENCH_OUT, type TerrainField } from '@/game/stage/TerrainField';
 import { halfWidthAt } from '@/game/stage/RoadWidth';
-import { FILLET, KERB_LIFT } from '@/game/stage/Town';
+import { KERB_LIFT } from '@/game/stage/Town';
+import { routeOpenings, type Openings } from '@/game/stage/TownKerbs';
 import type { Surface } from '@/game/vehicle/surfaces';
 
 export const ROAD_COLORS: Readonly<Record<Surface, string>> = {
@@ -75,6 +76,20 @@ function snowCover(i: number): number {
   return SNOW_COVER * smoothstep(PATCH_FROM, PATCH_TO, patchNoise(i));
 }
 
+/** One cross-section of the ribbon: where it is, which way is left, how wide, how high, and its tarmac shade. */
+interface Station {
+  d: number;
+  /** Sample index the shade and snow cover are drawn from. */
+  k: number;
+  x: number;
+  z: number;
+  lx: number;
+  lz: number;
+  hw: number;
+  y: number;
+  shade: number;
+}
+
 /** One ribbon strip: lateral extent, lift, flat colour, optional snow cover and tarmac shade jitter; `town` overrides inside a town. */
 interface Strip {
   /** Lateral extents as functions of the local half width. */
@@ -85,7 +100,7 @@ interface Strip {
   cover?: (i: number) => number;
   shaded: boolean;
   town?: { color: Color; lift: number };
-  /** Which verge this strip lies on (+1 left, -1 right); such strips open up across side-street mouths. */
+  /** Which verge this strip lies on (+1 left, -1 right); such strips stop across junction openings. */
   side?: number;
 }
 
@@ -96,11 +111,15 @@ export class RoadBuilder {
   private readonly materials: MeshStandardMaterial[] = [];
   private readonly instanced: InstancedMesh[] = [];
   private readonly verge: Color;
+  private readonly scratch = { x: 0, z: 0, heading: 0 };
 
   /** `shoulder` is the region palette's verge colour, so the strips match the terrain beside them. */
   constructor(stage: StageDef, field: TerrainField, shoulder: string) {
     this.group.name = 'road';
     this.verge = new Color(shoulder);
+    const openings: Openings = stage.town
+      ? routeOpenings(stage.town, stage)
+      : { left: [], right: [] };
     if (VERGE_WIDTH <= TRENCH_OUT) throw new Error('verge strip must cover the trench ramp');
     const roadMat = new MeshStandardMaterial({
       vertexColors: true,
@@ -113,7 +132,7 @@ export class RoadBuilder {
     const path = stage.path;
     for (let s0 = 0; s0 < path.count - 1; s0 += SAMPLES_PER_PIECE) {
       const s1 = Math.min(path.count - 1, s0 + SAMPLES_PER_PIECE);
-      const geo = this.buildPiece(stage, field, s0, s1);
+      const geo = this.buildPiece(stage, field, s0, s1, openings);
       this.geometries.push(geo);
       const mesh = new Mesh(geo, roadMat);
       mesh.receiveShadow = true;
@@ -128,8 +147,15 @@ export class RoadBuilder {
     for (const i of this.instanced) i.dispose();
   }
 
-  private buildPiece(stage: StageDef, field: TerrainField, s0: number, s1: number): BufferGeometry {
+  private buildPiece(
+    stage: StageDef,
+    field: TerrainField,
+    s0: number,
+    s1: number,
+    openings: Openings,
+  ): BufferGeometry {
     const path = stage.path;
+    const sp = path.spacing;
     const snowy = stage.surface === 'snow';
     const road = new Color(snowy ? ROAD_COLORS.tarmac : ROAD_COLORS[stage.surface]);
     const dust = new Color(ROAD_COLORS.snow);
@@ -138,35 +164,48 @@ export class RoadBuilder {
     const paved = { color: new Color(ROAD_COLORS.tarmac), lift: ROAD_LIFT };
     const pavement = { color: new Color(PAVEMENT_COLOR), lift: ROAD_LIFT + KERB_LIFT };
     const town = stage.town;
-    // Side streets leave the route here: the kerb drops and the edge line stops across each mouth.
-    // A stub starts at the polygon corner, which the route's arc cuts, so the mouth is found by
-    // projecting the verge point onto the stub's line rather than by distance to its start.
-    const mouths = (town?.streets ?? [])
-      .filter((st) => !st.route)
-      .map((st) => {
-        const len = Math.hypot(st.x1 - st.x0, st.z1 - st.z0) || 1;
-        return {
-          x: st.x0,
-          z: st.z0,
-          ux: (st.x1 - st.x0) / len,
-          uz: (st.z1 - st.z0) / len,
-          hw: st.halfWidth,
-        };
-      });
-    const openOn = (x: number, z: number, lx: number, lz: number, side: number, hw: number) =>
-      mouths.some((m) => {
-        if (Math.sign(m.ux * lx + m.uz * lz) !== side) return false;
-        const rx = x - m.x;
-        const rz = z - m.z;
-        const along = rx * m.ux + rz * m.uz;
-        const across = Math.abs(rx * m.uz - rz * m.ux);
-        // The kerb returns reach further along the route's edge the more acutely the street meets it;
-        // the junction surface draws the pavement and line around them.
-        const skew = Math.abs(m.ux * -lz + m.uz * lx);
-        return along > -(hw + 8) && along < 14 && across < m.hw + FILLET * (1 + skew) + 0.6;
-      });
-    const n = s1 - s0 + 1;
-    // Road, two verges and two edge lines, two verts per sample each; lateral extents follow the local half width.
+    // A station is a cross-section of the ribbon: every sample, plus the exact ends of each
+    // junction opening, where the verge and edge line stop and the junction surface takes over.
+    const stationAt = (d: number, i: number | null): Station => {
+      let x: number;
+      let z: number;
+      let heading: number;
+      if (i !== null) {
+        x = path.xs[i]!;
+        z = path.zs[i]!;
+        heading = path.headings[i]!;
+      } else {
+        path.sample(d, this.scratch);
+        x = this.scratch.x;
+        z = this.scratch.z;
+        heading = this.scratch.heading;
+      }
+      const k = i ?? Math.floor(d / sp);
+      return {
+        d,
+        k,
+        x,
+        z,
+        lx: Math.cos(heading),
+        lz: -Math.sin(heading),
+        hw: halfWidthAt(stage, d),
+        y: field.roadHeightAt(d),
+        shade: 0.96 + hash01(k) * 0.08,
+      };
+    };
+    const base: Station[] = [];
+    for (let i = s0; i <= s1; i++) base.push(stationAt(i * sp, i));
+    const stationsFor = (side: number | undefined): Station[] => {
+      if (side === undefined) return base;
+      const cuts = (side > 0 ? openings.left : openings.right)
+        .flatMap((o) => [o.from, o.to])
+        .filter((d) => d > s0 * sp + 1e-6 && d < s1 * sp - 1e-6);
+      if (cuts.length === 0) return base;
+      return [...base, ...cuts.map((d) => stationAt(d, null))].sort((p, q) => p.d - q.d);
+    };
+    const open = (side: number, d: number) =>
+      (side > 0 ? openings.left : openings.right).some((o) => d > o.from && d < o.to);
+    // Road, two verges and two edge lines; lateral extents follow the local half width.
     const strips: Strip[] = [
       {
         a: (hw) => -hw,
@@ -212,50 +251,40 @@ export class RoadBuilder {
         side: -1,
       },
     ];
-    const pos = new Float32Array(n * strips.length * 2 * 3);
-    const col = new Float32Array(n * strips.length * 2 * 3);
+    const pos: number[] = [];
+    const col: number[] = [];
     const index: number[] = [];
-    strips.forEach(({ a, b, lift, color, cover, shaded, town: inTown, side }, strip) => {
-      const base = strip * n * 2;
-      for (let k = 0; k < n; k++) {
-        const i = s0 + k;
-        const x = path.xs[i]!;
-        const z = path.zs[i]!;
-        const h = path.headings[i]!;
-        const lx = Math.cos(h);
-        const lz = -Math.sin(h);
-        const d = i * path.spacing;
-        const hw = halfWidthAt(stage, d);
-        const urban = inTown !== undefined && town !== undefined && d >= town.from && d <= town.to;
-        const mouth =
-          side !== undefined &&
-          mouths.length > 0 &&
-          openOn(x + lx * side * hw, z + lz * side * hw, lx, lz, side, hw);
-        const y = field.roadHeightAt(d) + (mouth ? ROAD_LIFT : urban ? inTown.lift : lift);
-        const shade = shaded ? 0.96 + hash01(i) * 0.08 : 1;
-        const c = mouth
-          ? paved.color
-          : urban
-            ? inTown.color
-            : cover
-              ? tint.copy(color).lerp(dust, cover(i))
-              : color;
-        const v = (base + k * 2) * 3;
-        const ea = a(hw);
-        const eb = b(hw);
-        pos.set([x + lx * ea, y, z + lz * ea, x + lx * eb, y, z + lz * eb], v);
-        col.set([c.r * shade, c.g * shade, c.b * shade, c.r * shade, c.g * shade, c.b * shade], v);
-        if (k > 0) {
-          const p = base + (k - 1) * 2;
-          const q = base + k * 2;
-          // a is the right-hand edge; wind counter-clockwise seen from above.
-          index.push(p, q, p + 1, q, q + 1, p + 1);
-        }
+    const vertex = (st: Station, e: number, strip: Strip) => {
+      const urban =
+        strip.town !== undefined && town !== undefined && st.d >= town.from && st.d <= town.to;
+      const y = st.y + (urban ? strip.town!.lift : strip.lift);
+      const shade = strip.shaded ? st.shade : 1;
+      const c = urban
+        ? strip.town!.color
+        : strip.cover
+          ? tint.copy(strip.color).lerp(dust, strip.cover(st.k))
+          : strip.color;
+      pos.push(st.x + st.lx * e, y, st.z + st.lz * e);
+      col.push(c.r * shade, c.g * shade, c.b * shade);
+    };
+    for (const strip of strips) {
+      const stations = stationsFor(strip.side);
+      for (let k = 0; k + 1 < stations.length; k++) {
+        const p = stations[k]!;
+        const q = stations[k + 1]!;
+        if (strip.side !== undefined && open(strip.side, (p.d + q.d) / 2)) continue;
+        const base = pos.length / 3;
+        // a is the right-hand edge; wind counter-clockwise seen from above.
+        vertex(p, strip.a(p.hw), strip);
+        vertex(p, strip.b(p.hw), strip);
+        vertex(q, strip.a(q.hw), strip);
+        vertex(q, strip.b(q.hw), strip);
+        index.push(base, base + 2, base + 1, base + 2, base + 3, base + 1);
       }
-    });
+    }
     const geo = new BufferGeometry();
-    geo.setAttribute('position', new BufferAttribute(pos, 3));
-    geo.setAttribute('color', new BufferAttribute(col, 3));
+    geo.setAttribute('position', new BufferAttribute(Float32Array.from(pos), 3));
+    geo.setAttribute('color', new BufferAttribute(Float32Array.from(col), 3));
     geo.setIndex(index);
     geo.computeVertexNormals();
     geo.computeBoundingSphere();

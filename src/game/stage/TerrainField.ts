@@ -7,6 +7,7 @@ import { createRoadHit } from './RoadPath';
 import { halfWidthAt } from './RoadWidth';
 import type { StageDef } from './StageGenerator';
 import { JUNCTION_REACH, PLATEAU_BLEND, plateauDistance, type TownDef } from './Town';
+import { junctionKerbs, type JunctionSurface } from './TownKerbs';
 
 const FLAT_MARGIN = 3;
 const BLEND_WIDTH = 16;
@@ -116,6 +117,8 @@ export class TerrainField implements TerrainQuery {
   /** Share of the hills' relief kept inside the town. */
   readonly townRelief: number;
   private readonly stubs: StubDeck[];
+  /** Each junction's tarmac, trenched like a carriageway so the junction surface sits clear of the terrain. */
+  private readonly junctions: JunctionSurface[];
   private readonly street: StreetHit = { deck: 0, distance: Infinity, hw: 0 };
   private readonly stubScratch: StreetHit = { deck: 0, distance: Infinity, hw: 0 };
 
@@ -131,6 +134,9 @@ export class TerrainField implements TerrainQuery {
     this.townRelief = Math.min(TOWN_RELIEF_MAX, TOWN_RELIEF_METRES / this.amplitude);
     this.roadHeights = this.buildRoadHeights();
     this.stubs = this.town ? this.buildStubs(this.town) : [];
+    this.junctions = this.town
+      ? this.town.junctions.map((j) => junctionKerbs(j, this.stage, this.stage.halfWidth).surface)
+      : [];
   }
 
   /**
@@ -209,8 +215,12 @@ export class TerrainField implements TerrainQuery {
       best = distance - s.hw;
       found = true;
       const zone = (s.hw + JUNCTION_REACH) / s.len;
-      if (t <= zone && routeDeck !== null) out.deck = routeDeck;
-      else {
+      if (t <= zone && routeDeck !== null) {
+        // The mouth takes the route's deck exactly (which tilts across the street where the route
+        // climbs), easing to the street's own level by the end of the zone, where the ramp starts.
+        const w = zone > 0 ? t / zone : 1;
+        out.deck = routeDeck + (s.yZone - routeDeck) * w;
+      } else {
         const ramp = zone >= 1 ? 0 : Math.max(0, (t - zone) / (1 - zone));
         out.deck = s.yZone + (s.y1 - s.yZone) * ramp;
       }
@@ -306,8 +316,16 @@ export class TerrainField implements TerrainQuery {
     const deck = st.deck + ROAD_LIFT;
     const hw = st.hw;
     const t = smoothstep(hw + FLAT_MARGIN, hw + FLAT_MARGIN + BLEND_WIDTH, st.distance);
-    const trench =
+    let trench =
       (ROAD_LIFT + ROAD_BED_DROP) * (1 - smoothstep(hw - TRENCH_IN, hw + TRENCH_OUT, st.distance));
+    for (const js of this.junctions) {
+      if (Math.hypot(x - js.x, z - js.z) > js.zone) continue;
+      const f = js.distance(x, z);
+      trench = Math.max(
+        trench,
+        (ROAD_LIFT + ROAD_BED_DROP) * (1 - smoothstep(-TRENCH_IN, TRENCH_OUT, f)),
+      );
+    }
     out.height = this.applyPads(x, z, deck + (base - deck) * t - trench);
     out.roadBlend = 1 - t;
     out.roadDistance = st.distance;

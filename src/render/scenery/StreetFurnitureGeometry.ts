@@ -2,7 +2,7 @@ import { BoxGeometry, BufferAttribute, type BufferGeometry, Color } from 'three'
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 /**
- * Street furniture for the town sections: rally barriers across the side
+ * Street furniture for the town sections: traffic cones across the side
  * streets the route must not take, direction boards at each turn and a plain
  * town lamp. Every kit is one non-indexed, vertex-coloured geometry merged
  * from boxes (flat shaded, nothing finer than ~6 cm so it reads from 40 m),
@@ -11,7 +11,6 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
  * other with a 1-2 cm overlap and visible faces never share a plane, so
  * nothing z-fights.
  */
-const RED = new Color('#d9343a');
 const WHITE = new Color('#f4f1e8');
 const DARK = new Color('#2b2a33');
 const YELLOW = new Color('#f2c14e');
@@ -55,32 +54,21 @@ function merge(parts: BufferGeometry[]): BufferGeometry {
   return merged;
 }
 
-const BARRIER_LEN = 1.2;
-const BARRIER_H = 0.8;
-const BARRIER_D = 0.4;
-/** Vertical slabs standing in for the diagonal stripes; odd so both ends are red. */
-const BARRIER_STRIPES = 5;
+const CONE = new Color('#f26b1d');
 
 /**
- * One rally barrier element: two dark feet spanning the full depth, a dark
- * base rail, five alternating red/white slabs and a thin dark top rail.
- * Long axis along x, standing on y = 0.
- * Bounding box: x [-0.6, 0.6], y [0, 0.8], z [-0.2, 0.2].
+ * Traffic cone marking a closed street: a dark square base plate and three
+ * stacked square tiers, orange below and above a white band, each tier
+ * tucked 1 cm into the one under it. Standing on y = 0.
+ * Bounding box: x [-0.21, 0.21], y [0, 0.57], z [-0.21, 0.21].
  */
-export function barrierGeometry(): BufferGeometry {
-  const slabW = BARRIER_LEN / BARRIER_STRIPES;
-  const parts = [
-    box(0.14, 0.08, BARRIER_D, -0.46, 0.04, 0, DARK),
-    box(0.14, 0.08, BARRIER_D, 0.46, 0.04, 0, DARK),
-    // Base rail over the feet, top rail capping the slabs; each overlaps its neighbour by 2 cm.
-    box(BARRIER_LEN, 0.1, 0.18, 0, 0.11, 0, DARK),
-    box(BARRIER_LEN, 0.08, 0.16, 0, BARRIER_H - 0.04, 0, DARK),
-  ];
-  for (let i = 0; i < BARRIER_STRIPES; i++) {
-    const x = -BARRIER_LEN / 2 + slabW * (i + 0.5);
-    parts.push(box(slabW, 0.6, 0.12, x, 0.44, 0, i % 2 === 0 ? RED : WHITE));
-  }
-  return merge(parts);
+export function coneGeometry(): BufferGeometry {
+  return merge([
+    box(0.42, 0.05, 0.42, 0, 0.025, 0, DARK),
+    box(0.3, 0.2, 0.3, 0, 0.15, 0, CONE),
+    box(0.26, 0.12, 0.26, 0, 0.3, 0, WHITE),
+    box(0.18, 0.22, 0.18, 0, 0.46, 0, CONE),
+  ]);
 }
 
 const BOARD_W = 1.4;

@@ -16,7 +16,8 @@ import type { Prop, PropKind } from '@/game/stage/SceneryScatter';
 import { ChunkStreamer, chunkKey } from '../ChunkStreamer';
 import { buildingRoofGeometry, buildingWallsGeometry } from './BuildingGeometry';
 import { houseRoofGeometry, houseWallsGeometry } from './HouseGeometry';
-import { arrowBoardGeometry, barrierGeometry, lampPostGeometry } from './StreetFurnitureGeometry';
+import { buildingPlantersGeometry } from './PlanterGeometry';
+import { arrowBoardGeometry, coneGeometry, lampPostGeometry } from './StreetFurnitureGeometry';
 
 interface KindKit {
   sources: readonly PropKind[];
@@ -27,6 +28,8 @@ interface KindKit {
   castShadow: boolean;
   /** Geometry carries its own colours (multiplied by the tint). */
   vertexColors?: boolean;
+  /** Only instances with one of these variants get this kit (flower boxes on some houses, not all). */
+  variants?: readonly number[];
 }
 
 function foliageGeometry(): BufferGeometry {
@@ -139,29 +142,46 @@ export class SceneryChunkManager {
         castShadow: shadows,
         vertexColors: true,
       },
-      // Town buildings: walls and roofs tinted per variant like the houses, in four footprints.
-      ...(['townhouse', 'shop', 'tower', 'hall'] as const).flatMap((style): KindKit[] => [
-        {
-          sources: [style],
-          geometry: buildingWallsGeometry(style),
-          material: mat('#ffffff', true),
-          tint: townWalls,
-          castShadow: shadows,
-          vertexColors: true,
-        },
-        {
-          sources: [style],
-          geometry: buildingRoofGeometry(style),
-          material: mat('#ffffff', true),
-          tint: townRoofs,
-          castShadow: shadows,
-          vertexColors: true,
-        },
-      ]),
+      // Town buildings: walls and roofs tinted per variant like the houses, in four footprints,
+      // and untinted flower boxes under the windows of the houses and shops.
+      ...(['townhouse', 'shop', 'tower', 'hall'] as const).flatMap((style): KindKit[] => {
+        const planters = buildingPlantersGeometry(style);
+        return [
+          {
+            sources: [style],
+            geometry: buildingWallsGeometry(style),
+            material: mat('#ffffff', true),
+            tint: townWalls,
+            castShadow: shadows,
+            vertexColors: true,
+          },
+          {
+            sources: [style],
+            geometry: buildingRoofGeometry(style),
+            material: mat('#ffffff', true),
+            tint: townRoofs,
+            castShadow: shadows,
+            vertexColors: true,
+          },
+          ...(planters
+            ? [
+                {
+                  sources: [style] as const,
+                  geometry: planters,
+                  material: mat('#ffffff', true),
+                  tint: null,
+                  castShadow: false,
+                  vertexColors: true,
+                  variants: [1],
+                },
+              ]
+            : []),
+        ];
+      }),
       // Town street furniture keeps its own painted colours.
       ...(
         [
-          ['barrier', barrierGeometry()],
+          ['cone', coneGeometry()],
           ['arrowLeft', arrowBoardGeometry('left')],
           ['arrowRight', arrowBoardGeometry('right')],
           ['lamp', lampPostGeometry()],
@@ -201,7 +221,9 @@ export class SceneryChunkManager {
     if (!props) return;
     const meshes: InstancedMesh[] = [];
     for (const kit of this.kits) {
-      const items = props.filter((p) => kit.sources.includes(p.kind));
+      const items = props.filter(
+        (p) => kit.sources.includes(p.kind) && (kit.variants?.includes(p.variant) ?? true),
+      );
       if (items.length === 0) continue;
       const mesh = new InstancedMesh(kit.geometry, kit.material, items.length);
       const isTrunk = kit.sources.length > 1;

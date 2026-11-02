@@ -2,10 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { createRoadHit } from '@/game/stage/RoadPath';
 import { generateStage, stageBrief, type StageDef } from '@/game/stage/StageGenerator';
 import { markerDistances } from '@/game/stage/RoadMarkers';
-import { scatterScenery } from '@/game/stage/SceneryScatter';
+import { propObstacles, scatterScenery } from '@/game/stage/SceneryScatter';
 import { ROAD_BED_DROP, ROAD_LIFT, TerrainField } from '@/game/stage/TerrainField';
 import {
-  BARRIER_HALF_DEPTH,
   buildingBaseHeight,
   buildingCorners,
   FRONT_SETBACK,
@@ -14,6 +13,7 @@ import {
   streetDistance,
   townBlocks,
   townObstacles,
+  townProps,
   type TownDef,
 } from '@/game/stage/Town';
 import { STUB_LENGTH } from '@/game/stage/TownGenerator';
@@ -56,10 +56,11 @@ function withTown(seed: number, index: number, at: number): { stage: StageDef; t
         variant: 0,
       },
     ],
-    barriers: [{ x: s.x + lx * 28, z: s.z + lz * 28, yaw: s.heading + Math.PI / 2, halfLength: 4 }],
+    cones: [{ x: s.x + lx * 28, z: s.z + lz * 28, yaw: s.heading + Math.PI / 2, halfLength: 3.5 }],
     arrows: [],
     junctions: [],
     walls: [],
+    plantings: [],
   };
   stage.town = town;
   void fx;
@@ -158,19 +159,22 @@ describe('town scenery and colliders', () => {
     expect(inside.filter((p) => townBlocks(town, p.x, p.z))).toEqual([]);
     // The town's own props are there instead.
     expect(props.some((p) => p.kind === 'shop')).toBe(true);
-    expect(props.filter((p) => p.kind === 'barrier').length).toBeGreaterThanOrEqual(2);
+    expect(props.filter((p) => p.kind === 'cone').length).toBeGreaterThanOrEqual(4);
     const nearHouses = props.filter(
       (p) => p.kind === 'house' && plateauDistance(town, p.x, p.z) < 40,
     );
     expect(nearHouses).toEqual([]);
   });
 
-  it('turns buildings and barrier rows into oriented box colliders', () => {
-    const { town } = withTown(99, 0, 700);
+  it('turns buildings and garden walls into oriented box colliders; cones only mark the street', () => {
+    const { stage, town } = withTown(99, 0, 700);
     const boxes = townObstacles(town);
-    expect(boxes).toHaveLength(2);
+    expect(boxes).toHaveLength(1);
     expect(boxes[0]).toMatchObject({ hx: 4, hz: 3, yaw: town.heading });
-    expect(boxes[1]).toMatchObject({ hx: 4, hz: BARRIER_HALF_DEPTH });
+    const field = new TerrainField(stage);
+    const cones = townProps(town, field).filter((p) => p.kind === 'cone');
+    expect(cones.length).toBeGreaterThanOrEqual(4);
+    expect(propObstacles(cones)).toEqual([]);
   });
 });
 
@@ -260,7 +264,7 @@ describe('town generator', () => {
       // A crossroads on a long entry or exit leg adds a stub each side.
       const crossroads = (stubs.length - corners * 2) / 2;
       expect([0, 1, 2]).toContain(crossroads);
-      expect(town.barriers.length).toBe(stubs.length);
+      expect(town.cones.length).toBe(stubs.length);
       expect(town.buildings.length).toBeGreaterThan(8);
       expect(town.from).toBeGreaterThan(stage.startDistance + 150);
       expect(town.to).toBeLessThan(stage.startDistance + stage.length - 100);
@@ -285,7 +289,7 @@ describe('town generator', () => {
     expect(narrow).toBeGreaterThan(5);
   });
 
-  it('keeps buildings off every street and apart, barriers across the stubs, posts and gates out of town', () => {
+  it('keeps buildings off every street and apart, cones across the stubs, greenery clear, posts and gates out of town', () => {
     for (const stage of townStages()) {
       const town = stage.town!;
       const problems: string[] = [];
@@ -323,11 +327,20 @@ describe('town generator', () => {
       for (const st of town.streets)
         if (plateauDistance(town, st.x0, st.z0) !== 0 || plateauDistance(town, st.x1, st.z1) !== 0)
           problems.push(`street off plateau ${stage.seed}`);
-      for (const r of town.barriers) {
+      for (const r of town.cones) {
         const stub = town.streets.find((st) => !st.route && streetDistance(st, r.x, r.z) < 1e-6);
-        if (!stub) problems.push(`barrier off its stub ${stage.seed}`);
+        if (!stub) problems.push(`cones off their stub ${stage.seed}`);
         if (Math.hypot(r.x - stub!.x0, r.z - stub!.z0) > STUB_LENGTH)
-          problems.push(`barrier past stub ${stage.seed}`);
+          problems.push(`cones past stub ${stage.seed}`);
+        if (r.halfLength > stub!.halfWidth) problems.push(`cones on the pavement ${stage.seed}`);
+      }
+      // Corner greenery stands off every pavement and outside every building.
+      expect(town.plantings.length).toBeGreaterThan(0);
+      for (const p of town.plantings) {
+        if (intrudes(p.x, p.z, -0.5)) problems.push(`planting in street ${stage.seed}`);
+        for (const b of town.buildings)
+          if (Math.hypot(b.x - p.x, b.z - p.z) < Math.min(b.hx, b.hz))
+            problems.push(`planting in building ${stage.seed}`);
       }
       for (const g of stage.gates)
         if (g.kind === 'checkpoint' && g.distance > town.from - 39 && g.distance < town.to + 39)

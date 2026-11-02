@@ -1,46 +1,29 @@
 import { BufferAttribute, BufferGeometry, Color, Group, Mesh, MeshStandardMaterial } from 'three';
-import { createRoadHit } from '@/game/stage/RoadPath';
-import { halfWidthAt } from '@/game/stage/RoadWidth';
 import type { StageDef } from '@/game/stage/StageGenerator';
+import { KERB_LIFT, PAVEMENT_WIDTH, type GroundQuery } from '@/game/stage/Town';
 import {
-  FILLET,
-  KERB_LIFT,
-  PAVEMENT_WIDTH,
-  type GroundQuery,
-  type Junction,
-} from '@/game/stage/Town';
-import { stubCut } from '@/game/stage/TownJunctions';
+  junctionKerbs,
+  type JunctionSurface,
+  type KerbPoint,
+  type Pt,
+} from '@/game/stage/TownKerbs';
 import { LINE_COLOR, LINE_LIFT, PAVEMENT_COLOR, ROAD_COLORS } from '../road/RoadBuilder';
-import { band, clip, type Vert } from './Isobands';
 
-/** Grid the junction surface is cut on; kerb returns come out as facets this long. */
-const CELL = 0.5;
-/** The tarmac fill sits under the ribbon and the side-street plates; pavements and lines just under the ribbon's own. */
-const FILL_DROP = 0.02;
-const UNDER = 0.005;
+/** The pavement starts this far over the tarmac so no seam shows along the kerb. */
+const PAVEMENT_OVERLAP = 0.05;
+/** Mouth strips are laid in pieces this long along the arm, so they follow the deck. */
+const MOUTH_STEP = 2;
 const LINE_INSET = 0.35;
 const LINE_WIDTH = 0.22;
-/** The grid reaches this far beyond the farthest side-street cut. */
-const ZONE_MARGIN = 6;
-/** The route only shapes the surface this close to its edge. */
-const ROUTE_REACH = 8;
-
-interface Stub {
-  fx: number;
-  fz: number;
-  lx: number;
-  lz: number;
-  hw: number;
-  cut: number;
-}
 
 /**
- * The paved ground of every junction, cut from a signed-distance field: the
- * union of the route's carriageway, the blocked arms and a core disc, with
- * every concave corner rounded to a kerb return of `FILLET`. Tarmac fills
- * the inside, a pavement band and a white edge line follow the outline, so
- * the kerbs run unbroken round crossings at any angle. Each blocked arm's
- * straight plates take over beyond its cut. One merged mesh.
+ * The paved ground of every junction. Kerbs come from `junctionKerbs`: one
+ * outline per wedge between arms, from a side street's cut round its kerb
+ * return and along the route's edge to where the ribbon resumes, each with
+ * exact normals, so the pavement band and the white edge line are offset
+ * strips that meet the ribbon's and the side-street plates' own sections
+ * vertex for vertex. Tarmac fills the mouths and kerb-return crescents from
+ * the same geometry, flush with the ribbon. One merged mesh.
  */
 export class TownJunctionBuilder {
   readonly group = new Group();
@@ -48,7 +31,6 @@ export class TownJunctionBuilder {
   private readonly material: MeshStandardMaterial;
   private readonly pos: number[] = [];
   private readonly col: number[] = [];
-  private readonly hit = createRoadHit();
   private readonly tarmac = new Color(ROAD_COLORS.tarmac);
   private readonly pavement = new Color(PAVEMENT_COLOR);
   private readonly line = new Color(LINE_COLOR);
@@ -58,7 +40,14 @@ export class TownJunctionBuilder {
     private readonly field: GroundQuery,
   ) {
     this.group.name = 'town-junctions';
-    for (const j of stage.town?.junctions ?? []) this.junction(j);
+    for (const j of stage.town?.junctions ?? []) {
+      const kerbs = junctionKerbs(j, stage, stage.halfWidth);
+      for (const o of kerbs.outlines) {
+        this.strip(o.points, -PAVEMENT_OVERLAP, PAVEMENT_WIDTH, KERB_LIFT, this.pavement);
+        this.strip(o.points, -LINE_INSET - LINE_WIDTH, -LINE_INSET, LINE_LIFT, this.line);
+      }
+      this.fill(kerbs.surface);
+    }
     this.geometry = new BufferGeometry();
     this.geometry.setAttribute('position', new BufferAttribute(Float32Array.from(this.pos), 3));
     this.geometry.setAttribute('color', new BufferAttribute(Float32Array.from(this.col), 3));
@@ -71,108 +60,78 @@ export class TownJunctionBuilder {
     this.group.add(mesh);
   }
 
-  private junction(j: Junction): void {
-    const stubs: Stub[] = j.arms
-      .filter((a) => a.role === 'blocked')
-      .map((a) => ({
-        fx: Math.sin(a.heading),
-        fz: Math.cos(a.heading),
-        lx: Math.cos(a.heading),
-        lz: -Math.sin(a.heading),
-        hw: a.halfWidth,
-        cut: stubCut(j, a, this.stage.halfWidth),
-      }));
-    const core = Math.max(...j.arms.filter((a) => a.role !== 'blocked').map((a) => a.halfWidth));
-    const zone = Math.max(core, ...stubs.map((s) => s.cut)) + ZONE_MARGIN;
-    const cells = Math.ceil((2 * zone) / CELL);
-    const n = cells + 1;
-    const x0 = j.x - zone;
-    const z0 = j.z - zone;
-    // Field, route distance and height memoised per grid corner; clipped vertices are evaluated directly.
-    const fs = new Float64Array(n * n).fill(NaN);
-    const rs = new Float64Array(n * n);
-    const hs = new Float64Array(n * n);
-    const corner = (ix: number, iz: number): Vert => {
-      const k = ix + iz * n;
-      const x = x0 + ix * CELL;
-      const z = z0 + iz * CELL;
-      if (Number.isNaN(fs[k])) {
-        const e = this.evaluate(x, z, j, stubs, core);
-        fs[k] = e.f;
-        rs[k] = e.r;
-        hs[k] = this.field.heightAt(x, z);
-      }
-      return { x, z, f: fs[k]!, h: hs[k] };
-    };
-    for (let iz = 0; iz < cells; iz++) {
-      for (let ix = 0; ix < cells; ix++) {
-        const quad = [
-          corner(ix, iz),
-          corner(ix, iz + 1),
-          corner(ix + 1, iz + 1),
-          corner(ix + 1, iz),
-        ];
-        if (Math.min(...quad.map((v) => v.f)) > PAVEMENT_WIDTH + 0.3) continue;
-        // Wholly inside the route's carriageway: the ribbon covers it.
-        if (
-          Math.max(
-            rs[ix + iz * n]!,
-            rs[ix + (iz + 1) * n]!,
-            rs[ix + 1 + (iz + 1) * n]!,
-            rs[ix + 1 + iz * n]!,
-          ) < -0.6
-        )
-          continue;
-        let poly: Vert[] = quad;
-        for (const s of stubs) {
-          poly = clip(poly, (v) => s.cut - ((v.x - j.x) * s.fx + (v.z - j.z) * s.fz));
-          if (poly.length < 3) break;
-        }
-        if (poly.length < 3) continue;
-        this.emit(
-          clip(poly, (v) => -v.f),
-          -FILL_DROP,
-          this.tarmac,
-        );
-        this.emit(band(poly, 0, PAVEMENT_WIDTH), KERB_LIFT - UNDER, this.pavement);
-        this.emit(band(poly, -LINE_INSET - LINE_WIDTH, -LINE_INSET), LINE_LIFT - UNDER, this.line);
+  /** Band between offsets `o0` and `o1` along the kerb normals, each vertex on the ground there plus `lift`. */
+  private strip(points: KerbPoint[], o0: number, o1: number, lift: number, c: Color): void {
+    const at = (p: KerbPoint, o: number) =>
+      this.field.heightAt(p.x + p.nx * o, p.z + p.nz * o) + lift;
+    for (let i = 0; i + 1 < points.length; i++) {
+      const p = points[i]!;
+      const q = points[i + 1]!;
+      const tx = q.x - p.x;
+      const tz = q.z - p.z;
+      if (tx * tx + tz * tz < 1e-8) continue;
+      // Wind counter-clockwise seen from above: the further-left offset comes last.
+      const leftward = p.nx * tz - p.nz * tx > 0;
+      const [a0, a1] = leftward ? [o0, o1] : [o1, o0];
+      const corners = [
+        [p, a0, at(p, a0)],
+        [q, a0, at(q, a0)],
+        [q, a1, at(q, a1)],
+        [p, a1, at(p, a1)],
+      ] as const;
+      // Two triangles, vertices pushed in order: the geometry is non-indexed.
+      for (const k of [0, 1, 2, 0, 2, 3]) {
+        const [v, o, y] = corners[k]!;
+        this.pos.push(v.x + v.nx * o, y, v.z + v.nz * o);
+        this.col.push(c.r, c.g, c.b);
       }
     }
   }
 
-  /** Rounded-union distance to the paved ground (negative inside) and the plain distance beyond the route's edge. */
-  private evaluate(
-    x: number,
-    z: number,
-    j: Junction,
-    stubs: Stub[],
-    core: number,
-  ): { f: number; r: number } {
-    let acc = 0;
-    const add = (d: number) => {
-      const t = FILLET - d;
-      if (t > 0) acc += t * t;
-    };
-    const rx = x - j.x;
-    const rz = z - j.z;
-    for (const s of stubs)
-      add(Math.max(-(rx * s.fx + rz * s.fz), Math.abs(rx * s.lx + rz * s.lz) - s.hw));
-    add(Math.hypot(rx, rz) - core);
-    let r = Infinity;
-    if (this.stage.path.nearest(x, z, ROUTE_REACH, this.hit)) {
-      r = this.hit.distance - halfWidthAt(this.stage, this.hit.along);
-      add(r);
+  /**
+   * Tarmac beyond the ribbon: each blocked arm's mouth as a strip of quads
+   * (so it follows the deck) and a fan over each kerb return's crescent,
+   * from the same geometry as the kerbs, flush with the ribbon and plates.
+   */
+  private fill(surface: JunctionSurface): void {
+    for (const poly of surface.polygons) {
+      if (poly.length === 4) this.mouth(poly);
+      else this.fan(poly);
     }
-    return { f: FILLET - Math.sqrt(acc), r };
   }
 
-  /** Fan-triangulate a convex polygon at the ground plus `lift`, counter-clockwise seen from above. */
-  private emit(poly: Vert[], lift: number, c: Color): void {
+  /** The mouth quad [back-left, back-right, cut-right, cut-left] in pieces along the arm. */
+  private mouth(q: Pt[]): void {
+    const [bl, br, cr, cl] = q as [Pt, Pt, Pt, Pt];
+    const len = Math.max(
+      Math.hypot(cl.x - bl.x, cl.z - bl.z),
+      Math.hypot(cr.x - br.x, cr.z - br.z),
+    );
+    const n = Math.max(1, Math.ceil(len / MOUTH_STEP));
+    const lerp = (a: Pt, b: Pt, t: number): Pt => ({
+      x: a.x + (b.x - a.x) * t,
+      z: a.z + (b.z - a.z) * t,
+    });
+    for (let k = 0; k < n; k++) {
+      const t0 = k / n;
+      const t1 = (k + 1) / n;
+      this.fan([lerp(bl, cl, t0), lerp(br, cr, t0), lerp(br, cr, t1), lerp(bl, cl, t1)]);
+    }
+  }
+
+  /** Fan-triangulate a polygon that is star-shaped from its first vertex, counter-clockwise seen from above. */
+  private fan(poly: Pt[]): void {
     if (poly.length < 3) return;
-    const ys = poly.map((v) => (v.h ?? this.field.heightAt(v.x, v.z)) + lift);
-    for (let i = 1; i + 1 < poly.length; i++) {
+    let area = 0;
+    for (let i = 0, k = poly.length - 1; i < poly.length; k = i++)
+      area += poly[k]!.x * poly[i]!.z - poly[i]!.x * poly[k]!.z;
+    // Positive shoelace area in (x, z) is clockwise seen from above (y up): reverse it.
+    const pts = area > 0 ? [...poly].reverse() : poly;
+    const ys = pts.map((v) => this.field.heightAt(v.x, v.z));
+    const c = this.tarmac;
+    for (let i = 1; i + 1 < pts.length; i++) {
       for (const k of [0, i, i + 1]) {
-        const v = poly[k]!;
+        const v = pts[k]!;
         this.pos.push(v.x, ys[k]!, v.z);
         this.col.push(c.r, c.g, c.b);
       }

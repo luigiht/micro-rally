@@ -1,22 +1,19 @@
 import { BufferAttribute, BufferGeometry, Color, Group, Mesh, MeshStandardMaterial } from 'three';
 import { KERB_LIFT, PAVEMENT_WIDTH, type GroundQuery, type TownDef } from '@/game/stage/Town';
 import { stubCut } from '@/game/stage/TownJunctions';
-import { BARRIER_DISTANCE, STUB_LENGTH } from '@/game/stage/TownSideStreets';
+import { STUB_LENGTH } from '@/game/stage/TownSideStreets';
 import { LINE_COLOR, LINE_LIFT, PAVEMENT_COLOR, ROAD_COLORS } from '../road/RoadBuilder';
 
-/** Side-street plates sit this far under the deck the field reports, so the junction surface and ribbon win where they overlap. */
-const PLATE_DROP = 0.005;
-/** A white stop line across each blocked arm where its plate begins, when that is still short of the barrier. */
-const STOP_LINE = 0.4;
+/** Side-street plates sit on the deck the field reports, flush with the junction's fill where they meet at the cut. */
+const PLATE_DROP = 0;
 const STRIP_STEP = 4;
 const LINE_INSET = 0.35;
 const LINE_WIDTH = 0.22;
 
 /**
  * The straight part of every blocked side street, from the junction's cut
- * to its end: a tarmac plate, pavements and white edge lines either side, a
- * stop line, and a pavement across the end under the building that closes
- * it. Every vertex takes its height from the field, so the plates climb and
+ * to its end: a tarmac plate, pavements and white edge lines either side,
+ * and a pavement across the end under the building that closes it. Every vertex takes its height from the field, so the plates climb and
  * dip with the streets. One merged mesh.
  */
 export class TownStreetBuilder {
@@ -41,8 +38,6 @@ export class TownStreetBuilder {
         const deck = (al: number) => field.heightAt(j.x + Math.sin(h) * al, j.z + Math.cos(h) * al);
         const strip = (a0: number, a1: number, l0: number, l1: number, lift: number, c: Color) =>
           this.strip(j.x, j.z, h, a0, a1, l0, l1, (al) => deck(al) + lift, c);
-        if (cut + STOP_LINE + 0.2 < BARRIER_DISTANCE - 1)
-          strip(cut + 0.2, cut + 0.2 + STOP_LINE, -hw, hw, LINE_LIFT, line);
         strip(cut, STUB_LENGTH, -hw, hw, -PLATE_DROP, tarmac);
         for (const side of [1, -1] as const) {
           const lo = Math.min(side * hw, side * (hw + PAVEMENT_WIDTH));

@@ -67,26 +67,29 @@ flowchart LR
   the self-approach rule; the centreline builder (`Centreline.ts`) steers
   onto the stage axis, lays them and resumes on the arrival heading, and
   `layoutTown` derives streets, junctions (`TownJunctions.ts`: arms, wedges,
-  side-street cuts), blocked side streets with barrier rows and end
-  buildings (`TownSideStreets.ts`), direction boards, and then the village
-  itself: facade polylines a pavement beyond the route's real edge and along
-  every side street, walked by `TownTerraces.row` to stand houses a party
-  wall apart with garden walls over every gap, L-walls round each junction
-  wedge, and the footprint. `TerrainField` tames the hills inside the
+  side-street cuts), blocked side streets with cone rows and end buildings
+  (`TownSideStreets.ts`), direction boards, and then the village itself:
+  facade polylines a pavement beyond the route's real edge and along every
+  side street, walked by `TownTerraces.row` to stand houses a party wall
+  apart with garden walls over every gap, L-walls round each junction wedge
+  with a tree and bushes planted behind them, and the footprint.
+  `TownKerbs.ts` traces each junction's kerbs exactly (kerb returns between
+  side streets and the route's curved edge, with normals) and the stretches
+  where the ribbon hands its verge and line over. `TerrainField` tames the hills inside the
   footprint (streets still climb and dip), cuts side streets into the slope,
   levels a terrace under each building at its door and treats every town
   street as paved; `SceneryScatter` keeps wild scenery only off streets,
   buildings and walls (`townBlocks`) and emits the town's props; buildings,
   walls and barriers collide as oriented boxes (`vehicle/Collisions.ts`).
   Render side: `RoadBuilder` paves the route through town at its per-sample
-  width with kerbed pavements that open across junction mouths,
-  `TownJunctionBuilder` cuts each junction's tarmac, pavement band and edge
-  line from a rounded-union distance field (`Isobands.ts`) so kerb returns
-  wrap crossings at any angle, `TownStreetBuilder` lays the side-street
-  plates, lines and pavements beyond each cut, `TownWallBuilder` merges the
-  garden walls, and `SceneryChunkManager` instances the building and
-  street-furniture kits (`render/scenery/BuildingGeometry.ts`,
-  `CivicGeometry.ts`, `StreetFurnitureGeometry.ts`).
+  width with kerbed pavements cut exactly at each junction opening,
+  `TownJunctionBuilder` lays the pavement band and edge line as offset strips
+  along the kerb outlines and fills the mouths with tarmac cut from the
+  junction's distance field (`Isobands.ts`), `TownStreetBuilder` lays the
+  side-street plates, lines and pavements beyond each cut, `TownWallBuilder`
+  merges the garden walls, and `SceneryChunkManager` instances the building,
+  flower-box and street-furniture kits (`render/scenery/BuildingGeometry.ts`,
+  `CivicGeometry.ts`, `PlanterGeometry.ts`, `StreetFurnitureGeometry.ts`).
 
 - `DrivingSession` (components/game) is a plain class held in a ref. It owns
   the sim, the stepper, input, the camera rig and the `StageRun`, and

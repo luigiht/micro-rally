@@ -24,13 +24,16 @@ export interface TownDef {
   /** Every street centreline, route and side streets alike. */
   streets: Street[];
   buildings: Building[];
-  barriers: Barrier[];
+  /** Rows of traffic cones marking each blocked side street as closed. */
+  cones: ConeRow[];
   /** Direction boards at the route's turns. */
   arrows: Arrow[];
   /** Every crossroads: the polygon corners and the mid-leg crossings, with the arms that meet there. */
   junctions: Junction[];
   /** Low garden walls that carry the facade line wherever no building stands behind the pavement. */
   walls: Wall[];
+  /** Trees and bushes planted in the walled corners of the junctions. */
+  plantings: Planting[];
 }
 
 /** One arm of a junction: a street leaving the junction centre on `heading`. */
@@ -88,12 +91,22 @@ export interface Building {
   variant: number;
 }
 
-/** Row of rally barriers across a side street, centred on (x, z), spanning `halfLength` either side along its left axis. */
-export interface Barrier {
+/** A row of cones across a blocked side street at (x, z), reaching `halfLength` either side of its centreline. */
+export interface ConeRow {
   x: number;
   z: number;
   yaw: number;
   halfLength: number;
+}
+
+/** A tree or bush planted inside the village. */
+export interface Planting {
+  kind: 'tree' | 'bush';
+  x: number;
+  z: number;
+  scale: number;
+  rotation: number;
+  variant: number;
 }
 
 export interface Arrow {
@@ -136,15 +149,10 @@ export function onTownStreet(town: TownDef, x: number, z: number): boolean {
   return false;
 }
 
-/** Depth of a barrier row (half), along its facing axis. */
-export const BARRIER_HALF_DEPTH = 0.4;
-
-/** Oriented-box colliders for every building and barrier row in the town. */
+/** Oriented-box colliders for every building and garden wall in the town; cones only mark a closed street. */
 export function townObstacles(town: TownDef): BoxObstacle[] {
   const out: BoxObstacle[] = [];
   for (const b of town.buildings) out.push({ x: b.x, z: b.z, hx: b.hx, hz: b.hz, yaw: b.yaw });
-  for (const r of town.barriers)
-    out.push({ x: r.x, z: r.z, hx: r.halfLength, hz: BARRIER_HALF_DEPTH, yaw: r.yaw });
   for (const w of town.walls) {
     const dx = w.x1 - w.x0;
     const dz = w.z1 - w.z0;
@@ -181,8 +189,8 @@ function segmentDistance(x0: number, z0: number, x1: number, z1: number, x: numb
   t = t < 0 ? 0 : t > 1 ? 1 : t;
   return Math.hypot(x - (x0 + dx * t), z - (z0 + dz * t));
 }
-/** Length of one barrier element along the row. */
-export const BARRIER_ELEMENT = 1.2;
+/** Cones stand this far apart across a closed street. */
+export const CONE_SPACING = 1.5;
 /** Pavements stand this far above the road deck. */
 export const KERB_LIFT = 0.04;
 /**
@@ -235,12 +243,16 @@ export const TERRACE_BLEND = 0.2;
 export const TERRACE_FRONT = 0.2;
 
 /**
- * Render props for the town: one per building, one per barrier element, a
+ * Render props for the town: one per building, one per cone, a
  * direction board per turn and lamp posts along the route's pavements, each
  * standing on the ground the field reports there (streets at deck height,
  * pavements a kerb higher).
  */
-export function townProps(town: TownDef, ground: GroundQuery): Prop[] {
+export function townProps(
+  town: TownDef,
+  ground: GroundQuery,
+  treeKind: 'tree' | 'broadleaf' = 'tree',
+): Prop[] {
   const out: Prop[] = [];
   for (const b of town.buildings)
     out.push({
@@ -252,23 +264,22 @@ export function townProps(town: TownDef, ground: GroundQuery): Prop[] {
       rotation: b.yaw,
       variant: b.variant,
     });
-  for (const r of town.barriers) {
-    const n = Math.max(2, Math.round((2 * r.halfLength) / BARRIER_ELEMENT));
+  for (const r of town.cones) {
+    const n = Math.max(3, Math.round((2 * r.halfLength) / CONE_SPACING) + 1);
     const lx = Math.cos(r.yaw);
     const lz = -Math.sin(r.yaw);
-    const span = (n - 1) * BARRIER_ELEMENT;
     for (let i = 0; i < n; i++) {
-      const o = -span / 2 + i * BARRIER_ELEMENT;
+      const o = -r.halfLength + (2 * r.halfLength * i) / (n - 1);
       const x = r.x + lx * o;
       const z = r.z + lz * o;
       out.push({
-        kind: 'barrier',
+        kind: 'cone',
         x,
         y: ground.heightAt(x, z),
         z,
         scale: 1,
         rotation: r.yaw,
-        variant: i % 2,
+        variant: 0,
       });
     }
   }
@@ -281,6 +292,16 @@ export function townProps(town: TownDef, ground: GroundQuery): Prop[] {
       scale: 1,
       rotation: a.yaw,
       variant: 0,
+    });
+  for (const p of town.plantings)
+    out.push({
+      kind: p.kind === 'tree' ? treeKind : 'bush',
+      x: p.x,
+      y: ground.heightAt(p.x, p.z),
+      z: p.z,
+      scale: p.scale,
+      rotation: p.rotation,
+      variant: p.variant,
     });
   let side = 1;
   for (const s of town.streets) {

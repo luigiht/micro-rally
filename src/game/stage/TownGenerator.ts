@@ -4,12 +4,14 @@ import { buildWidths, halfWidthAt } from './RoadWidth';
 import { FRONT_SETBACK, streetDistance, type Junction, type TownDef } from './Town';
 import { tangentLength } from './TownPlan';
 import {
-  ARROW_AHEAD_OF_BARRIER,
-  BARRIER_DISTANCE,
+  ARROW_AHEAD_OF_CONES,
+  CONE_DISTANCE,
   junctionWalls,
+  plantCorners,
   sideStreet,
   stubEnd,
   stubRows,
+  type Corner,
   type RouteFacades,
   type StubSite,
 } from './TownSideStreets';
@@ -87,7 +89,7 @@ function cornerStreets(
   // The first corner's blocked straight ends in the town hall, the landmark the driver brakes toward.
   sideStreet(site, stubs, c, hin, leg.halfWidth, first ? 'hall' : undefined);
   sideStreet(site, stubs, c, hout + Math.PI, leg.halfWidth);
-  const a = at(c, hin, BARRIER_DISTANCE - ARROW_AHEAD_OF_BARRIER, 0);
+  const a = at(c, hin, CONE_DISTANCE - ARROW_AHEAD_OF_CONES, 0);
   site.arrows.push({ x: a.x, z: a.z, yaw: hin, turn: leg.turn > 0 ? 1 : -1 });
 }
 
@@ -140,17 +142,18 @@ export function routeFacade(
   return polylineFacade(pts, side);
 }
 
-/** Lay the village: streets, junctions, barriers, boards, terraces, garden walls and the footprint around the traced route. */
+/** Lay the village: streets, junctions, cones, boards, terraces, garden walls, corner greenery and the footprint around the traced route. */
 export function layoutTown(trace: TownTrace, path: RoadPath, seed: number, base: number): TownDef {
   const site: Site = {
     rand: mulberry32(hashSeed(seed, 'town-layout')),
     clear: () => true,
     streets: [],
-    barriers: [],
+    cones: [],
     buildings: [],
     walls: [],
     arrows: [],
     junctions: [],
+    plantings: [],
   };
   const stubs: StubSite[] = [];
   const legs = trace.legs;
@@ -192,8 +195,10 @@ export function layoutTown(trace: TownTrace, path: RoadPath, seed: number, base:
   for (const s of stubs) stubEnd(site, s);
   // Junction walls, and where they interrupt the route's facades; then terraces between the interruptions.
   const gaps = { left: [] as [number, number][], right: [] as [number, number][] };
+  const greens: Corner[] = [];
   for (const j of site.junctions) {
     const cuts = junctionWalls(site, j, facades);
+    greens.push(...cuts.corners);
     for (const side of ['left', 'right'] as const)
       if (cuts[side].length >= 2)
         gaps[side].push([Math.min(...cuts[side]), Math.max(...cuts[side])]);
@@ -208,6 +213,7 @@ export function layoutTown(trace: TownTrace, path: RoadPath, seed: number, base:
     row(site, facade, s0, facade.length - EDGE_SETBACK);
   }
   for (const s of stubs) stubRows(site, s);
+  plantCorners(site, greens);
 
   // Footprint: the bounding box of everything in the town frame, with ramp room along the route.
   const h0 = trace.entry.heading;
@@ -248,9 +254,10 @@ export function layoutTown(trace: TownTrace, path: RoadPath, seed: number, base:
     to,
     streets: site.streets,
     buildings: site.buildings,
-    barriers: site.barriers,
+    cones: site.cones,
     arrows: site.arrows,
     junctions: site.junctions,
     walls: site.walls,
+    plantings: site.plantings,
   };
 }

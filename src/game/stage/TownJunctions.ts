@@ -25,7 +25,7 @@ export function sortedArms(j: Junction): Arm[] {
 }
 
 /** Where a's left offset line meets b's right offset line, each `off` beyond the arm's axis. */
-function offsetCorner(
+export function offsetCorner(
   j: Junction,
   a: Arm,
   b: Arm,

@@ -2,7 +2,7 @@ import { type BufferAttribute, type BufferGeometry, Color, Vector3 } from 'three
 import { describe, expect, it } from 'vitest';
 import {
   arrowBoardGeometry,
-  barrierGeometry,
+  coneGeometry,
   lampPostGeometry,
 } from '@/render/scenery/StreetFurnitureGeometry';
 
@@ -112,7 +112,7 @@ function sortedX(geo: BufferGeometry, sign: 1 | -1): number[] {
 
 describe('StreetFurnitureGeometry', () => {
   const kits = {
-    barrier: barrierGeometry(),
+    cone: coneGeometry(),
     left: arrowBoardGeometry('left'),
     right: arrowBoardGeometry('right'),
     lamp: lampPostGeometry(),
@@ -141,17 +141,17 @@ describe('StreetFurnitureGeometry', () => {
     }
   });
 
-  it('sizes the barrier 1.2 × 0.8 × 0.4 m on the ground with red and white stripes', () => {
-    const e = extents(kits.barrier);
-    expect(Math.abs(e.w - 1.2)).toBeLessThan(TOLERANCE);
-    expect(Math.abs(e.h - 0.8)).toBeLessThan(TOLERANCE);
-    expect(Math.abs(e.d - 0.4)).toBeLessThan(TOLERANCE);
+  it('stands the cone 0.57 m tall on a 0.42 m base plate, orange with a white band', () => {
+    const e = extents(kits.cone);
+    expect(Math.abs(e.w - 0.42)).toBeLessThan(TOLERANCE);
+    expect(Math.abs(e.h - 0.57)).toBeLessThan(TOLERANCE);
+    expect(Math.abs(e.d - 0.42)).toBeLessThan(TOLERANCE);
     expect(Math.abs(e.min.y)).toBeLessThan(1e-6);
     expect(Math.abs(e.min.x + e.max.x)).toBeLessThan(1e-6);
     expect(Math.abs(e.min.z + e.max.z)).toBeLessThan(1e-6);
-    expect(hasColor(kits.barrier, '#d9343a')).toBe(true);
-    expect(hasColor(kits.barrier, '#f4f1e8')).toBe(true);
-    expect(hasColor(kits.barrier, '#2b2a33')).toBe(true);
+    expect(hasColor(kits.cone, '#f26b1d')).toBe(true);
+    expect(hasColor(kits.cone, '#f4f1e8')).toBe(true);
+    expect(hasColor(kits.cone, '#2b2a33')).toBe(true);
   });
 
   it('stands the arrow board 1.4 m wide and 1.5 m tall with the board 0.7 m up', () => {

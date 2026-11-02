@@ -1156,3 +1156,53 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
     and bulge, isoband clipping, every building and wall end behind the real
     pavement, terraces level at the back and at the kerb in front, and wild
     scenery inside the footprint but never on a street or a building.
+
+83. **2026-11-01 — Village kerbs traced exactly; cones, corner greenery and
+    flower boxes.** The grid-cut junction bands and the ribbon's lowered
+    mouths produced a doubled, wobbly edge line at every junction, pavements
+    that overlapped 5 mm apart and shimmered, and tarmac that the terrain
+    poked through where the fill sat 2 cm under the verge level. Kerbs are
+    now geometry, not fields: `TownKerbs.junctionKerbs` builds one kerb
+    outline per wedge between a junction's arms, from the blocked arm's cut
+    round a `FILLET` kerb return to the route's edge and along it to a cut
+    one metre past the return's tangent. The return between a straight arm
+    edge and the route's (curved) edge is found by walking a line a radius
+    off the arm until the route's edge is a radius away, taking the first
+    crossing whose tangent falls on the wedge's own arm of the route (a
+    sharp corner's line brushes the other arm first); two straight edges
+    take the classic fillet. At a corner each blocked arm continues one of
+    the route's arms straight through, so their edges share a line and the
+    bend's arc only leaves it at its tangent: the apron between is that
+    arm's mouth, the kerb return is the classic fillet against the shared
+    line (taken from the ribbon's own edge beyond the tangent, so a width
+    taper cannot offset it), and the kerb follows the apron's edge to the
+    tangent, where the ribbon takes over. Every kerb point carries its exact normal, so
+    the pavement band and the edge line are offset strips that meet the
+    ribbon's and the side-street plates' sections vertex for vertex: the
+    route edge is sampled with the ribbon's own convention (`routeEdge`,
+    vertex headings at samples), and `RoadBuilder` now cuts its verge and
+    line strips exactly at each opening's ends (`routeOpenings`) and draws
+    nothing across the mouth instead of lowering it. Tarmac fills each
+    blocked arm's mouth (a strip from where its edges leave the ribbon to its
+    cut) and each kerb return's crescent (a fan from the corner where the two
+    edges meet), from the same geometry as the kerbs, flush with the ribbon;
+    `TerrainField` trenches the ground under those same polygons so no
+    terrain reaches the fill, and the pavement starts 5 cm over the tarmac.
+    A rounded-union distance field was tried first for the fill and trench;
+    it is only a true fillet at right angles and left crescents of ground
+    showing at skewed wedges. Side streets lost their stop line. The
+    rally barriers are gone: each closed street gets a row of small traffic
+    cones (`coneGeometry`, four stacked boxes) across the carriageway only,
+    1.5 m apart, with no collider, so they read as a closed road without
+    stopping a car that strays; the arrow boards stay. Every walled corner
+    gets greenery once the houses stand (`plantCorners`): spots fan into the
+    wedge from its facade corner, the deepest open one takes a low tree, up
+    to three nearer the walls take bushes, each needing room off both walls,
+    off every pavement and building, and from each other; trees take the
+    region's canopy kind. `PlanterGeometry` hangs a terracotta flower box
+    with leaves and three blooms under the front and upper flank windows of
+    the townhouse, shop and tower (the hall stays civic), instanced untinted
+    beside the walls kit. Tests cover kerb continuity and clearance, that
+    every opening end lies on a kerb outline, the ribbon-edge convention,
+    cone rows on the carriageway with no collider, and greenery clear of
+    streets and floors.

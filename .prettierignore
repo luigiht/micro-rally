@@ -10,3 +10,4 @@ ios
 android
 next-env.d.ts
 context
+tests/unit/fixtures/*.json

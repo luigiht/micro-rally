@@ -2,10 +2,11 @@ import {
   buildingCorners,
   FRONT_SETBACK,
   type Arrow,
-  type Barrier,
   type Building,
   type BuildingStyle,
+  type ConeRow,
   type Junction,
+  type Planting,
   type Street,
   type Wall,
 } from './Town';
@@ -47,11 +48,27 @@ export interface Site {
   /** True when (x, z) stands at least a pavement less `slack` from every carriageway, the route's by its actual width. */
   clear: (x: number, z: number, slack: number) => boolean;
   streets: Street[];
-  barriers: Barrier[];
+  cones: ConeRow[];
   buildings: Building[];
   walls: Wall[];
   arrows: Arrow[];
   junctions: Junction[];
+  plantings: Planting[];
+}
+
+/** True when a circle of radius `r` at (x, z) is clear of every carriageway's pavement and every building. */
+export function openGround(site: Site, x: number, z: number, r: number): boolean {
+  if (!site.clear(x, z, -r)) return false;
+  for (const b of site.buildings) {
+    const dx = x - b.x;
+    const dz = z - b.z;
+    const cy = Math.cos(b.yaw);
+    const sy = Math.sin(b.yaw);
+    const u = dx * cy - dz * sy;
+    const v = dx * sy + dz * cy;
+    if (Math.abs(u) <= b.hx + r && Math.abs(v) <= b.hz + r) return false;
+  }
+  return true;
 }
 
 export const forward = (h: number): Pt => ({ x: Math.sin(h), z: Math.cos(h) });

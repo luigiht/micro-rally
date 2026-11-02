@@ -8,7 +8,7 @@ export interface Obstacle {
 }
 
 /**
- * Oriented box obstacle: building walls, street barriers. `yaw` follows the
+ * Oriented box obstacle: buildings, garden walls. `yaw` follows the
  * car convention (forward = (sin, 0, cos)); `hx` is the half extent across
  * (local x, the left axis), `hz` along (local z, forward).
  */

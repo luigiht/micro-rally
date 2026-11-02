@@ -23,7 +23,7 @@ export type PropKind =
   | 'shop'
   | 'tower'
   | 'hall'
-  | 'barrier'
+  | 'cone'
   | 'arrowLeft'
   | 'arrowRight'
   | 'lamp';
@@ -106,7 +106,7 @@ class CanopyGrid {
   }
 }
 
-/** Buildings and barriers collide as oriented boxes (see `townObstacles`), so only the lamp posts get a circle here. */
+/** Buildings and garden walls collide as oriented boxes (see `townObstacles`); cones only mark a closed street, so of the town's own props only lamp posts get a circle. */
 const COLLIDER_RADIUS: Readonly<Record<PropKind, number>> = {
   tree: 0.45,
   broadleaf: 0.4,
@@ -117,7 +117,7 @@ const COLLIDER_RADIUS: Readonly<Record<PropKind, number>> = {
   shop: 0,
   tower: 0,
   hall: 0,
-  barrier: 0,
+  cone: 0,
   arrowLeft: 0,
   arrowRight: 0,
   lamp: 0.15,
@@ -202,7 +202,10 @@ export function scatterScenery(field: TerrainField): Prop[] {
     houses.every((h) => Math.hypot(h.x - p.x, h.z - p.z) >= HOUSE_CLEAR_RADIUS * h.scale),
   );
   kept.push(...houses);
-  if (stage.town) kept.push(...townProps(stage.town, field));
+  if (stage.town)
+    kept.push(
+      ...townProps(stage.town, field, density.broadleaf > density.trees ? 'broadleaf' : 'tree'),
+    );
   return kept;
 }
 
