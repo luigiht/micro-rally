@@ -131,4 +131,11 @@ build sends nothing. The in-app policy is at `/privacy`.
 
 Fonts and any third-party assets are listed in [CREDITS.md](CREDITS.md).
 
+## Licence
+
+All rights reserved. The repository is public so the game and its code can be
+seen, but no licence is granted to use, copy, modify or redistribute any of
+it; see [LICENSE](LICENSE). The Press Start 2P font keeps its own open
+licence.
+
 Created by [Luis Hermosilla](https://www.luigiht.com).

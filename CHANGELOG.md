@@ -5,25 +5,19 @@ tags yet: `main` is deployed continuously, so entries are grouped by the day
 they landed. The numbered entries in [docs/DECISIONS.md](docs/DECISIONS.md)
 hold the reasoning behind each change; the numbers in brackets point there.
 
-## Unreleased
-
-### Added
-
-- `H` hides and shows the HUD chrome (clock, tags, money, toolbar, progress
-  bar, speed readout, debug overlay, replay bar). Dialogs, the countdown and
-  the touch controls stay; Esc still works. Listed in the controls table.
-  [90]
-- End-to-end test for the HUD toggle.
-
-### Changed
-
-- The replay no longer loops: when the recording runs out it leaves the
-  replay by itself and the "Stage complete" panel comes straight back. [89]
-
 ## 2026-11-02
 
 ### Added
 
+- `LICENSE`: all rights reserved. The repository is public for viewing; no
+  licence to use, copy, modify or redistribute is granted.
+- `H` hides and shows the HUD chrome (clock, tags, money, toolbar, progress
+  bar, speed readout, debug overlay, replay bar). Dialogs, the countdown and
+  the touch controls stay; Esc still works. Listed in the controls table,
+  with an end-to-end test. [90]
+- `CHANGELOG.md` and the context documents `docs/GAMEPLAY.md`,
+  `docs/CONTENT.md` and `docs/TESTING.md`; README rewritten for the current
+  game. [91]
 - **Cinematic camera**, a fourth view after Chase, Interior and Isometric.
   A pure-TS director draws trackside TV cameras on the verge ahead (pan,
   14°–50° zoom with distance, cut once passed), a helicopter, a low chase
@@ -45,6 +39,8 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Changed
 
+- The replay no longer loops: when the recording runs out it leaves the
+  replay by itself and the "Stage complete" panel comes straight back. [89]
 - A town on every third stage, the last of each region's run, whatever the
   seed (previously a random slot in each trio). [86]
 - Prize per kilometre raised from 120 to 200 and then to 800: an upgrade
