@@ -10,6 +10,7 @@ import { StageProgress } from '@/components/hud/StageProgress';
 import { TouchControls } from '@/components/hud/TouchControls';
 import { SplashScreen } from '@/components/splash/SplashScreen';
 import { useGameStore } from '@/state/gameStore';
+import { useUiStore } from '@/state/uiStore';
 import { useAutosave } from './useAutosave';
 
 const GameCanvas = dynamic(() => import('./GameCanvas').then((m) => m.GameCanvas), {
@@ -26,17 +27,21 @@ function BootMessage() {
   );
 }
 
-/** Canvas + HUD for the active game; autosaves while mounted. */
+/**
+ * Canvas + HUD for the active game; autosaves while mounted. H hides the HUD
+ * chrome for a clean view; dialogs, the countdown and the touch controls stay.
+ */
 function GameShell() {
   useAutosave();
+  const hidden = useUiStore((s) => s.hudHidden);
   return (
     <>
       <GameCanvas />
       <div className="hud-frame">
-        <DebugOverlay />
-        <SpeedReadout />
+        {!hidden && <DebugOverlay />}
+        {!hidden && <SpeedReadout />}
         <StageHud />
-        <StageProgress />
+        {!hidden && <StageProgress />}
         <TouchControls />
         <HudToolbar />
       </div>

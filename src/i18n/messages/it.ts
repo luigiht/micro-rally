@@ -212,6 +212,7 @@ export const it: Messages = {
       keys: 'C',
       action: 'Cambia telecamera (inseguimento / interni / isometrica / cinematica)',
     },
+    { keys: 'H', action: 'Nascondi o mostra l’interfaccia' },
     { keys: 'Rotella del mouse', action: 'Zoom della telecamera' },
     { keys: '`', action: 'Pannello di debug' },
     { keys: 'Esc', action: 'Chiudi qualsiasi pannello, o apri il pannello Gioco' },

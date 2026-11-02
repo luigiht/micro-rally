@@ -183,15 +183,15 @@ export class DrivingSession {
     this.syncReplay();
     // An open HUD panel pauses the sim (and a replay); the camera keeps rendering the frozen pose.
     const paused = useUiStore.getState().panel !== null;
-    if (this.replayTime !== null) {
-      if (!paused) {
-        this.replayTime += dt;
-        // Round again from the start signal, the camera snapping back with the car.
-        if (this.replayTime > this.track.duration) {
-          this.replayTime = 0;
-          this.needsSnap = true;
-        }
+    if (this.replayTime !== null && !paused) {
+      this.replayTime += dt;
+      // The recording has run out: straight back to the result panel, the car where the sim left it.
+      if (this.replayTime > this.track.duration) {
+        useUiStore.getState().stopReplay();
+        this.syncReplay();
       }
+    }
+    if (this.replayTime !== null) {
       this.track.sampleAt(this.replayTime, this.pose);
     } else {
       const alpha = paused ? 1 : this.stepper.advance(dt, this.stepFn);
@@ -233,9 +233,10 @@ export class DrivingSession {
   }
 
   /**
-   * Enter or leave the replay as the HUD asks (Watch replay, Exit replay, Esc).
-   * The camera snaps either way; leaving puts the car back where the sim left it
-   * and the HUD back on the final time.
+   * Enter or leave the replay as the HUD asks (Watch replay, Exit replay, Esc) or
+   * when the recording runs out. The camera snaps either way; leaving puts the car
+   * back where the sim left it and the HUD back on the final time, and the result
+   * panel shows again.
    */
   private syncReplay(): void {
     const ui = useUiStore.getState();
@@ -290,6 +291,8 @@ export class DrivingSession {
       useSettingsStore.getState().cycleCamera();
     } else if (action === 'debug') {
       useTelemetryStore.getState().toggleDebug();
+    } else if (action === 'hud') {
+      useUiStore.getState().toggleHud();
     }
   };
 

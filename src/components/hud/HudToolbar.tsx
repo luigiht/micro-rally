@@ -93,6 +93,7 @@ function PauseMenu() {
 export function HudToolbar() {
   const m = useMessages();
   const panel = useUiStore((s) => s.panel);
+  const hidden = useUiStore((s) => s.hudHidden);
   // Esc closes whichever panel is open, else leaves a running replay, else opens the Game panel. A HUD
   // hotkey rather than a driving control, so it works from the moment the HUD shows, before the driving
   // session is ready, and even when a form control inside a panel has focus.
@@ -109,33 +110,35 @@ export function HudToolbar() {
   }, []);
   return (
     <>
-      <nav
-        aria-label={m.toolbar.label}
-        className="pointer-events-auto absolute top-4 right-4 flex gap-2 md:top-6 md:right-6 md:gap-3"
-      >
-        <ToolbarButton
-          icon="pause"
-          label={m.toolbar.pause}
-          panel="menu"
-          open={panel !== null}
-          display="hidden coarse:grid"
-          pad
-        />
-        <ToolbarButton
-          icon="settings"
-          label={m.toolbar.settings}
-          panel="settings"
-          open={panel === 'settings'}
-          display="inline-flex coarse:hidden"
-        />
-        <ToolbarButton
-          icon="game"
-          label={m.toolbar.game}
-          panel="game"
-          open={panel === 'game'}
-          display="inline-flex coarse:hidden"
-        />
-      </nav>
+      {!hidden && (
+        <nav
+          aria-label={m.toolbar.label}
+          className="pointer-events-auto absolute top-4 right-4 flex gap-2 md:top-6 md:right-6 md:gap-3"
+        >
+          <ToolbarButton
+            icon="pause"
+            label={m.toolbar.pause}
+            panel="menu"
+            open={panel !== null}
+            display="hidden coarse:grid"
+            pad
+          />
+          <ToolbarButton
+            icon="settings"
+            label={m.toolbar.settings}
+            panel="settings"
+            open={panel === 'settings'}
+            display="inline-flex coarse:hidden"
+          />
+          <ToolbarButton
+            icon="game"
+            label={m.toolbar.game}
+            panel="game"
+            open={panel === 'game'}
+            display="inline-flex coarse:hidden"
+          />
+        </nav>
+      )}
       {panel === 'menu' && <PauseMenu />}
       {panel === 'game' && <GamePanel />}
       {panel === 'settings' && <SettingsPanel />}

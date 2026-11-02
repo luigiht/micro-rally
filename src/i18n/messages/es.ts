@@ -212,6 +212,7 @@ export const es: Messages = {
     { keys: 'Mayús', action: 'Turbo (si está instalado)' },
     { keys: 'R', action: 'Volver al último control' },
     { keys: 'C', action: 'Cambiar de cámara (persecución / interior / isométrica / cinemática)' },
+    { keys: 'H', action: 'Ocultar o mostrar la interfaz' },
     { keys: 'Rueda del ratón', action: 'Zoom de cámara' },
     { keys: '`', action: 'Panel de depuración' },
     { keys: 'Esc', action: 'Cerrar cualquier panel, o abrir el panel Juego' },

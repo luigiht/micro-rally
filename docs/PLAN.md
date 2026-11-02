@@ -2,6 +2,16 @@
 
 Status legend: [x] done · [~] in progress · [ ] not started
 
+**Where things stand (2 November 2026).** Milestones 1–4 are done. Of 5–8,
+the Garage, car models, economy, saves and Game IDs, i18n, Settings (language
+and camera), the touch HUD, the Alpine region, towns on every third stage,
+the cinematic camera, replays and Vercel deployment are in; sound,
+post-processing and quality tiers, weather and night, Coast and Desert, pace
+notes and live splits, and the service-park hub are not. Milestone 9
+(Capacitor) has not started. What the game does today is described in
+[GAMEPLAY.md](GAMEPLAY.md) and [CONTENT.md](CONTENT.md); day-by-day changes
+are in [../CHANGELOG.md](../CHANGELOG.md).
+
 ## 1. Scaffold — [x]
 
 - [x] Next.js App Router + React 19 + TypeScript strict
@@ -44,7 +54,7 @@ Status legend: [x] done · [~] in progress · [ ] not started
 
 - [x] `CockpitCameraRig` (eye on the chassis, glance into corners, cabin hidden), `IsometricCameraRig` (long lens, 55° pitch, stage axis + 45°, zoom)
 - [x] `C` / `V` cycle; Camera dropdown in Settings; rigs swap via `createCameraRig` and snap
-- [x] Replay after the finish: the run is recorded every sim step and the result panel offers "Watch replay"; the car follows the recording with no control, C and Settings still switch camera, Esc or "Exit replay" returns to the results
+- [x] Replay after the finish: the run is recorded every sim step and the result panel offers "Watch replay"; the car follows the recording with no control, C and Settings still switch camera, Esc, "Exit replay" or the end of the recording returns to the results
 - [x] Cinematic camera (fourth view): a broadcast-style director with trackside, helicopter, chase-car, camera-car and reverse tracking shots, 180°/30° cut rules, terrain-aware placement, reduced-motion variant
 - [x] Interior view behind the wheel with a modelled cabin (`CarInterior`): working speedo/tacho, turning wheel, seats, pillars
 - [x] Reduced motion: level head in the cab, no roll / FOV kick in chase
@@ -58,6 +68,7 @@ Status legend: [x] done · [~] in progress · [ ] not started
 - [x] Economy tests for upgrade pricing/effects, catalogue and store purchases; save v2 migration
 - [x] Grip rework: steering assist, friction ellipse, rear grip bias — every car composed under power and off-throttle (unit-tested)
 - [x] Tyre marks: one-mesh ring buffer fading from the oldest end, per-surface ink, Settings toggle
+- [x] H hides and shows the HUD chrome for a clean view; dialogs, the countdown and touch controls stay
 - [x] Dealership preview centred on the car; garage modal responsive (phone portrait/landscape, tablet, desktop)
 
 ## 6. Save system, API route, Game ID URL, start/continue — [ ]

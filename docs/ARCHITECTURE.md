@@ -97,7 +97,8 @@ flowchart LR
   run into a `ReplayTrack` (`game/replay/`, pure TS: one sample per fixed
   step, blended on playback) and, when the HUD asks after the finish, plays it
   back in place of the sim: the car follows the recording, input is ignored,
-  the camera rigs keep working and Esc or the HUD's button leaves it.
+  the camera rigs keep working, and Esc, the HUD's button or the end of the
+  recording leaves it with the result panel back on screen.
 - Camera rigs (`components/game/cameras/`): `ChaseCameraRig`,
   `FirstPersonCameraRig` (interior), `IsometricCameraRig` and
   `CinematicCameraRig`, built by `createCameraRig` and swapped by

@@ -200,6 +200,7 @@ export const en = {
     { keys: 'Shift', action: 'Turbo (when fitted)' },
     { keys: 'R', action: 'Back to the last checkpoint' },
     { keys: 'C', action: 'Switch camera (chase / interior / isometric / cinematic)' },
+    { keys: 'H', action: 'Hide or show the HUD' },
     { keys: 'Mouse wheel', action: 'Zoom the camera' },
     { keys: '`', action: 'Debug overlay' },
     { keys: 'Esc', action: 'Close any panel, or open the Game panel' },

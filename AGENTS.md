@@ -10,14 +10,18 @@ Read that first, then the documents below as the task needs them.
 
 ## Where things are
 
-| Document                                     | Use it for                                              |
-| -------------------------------------------- | ------------------------------------------------------- |
-| [CLAUDE.md](CLAUDE.md)                       | Project rules, commands, directory layout               |
-| [docs/BRIEF.md](docs/BRIEF.md)               | The design brief: what the game is and is not           |
-| [docs/PLAN.md](docs/PLAN.md)                 | Milestones and what is done                             |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Code map: sim, stage pipeline, save pipeline, rendering |
-| [docs/DECISIONS.md](docs/DECISIONS.md)       | Numbered log of technical choices, newest last          |
-| [docs/DEPLOY.md](docs/DEPLOY.md)             | Vercel and Supabase deployment                          |
+| Document                                     | Use it for                                                          |
+| -------------------------------------------- | ------------------------------------------------------------------- |
+| [CLAUDE.md](CLAUDE.md)                       | Project rules, commands, directory layout                           |
+| [docs/BRIEF.md](docs/BRIEF.md)               | The design brief: what the game is and is not                       |
+| [docs/PLAN.md](docs/PLAN.md)                 | Milestones and what is done                                         |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Code map: sim, stage pipeline, save pipeline, rendering             |
+| [docs/DECISIONS.md](docs/DECISIONS.md)       | Numbered log of technical choices, newest last                      |
+| [docs/DEPLOY.md](docs/DEPLOY.md)             | Vercel and Supabase deployment                                      |
+| [docs/GAMEPLAY.md](docs/GAMEPLAY.md)         | How the game plays today: stages, prizes, cameras, garage, controls |
+| [docs/CONTENT.md](docs/CONTENT.md)           | Stage and town generation, regions, the car catalogue               |
+| [docs/TESTING.md](docs/TESTING.md)           | Test suites, e2e setup, screenshotting a change                     |
+| [CHANGELOG.md](CHANGELOG.md)                 | User-visible changes by day                                         |
 
 ## Working here
 

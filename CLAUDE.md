@@ -4,7 +4,10 @@ A cozy, flat-shaded low-poly rally game for the browser (and later iOS/Android
 via Capacitor). Full design brief: [docs/BRIEF.md](docs/BRIEF.md). Milestone
 status: [docs/PLAN.md](docs/PLAN.md). Code map:
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Technical choices:
-[docs/DECISIONS.md](docs/DECISIONS.md).
+[docs/DECISIONS.md](docs/DECISIONS.md). How the game plays and what the
+generators make: [docs/GAMEPLAY.md](docs/GAMEPLAY.md) and
+[docs/CONTENT.md](docs/CONTENT.md). Tests and screenshot harness:
+[docs/TESTING.md](docs/TESTING.md). User-visible changes: [CHANGELOG.md](CHANGELOG.md).
 
 ## Project rules
 

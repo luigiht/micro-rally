@@ -1,7 +1,11 @@
 # Micro Rally — design brief
 
-This is the original design brief. Project rules live in
-[../CLAUDE.md](../CLAUDE.md).
+This is the original design brief, kept as written. Project rules live in
+[../CLAUDE.md](../CLAUDE.md). The game has since grown past it in places
+(four cameras including a cinematic director, replays, towns, a nine-car
+dealership) and not yet reached it in others (sound, quality tiers, weather,
+Coast and Desert, the service park); [GAMEPLAY.md](GAMEPLAY.md) describes
+what is built and [DECISIONS.md](DECISIONS.md) why it differs.
 
 ## Concept
 

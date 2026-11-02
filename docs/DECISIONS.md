@@ -1412,9 +1412,10 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
     camera mode: while it is on, `DrivingSession.tick` stops stepping the sim,
     advances a replay clock (paused with the panels like the sim), writes the
     recorded pose into the same `pose` the car model and camera rigs read,
-    loops back to the start with a camera snap when the recording ends, and
-    publishes the clock, checkpoints passed (by progress along the stage) and
-    the progress bar from the recording. Driving keys do nothing because the
+    and publishes the clock, checkpoints passed (by progress along the stage)
+    and the progress bar from the recording. When the recording runs out the
+    session leaves the replay by itself, so the result panel comes straight
+    back (a first cut looped the replay; the player asked for the results). Driving keys do nothing because the
     sim is not stepped; R is already ignored after the finish; C and the
     Settings dropdown still switch camera, so the new cinematic view can be
     watched; Esc leaves the replay before it would open the Game panel, and
@@ -1425,3 +1426,31 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
     A new session resets the flag. For testing, the `?spawn=` dev aid now
     also counts the checkpoints behind the spawn as passed
     (`StageRun.skipGatesBefore`), so a car spawned near the finish can finish.
+
+90. **2026-11-02 — H hides the HUD.** A clean view for watching the cinematic
+    camera or a replay: `H` toggles `uiStore.hudHidden`, routed like the
+    other action keys through `KeyboardControls` (so typing in a form field
+    never triggers it) and the session. Hidden means the chrome goes: clock,
+    checkpoint and penalty tags, money and Garage button, the toolbar
+    buttons, the progress bar, the speed readout, the debug overlay and the
+    replay bar. What the player must see stays: the countdown and GO, the
+    result panel, any open dialog, and the touch controls (they are the
+    controls, and touch devices have no H). Esc still works as before, so a
+    player who forgets the key can open the Game panel from a hidden HUD,
+    and the controls table lists H. Nothing is persisted; a new game shows
+    the HUD. An e2e test hides and shows the chrome and opens a dialog over
+    the hidden HUD.
+
+91. **2026-11-02 — Changelog and context documents.** The repository gains a
+    `CHANGELOG.md` and three documents in `docs/`: `GAMEPLAY.md` (what the
+    player meets, with the constants behind it), `CONTENT.md` (stages,
+    towns, regions, cars, surfaces) and `TESTING.md` (suites, e2e setup and
+    the Playwright screenshot pattern that until now lived only in session
+    notes). The changelog is grouped by day rather than version: there are
+    no version tags and `main` deploys continuously, so a date is the
+    truthful unit, with the decision numbers in brackets for the reasoning.
+    The brief stays as written and points to GAMEPLAY for where the game has
+    moved past it; PLAN gains a "where things stand" paragraph. The README
+    now states that the Vercel deployment uses Vercel Web Analytics
+    (cookie-free); the in-app privacy page still says "no analytics" and
+    should be reconciled by the owner.

@@ -152,8 +152,17 @@ export function StageHud() {
   const penalties = useStageHudStore((s) => s.penalties);
   const result = useStageHudStore((s) => s.result);
   const replay = useUiStore((s) => s.replay);
+  const hidden = useUiStore((s) => s.hudHidden);
   const money = useGameStore((s) => s.money);
   if (gateCount === 0) return null;
+  // With the HUD hidden (H) only what the player must see stays: the start signal and the result.
+  if (hidden)
+    return (
+      <>
+        <Countdown />
+        {result && !replay && <ResultPanel result={result} />}
+      </>
+    );
   return (
     <>
       {/* Centred on desktop; on touch devices the stack hugs the top-left and money joins it. */}
