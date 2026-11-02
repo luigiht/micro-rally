@@ -1,4 +1,5 @@
 import { FILLET, FRONT_SETBACK, JUNCTION_REACH, type Arm, type Junction } from './Town';
+import { cornerRadius, tangentLength } from './TownPlan';
 
 const TAU = Math.PI * 2;
 /** Heading folded into [0, 2π). */
@@ -79,4 +80,69 @@ export function stubCut(j: Junction, arm: Arm, routeHalfWidth: number): number {
     reach = Math.max(reach, tangent + 1);
   }
   return reach;
+}
+
+/** At a corner the ribbon hands over to a straight-through apron's kerb this far beyond the arc's tangent. */
+export const HANDOFF_BEYOND = 2;
+/** The ribbon hands over this far past a kerb return's tangent on its edge. */
+export const CUT_MARGIN = 1;
+
+const forward = (h: number) => ({ x: Math.sin(h), z: Math.cos(h) });
+const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
+
+/** The blocked arm that continues `route` straight through the junction, if any. */
+export function throughArm(j: Junction, route: Arm): Arm | undefined {
+  return j.arms.find(
+    (c) => c.role === 'blocked' && Math.abs(wrap(c.heading - route.heading - Math.PI)) < 0.05,
+  );
+}
+
+/** The route's turn at a corner junction, from its arriving to its leaving arm. */
+export function junctionTurn(j: Junction): number {
+  const inArm = j.arms.find((a) => a.role === 'in');
+  const outArm = j.arms.find((a) => a.role === 'out');
+  return inArm && outArm ? wrap(outArm.heading - (inArm.heading + Math.PI)) : 0;
+}
+
+/**
+ * How far along `route`'s arm, from the junction, a straight-through apron's
+ * kerb runs before the ribbon takes over: past the arc's tangent, or past the
+ * kerb return between `stub`'s edge and the apron's edge when that lies
+ * further out (acute wedges push it a long way down the arm).
+ */
+export function apronEnd(j: Junction, w: Wedge, route: Arm, stub: Arm, through: Arm): number {
+  const tangent = tangentLength(junctionTurn(j));
+  const c = offsetCorner(
+    j,
+    w.a,
+    w.b,
+    (w.a === route ? through.halfWidth : stub.halfWidth) + FILLET,
+    (w.b === route ? through.halfWidth : stub.halfWidth) + FILLET,
+  );
+  const f = forward(route.heading);
+  const tr = (c.x - j.x) * f.x + (c.z - j.z) * f.z;
+  return Math.max(tangent + HANDOFF_BEYOND, tr + CUT_MARGIN);
+}
+
+/**
+ * How far along the route, from where it passes the junction, the junction's
+ * kerbs reach on either side: the farthest straight-through hand-off, or the
+ * arc's tangent and a kerb return where no arm runs straight through.
+ */
+export function junctionReach(j: Junction): number {
+  const turn = junctionTurn(j);
+  const tangent = tangentLength(turn);
+  // Path distance from the arc's midpoint to its tangent point.
+  const halfArc = (cornerRadius(turn) * Math.abs(turn)) / 2;
+  let reach = tangent + FILLET + CUT_MARGIN;
+  for (const w of wedges(j)) {
+    const aBlocked = w.a.role === 'blocked';
+    const bBlocked = w.b.role === 'blocked';
+    if (aBlocked === bBlocked) continue;
+    const stub = aBlocked ? w.a : w.b;
+    const route = aBlocked ? w.b : w.a;
+    const through = throughArm(j, route);
+    if (through) reach = Math.max(reach, apronEnd(j, w, route, stub, through));
+  }
+  return halfArc + (reach - tangent);
 }

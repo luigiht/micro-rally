@@ -1184,9 +1184,11 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
     end of a straight that meets a corner pins the straight to its line
     right up to the arc; a corner, and the side streets leaving it, take
     the narrower of the two straights it joins, and `buildWidths` holds
-    that width from one arc tangent to the other and 4 m beyond before
-    tapering, so the ribbon's edge lies on the street's own edge line where
-    it hands over, 2 m past the tangent. The apron's edge is that line, and
+    that width out to where the junction's kerbs hand over to the ribbon on
+    either side (`junctionReach`: past the arc's tangent, or past an acute
+    wedge's kerb return, which can lie far down the arm) before tapering,
+    so the ribbon's edge lies on the street's own edge line where it hands
+    over. The apron's edge is that line, and
     the terrace row on that side ends where a wall along it begins, so
     pavement, kerb line and facades agree.
     Every kerb, on the ribbon in town, round the junctions and along the

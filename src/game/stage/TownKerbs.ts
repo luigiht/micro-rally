@@ -1,8 +1,15 @@
 import { createRoadHit, type RoadHit } from './RoadPath';
 import { halfWidthAt, type RoadWidthSource } from './RoadWidth';
 import { FILLET, type Arm, type Junction, type TownDef } from './Town';
-import { offsetCorner, stubCut, wedges, type Wedge } from './TownJunctions';
-import { tangentLength } from './TownPlan';
+import {
+  apronEnd,
+  CUT_MARGIN,
+  offsetCorner,
+  stubCut,
+  throughArm,
+  wedges,
+  type Wedge,
+} from './TownJunctions';
 
 /** A point on a kerb line with the unit normal pointing onto the pavement. */
 export interface KerbPoint {
@@ -80,12 +87,8 @@ const ARC_STEP = 0.35;
 const STUB_STEP = 2;
 /** The route's edge is followed at this spacing between the kerb return and the ribbon's cut. */
 const EDGE_STEP = 1;
-/** The ribbon hands over to the junction this far beyond a kerb return's tangent on its edge. */
-const CUT_MARGIN = 1;
 /** Fillet centres are searched along the arm at this step, then bisected. */
 const SEARCH_STEP = 0.5;
-/** At a corner the ribbon hands over this far beyond the arc's tangent, where the straight is pinned to its line. */
-const HANDOFF_BEYOND = 2;
 /** A blocked arm's mouth polygon reaches this far back under the ribbon past where its edges meet it. */
 const MOUTH_OVERLAP = 0.5;
 /** Reported depth anywhere inside the paved ground: the polygons share internal edges, so true depth is not available. */
@@ -312,9 +315,7 @@ function routeStub(
   // At a corner a blocked arm continues the route's arm straight through the junction: their
   // edges share a line, the bend's arc only leaves it at its tangent, and the apron between
   // is that arm's mouth. The kerb then follows the shared line, not the arc.
-  const through = j.arms.find(
-    (c) => c.role === 'blocked' && Math.abs(wrap(c.heading - route.heading - Math.PI)) < 0.05,
-  );
+  const through = throughArm(j, route);
   if (through)
     return straightThrough(j, w, stub, route, through, sign, side, role, stage, cut, hit);
   const f = forward(stub.heading);
@@ -393,9 +394,6 @@ function straightThrough(
   cut: number,
   hit: RoadHit,
 ): RouteStub {
-  const inArm = j.arms.find((a) => a.role === 'in')!;
-  const outArm = j.arms.find((a) => a.role === 'out')!;
-  const tangent = tangentLength(wrap(outArm.heading - (inArm.heading + Math.PI)));
   // The apron's edge is the through arm's own edge line, continued back along the route arm; the
   // straight is pinned to that line to within a metre of the arc, and keeps the corner's width,
   // so the ribbon's edge lies on it where it hands over.
@@ -428,8 +426,9 @@ function straightThrough(
   arc(c, FILLET, points[from]!, trPt, points);
   points.push(trPt);
   const crescent = crescentOf(points, from, mouth);
-  // Along the apron's edge past the arc's tangent, in pieces, to where the ribbon takes over.
-  const tEnd = Math.max(tangent + HANDOFF_BEYOND, tr + CUT_MARGIN);
+  // Along the apron's edge past the arc's tangent, in pieces, to where the ribbon takes over
+  // (the same distance the carriageway's width is held to).
+  const tEnd = apronEnd(j, w, route, stub, through);
   const n = Math.max(1, Math.ceil((tEnd - tr) / STUB_STEP));
   for (let k = 1; k < n; k++) points.push(onLine(tr + ((tEnd - tr) * k) / n));
   stage.path.nearest(o.x + f.x * tEnd, o.z + f.z * tEnd, 60, hit);
