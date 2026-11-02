@@ -13,6 +13,8 @@ const STEER_IN = 100;
 const STEER_RATE = 0.3;
 /** Corner arcs are laid as chords no longer than this. */
 const CHORD = 5;
+/** Extra spline control this far inside a straight's end at a corner, pinning the straight to its line. */
+const CORNER_PIN = 1;
 
 function catmullRom(p0: number, p1: number, p2: number, p3: number, t: number): number {
   const t2 = t * t;
@@ -116,7 +118,8 @@ export function buildCentreline(
         }
         emitted += radius * Math.abs(sweep);
       };
-      for (const leg of plan.legs) {
+      for (let li = 0; li < plan.legs.length; li++) {
+        const leg = plan.legs[li]!;
         const headingIn = h;
         if (leg.kind === 'curve') {
           const points = [{ x, z }];
@@ -140,8 +143,15 @@ export function buildCentreline(
         const portion = leg.length - carry - out;
         const steps = Math.max(1, Math.round(portion / CONTROL_STEP));
         const points = [{ x, z }];
-        for (let k = 0; k < steps; k++)
-          push(x + (Math.sin(h) * portion) / steps, z + (Math.cos(h) * portion) / steps);
+        const sx = x;
+        const sz = z;
+        const along = (d: number) => push(sx + Math.sin(h) * d, sz + Math.cos(h) * d);
+        // A control a metre inside each end that meets a corner pins the spline to the line there,
+        // so the straight stays straight right up to the arc instead of bowing into it.
+        if (carry > 0 && portion > 2 * CORNER_PIN) along(CORNER_PIN);
+        for (let k = 1; k < steps; k++) along((portion * k) / steps);
+        if (turn !== 0 && portion > 2 * CORNER_PIN) along(portion - CORNER_PIN);
+        along(portion);
         points.push({ x, z });
         emitted += portion;
         trace.legs.push({
@@ -162,13 +172,16 @@ export function buildCentreline(
           const radius = cornerRadius(turn);
           const cpoints = [{ x, z }];
           arc(radius, turn, cpoints);
+          // The corner, and the side streets that leave it, take the narrower of the two straights it
+          // joins, so the carriageway keeps one width right through the junction.
+          const nextHalf = plan.legs[li + 1]?.halfWidth ?? leg.halfWidth;
           trace.legs.push({
             kind: 'corner',
             points: cpoints,
             headingIn,
             headingOut: h,
             turn,
-            halfWidth: leg.halfWidth,
+            halfWidth: Math.min(leg.halfWidth, nextHalf),
             radius,
             sweep: turn,
             length: radius * Math.abs(turn),

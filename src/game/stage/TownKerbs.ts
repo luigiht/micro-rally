@@ -84,10 +84,8 @@ const EDGE_STEP = 1;
 const CUT_MARGIN = 1;
 /** Fillet centres are searched along the arm at this step, then bisected. */
 const SEARCH_STEP = 0.5;
-/** The ribbon has left a straight line once its heading differs from the line's by more than this. */
-const STRAIGHT_TOLERANCE = 0.01;
-/** The ribbon is searched this far from a corner for where it leaves its straight line. */
-const STRAIGHT_SEARCH = 40;
+/** At a corner the ribbon hands over this far beyond the arc's tangent, where the straight is pinned to its line. */
+const HANDOFF_BEYOND = 2;
 /** A blocked arm's mouth polygon reaches this far back under the ribbon past where its edges meet it. */
 const MOUTH_OVERLAP = 0.5;
 /** Reported depth anywhere inside the paved ground: the polygons share internal edges, so true depth is not available. */
@@ -395,73 +393,52 @@ function straightThrough(
   cut: number,
   hit: RoadHit,
 ): RouteStub {
-  const dir = role === 'in' ? -1 : 1;
-  // The spline bends into the corner well before the arc's nominal tangent. Walk out from the
-  // junction until the ribbon runs along the arm's axis again: that is where the apron's straight
-  // edge leaves the ribbon's, and where the ribbon hands its verge and line to the junction.
-  stage.path.nearest(j.x, j.z, 60, hit);
-  const apex = hit.along;
-  const sample = { x: 0, z: 0, heading: 0 };
-  let dDepart =
-    apex +
-    dir * (tangentLength(wrap(route.heading - j.arms.find((a) => a.role === 'in')!.heading)) || 1);
-  for (
-    let d = Math.max(0, apex + dir * 2);
-    Math.abs(d - apex) < STRAIGHT_SEARCH;
-    d += dir * SEARCH_STEP
-  ) {
-    stage.path.sample(d, sample);
-    const off = wrap(sample.heading - (role === 'in' ? route.heading + Math.PI : route.heading));
-    if (Math.abs(off) < STRAIGHT_TOLERANCE) {
-      dDepart = d;
-      break;
-    }
-  }
-  const e1 = routeEdge(stage, dDepart, side, 0);
-  // The apron's edge continues the ribbon's straight edge (its width may still be tapering), toward the junction.
-  const e2 = routeEdge(stage, dDepart + dir * 2, side, 0);
-  const len = Math.hypot(e1.x - e2.x, e1.z - e2.z) || 1;
-  const u = { x: (e1.x - e2.x) / len, z: (e1.z - e2.z) / len };
-  const nL = { x: e1.nx, z: e1.nz };
-  const fs = forward(stub.heading);
-  const ls = left(stub.heading);
-  const oStub = at(j, stub.heading, 0, sign * stub.halfWidth);
-  const mouth = meet(oStub, fs, e1, u) ?? { x: w.px, z: w.pz, t: 0 };
-  const c = meet(
-    { x: oStub.x + ls.x * sign * FILLET, z: oStub.z + ls.z * sign * FILLET },
-    fs,
-    { x: e1.x + nL.x * FILLET, z: e1.z + nL.z * FILLET },
-    u,
-  ) ?? { x: mouth.x, z: mouth.z, t: 0 };
-  const ts = Math.min((c.x - oStub.x) * fs.x + (c.z - oStub.z) * fs.z, cut - 0.1);
-  const sr = (c.x - e1.x) * u.x + (c.z - e1.z) * u.z;
-  const onLine = (sAlong: number): KerbPoint => ({
-    x: e1.x + u.x * sAlong,
-    z: e1.z + u.z * sAlong,
+  const inArm = j.arms.find((a) => a.role === 'in')!;
+  const outArm = j.arms.find((a) => a.role === 'out')!;
+  const tangent = tangentLength(wrap(outArm.heading - (inArm.heading + Math.PI)));
+  // The apron's edge is the through arm's own edge line, continued back along the route arm; the
+  // straight is pinned to that line to within a metre of the arc, and keeps the corner's width,
+  // so the ribbon's edge lies on it where it hands over.
+  const f = forward(route.heading);
+  const routeSign: 1 | -1 = route === w.a ? 1 : -1;
+  const l = left(route.heading);
+  const nL = { x: l.x * routeSign, z: l.z * routeSign };
+  const o = at(j, route.heading, 0, routeSign * through.halfWidth);
+  const onLine = (t: number): KerbPoint => ({
+    x: o.x + f.x * t,
+    z: o.z + f.z * t,
     nx: nL.x,
     nz: nL.z,
   });
-  const tr = onLine(sr);
+  const fs = forward(stub.heading);
+  const ls = left(stub.heading);
+  const oStub = at(j, stub.heading, 0, sign * stub.halfWidth);
+  const mouth = meet(oStub, fs, o, f) ?? { x: w.px, z: w.pz, t: 0 };
+  const c = meet(
+    { x: oStub.x + ls.x * sign * FILLET, z: oStub.z + ls.z * sign * FILLET },
+    fs,
+    { x: o.x + nL.x * FILLET, z: o.z + nL.z * FILLET },
+    f,
+  ) ?? { x: mouth.x, z: mouth.z, t: 0 };
+  const ts = Math.min((c.x - oStub.x) * fs.x + (c.z - oStub.z) * fs.z, cut - 0.1);
+  const tr = (c.x - o.x) * f.x + (c.z - o.z) * f.z;
+  const trPt = onLine(tr);
   const points = stubRun(j, stub, sign, cut, ts);
   const from = points.length - 1;
-  arc(c, FILLET, points[from]!, tr, points);
-  points.push(tr);
+  arc(c, FILLET, points[from]!, trPt, points);
+  points.push(trPt);
   const crescent = crescentOf(points, from, mouth);
-  let dCut: number;
-  if (sr > 0) {
-    // The return lies on the apron: follow its straight edge back to where the ribbon rejoins it.
-    const n = Math.max(1, Math.ceil(sr / STUB_STEP));
-    for (let k = 1; k <= n; k++) points.push(onLine(sr - (sr * k) / n));
-    dCut = dDepart + dir * CUT_MARGIN;
-  } else {
-    // The return reaches past the departure onto the ribbon's own straight edge.
-    stage.path.nearest(tr.x, tr.z, 60, hit);
-    dCut = hit.along + dir * CUT_MARGIN;
-  }
+  // Along the apron's edge past the arc's tangent, in pieces, to where the ribbon takes over.
+  const tEnd = Math.max(tangent + HANDOFF_BEYOND, tr + CUT_MARGIN);
+  const n = Math.max(1, Math.ceil((tEnd - tr) / STUB_STEP));
+  for (let k = 1; k < n; k++) points.push(onLine(tr + ((tEnd - tr) * k) / n));
+  stage.path.nearest(o.x + f.x * tEnd, o.z + f.z * tEnd, 60, hit);
+  const dCut = hit.along;
+  const e1 = onLine(tEnd);
+  const u = { x: -f.x, z: -f.z };
   const handoff = routeEdge(stage, dCut, side, 0);
   points.push(handoff);
   // The route arm's edge is the through arm's opposite edge: the apron's side of that arm.
-  const routeSign: 1 | -1 = route === w.a ? 1 : -1;
   const apron: Apron = {
     arm: through,
     route,
@@ -470,7 +447,7 @@ function straightThrough(
     e1,
     u,
     back: -MOUTH_OVERLAP,
-    knee: (j.x - e1.x) * u.x + (j.z - e1.z) * u.z,
+    knee: tEnd,
     cut: dCut,
     handoff,
   };
