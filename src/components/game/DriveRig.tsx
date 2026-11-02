@@ -91,7 +91,8 @@ export function DriveRig({ world, sky, fog, onPose, children }: DriveRigProps) {
     const pose = s.pose;
     car.current?.apply(pose);
     const m = marks.current;
-    if (m) {
+    // The replay drives the pose from the recording; the sim's frozen slip must not keep drawing marks.
+    if (m && !s.replaying) {
       wheelContacts(contacts, pose, s.sim.state, s.sim.spec, world.terrain);
       m.update(contacts, s.sim.state.surface, s.time, dt);
     }

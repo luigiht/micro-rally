@@ -1,7 +1,7 @@
 'use client';
 
 import type { Ref } from 'react';
-import { Euler, Matrix4, Vector3, type Group } from 'three';
+import type { Group } from 'three';
 import { CAR_SPECS, type CarSpec } from '@/game/vehicle/CarSpec';
 import { wellsFor, type HullSpec } from '@/render/car/CarHull';
 import { ArchLip, Box, Lamp } from '../CarParts';
@@ -44,6 +44,12 @@ const HULL: HullSpec = {
   },
   stripeBand: [0.56, 0.14],
   wrapStripes: true,
+  // Tail lamps painted into the shell: a lens up each C-pillar beside the rear glass, following
+  // the pillar's lean and rise, wrapping down onto the tail panel's white band at the corners.
+  sideDecals: [{ z0: -2.0, z1: -1.55, u0: 0, u1: 0.45, color: K.tail, glow: true }],
+  capDecals: [
+    { end: 'tail', x0: 0.62, x1: 1, y0: 0.84, y1: 0.99, color: K.tail, glow: true, mirror: true },
+  ],
   deck: [
     { x0: -0.3, x1: 0.3, z0: 1.1, z1: 2.05, color: K.blue },
     { x0: -0.16, x1: 0.16, z0: 1.42, z1: 1.72, color: K.body },
@@ -173,33 +179,6 @@ const HULL: HullSpec = {
 
 /** Bonnet slope between the scuttle and the nose, radians (positive tips the +z end down). */
 const BONNET_TILT = 0.21;
-/**
- * Tail lamp: a lens lying on the C-pillar surface beside the rear glass, from
- * the tail's top edge to the roof. The pillar leans inward (body edge 0.92 →
- * roof edge 0.64) and rises less steeply than the glass centre, so the lamp
- * is oriented from the surface's own axis and outward normal rather than
- * the glass slope.
- */
-const LAMP_FROM = new Vector3(0.84, 0.98, -2.0);
-const LAMP_TO = new Vector3(0.7, 1.4, -1.55);
-/** Across the pillar surface at mid-height: from the body edge inward and up. */
-const LAMP_ACROSS = new Vector3(-0.275, 0.21, 0);
-const LAMP_THICKNESS = 0.06;
-const lampAxis = new Vector3().subVectors(LAMP_TO, LAMP_FROM);
-const LAMP_LENGTH = lampAxis.length();
-const lampY = lampAxis.clone().normalize();
-const lampNormal = new Vector3().crossVectors(LAMP_ACROSS, lampY).normalize();
-const lampX = new Vector3().crossVectors(lampY, lampNormal).normalize();
-const lampEuler = new Euler().setFromRotationMatrix(
-  new Matrix4().makeBasis(lampX, lampY, lampNormal),
-  'XYZ',
-);
-/** Centre sits a hair proud of the surface so the inner face is buried. */
-const LAMP_CENTRE = new Vector3()
-  .addVectors(LAMP_FROM, LAMP_TO)
-  .multiplyScalar(0.5)
-  .addScaledVector(lampNormal, LAMP_THICKNESS / 2 - 0.01);
-
 /** Mid-2000s World Rally hatch. Coordinates in the root frame. `cabinRef` holds the mirrors. */
 export function FocusHatchBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Ref<Group> }) {
   const front = spec.cgToFront;
@@ -254,14 +233,6 @@ export function FocusHatchBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Re
           />
           {/* Blue bumper corner over the lime */}
           <Box p={[0.72 * side, 0.46, 2.23]} s={[0.3, 0.2, 0.17]} c={K.blue} />
-          {/* Tail lamp hugging the C-pillar for the full height of the rear glass (mirrored Euler: x, −y, −z) */}
-          <Box
-            p={[LAMP_CENTRE.x * side, LAMP_CENTRE.y, LAMP_CENTRE.z]}
-            s={[0.16, LAMP_LENGTH, LAMP_THICKNESS]}
-            c={K.tail}
-            glow={0.5}
-            r={[lampEuler.x, lampEuler.y * side, lampEuler.z * side]}
-          />
         </group>
       ))}
       {/* Nose: slim grille, lime bumper with a white band and twin lime lamps, blue splitter */}

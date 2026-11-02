@@ -285,3 +285,56 @@ describe('prismPositions', () => {
     }
   });
 });
+
+describe('hull decals', () => {
+  const lens = '#ff00ff';
+  const magenta = '1,0,1';
+  const decorated = buildCarHull({
+    ...spec,
+    sideDecals: [{ z0: -2, z1: -1, u0: 0, u1: 0.5, color: lens, glow: true }],
+    capDecals: [
+      { end: 'tail', x0: 0.5, x1: 1, y0: 0.8, y1: 0.95, color: lens, glow: true, mirror: true },
+    ],
+  });
+  const tris = triangles(decorated.positions);
+  const faces = tris.map((t, i) => ({ i, c: centroid(t), color: colorOfTri(decorated.colors, i) }));
+  const lit = faces.filter((f) => f.i * 3 < decorated.glowStart);
+  const glowing = faces.filter((f) => f.i * 3 >= decorated.glowStart);
+
+  it('paints side and cap decals into the surface and keeps them apart as the glowing group', () => {
+    expect(glowing.length).toBeGreaterThan(0);
+    expect(glowing.every((f) => f.color === magenta)).toBe(true);
+    expect(lit.every((f) => f.color !== magenta)).toBe(true);
+    // Without decals nothing glows and the geometry is unchanged in size.
+    const plain = buildCarHull(spec);
+    expect(plain.glowStart).toBe(plain.positions.length / 3);
+  });
+
+  it('lays the pillar lens along the outer half of the C-pillar band, between the tail and the pillar station', () => {
+    const pillar = glowing.filter((f) => f.c[2]! > -2 + 1e-6 && f.c[2]! < -1 - 1e-6);
+    expect(pillar.length).toBeGreaterThan(0);
+    for (const f of pillar) {
+      // The band runs from the belt edge (|x| 0.9) in toward the roof edge (0.7); the lens keeps to its outer half.
+      expect(Math.abs(f.c[0]!)).toBeGreaterThan(0.78);
+      expect(f.c[1]!).toBeGreaterThan(0.9 - 1e-6);
+      expect(f.c[1]!).toBeLessThan(1.4);
+    }
+    expect(pillar.some((f) => f.c[0]! > 0)).toBe(true);
+    expect(pillar.some((f) => f.c[0]! < 0)).toBe(true);
+  });
+
+  it('wraps the cap lens onto the tail panel at both corners, inside its height band only', () => {
+    const cap = glowing.filter((f) => Math.abs(f.c[2]! + 2) < 1e-6);
+    expect(cap.some((f) => f.c[0]! > 0.5)).toBe(true);
+    expect(cap.some((f) => f.c[0]! < -0.5)).toBe(true);
+    for (const f of cap) {
+      expect(Math.abs(f.c[0]!)).toBeGreaterThan(0.5);
+      expect(f.c[1]!).toBeGreaterThan(0.8);
+      expect(f.c[1]!).toBeLessThan(0.95);
+    }
+    // The panel's centre and the nose stay paint.
+    const tailCentre = lit.filter((f) => Math.abs(f.c[2]! + 2) < 1e-6 && Math.abs(f.c[0]!) < 0.4);
+    expect(tailCentre.length).toBeGreaterThan(0);
+    expect(faces.filter((f) => f.c[2]! > 1.99).every((f) => f.color !== magenta)).toBe(true);
+  });
+});

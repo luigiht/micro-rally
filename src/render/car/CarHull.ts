@@ -10,6 +10,18 @@
  * arrays so this module stays free of three.js and unit-testable.
  */
 import type { CarSpec } from '@/game/vehicle/CarSpec';
+import {
+  capPatches,
+  deckPatches,
+  patchAt,
+  patchCuts,
+  sidePatches,
+  type CapDecal,
+  type DeckDecal,
+  type SideDecal,
+} from './CarHullDecals';
+
+export type { CapDecal, DeckDecal, SideDecal } from './CarHullDecals';
 
 export interface HullStation {
   z: number;
@@ -50,19 +62,6 @@ export interface WheelWells {
   xInner: number;
 }
 
-/** A painted patch on the top surface (bonnet, roof, deck); never drawn over glass. */
-export interface DeckDecal {
-  /** Signed x range across the car, x0 < x1. */
-  x0: number;
-  x1: number;
-  /** Length range along the car, z0 < z1. */
-  z0: number;
-  z1: number;
-  color: string;
-  /** Also paint the range mirrored about the centre line. */
-  mirror?: boolean;
-}
-
 export interface HullSpec {
   stations: readonly HullStation[];
   colors: HullColors;
@@ -71,6 +70,10 @@ export interface HullSpec {
   stripeBand?: readonly [number, number];
   /** Painted onto the top faces in order; later decals win where they overlap. */
   deck?: readonly DeckDecal[];
+  /** Painted onto the pillar band (belt line to roof edge, where it is not glass), following its twist. */
+  sideDecals?: readonly SideDecal[];
+  /** Painted onto the nose and tail panels. */
+  capDecals?: readonly CapDecal[];
   /** Carry the stripe bands across the end caps (nose and tail) instead of painting them body colour. */
   wrapStripes?: boolean;
 }
@@ -80,6 +83,8 @@ export interface HullMesh {
   positions: Float32Array;
   /** rgb per vertex, flat per face. */
   colors: Float32Array;
+  /** Vertex index where the glowing faces start (drawn unlit); the vertex count when there are none. */
+  glowStart: number;
 }
 
 /** Wheel wells matching a car's axles and tyres, with clearance. */
@@ -172,7 +177,7 @@ function expandStations(spec: HullSpec): Station[] {
   for (const wz of spec.wells?.zs ?? []) {
     for (const f of WELL_STEPS) add(wz + f * spec.wells!.radius);
   }
-  for (const d of spec.deck ?? []) {
+  for (const d of [...(spec.deck ?? []), ...(spec.sideDecals ?? [])]) {
     add(d.z0);
     add(d.z1);
   }
@@ -246,29 +251,12 @@ function bandColor(
   return stripes[kind.stripe] ?? c.body;
 }
 
-/** Decals as absolute-x intervals on one side of the car (sgn = +1 left, -1 right). */
-function decalsOnSide(
-  deck: readonly DeckDecal[],
-  z: number,
-  sgn: 1 | -1,
-): { a: number; b: number; color: string }[] {
-  const out: { a: number; b: number; color: string }[] = [];
-  for (const d of deck) {
-    if (z < d.z0 || z > d.z1) continue;
-    for (const m of d.mirror ? [1, -1] : [1]) {
-      const lo = Math.min(d.x0 * m, d.x1 * m) * sgn;
-      const hi = Math.max(d.x0 * m, d.x1 * m) * sgn;
-      const a = Math.max(0, Math.min(lo, hi));
-      const b = Math.max(lo, hi);
-      if (b > a + 1e-6) out.push({ a, b, color: d.color });
-    }
-  }
-  return out;
-}
-
 export function buildCarHull(spec: HullSpec): HullMesh {
   const pos: number[] = [];
   const col: number[] = [];
+  // Glowing faces are kept apart and appended last, so the mesh can draw them unlit as one group.
+  const glowPos: number[] = [];
+  const glowCol: number[] = [];
   const colorOf = new Map<string, V3>();
   const rgb = (hex: string) => {
     let v = colorOf.get(hex);
@@ -276,7 +264,7 @@ export function buildCarHull(spec: HullSpec): HullMesh {
     return v;
   };
 
-  function tri(a: V3, b: V3, c: V3, expected: V3, color: V3): void {
+  function tri(a: V3, b: V3, c: V3, expected: V3, color: V3, glow = false): void {
     const ux = b[0] - a[0];
     const uy = b[1] - a[1];
     const uz = b[2] - a[2];
@@ -288,15 +276,17 @@ export function buildCarHull(spec: HullSpec): HullMesh {
     const nz = ux * vy - uy * vx;
     if (Math.hypot(nx, ny, nz) < 1e-7) return;
     const flip = nx * expected[0] + ny * expected[1] + nz * expected[2] < 0;
+    const p3 = glow ? glowPos : pos;
+    const c3 = glow ? glowCol : col;
     for (const p of flip ? [a, c, b] : [a, b, c]) {
-      pos.push(p[0], p[1], p[2]);
-      col.push(color[0], color[1], color[2]);
+      p3.push(p[0], p[1], p[2]);
+      c3.push(color[0], color[1], color[2]);
     }
   }
 
-  function quad(a: V3, b: V3, c: V3, d: V3, expected: V3, color: V3): void {
-    tri(a, b, c, expected, color);
-    tri(a, c, d, expected, color);
+  function quad(a: V3, b: V3, c: V3, d: V3, expected: V3, color: V3, glow = false): void {
+    tri(a, b, c, expected, color, glow);
+    tri(a, c, d, expected, color, glow);
   }
 
   const st = expandStations(spec);
@@ -309,6 +299,8 @@ export function buildCarHull(spec: HullSpec): HullMesh {
         : spec.colors.stripe;
   const band = spec.stripeBand ?? DEFAULT_STRIPE_BAND;
   const deck = spec.deck ?? [];
+  const sideDecals = spec.sideDecals ?? [];
+  const capDecals = spec.capDecals ?? [];
   const profiles = st.map((s) => profile(s, xInner, Math.max(1, stripes.length), band));
   const bands = profiles[0]!.kinds.length;
   const users = spec.stations;
@@ -340,7 +332,35 @@ export function buildCarHull(spec: HullSpec): HullMesh {
       const n1 = edgeNormal(p1, k);
       for (const sgn of [1, -1] as const) {
         const exp: V3 = [(n0[0] + n1[0]) * sgn, n0[1] + n1[1], 0];
-        const decals = kind === 'top' && top !== 'glass' ? decalsOnSide(deck, zMid, sgn) : [];
+        const pillar =
+          kind === 'side' && side !== 'glass' ? sidePatches(sideDecals, zMid, sgn) : [];
+        if (pillar.length > 0) {
+          // Split the pillar band across its width at every decal edge. Each strip still spans
+          // the two stations like the band itself, so a lens painted here follows the pillar's
+          // twist instead of standing proud of it.
+          const at = (p: V2[], u: number, z: number): V3 => [
+            lerp(p[k]![0], p[k + 1]![0], u) * sgn,
+            lerp(p[k]![1], p[k + 1]![1], u),
+            z,
+          ];
+          const edges = [0, ...patchCuts(pillar, 1), 1];
+          for (let e = 0; e < edges.length - 1; e++) {
+            const ua = edges[e]!;
+            const ub = edges[e + 1]!;
+            const hit = patchAt(pillar, (ua + ub) / 2);
+            quad(
+              at(p0, ua, z0),
+              at(p1, ua, z1),
+              at(p1, ub, z1),
+              at(p0, ub, z0),
+              exp,
+              rgb(hit?.color ?? base),
+              hit?.glow ?? false,
+            );
+          }
+          continue;
+        }
+        const decals = kind === 'top' && top !== 'glass' ? deckPatches(deck, zMid, sgn) : [];
         if (decals.length === 0) {
           const pa: V3 = [p0[k]![0] * sgn, p0[k]![1], z0];
           const pb: V3 = [p1[k]![0] * sgn, p1[k]![1], z1];
@@ -352,24 +372,18 @@ export function buildCarHull(spec: HullSpec): HullMesh {
         // Split the top strip at every decal edge; the outer edge keeps each station's own width.
         const x0 = p0[k]![0];
         const x1 = p1[k]![0];
-        const xMax = Math.min(x0, x1);
-        const cuts = [...new Set(decals.flatMap((d) => [d.a, d.b]))]
-          .filter((x) => x > 1e-6 && x < xMax - 1e-6)
-          .sort((u, v) => u - v);
-        const edges = [0, ...cuts, Infinity];
+        const edges = [0, ...patchCuts(decals, Math.min(x0, x1)), Infinity];
         for (let e = 0; e < edges.length - 1; e++) {
           const a = edges[e]!;
           const bOuter = edges[e + 1] === Infinity;
           const b0 = bOuter ? x0 : edges[e + 1]!;
           const b1 = bOuter ? x1 : edges[e + 1]!;
-          const mid = (a + Math.min(b0, b1)) / 2;
-          let paint = base;
-          for (const d of decals) if (mid > d.a && mid < d.b) paint = d.color;
+          const hit = patchAt(decals, (a + Math.min(b0, b1)) / 2);
           const pa: V3 = [b0 * sgn, p0[k]![1], z0];
           const pb: V3 = [b1 * sgn, p1[k]![1], z1];
           const pc: V3 = [a * sgn, p1[k + 1]![1], z1];
           const pd: V3 = [a * sgn, p0[k + 1]![1], z0];
-          quad(pa, pb, pc, pd, exp, rgb(paint));
+          quad(pa, pb, pc, pd, exp, rgb(hit?.color ?? base), hit?.glow ?? false);
         }
       }
     }
@@ -383,22 +397,52 @@ export function buildCarHull(spec: HullSpec): HullMesh {
     const { pts, kinds } = profiles[i]!;
     const z = st[i]!.z;
     const expected: V3 = [0, 0, dir];
+    const end = dir < 0 ? 'tail' : 'nose';
     for (let k = 0; k < bands; k++) {
       const kind = kinds[k]!;
-      const color = rgb(
+      const base =
         kind === 'trim'
           ? spec.colors.trim
           : spec.wrapStripes
             ? bandColor(spec.colors, stripes, kind, 'paint', 'paint')
-            : spec.colors.body,
-      );
-      const pa: V3 = [pts[k]![0], pts[k]![1], z];
-      const pb: V3 = [-pts[k]![0], pts[k]![1], z];
-      const pc: V3 = [-pts[k + 1]![0], pts[k + 1]![1], z];
-      const pd: V3 = [pts[k + 1]![0], pts[k + 1]![1], z];
-      quad(pa, pb, pc, pd, expected, color);
+            : spec.colors.body;
+      const [xa, ya] = pts[k]!;
+      const [xb, yb] = pts[k + 1]!;
+      const patches = kind === 'trim' ? [] : capPatches(capDecals, end, (ya + yb) / 2, 1);
+      if (patches.length === 0) {
+        quad([xa, ya, z], [-xa, ya, z], [-xb, yb, z], [xb, yb, z], expected, rgb(base));
+        continue;
+      }
+      // Split the strip along x at every decal edge, each side from the centre line out to
+      // the strip's own slanted edge (a lens at a corner wraps onto the panel this way).
+      for (const sgn of [1, -1] as const) {
+        const side = capPatches(capDecals, end, (ya + yb) / 2, sgn);
+        const edges = [0, ...patchCuts(side, Math.min(xa, xb)), Infinity];
+        for (let e = 0; e < edges.length - 1; e++) {
+          const a = edges[e]!;
+          const outer = edges[e + 1] === Infinity;
+          const b0 = outer ? xa : edges[e + 1]!;
+          const b1 = outer ? xb : edges[e + 1]!;
+          const hit = patchAt(side, (a + Math.min(b0, b1)) / 2);
+          quad(
+            [b0 * sgn, ya, z],
+            [a * sgn, ya, z],
+            [a * sgn, yb, z],
+            [b1 * sgn, yb, z],
+            expected,
+            rgb(hit?.color ?? base),
+            hit?.glow ?? false,
+          );
+        }
+      }
     }
   }
 
-  return { positions: new Float32Array(pos), colors: new Float32Array(col) };
+  const positions = new Float32Array(pos.length + glowPos.length);
+  positions.set(pos);
+  positions.set(glowPos, pos.length);
+  const colors = new Float32Array(col.length + glowCol.length);
+  colors.set(col);
+  colors.set(glowCol, col.length);
+  return { positions, colors, glowStart: pos.length / 3 };
 }

@@ -164,6 +164,7 @@ export const it: Messages = {
       chase: 'Inseguimento',
       interior: 'Interni',
       iso: 'Isometrica',
+      cinematic: 'Cinematica',
     },
     languages: { en: 'English', es: 'Español', it: 'Italiano' },
     close: 'Chiudi',
@@ -209,7 +210,7 @@ export const it: Messages = {
     { keys: 'R', action: 'Torna all’ultimo controllo' },
     {
       keys: 'C',
-      action: 'Cambia telecamera (inseguimento / interni / isometrica)',
+      action: 'Cambia telecamera (inseguimento / interni / isometrica / cinematica)',
     },
     { keys: 'Rotella del mouse', action: 'Zoom della telecamera' },
     { keys: '`', action: 'Pannello di debug' },
@@ -225,7 +226,7 @@ export const it: Messages = {
     { keys: 'Pausa', action: 'Menu di pausa: Gioco, Garage e Impostazioni' },
     {
       keys: 'Impostazioni › Telecamera',
-      action: 'Cambia telecamera (inseguimento / interni / isometrica)',
+      action: 'Cambia telecamera (inseguimento / interni / isometrica / cinematica)',
     },
   ],
   debug: {
@@ -263,6 +264,10 @@ export const it: Messages = {
     newRecord: 'Nuovo record della prova!',
     retry: 'Ripeti la prova',
     next: 'Prova successiva',
+    replay: 'Guarda il replay',
+    replayTag: 'Replay',
+    exitReplay: 'Esci dal replay',
+    replayHint: 'Esc esce · C cambia telecamera',
     resetHint: 'Perso? Premi R per tornare all’ultimo controllo.',
   },
 };

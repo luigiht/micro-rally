@@ -38,7 +38,13 @@ function StageDrive({ gameSeed, stageIndex }: { gameSeed: number; stageIndex: nu
       world.stage.path.sample(at, s);
       spawn = { x: s.x, z: s.z, yaw: s.heading };
     }
-    return { terrain: world.field, spawn, obstacles: world.obstacles, stage: world.stage };
+    return {
+      terrain: world.field,
+      spawn,
+      obstacles: world.obstacles,
+      stage: world.stage,
+      ...(at !== null && at > 0 ? { startAlong: at } : {}),
+    };
   }, [world]);
   const group = useRef<Group>(null);
   const renderer = useRef<StageRenderer | null>(null);

@@ -1,6 +1,7 @@
 import type { PerspectiveCamera } from 'three';
 import { stagePrize } from '@/game/economy/prize';
 import { FixedStepper } from '@/game/loop/FixedStepper';
+import { ReplayTrack } from '@/game/replay/ReplayTrack';
 import { StageRun } from '@/game/stage/StageRun';
 import type { StageDef } from '@/game/stage/StageGenerator';
 import type { CarSpec } from '@/game/vehicle/CarSpec';
@@ -20,6 +21,8 @@ import { KeyboardControls, type KeyAction } from './input/KeyboardControls';
 import { TOUCH_INPUT } from './input/touchInput';
 
 const HUD_INTERVAL = 0.1;
+/** The replay keeps rolling this long past the finish line. */
+const REPLAY_TAIL = 3;
 
 /** What the car drives on. `stage` is absent on the free-roam test track. */
 export interface DriveWorld {
@@ -27,6 +30,8 @@ export interface DriveWorld {
   spawn: SpawnPose;
   obstacles?: ObstacleGrid;
   stage?: StageDef;
+  /** Development spawn: metres along the stage the car starts at, so the checkpoints behind it count as passed. */
+  startAlong?: number;
 }
 
 interface RenderInfo {
@@ -40,6 +45,11 @@ export class DrivingSession {
   readonly pose = createVehiclePose();
   readonly run: StageRun | null;
   private readonly stepper = new FixedStepper();
+  private readonly track = new ReplayTrack(this.stepper.stepSize);
+  /** Seconds into the replay while one is playing; null while driving. */
+  private replayTime: number | null = null;
+  private tailLeft = 0;
+  private readonly gateFractions: number[];
   private readonly keyboard: KeyboardControls;
   private readonly coast = createControlInput();
   private readonly merged = createControlInput();
@@ -76,6 +86,7 @@ export class DrivingSession {
       if (impact > 0) run?.onImpact(impact);
     }
     run?.onMove(px, pz, s.x, s.z);
+    this.recordStep(run, dt);
   };
 
   constructor(
@@ -89,21 +100,17 @@ export class DrivingSession {
     this.bodyScale = spec.bodyScale;
     this.sim.reset(world.spawn, world.terrain);
     this.run = world.stage ? new StageRun(world.stage) : null;
+    if (this.run && world.startAlong !== undefined) this.run.skipGatesBefore(world.startAlong);
+    this.gateFractions = this.run?.gateFractions ?? [];
+    useUiStore.getState().stopReplay();
     this.coast.brake = 0.35;
     this.keyboard = new KeyboardControls(this.handleAction);
-    this.rig = createCameraRig(
-      useSettingsStore.getState().camera,
-      world.terrain,
-      world.spawn.yaw,
-      spec.cabinDrop,
-      spec.cabinForward,
-      spec.bodyScale,
-    );
+    this.rig = this.buildRig(useSettingsStore.getState().camera);
     this.frame = { camera, target: this.pose, dt: 0, reducedMotion: false };
     useStageHudStore.setState({
       ...INITIAL_STAGE_HUD,
       gateCount: world.stage?.gates.length ?? 0,
-      gateFractions: this.run?.gateFractions ?? [],
+      gateFractions: this.gateFractions,
       stage: world.stage
         ? {
             index: world.stage.index,
@@ -128,6 +135,7 @@ export class DrivingSession {
     this.canvas?.removeEventListener('wheel', this.handleWheel);
     this.canvas = null;
     this.rig.dispose();
+    useUiStore.getState().stopReplay();
   }
 
   /** Swap the car mid-run (garage purchase or selection); the stage clock keeps running. */
@@ -143,14 +151,7 @@ export class DrivingSession {
     this.cabinForward = spec.cabinForward;
     this.bodyScale = spec.bodyScale;
     this.rig.dispose();
-    this.rig = createCameraRig(
-      this.rig.mode,
-      this.world.terrain,
-      this.world.spawn.yaw,
-      this.cabinDrop,
-      this.cabinForward,
-      this.bodyScale,
-    );
+    this.rig = this.buildRig(this.rig.mode);
     this.needsSnap = true;
   }
 
@@ -159,13 +160,44 @@ export class DrivingSession {
     return this.rig.mode;
   }
 
+  /** True while the finished run plays back: the sim stands still and the car follows the recording. */
+  get replaying(): boolean {
+    return this.replayTime !== null;
+  }
+
+  /** A rig for `mode` around the current car; the cinematic rig also gets the stage to place its cameras beside its road. */
+  private buildRig(mode: CameraMode): CameraRig {
+    return createCameraRig(
+      mode,
+      this.world.terrain,
+      this.world.spawn.yaw,
+      this.cabinDrop,
+      this.cabinForward,
+      this.bodyScale,
+      this.world.stage,
+    );
+  }
+
   tick(dt: number, reducedMotion: boolean, info: RenderInfo): void {
     this.syncCameraRig();
-    // An open HUD panel pauses the sim; the camera keeps rendering the frozen pose.
+    this.syncReplay();
+    // An open HUD panel pauses the sim (and a replay); the camera keeps rendering the frozen pose.
     const paused = useUiStore.getState().panel !== null;
-    const alpha = paused ? 1 : this.stepper.advance(dt, this.stepFn);
-    if (!paused) this.time += dt;
-    interpolatePose(this.pose, this.sim.prev, this.sim.state, alpha);
+    if (this.replayTime !== null) {
+      if (!paused) {
+        this.replayTime += dt;
+        // Round again from the start signal, the camera snapping back with the car.
+        if (this.replayTime > this.track.duration) {
+          this.replayTime = 0;
+          this.needsSnap = true;
+        }
+      }
+      this.track.sampleAt(this.replayTime, this.pose);
+    } else {
+      const alpha = paused ? 1 : this.stepper.advance(dt, this.stepFn);
+      if (!paused) this.time += dt;
+      interpolatePose(this.pose, this.sim.prev, this.sim.state, alpha);
+    }
 
     this.frame.dt = dt;
     this.frame.reducedMotion = reducedMotion;
@@ -184,15 +216,42 @@ export class DrivingSession {
     const wanted = useSettingsStore.getState().camera;
     if (wanted === this.rig.mode) return;
     this.rig.dispose();
-    this.rig = createCameraRig(
-      wanted,
-      this.world.terrain,
-      this.world.spawn.yaw,
-      this.cabinDrop,
-      this.cabinForward,
-      this.bodyScale,
-    );
+    this.rig = this.buildRig(wanted);
     this.needsSnap = true;
+  }
+
+  /** Record the run for the replay: every step from the start signal to a few seconds past the finish. */
+  private recordStep(run: StageRun | null, dt: number): void {
+    if (!run) return;
+    if (run.phase === 'running') {
+      this.track.record(this.sim.state);
+      this.tailLeft = REPLAY_TAIL;
+    } else if (run.phase === 'finished' && this.tailLeft > 0) {
+      this.track.record(this.sim.state);
+      this.tailLeft -= dt;
+    }
+  }
+
+  /**
+   * Enter or leave the replay as the HUD asks (Watch replay, Exit replay, Esc).
+   * The camera snaps either way; leaving puts the car back where the sim left it
+   * and the HUD back on the final time.
+   */
+  private syncReplay(): void {
+    const ui = useUiStore.getState();
+    const run = this.run;
+    const wanted = ui.replay && run?.phase === 'finished' && this.track.samples > 1;
+    if (ui.replay && !wanted) ui.stopReplay();
+    if (wanted === (this.replayTime !== null)) return;
+    this.replayTime = wanted ? 0 : null;
+    this.needsSnap = true;
+    if (wanted || !run) return;
+    interpolatePose(this.pose, this.sim.prev, this.sim.state, 1);
+    useStageHudStore.setState({
+      time: run.totalTime,
+      gatesPassed: this.gateFractions.length,
+      progress: run.progressAt(this.pose.x, this.pose.z),
+    });
   }
 
   resetCar(): void {
@@ -244,21 +303,31 @@ export class DrivingSession {
     this.hudFrames++;
     if (this.hudElapsed < HUD_INTERVAL) return;
     const s = this.sim.state;
+    // In a replay the readout follows the recording, not the sim standing at the finish.
+    const live = this.replayTime !== null ? this.pose : s;
     useTelemetryStore.setState({
       telemetry: {
         fps: Math.round(this.hudFrames / this.hudElapsed),
         drawCalls: info.calls,
         triangles: info.triangles,
-        speedKmh: Math.abs(s.speed) * 3.6,
-        gear: s.gear,
-        rpm: s.rpm,
+        speedKmh: Math.abs(live.speed) * 3.6,
+        gear: live.gear,
+        rpm: live.rpm,
         surface: s.surface,
-        airborne: !s.grounded,
+        airborne: !live.grounded,
         slip: s.slipRear,
       },
     });
     const run = this.run;
-    if (run && run.phase !== 'finished') {
+    if (run && this.replayTime !== null) {
+      // The clock, checkpoints and progress bar follow the recording as it plays.
+      const progress = run.progressAt(this.pose.x, this.pose.z);
+      useStageHudStore.setState({
+        time: this.replayTime,
+        progress,
+        gatesPassed: this.gateFractions.filter((f) => f <= progress + 1e-6).length,
+      });
+    } else if (run && run.phase !== 'finished') {
       useStageHudStore.setState({
         phase: run.phase,
         countdown: run.countdown,

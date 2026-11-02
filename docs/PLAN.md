@@ -44,6 +44,8 @@ Status legend: [x] done · [~] in progress · [ ] not started
 
 - [x] `CockpitCameraRig` (eye on the chassis, glance into corners, cabin hidden), `IsometricCameraRig` (long lens, 55° pitch, stage axis + 45°, zoom)
 - [x] `C` / `V` cycle; Camera dropdown in Settings; rigs swap via `createCameraRig` and snap
+- [x] Replay after the finish: the run is recorded every sim step and the result panel offers "Watch replay"; the car follows the recording with no control, C and Settings still switch camera, Esc or "Exit replay" returns to the results
+- [x] Cinematic camera (fourth view): a broadcast-style director with trackside, helicopter, chase-car, camera-car and reverse tracking shots, 180°/30° cut rules, terrain-aware placement, reduced-motion variant
 - [x] Interior view behind the wheel with a modelled cabin (`CarInterior`): working speedo/tacho, turning wheel, seats, pillars
 - [x] Reduced motion: level head in the cab, no roll / FOV kick in chase
 - [ ] Look-around in the interior view (drag / arrows) — later

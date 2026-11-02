@@ -93,14 +93,15 @@ function PauseMenu() {
 export function HudToolbar() {
   const m = useMessages();
   const panel = useUiStore((s) => s.panel);
-  // Esc closes whichever panel is open, else opens the Game panel. A HUD hotkey rather than a driving
-  // control, so it works from the moment the HUD shows, before the driving session is ready, and even
-  // when a form control inside a panel has focus.
+  // Esc closes whichever panel is open, else leaves a running replay, else opens the Game panel. A HUD
+  // hotkey rather than a driving control, so it works from the moment the HUD shows, before the driving
+  // session is ready, and even when a form control inside a panel has focus.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.code !== 'Escape' || e.repeat) return;
       const ui = useUiStore.getState();
       if (ui.panel) ui.closePanel();
+      else if (ui.replay) ui.stopReplay();
       else ui.openPanel('game');
     };
     window.addEventListener('keydown', onKey);

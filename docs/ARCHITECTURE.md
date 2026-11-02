@@ -93,7 +93,21 @@ flowchart LR
 
 - `DrivingSession` (components/game) is a plain class held in a ref. It owns
   the sim, the stepper, input, the camera rig and the `StageRun`, and
-  publishes telemetry/HUD snapshots to Zustand at 10 Hz.
+  publishes telemetry/HUD snapshots to Zustand at 10 Hz. It also records the
+  run into a `ReplayTrack` (`game/replay/`, pure TS: one sample per fixed
+  step, blended on playback) and, when the HUD asks after the finish, plays it
+  back in place of the sim: the car follows the recording, input is ignored,
+  the camera rigs keep working and Esc or the HUD's button leaves it.
+- Camera rigs (`components/game/cameras/`): `ChaseCameraRig`,
+  `FirstPersonCameraRig` (interior), `IsometricCameraRig` and
+  `CinematicCameraRig`, built by `createCameraRig` and swapped by
+  `DrivingSession` when the setting changes. The cinematic rig's director,
+  `CinematicShots.ts`, is pure TS: it draws trackside, helicopter,
+  chase-car, camera-car and reverse tracking shots, stands trackside cameras
+  beside the stage road ahead (lifted clear of the terrain between them and
+  the car) and cuts under the 180° and 30° rules; the rig pans, follows and
+  zooms each shot with frame-rate-independent damping and hard-cuts between
+  them.
 - `StageRenderer` owns every three.js object for a stage and disposes them
   together; chunk managers stream around the car via `ChunkStreamer`.
   `CarInterior` (components/game) assembles the first-person cabin from

@@ -101,6 +101,16 @@ export class StageRun {
     return true;
   }
 
+  /**
+   * Development aid for spawning part-way along a stage: count every
+   * checkpoint before `along` metres as passed, so the finish still counts.
+   */
+  skipGatesBefore(along: number): void {
+    this.tracker.next = this.stage.gates.filter(
+      (g) => g.kind === 'checkpoint' && g.distance < along,
+    ).length;
+  }
+
   /** Pose just before the last passed gate (or the start line). */
   respawnPose(out: SpawnPose): SpawnPose {
     const passed = this.tracker.next - 1;

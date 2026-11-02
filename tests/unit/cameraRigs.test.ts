@@ -32,10 +32,11 @@ function alignment(camera: PerspectiveCamera, point: Vector3): number {
 }
 
 describe('camera modes', () => {
-  it('cycle chase → interior → iso → chase', () => {
-    expect(CAMERA_MODES.map(nextCameraMode)).toEqual(['interior', 'iso', 'chase']);
+  it('cycle chase → interior → iso → cinematic → chase', () => {
+    expect(CAMERA_MODES.map(nextCameraMode)).toEqual(['interior', 'iso', 'cinematic', 'chase']);
     expect(isCameraMode('cockpit')).toBe(false);
     expect(isCameraMode('iso')).toBe(true);
+    expect(isCameraMode('cinematic')).toBe(true);
     expect(isCameraMode('drone')).toBe(false);
   });
 

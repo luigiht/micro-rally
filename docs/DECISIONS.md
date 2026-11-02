@@ -1316,3 +1316,112 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
     cones of that street stand a metre inside its junction zone, on the
     junction's plate at the route's deck, which renders cleanly (checked in
     the dev server).
+
+87. **2026-11-02 — Cinematic camera.** A fourth view, _cinematic_ (`C` cycles
+    chase → interior → isometric → cinematic; Settings lists it too), covers
+    the car the way a rally broadcast does. `CinematicShots` (pure TS) is
+    the director and shot library; `CinematicCameraRig` runs each shot on
+    the three.js camera. Five shots. A **trackside** TV camera fixed on the
+    verge 40–110 m ahead (further with speed), 1.2–2.8 m off the road edge
+    (inside the 3 m the scenery keeps clear of trees, so no trunk stands
+    between it and the road; a first cut at 3–9 m put one camera among the
+    pines, which hid the car), on a 1.6–3.2 m tripod or, three times in ten,
+    7–12 m up a bank; it pans with the car with a quarter second of lead
+    room, zooms with its distance between 14° and 50° (a 12 m frame height)
+    and cuts once the car is 10 m past it, 170 m away or hidden behind
+    terrain for half a second. A **helicopter** 10–18 m up and 12–24 m out,
+    trailing lazily (λ 2.5) and circling at 0.08–0.14 rad/s for 7–10 s. A **low chase** car at bumper
+    height 6–8 m behind and 1.6–3 m beside, aimed 12 m up the road past the
+    car, with a speed kick on its 60° lens. A **camera car** alongside
+    (5.5–8 m out, level with the car) with the car in the near third of the
+    frame and the road ahead beyond it. A **reverse** tracking shot backing
+    away 7–10 m ahead, on the car's nose. Tracking cameras are damped (λ 6,
+    height 4) with the velocity fed forward, so the composition holds at
+    speed instead of trailing by v/λ; the aim is damped at λ 8 and the
+    travel heading at λ 4, leaning half way into a slide. Cuts are hard and
+    follow two editing rules: the 180° rule (every camera in a scene stands
+    on one side of the car's line of travel; the side may flip only across a
+    shot on the line or high above it, the reverse or the helicopter) and
+    the 30° rule (a cut moves the camera at least 30° round or above the car
+    as it stands at the cut; a candidate that would not is dropped and
+    another kind drawn). Trackside carries weight 4 against 1.5 for the
+    helicopter, chase car and camera car and 1 for the reverse; at most two
+    tracksides in a row, no other kind twice running, the helicopter at most
+    once in three shots, and below 5 m/s trackside is weighted down to a
+    third because the car reaches no camera. A fixed camera is lifted at
+    placement until its sight lines to the car and to the point it will pass
+    clear the terrain by 0.6 m. The director is seeded from the car's
+    position at snap, so the sequence is reproducible in tests and differs
+    between stages. Under reduced motion the trackside lens is fixed at 38°,
+    the helicopter does not circle, the chase car has no speed kick, the
+    operator wobble is off and shots hold 1.4× longer. The wheel scales the
+    tracking offsets and the trackside frame height (0.6–2×). The rig gets
+    the stage through `createCameraRig` so trackside cameras stand beside
+    the road; on the test track they stand straight ahead. Design drawn from
+    online sources: the Game Developer article on event-driven cinematic
+    cameras (line of action as the first rule, cuts as the default,
+    alternative shots when one fails; gamedeveloper.com/programming/
+    creating-an-event-driven-cinematic-camera-part-one); DiRT Rally, Assetto
+    Corsa and Gran Turismo replay threads (trackside cameras as the
+    backbone, helicopter sparingly, too many onboard cuts disliked, each TV
+    camera owning a stretch of road; steamcommunity.com/app/310560/
+    discussions/0/611704730328080635, overtake.gg/threads/
+    replay-cam-mod-no-onboards.115943, gtplanet.net/forum/threads/
+    camera-controls-in-replays.415707); iRacing's camera-editor primer (zoom
+    only on fixed cameras, clamp the zoom range, hand off by distance window;
+    iracing.com/camera-editing-primer); a three.js F1 project's framing fix
+    (trackside lens 18°–50°, helicopter lower and closer, low camera aimed up
+    the road, side camera looking ahead; github.com/brycejmurrin/f1-game/
+    pull/770); Unity Cinemachine's composer docs (look-ahead and damping;
+    docs.unity3d.com/Packages/com.unity.cinemachine@3.1/manual/
+    CinematicPositionComposer.html); and the three.js `MathUtils.damp`
+    discussion on frame-rate independent exponential smoothing
+    (github.com/mrdoob/three.js/pull/21102), which `dampFactor` follows.
+
+88. **2026-11-02 — Lamp lenses painted into the hull.** The Albion RS Hatch's
+    tail lamps were 6 cm boxes lying on the C-pillars. That surface is a
+    twisted quad (horizontal along the tail's top edge, slanting up to the
+    roof at the pillar station), so no flat box can sit flush on it and the
+    lamps stood proud as red bars. The hull builder now paints lenses into
+    its own faces: `sideDecals` split the pillar band across its width (as
+    fractions from the belt edge to the roof edge) and `capDecals` split the
+    nose and tail panels along x, like the existing deck decals, so a patch is
+    made of hull faces and follows the surface exactly. A patch marked
+    `glow` is emitted after the lit faces and `CarHullMesh` draws that tail of
+    the buffer as a second group with an unlit vertex-colour material, so it
+    reads as a lit lens whatever the sun does (per-face emissive is not
+    possible with one standard material). The Focus carries a lens up the
+    outer 45 % of each C-pillar from the tail to the pillar station, wrapping
+    down onto the tail panel's white band at the corners (|x| > 0.62,
+    y 0.84–0.99); the old box and its basis maths are gone. Decal types and
+    the interval helpers moved to `CarHullDecals.ts`; `CarHull.ts` still grew
+    to ~450 lines with the two new splits, a little over the file guideline,
+    accepted rather than splitting the builder's single loop.
+
+89. **2026-11-02 — Replay after the finish.** The result panel gains a
+    "Watch replay" button between Retry and Next. `ReplayTrack`
+    (`game/replay/`, pure TS) records the run as one sample per fixed sim
+    step (18 floats: position, ground height, yaw/pitch/roll, velocity,
+    speed, yaw rate, lateral g, steer and wheel angle, rpm, gear, grounded,
+    turbo) from the start signal until three seconds past the finish line,
+    in a flat buffer that doubles when full (a few MB for a long run, no
+    per-step allocation once grown); `sampleAt` blends the two samples
+    either side of a time (angles the short way round), so playback is as
+    smooth as the render interpolation. The replay is a UI state
+    (`uiStore.replay`) the session reads imperatively each frame, like the
+    camera mode: while it is on, `DrivingSession.tick` stops stepping the sim,
+    advances a replay clock (paused with the panels like the sim), writes the
+    recorded pose into the same `pose` the car model and camera rigs read,
+    loops back to the start with a camera snap when the recording ends, and
+    publishes the clock, checkpoints passed (by progress along the stage) and
+    the progress bar from the recording. Driving keys do nothing because the
+    sim is not stepped; R is already ignored after the finish; C and the
+    Settings dropdown still switch camera, so the new cinematic view can be
+    watched; Esc leaves the replay before it would open the Game panel, and
+    the HUD shows a Replay tag with an Exit button under the clock. Leaving
+    restores the pose from the sim and the final time on the HUD, and the
+    result panel comes back. `DriveRig` skips tyre marks while replaying,
+    since the sim's frozen slip would otherwise paint under the moving car.
+    A new session resets the flag. For testing, the `?spawn=` dev aid now
+    also counts the checkpoints behind the spawn as passed
+    (`StageRun.skipGatesBefore`), so a car spawned near the finish can finish.

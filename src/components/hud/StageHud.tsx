@@ -71,6 +71,13 @@ function ResultPanel({ result }: { result: StageResult }) {
           </button>
           <button
             type="button"
+            className="pixel-btn-ghost flex-1"
+            onClick={() => useUiStore.getState().startReplay()}
+          >
+            {m.stage.replay}
+          </button>
+          <button
+            type="button"
             autoFocus
             className="pixel-btn flex-1"
             onClick={() => useGameStore.getState().nextStage()}
@@ -79,6 +86,37 @@ function ResultPanel({ result }: { result: StageResult }) {
           </button>
         </div>
       </section>
+    </div>
+  );
+}
+
+/**
+ * Shown under the clock while the finished run plays back: the car follows the
+ * recording and only the camera (C, or Settings) and leaving are the player's.
+ */
+function ReplayBar() {
+  const m = useMessages();
+  return (
+    <div
+      className="pointer-events-auto mt-3 flex flex-col items-center gap-2"
+      data-testid="replay-bar"
+    >
+      <div className="flex items-center gap-2">
+        <p role="status" className="pixel-tag bg-ink px-2 py-1 text-[10px] text-paper">
+          {m.stage.replayTag}
+        </p>
+        <button
+          type="button"
+          className="pixel-btn-ghost px-3 py-2 text-[10px]"
+          onClick={(e) => {
+            e.currentTarget.blur();
+            useUiStore.getState().stopReplay();
+          }}
+        >
+          {m.stage.exitReplay}
+        </button>
+      </div>
+      <p className="pixel-tag px-2 py-1 text-[10px] coarse:hidden">{m.stage.replayHint}</p>
     </div>
   );
 }
@@ -113,6 +151,7 @@ export function StageHud() {
   const gateCount = useStageHudStore((s) => s.gateCount);
   const penalties = useStageHudStore((s) => s.penalties);
   const result = useStageHudStore((s) => s.result);
+  const replay = useUiStore((s) => s.replay);
   const money = useGameStore((s) => s.money);
   if (gateCount === 0) return null;
   return (
@@ -133,6 +172,7 @@ export function StageHud() {
             {fill(m.stage.penalties, { s: penalties })}
           </p>
         )}
+        {replay && <ReplayBar />}
         <div className="absolute bottom-6 left-6 flex items-center gap-2 coarse:static coarse:mt-3">
           <p
             className="pixel-box px-4 py-3 text-sm coarse:px-2 coarse:py-1 coarse:text-[10px]"
@@ -144,7 +184,7 @@ export function StageHud() {
         </div>
       </div>
       <Countdown />
-      {result && <ResultPanel result={result} />}
+      {result && !replay && <ResultPanel result={result} />}
     </>
   );
 }
