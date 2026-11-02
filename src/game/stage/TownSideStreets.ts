@@ -1,5 +1,6 @@
 import { FRONT_SETBACK, type Arm, type BuildingStyle, type Junction } from './Town';
 import { wedges } from './TownJunctions';
+import { meet, type JunctionKerbs } from './TownKerbs';
 import {
   at,
   BUILDING_SIZE,
@@ -182,6 +183,7 @@ export function junctionWalls(
   site: Site,
   j: Junction,
   facades: RouteFacades,
+  kerbs: JunctionKerbs,
 ): { left: number[]; right: number[]; corners: Corner[] } {
   const cuts = { left: [] as number[], right: [] as number[], corners: [] as Corner[] };
   for (const w of wedges(j)) {
@@ -201,6 +203,27 @@ export function junctionWalls(
     // The wedge lies left of `a` and right of `b`; an arm pointing back up the route has the route's right on its left.
     const side = (route === w.a) === (route.role === 'out') ? 1 : -1;
     const facade = side === 1 ? facades.left : facades.right;
+    const apron = kerbs.aprons.find((ap) => ap.route === route);
+    if (apron) {
+      // At a corner the pavement runs straight along the apron's edge while the ribbon bends away
+      // behind it: the facade corner lies on that straight edge, and a wall follows it back to
+      // where the ribbon hands over, so the terrace row and the kerb agree.
+      const start = at(j, stub.heading, ROW_SETBACK, across);
+      const edge = {
+        x: apron.e1.x + apron.e1.nx * FRONT_SETBACK,
+        z: apron.e1.z + apron.e1.nz * FRONT_SETBACK,
+      };
+      const corner = meet(start, forward(stub.heading), edge, apron.u) ?? edge;
+      const end = facade.nearest(
+        apron.handoff.x + apron.handoff.nx * FRONT_SETBACK,
+        apron.handoff.z + apron.handoff.nz * FRONT_SETBACK,
+      );
+      pushWall(site, start, corner);
+      pushWall(site, corner, end);
+      cuts.corners.push({ k: corner, a: w.a, b: w.b });
+      (side === 1 ? cuts.left : cuts.right).push(end.s);
+      continue;
+    }
     const k = facade.cross(j, stub.heading, across) ?? facade.nearest(w.kx, w.kz);
     pushWall(site, at(j, stub.heading, ROW_SETBACK, across), k);
     cuts.corners.push({ k, a: w.a, b: w.b });

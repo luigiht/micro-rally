@@ -9,6 +9,7 @@ import {
   MeshStandardMaterial,
   Object3D,
 } from 'three';
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { StageDef } from '@/game/stage/StageGenerator';
 import { markerDistances } from '@/game/stage/RoadMarkers';
 import { ROAD_LIFT, TRENCH_OUT, type TerrainField } from '@/game/stage/TerrainField';
@@ -49,6 +50,8 @@ export const LINE_LIFT = 0.1;
 const LINE_WIDTH = 0.22;
 /** Through a town the verges become pavements: pale concrete standing a kerb's height above the road. */
 export const PAVEMENT_COLOR = '#a6a39b';
+/** The kerb's vertical face, a shade darker than the pavement it carries. */
+export const KERB_COLOR = '#8d8a82';
 
 /** Integer mix hash to 0..1; a plain multiply-mod ramps instead of scattering. */
 function hash01(k: number): number {
@@ -102,6 +105,8 @@ interface Strip {
   town?: { color: Color; lift: number };
   /** Which verge this strip lies on (+1 left, -1 right); such strips stop across junction openings. */
   side?: number;
+  /** A vertical kerb face, only in town: a positive rise lifts the `b` edge by this much, a negative one the `a` edge. */
+  rise?: number;
 }
 
 /** Ribbon road split into pieces for frustum culling, plus verges, edge lines and marker posts. */
@@ -163,6 +168,7 @@ export class RoadBuilder {
     const line = new Color(LINE_COLOR);
     const paved = { color: new Color(ROAD_COLORS.tarmac), lift: ROAD_LIFT };
     const pavement = { color: new Color(PAVEMENT_COLOR), lift: ROAD_LIFT + KERB_LIFT };
+    const kerb = new Color(KERB_COLOR);
     const town = stage.town;
     // A station is a cross-section of the ribbon: every sample, plus the exact ends of each
     // junction opening, where the verge and edge line stop and the junction surface takes over.
@@ -250,14 +256,35 @@ export class RoadBuilder {
         shaded: false,
         side: -1,
       },
+      // Kerb faces in town, each wound with its raised edge placed so the face looks at the carriageway.
+      {
+        a: (hw) => hw,
+        b: (hw) => hw,
+        lift: ROAD_LIFT,
+        color: kerb,
+        shaded: false,
+        town: { color: kerb, lift: ROAD_LIFT },
+        side: 1,
+        rise: KERB_LIFT,
+      },
+      {
+        a: (hw) => -hw,
+        b: (hw) => -hw,
+        lift: ROAD_LIFT,
+        color: kerb,
+        shaded: false,
+        town: { color: kerb, lift: ROAD_LIFT },
+        side: -1,
+        rise: -KERB_LIFT,
+      },
     ];
     const pos: number[] = [];
     const col: number[] = [];
     const index: number[] = [];
-    const vertex = (st: Station, e: number, strip: Strip) => {
+    const vertex = (st: Station, e: number, strip: Strip, raise = 0) => {
       const urban =
         strip.town !== undefined && town !== undefined && st.d >= town.from && st.d <= town.to;
-      const y = st.y + (urban ? strip.town!.lift : strip.lift);
+      const y = st.y + (urban ? strip.town!.lift : strip.lift) + raise;
       const shade = strip.shaded ? st.shade : 1;
       const c = urban
         ? strip.town!.color
@@ -273,19 +300,26 @@ export class RoadBuilder {
         const p = stations[k]!;
         const q = stations[k + 1]!;
         if (strip.side !== undefined && open(strip.side, (p.d + q.d) / 2)) continue;
+        const mid = (p.d + q.d) / 2;
+        if (strip.rise !== undefined && !(town && mid >= town.from && mid <= town.to)) continue;
         const base = pos.length / 3;
-        // a is the right-hand edge; wind counter-clockwise seen from above.
-        vertex(p, strip.a(p.hw), strip);
-        vertex(p, strip.b(p.hw), strip);
-        vertex(q, strip.a(q.hw), strip);
-        vertex(q, strip.b(q.hw), strip);
+        // a is the right-hand edge; wind counter-clockwise seen from above. A kerb face raises one edge instead.
+        const ra = strip.rise !== undefined && strip.rise < 0 ? -strip.rise : 0;
+        const rb = strip.rise !== undefined && strip.rise > 0 ? strip.rise : 0;
+        vertex(p, strip.a(p.hw), strip, ra);
+        vertex(p, strip.b(p.hw), strip, rb);
+        vertex(q, strip.a(q.hw), strip, ra);
+        vertex(q, strip.b(q.hw), strip, rb);
         index.push(base, base + 2, base + 1, base + 2, base + 3, base + 1);
       }
     }
-    const geo = new BufferGeometry();
-    geo.setAttribute('position', new BufferAttribute(Float32Array.from(pos), 3));
-    geo.setAttribute('color', new BufferAttribute(Float32Array.from(col), 3));
-    geo.setIndex(index);
+    const raw = new BufferGeometry();
+    raw.setAttribute('position', new BufferAttribute(Float32Array.from(pos), 3));
+    raw.setAttribute('color', new BufferAttribute(Float32Array.from(col), 3));
+    raw.setIndex(index);
+    // Quads are laid one by one; weld them so the normals smooth along the ribbon instead of faceting it.
+    const geo = mergeVertices(raw, 1e-4);
+    raw.dispose();
     geo.computeVertexNormals();
     geo.computeBoundingSphere();
     return geo;

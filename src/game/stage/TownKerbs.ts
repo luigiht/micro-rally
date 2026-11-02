@@ -39,10 +39,34 @@ export interface JunctionSurface {
   distance(x: number, z: number): number;
 }
 
+/**
+ * The apron of an arm that continues the route straight through a corner:
+ * the ribbon's edge line from where the ribbon leaves it (`e1`, heading
+ * `u` toward the junction, pavement normal `n`) to the junction.
+ */
+export interface Apron {
+  /** The blocked arm whose mouth the apron is, and the route arm it continues. */
+  arm: Arm;
+  route: Arm;
+  /** The arm's side whose edge lies on the line (1 left, -1 right). */
+  sign: 1 | -1;
+  /** The route's side of travel the apron lies on. */
+  side: 1 | -1;
+  e1: KerbPoint;
+  u: Pt;
+  /** How far past `e1` the apron reaches under the ribbon, and where the junction lies along the line. */
+  back: number;
+  knee: number;
+  /** Path distance where the ribbon hands its verge and line to the junction, and the kerb point there. */
+  cut: number;
+  handoff: KerbPoint;
+}
+
 export interface JunctionKerbs {
   outlines: KerbOutline[];
   openings: Openings;
   surface: JunctionSurface;
+  aprons: Apron[];
 }
 
 export interface Pt {
@@ -60,6 +84,10 @@ const EDGE_STEP = 1;
 const CUT_MARGIN = 1;
 /** Fillet centres are searched along the arm at this step, then bisected. */
 const SEARCH_STEP = 0.5;
+/** The ribbon has left a straight line once its heading differs from the line's by more than this. */
+const STRAIGHT_TOLERANCE = 0.01;
+/** The ribbon is searched this far from a corner for where it leaves its straight line. */
+const STRAIGHT_SEARCH = 40;
 /** A blocked arm's mouth polygon reaches this far back under the ribbon past where its edges meet it. */
 const MOUTH_OVERLAP = 0.5;
 /** Reported depth anywhere inside the paved ground: the polygons share internal edges, so true depth is not available. */
@@ -177,17 +205,6 @@ function stubStub(
   const crescent = crescentOf(points, from, { x: w.px, z: w.pz });
   points.push(...stubRun(j, w.b, -1, tb, cutB).slice(1));
   return { outline: { points }, crescent };
-}
-
-/** The edge of a straight-through arm's apron: the ribbon's edge line from the bend's tangent `e1`, continued along `u` toward the junction. */
-interface Apron {
-  arm: Arm;
-  sign: 1 | -1;
-  e1: KerbPoint;
-  u: Pt;
-  /** How far past `e1` the apron reaches under the ribbon, and where the junction lies along the line. */
-  back: number;
-  knee: number;
 }
 
 interface RouteStub {
@@ -349,7 +366,7 @@ function routeStub(
 }
 
 /** Where line `pa + da·t` meets line `pb + db·s`, with `t`; null when parallel. */
-function meet(pa: Pt, da: Pt, pb: Pt, db: Pt): (Pt & { t: number }) | null {
+export function meet(pa: Pt, da: Pt, pb: Pt, db: Pt): (Pt & { t: number }) | null {
   const det = da.x * -db.z - da.z * -db.x;
   if (Math.abs(det) < 1e-9) return null;
   const rx = pb.x - pa.x;
@@ -378,16 +395,31 @@ function straightThrough(
   cut: number,
   hit: RoadHit,
 ): RouteStub {
-  const inArm = j.arms.find((a) => a.role === 'in')!;
-  const outArm = j.arms.find((a) => a.role === 'out')!;
-  const turn = wrap(outArm.heading - (inArm.heading + Math.PI));
-  const tangent = tangentLength(turn);
-  const f = forward(route.heading);
-  stage.path.nearest(j.x + f.x * tangent, j.z + f.z * tangent, 60, hit);
-  const dTangent = hit.along;
   const dir = role === 'in' ? -1 : 1;
-  const e1 = routeEdge(stage, dTangent, side, 0);
-  const e2 = routeEdge(stage, dTangent + dir * 3, side, 0);
+  // The spline bends into the corner well before the arc's nominal tangent. Walk out from the
+  // junction until the ribbon runs along the arm's axis again: that is where the apron's straight
+  // edge leaves the ribbon's, and where the ribbon hands its verge and line to the junction.
+  stage.path.nearest(j.x, j.z, 60, hit);
+  const apex = hit.along;
+  const sample = { x: 0, z: 0, heading: 0 };
+  let dDepart =
+    apex +
+    dir * (tangentLength(wrap(route.heading - j.arms.find((a) => a.role === 'in')!.heading)) || 1);
+  for (
+    let d = Math.max(0, apex + dir * 2);
+    Math.abs(d - apex) < STRAIGHT_SEARCH;
+    d += dir * SEARCH_STEP
+  ) {
+    stage.path.sample(d, sample);
+    const off = wrap(sample.heading - (role === 'in' ? route.heading + Math.PI : route.heading));
+    if (Math.abs(off) < STRAIGHT_TOLERANCE) {
+      dDepart = d;
+      break;
+    }
+  }
+  const e1 = routeEdge(stage, dDepart, side, 0);
+  // The apron's edge continues the ribbon's straight edge (its width may still be tapering), toward the junction.
+  const e2 = routeEdge(stage, dDepart + dir * 2, side, 0);
   const len = Math.hypot(e1.x - e2.x, e1.z - e2.z) || 1;
   const u = { x: (e1.x - e2.x) / len, z: (e1.z - e2.z) / len };
   const nL = { x: e1.nx, z: e1.nz };
@@ -417,25 +449,30 @@ function straightThrough(
   const crescent = crescentOf(points, from, mouth);
   let dCut: number;
   if (sr > 0) {
-    // The return lies on the apron: follow its edge back to the bend's tangent in pieces.
+    // The return lies on the apron: follow its straight edge back to where the ribbon rejoins it.
     const n = Math.max(1, Math.ceil(sr / STUB_STEP));
     for (let k = 1; k <= n; k++) points.push(onLine(sr - (sr * k) / n));
-    dCut = dTangent + dir * CUT_MARGIN;
+    dCut = dDepart + dir * CUT_MARGIN;
   } else {
-    // The return reaches past the tangent onto the ribbon's own straight edge.
+    // The return reaches past the departure onto the ribbon's own straight edge.
     stage.path.nearest(tr.x, tr.z, 60, hit);
     dCut = hit.along + dir * CUT_MARGIN;
   }
-  points.push(routeEdge(stage, dCut, side, 0));
+  const handoff = routeEdge(stage, dCut, side, 0);
+  points.push(handoff);
   // The route arm's edge is the through arm's opposite edge: the apron's side of that arm.
   const routeSign: 1 | -1 = route === w.a ? 1 : -1;
   const apron: Apron = {
     arm: through,
+    route,
     sign: -routeSign as 1 | -1,
+    side,
     e1,
     u,
     back: -MOUTH_OVERLAP,
     knee: (j.x - e1.x) * u.x + (j.z - e1.z) * u.z,
+    cut: dCut,
+    handoff,
   };
   return { outline: { points }, side, role, cut: dCut, crescent, apron };
 }
@@ -522,7 +559,7 @@ export function junctionKerbs(
     };
     polygons.push([corner(1, exit(1)), corner(-1, exit(-1)), corner(-1, cut), corner(1, cut)]);
   }
-  return { outlines, openings, surface: surfaceOf(j, polygons) };
+  return { outlines, openings, surface: surfaceOf(j, polygons), aprons };
 }
 
 /** Signed distance to a polygon (negative inside), by edge distance and ray casting. */

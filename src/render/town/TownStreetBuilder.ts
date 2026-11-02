@@ -1,8 +1,15 @@
 import { BufferAttribute, BufferGeometry, Color, Group, Mesh, MeshStandardMaterial } from 'three';
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { KERB_LIFT, PAVEMENT_WIDTH, type GroundQuery, type TownDef } from '@/game/stage/Town';
 import { stubCut } from '@/game/stage/TownJunctions';
 import { STUB_LENGTH } from '@/game/stage/TownSideStreets';
-import { LINE_COLOR, LINE_LIFT, PAVEMENT_COLOR, ROAD_COLORS } from '../road/RoadBuilder';
+import {
+  KERB_COLOR,
+  LINE_COLOR,
+  LINE_LIFT,
+  PAVEMENT_COLOR,
+  ROAD_COLORS,
+} from '../road/RoadBuilder';
 
 /** Side-street plates sit on the deck the field reports, flush with the junction's fill where they meet at the cut. */
 const PLATE_DROP = 0;
@@ -29,6 +36,7 @@ export class TownStreetBuilder {
     const tarmac = new Color(ROAD_COLORS.tarmac);
     const pavement = new Color(PAVEMENT_COLOR);
     const line = new Color(LINE_COLOR);
+    const kerb = new Color(KERB_COLOR);
     for (const j of town.junctions) {
       for (const a of j.arms) {
         if (a.role !== 'blocked') continue;
@@ -44,6 +52,7 @@ export class TownStreetBuilder {
           strip(cut, STUB_LENGTH, lo, lo + PAVEMENT_WIDTH, KERB_LIFT, pavement);
           const inner = Math.min(side * (hw - LINE_INSET), side * (hw - LINE_INSET - LINE_WIDTH));
           strip(cut, STUB_LENGTH, inner, inner + LINE_WIDTH, LINE_LIFT, line);
+          this.face(j.x, j.z, h, cut, STUB_LENGTH, side * hw, side, deck, kerb);
         }
         const end = deck(STUB_LENGTH) + KERB_LIFT;
         this.strip(
@@ -59,10 +68,12 @@ export class TownStreetBuilder {
         );
       }
     }
-    this.geometry = new BufferGeometry();
-    this.geometry.setAttribute('position', new BufferAttribute(Float32Array.from(this.pos), 3));
-    this.geometry.setAttribute('color', new BufferAttribute(Float32Array.from(this.col), 3));
-    this.geometry.setIndex(this.idx);
+    const raw = new BufferGeometry();
+    raw.setAttribute('position', new BufferAttribute(Float32Array.from(this.pos), 3));
+    raw.setAttribute('color', new BufferAttribute(Float32Array.from(this.col), 3));
+    raw.setIndex(this.idx);
+    this.geometry = mergeVertices(raw, 1e-4);
+    raw.dispose();
     this.geometry.computeVertexNormals();
     this.geometry.computeBoundingSphere();
     this.material = new MeshStandardMaterial({
@@ -96,6 +107,41 @@ export class TownStreetBuilder {
       this.col.push(c.r, c.g, c.b);
     }
     this.idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
+  }
+
+  /** The kerb's vertical face along one edge of a street, facing the carriageway, in pieces. */
+  private face(
+    cx: number,
+    cz: number,
+    heading: number,
+    a0: number,
+    a1: number,
+    l: number,
+    side: 1 | -1,
+    deck: (a: number) => number,
+    c: Color,
+  ): void {
+    for (let a = a0; a < a1 - 1e-6; a += STRIP_STEP) {
+      const b = Math.min(a1, a + STRIP_STEP);
+      const ya = deck(a);
+      const yb = deck(b);
+      // The left kerb's quad climbs on its far edge, the right kerb's on its near edge, so both face the road.
+      const corners =
+        side > 0
+          ? ([
+              [a, l, ya],
+              [b, l, yb],
+              [b, l, yb + KERB_LIFT],
+              [a, l, ya + KERB_LIFT],
+            ] as const)
+          : ([
+              [a, l, ya + KERB_LIFT],
+              [b, l, yb + KERB_LIFT],
+              [b, l, yb],
+              [a, l, ya],
+            ] as const);
+      this.quad(cx, cz, heading, corners, c);
+    }
   }
 
   /** Flat-across strip along a street, in pieces so it follows the deck's rise and fall. */

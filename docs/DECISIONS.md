@@ -1175,8 +1175,16 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
     bend's arc only leaves it at its tangent: the apron between is that
     arm's mouth, the kerb return is the classic fillet against the shared
     line (taken from the ribbon's own edge beyond the tangent, so a width
-    taper cannot offset it), and the kerb follows the apron's edge to the
-    tangent, where the ribbon takes over. Every kerb point carries its exact normal, so
+    taper cannot offset it), and the kerb follows the apron's edge back to
+    where the ribbon takes over. That point is not the arc's nominal
+    tangent: the spline bends into a corner over the whole control step
+    before it, so the apron's edge is fitted where the ribbon's heading has
+    returned to the arm's (within 0.01 rad), the ribbon hands over a metre
+    beyond, and the terrace row on that side ends where a wall along the
+    apron's straight edge begins, so pavement, kerb line and facades agree.
+    Every kerb, on the ribbon in town, round the junctions and along the
+    side streets, has a 4 cm vertical face toward the carriageway, so the
+    pavement no longer reads as a slab floating over the road. Every kerb point carries its exact normal, so
     the pavement band and the edge line are offset strips that meet the
     ribbon's and the side-street plates' sections vertex for vertex: the
     route edge is sampled with the ribbon's own convention (`routeEdge`,

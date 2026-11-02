@@ -2,6 +2,7 @@ import { hashSeed, mulberry32 } from '../rng';
 import { createRoadHit, type RoadPath } from './RoadPath';
 import { buildWidths, halfWidthAt } from './RoadWidth';
 import { FRONT_SETBACK, streetDistance, type Junction, type TownDef } from './Town';
+import { junctionKerbs } from './TownKerbs';
 import { tangentLength } from './TownPlan';
 import {
   ARROW_AHEAD_OF_CONES,
@@ -197,7 +198,7 @@ export function layoutTown(trace: TownTrace, path: RoadPath, seed: number, base:
   const gaps = { left: [] as [number, number][], right: [] as [number, number][] };
   const greens: Corner[] = [];
   for (const j of site.junctions) {
-    const cuts = junctionWalls(site, j, facades);
+    const cuts = junctionWalls(site, j, facades, junctionKerbs(j, source, base));
     greens.push(...cuts.corners);
     for (const side of ['left', 'right'] as const)
       if (cuts[side].length >= 2)

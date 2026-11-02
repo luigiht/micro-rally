@@ -8,7 +8,13 @@ import {
   type KerbPoint,
   type Pt,
 } from '@/game/stage/TownKerbs';
-import { LINE_COLOR, LINE_LIFT, PAVEMENT_COLOR, ROAD_COLORS } from '../road/RoadBuilder';
+import {
+  KERB_COLOR,
+  LINE_COLOR,
+  LINE_LIFT,
+  PAVEMENT_COLOR,
+  ROAD_COLORS,
+} from '../road/RoadBuilder';
 
 /** The pavement starts this far over the tarmac so no seam shows along the kerb. */
 const PAVEMENT_OVERLAP = 0.05;
@@ -35,6 +41,7 @@ export class TownJunctionBuilder {
   private readonly tarmac = new Color(ROAD_COLORS.tarmac);
   private readonly pavement = new Color(PAVEMENT_COLOR);
   private readonly line = new Color(LINE_COLOR);
+  private readonly kerb = new Color(KERB_COLOR);
 
   constructor(
     private readonly stage: StageDef,
@@ -46,6 +53,7 @@ export class TownJunctionBuilder {
       for (const o of kerbs.outlines) {
         this.strip(o.points, -PAVEMENT_OVERLAP, PAVEMENT_WIDTH, KERB_LIFT, this.pavement);
         this.strip(o.points, -LINE_INSET - LINE_WIDTH, -LINE_INSET, LINE_LIFT, this.line);
+        this.face(o.points);
       }
       this.fill(kerbs.surface);
     }
@@ -127,6 +135,37 @@ export class TownJunctionBuilder {
       const t0 = k / n;
       const t1 = (k + 1) / n;
       this.fan([lerp(bl, cl, t0), lerp(br, cr, t0), lerp(br, cr, t1), lerp(bl, cl, t1)]);
+    }
+  }
+
+  /** The kerb's vertical face along the outline, facing the carriageway. */
+  private face(points: KerbPoint[]): void {
+    for (let i = 0; i + 1 < points.length; i++) {
+      const p = points[i]!;
+      const q = points[i + 1]!;
+      const tx = q.x - p.x;
+      const tz = q.z - p.z;
+      if (tx * tx + tz * tz < 1e-8) continue;
+      const yp = this.field.heightAt(p.x, p.z);
+      const yq = this.field.heightAt(q.x, q.z);
+      // With the pavement on the left of travel the face must look right, toward the road.
+      const leftward = p.nx * tz - p.nz * tx > 0;
+      const low = [
+        [p.x, yp, p.z],
+        [q.x, yq, q.z],
+      ] as const;
+      const high = [
+        [p.x, yp + KERB_LIFT, p.z],
+        [q.x, yq + KERB_LIFT, q.z],
+      ] as const;
+      const quad = leftward
+        ? [low[0], low[1], high[1], high[0]]
+        : [high[0], high[1], low[1], low[0]];
+      for (const k of [0, 1, 2, 0, 2, 3]) {
+        const v = quad[k]!;
+        this.pos.push(v[0], v[1], v[2]);
+        this.col.push(this.kerb.r, this.kerb.g, this.kerb.b);
+      }
     }
   }
 
