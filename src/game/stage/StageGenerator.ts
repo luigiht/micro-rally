@@ -164,7 +164,7 @@ function drawBrief(
 export function stageBrief(gameSeed: number, index: number): StageBrief {
   const { region, loop } = stageRegion(index);
   const seed = hashSeed(gameSeed, region, index);
-  return drawBrief(mulberry32(seed), seed, index, region, loop, hasTown(gameSeed, index));
+  return drawBrief(mulberry32(seed), seed, index, region, loop, hasTown(index));
 }
 
 /** The stage's RNG stream positioned after the brief's five draws, where the walk starts. */
@@ -179,7 +179,7 @@ export function generateStage(gameSeed: number, index: number): StageDef {
   const { region, loop } = stageRegion(index);
   const def = REGIONS[region];
   const seed = hashSeed(gameSeed, region, index);
-  const withTown = hasTown(gameSeed, index);
+  const withTown = hasTown(index);
   const brief = drawBrief(mulberry32(seed), seed, index, region, loop, withTown);
   const { surface, length } = brief;
   const twist = def.twistiness * (1 + 0.15 * Math.min(loop, 4));

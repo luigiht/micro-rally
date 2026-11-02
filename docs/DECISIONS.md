@@ -1297,3 +1297,22 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
     curve (+25% for beating par by a fifth, sliding to a 0.3 floor at
     double par) and the surface factors are unchanged. The prize test reads
     the constant instead of repeating it.
+
+86. **2026-11-02 — A town on every third stage.** `hasTown` drew the town's
+    slot per trio from the game seed (index 1 or 2 of each region's run),
+    so a player met a town in either the second or the third stage of a
+    region, never knowing which. It now takes no seed: the last stage of
+    every region's run carries the town (indices 2, 5, 8, …, stages 3, 6,
+    9, … to the player), the same in every game. Index 0 (splash demo, smoke
+    tests) and index 3 (the alpine curvature comparison) stay open road, no
+    two towns run back to back, and the open-road fixtures (all at indices
+    divisible by three) are untouched. The town tests now sample index 2 of
+    sixty game seeds instead of whichever slot each seed drew; that reached
+    game seed 57's stage 3, where a corner's side street is forced down to
+    15.5 m, the one forced street decision 84 counted. The stub test's floor
+    for a forced street was two metres stricter than the generator's
+    documented one (junction cut plus 2 m, now `FORCED_STUB_MARGIN`), so it
+    rejected a street the generator allows; both now share the constant. The
+    cones of that street stand a metre inside its junction zone, on the
+    junction's plate at the route's deck, which renders cleanly (checked in
+    the dev server).

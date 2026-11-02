@@ -79,6 +79,6 @@ Status legend: [x] done · [~] in progress · [ ] not started
 
 - [x] Deploy-ready for Vercel: Supabase Postgres save store (migration in `supabase/`), URL resolution from Vercel env, security headers, `docs/DEPLOY.md`
 
-- [x] Town sections on about a third of stages after the first: the route threads a level street grid with right-angle turns, blocked side streets closed by cones, direction boards, low-poly buildings, pavements and lamp posts; reworked as villages with unbroken facades and garden walls behind every pavement, kerb-return junctions traced exactly against the ribbon, flower boxes under the windows, and trees and bushes in the yards and walled corners
+- [x] Town sections on every third stage (the last of each region's run): the route threads a level street grid with right-angle turns, blocked side streets closed by cones, direction boards, low-poly buildings, pavements and lamp posts; reworked as villages with unbroken facades and garden walls behind every pavement, kerb-return junctions traced exactly against the ribbon, flower boxes under the windows, and trees and bushes in the yards and walled corners
 
 ## 9. Capacitor iOS/Android, docs/ANDROID.md — [ ]

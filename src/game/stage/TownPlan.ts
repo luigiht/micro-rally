@@ -1,5 +1,5 @@
 import { hashSeed, mulberry32 } from '../rng';
-import { REGION_ORDER, STAGES_PER_REGION } from './regions';
+import { STAGES_PER_REGION } from './regions';
 
 /** Corner arcs: 12 m, or 10 m on the sharpest (over 95°) corners. */
 export function cornerRadius(turn: number): number {
@@ -12,17 +12,13 @@ export function tangentLength(turn: number): number {
 }
 
 /**
- * Exactly one town per trio of stages (a region's run), never the trio's
- * first stage, so never index 0 (the splash demo and the smoke tests drive
- * it) nor index 3 (the alpine stage the curvature test compares), and never
- * two in a row; which of the other two carries it varies per game and loop.
+ * Every third stage carries a town: the last stage of each region's run
+ * (indices 2, 5, 8, …, stages 3, 6, 9, … to the player), the same in every
+ * game. Never index 0 (the splash demo and the smoke tests drive it) nor
+ * index 3 (the alpine stage the curvature test compares), never two in a row.
  */
-export function hasTown(gameSeed: number, index: number): boolean {
-  const perLoop = STAGES_PER_REGION * REGION_ORDER.length;
-  const loop = Math.floor(index / perLoop);
-  const region = REGION_ORDER[Math.floor((index % perLoop) / STAGES_PER_REGION)]!;
-  const slot = 1 + (hashSeed(gameSeed, region, loop, 'town') % (STAGES_PER_REGION - 1));
-  return index % STAGES_PER_REGION === slot;
+export function hasTown(index: number): boolean {
+  return index % STAGES_PER_REGION === STAGES_PER_REGION - 1;
 }
 
 /** Half width of the narrow old-town streets some towns have through their middle. */

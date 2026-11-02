@@ -54,6 +54,8 @@ const PLANT_GAP = 0.8;
 export const ROW_SETBACK = 16;
 /** A side street shortened to clear another junction's keeps at least this much carriageway. */
 export const MIN_STUB_LENGTH = 20;
+/** A corner's street forced below that keeps at least its junction's cut plus this much. */
+export const FORCED_STUB_MARGIN = 2;
 /** Pavements of side streets from different junctions keep this much apart. */
 const STUB_GAP = 0.5;
 const CLEAR_STEP = 0.25;
@@ -163,7 +165,7 @@ export function planStub(stubs: readonly StubSite[], s: StubSite, force: boolean
     if (!force) return null;
     cuts.push([o, MIN_STUB_LENGTH]);
     length = Math.max(
-      s.hw + JUNCTION_REACH + 2,
+      s.hw + JUNCTION_REACH + FORCED_STUB_MARGIN,
       Math.min(length, clearLength(s, { ...o, length: MIN_STUB_LENGTH })),
     );
   }

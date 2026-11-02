@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { createRoadHit } from '@/game/stage/RoadPath';
-import { MIN_STUB_LENGTH, streetGround, STUB_LENGTH } from '@/game/stage/TownSideStreets';
+import {
+  FORCED_STUB_MARGIN,
+  MIN_STUB_LENGTH,
+  streetGround,
+  STUB_LENGTH,
+} from '@/game/stage/TownSideStreets';
 import { generateStage, stageBrief, type StageDef } from '@/game/stage/StageGenerator';
 import { markerDistances } from '@/game/stage/RoadMarkers';
 import { propObstacles, scatterScenery } from '@/game/stage/SceneryScatter';
@@ -188,32 +193,27 @@ const seedOf = (stage: StageDef) => GAME_SEEDS.get(stage)!;
 /** Generated stages at index 1..3 for game seeds 1..60 that carry a town. */
 function townStages(): StageDef[] {
   const out: StageDef[] = [];
-  for (let seed = 1; seed <= 60; seed++)
-    for (const index of [1, 2, 3]) {
-      const stage = generateStage(seed, index);
-      if (stage.town) {
-        GAME_SEEDS.set(stage, seed);
-        out.push(stage);
-      }
-    }
+  for (let seed = 1; seed <= 60; seed++) {
+    const stage = generateStage(seed, 2);
+    expect(stage.town).toBeDefined();
+    GAME_SEEDS.set(stage, seed);
+    out.push(stage);
+  }
   return out;
 }
 
 describe('town generator', () => {
-  it('puts exactly one town in every trio of stages, never the first of a trio, never two in a row', () => {
-    for (let gameSeed = 1; gameSeed <= 120; gameSeed++) {
-      let previous = false;
-      for (let trio = 0; trio < 6; trio++) {
-        const flags = [0, 1, 2].map((k) => hasTown(gameSeed, trio * 3 + k));
-        expect(flags[0]).toBe(false);
-        expect(flags.filter(Boolean)).toHaveLength(1);
-        for (const f of flags) {
-          expect(previous && f).toBe(false);
-          previous = f;
-        }
-      }
+  it('puts a town on every third stage and nowhere else, whatever the game seed', () => {
+    for (let index = 0; index < 18; index++) expect(hasTown(index)).toBe(index % 3 === 2);
+    for (let seed = 1; seed <= 20; seed++) {
+      expect(generateStage(seed, 0).town).toBeUndefined();
+      expect(generateStage(seed, 1).town).toBeUndefined();
+      expect(generateStage(seed, 2).town).toBeDefined();
     }
-    for (let seed = 1; seed <= 20; seed++) expect(generateStage(seed, 0).town).toBeUndefined();
+    for (const seed of [3, 7]) {
+      expect(generateStage(seed, 5).town).toBeDefined();
+      expect(generateStage(seed, 6).town).toBeUndefined();
+    }
     // The brief knows too, and charges the town against par.
     for (let seed = 1; seed <= 30; seed++)
       for (const index of [1, 2]) {
@@ -368,7 +368,11 @@ describe('town generator', () => {
       for (const st of stubs) {
         const len = Math.hypot(st.x1 - st.x0, st.z1 - st.z0);
         if (len < STUB_LENGTH - 1e-6) shortened++;
-        if (len < MIN_STUB_LENGTH - 1e-6 && len < st.halfWidth + JUNCTION_REACH + 4 - 1e-6)
+        // A corner's street forced below the minimum still keeps its junction's cut plus the margin.
+        if (
+          len < MIN_STUB_LENGTH - 1e-6 &&
+          len < st.halfWidth + JUNCTION_REACH + FORCED_STUB_MARGIN - 1e-6
+        )
           problems.push(`stub ${len.toFixed(1)} m`);
       }
       // Two streets with different mouths: their ground (pavements and the one across each end) stays

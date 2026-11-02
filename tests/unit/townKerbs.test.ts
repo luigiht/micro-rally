@@ -5,7 +5,7 @@ import { generateStage, type StageDef } from '@/game/stage/StageGenerator';
 import { FILLET, type Arm, type Junction } from '@/game/stage/Town';
 import { junctionKerbs, routeEdge, routeOpenings } from '@/game/stage/TownKerbs';
 
-const stages: StageDef[] = [generateStage(6, 1), generateStage(3, 5), generateStage(8, 1)];
+const stages: StageDef[] = [generateStage(6, 2), generateStage(3, 5), generateStage(8, 2)];
 
 /** Signed position of (x, z) along an arm and across it (left positive). */
 function armFrame(j: Junction, a: Arm, x: number, z: number) {
