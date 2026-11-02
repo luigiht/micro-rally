@@ -65,7 +65,7 @@ export function RollCage({ spec }: { spec: InteriorSpec }) {
   return (
     <group>
       {bars.map(([a, b], i) => (
-        <Tube key={i} a={a} b={b} r={0.022} c={palette.cage} />
+        <Tube key={i} a={a} b={b} r={0.022} c={palette.cage} glow={palette.glow} />
       ))}
     </group>
   );
@@ -86,18 +86,18 @@ export function BucketSeat({ x, p }: { x: number; p: InteriorPalette }) {
         <Box p={[0, 0, 0]} s={[0.46, 0.46, 0.09]} c={p.seat} />
         <Box p={[0.21, 0, 0.04]} s={[0.06, 0.4, 0.14]} c={p.seat} />
         <Box p={[-0.21, 0, 0.04]} s={[0.06, 0.4, 0.14]} c={p.seat} />
-        <Box p={[0, 0, 0.047]} s={[0.1, 0.42, 0.004]} c={p.seatAccent} />
+        <Box p={[0, 0, 0.047]} s={[0.1, 0.42, 0.004]} c={p.seatAccent} glow={p.glow} />
         <Box p={[0.09, 0.13, 0.049]} s={[0.05, 0.05, 0.004]} c={slot} />
         <Box p={[-0.09, 0.13, 0.049]} s={[0.05, 0.05, 0.004]} c={slot} />
-        <Box p={[0.08, -0.03, 0.052]} s={[0.05, 0.3, 0.006]} c={p.harness} />
-        <Box p={[-0.08, -0.03, 0.052]} s={[0.05, 0.3, 0.006]} c={p.harness} />
+        <Box p={[0.08, -0.03, 0.052]} s={[0.05, 0.3, 0.006]} c={p.harness} glow={p.glow} />
+        <Box p={[-0.08, -0.03, 0.052]} s={[0.05, 0.3, 0.006]} c={p.harness} glow={p.glow} />
         <Box p={[0, 0.3, 0.02]} s={[0.26, 0.14, 0.1]} c={p.seat} />
         <Box p={[0.15, 0.3, 0.07]} s={[0.05, 0.14, 0.16]} c={p.seat} />
         <Box p={[-0.15, 0.3, 0.07]} s={[0.05, 0.14, 0.16]} c={p.seat} />
       </group>
-      <Box p={[0.12, 0.915, -0.3]} s={[0.05, 0.006, 0.2]} c={p.harness} />
-      <Box p={[-0.12, 0.915, -0.3]} s={[0.05, 0.006, 0.2]} c={p.harness} />
-      <Box p={[0, 0.915, -0.26]} s={[0.05, 0.006, 0.12]} c={p.harness} />
+      <Box p={[0.12, 0.915, -0.3]} s={[0.05, 0.006, 0.2]} c={p.harness} glow={p.glow} />
+      <Box p={[-0.12, 0.915, -0.3]} s={[0.05, 0.006, 0.2]} c={p.harness} glow={p.glow} />
+      <Box p={[0, 0.915, -0.26]} s={[0.05, 0.006, 0.12]} c={p.harness} glow={p.glow} />
       <Box p={[0, 0.922, -0.28]} s={[0.07, 0.012, 0.07]} c="#9a9690" />
     </group>
   );
@@ -119,7 +119,7 @@ export function SteeringWheel({ spec, rimRef }: { spec: InteriorSpec; rimRef: Re
         <Box p={[0, -0.01, 0]} s={[r * 1.8, 0.03, 0.02]} c="#2b2a33" />
         <Box p={[0, -r * 0.5, 0]} s={[0.03, r * 0.9, 0.02]} c="#2b2a33" />
         <Box p={[0, 0, 0]} s={[r * 0.55, r * 0.55, 0.03]} c="#2b2a33" />
-        <Box p={[0, r - 0.01, -0.015]} s={[0.05, 0.03, 0.006]} c={p.accent} />
+        <Box p={[0, r - 0.01, -0.015]} s={[0.05, 0.03, 0.006]} c={p.accent} glow={p.glow} />
       </group>
       <mesh position={[0, 0, column / 2]} rotation={[Math.PI / 2, 0, 0]}>
         <cylinderGeometry args={[r * 0.18, r * 0.18, column, 10]} />
@@ -179,7 +179,12 @@ export function GearLever({
           <cylinderGeometry args={[0.011, 0.014, height, 8]} />
           <meshStandardMaterial color="#9a9690" flatShading metalness={0.4} roughness={0.5} />
         </mesh>
-        <Box p={[0, height + 0.02, 0]} s={[0.05, 0.05, 0.05]} c={tall ? p.accent : '#15141a'} />
+        <Box
+          p={[0, height + 0.02, 0]}
+          s={[0.05, 0.05, 0.05]}
+          c={tall ? p.accent : '#15141a'}
+          glow={tall ? p.glow : undefined}
+        />
       </group>
     </group>
   );
@@ -212,7 +217,13 @@ export function CoDriverKit({ spec, x }: { spec: InteriorSpec; x: number }) {
           <Box key={zz} p={[0.095, 0.005, zz]} s={[0.12, 0.002, 0.008]} c="#5a5a63" />
         ))}
         {[-0.06, -0.02, 0.02, 0.06].map((zz) => (
-          <Box key={zz} p={[-0.095, 0.005, zz]} s={[0.12, 0.002, 0.008]} c={p.accent} />
+          <Box
+            key={zz}
+            p={[-0.095, 0.005, zz]}
+            s={[0.12, 0.002, 0.008]}
+            c={p.accent}
+            glow={p.glow}
+          />
         ))}
       </group>
       {tripMeter && (

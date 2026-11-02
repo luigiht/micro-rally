@@ -71,6 +71,33 @@ Every third stage (the last of each region's run) carries a town between
 Coast, Desert and Night are placeholders cloned from Forest and not yet in
 the progression loop.
 
+## Hidden mode: Nightcity
+
+Press `N` while driving (it is not in the controls table) and the stage is
+re-dressed in place as a cyberpunk night city; `N` again brings the day back.
+The road, timing, colliders and records are the daytime ones. Pitch-black sky,
+a cold moon, dark ground and asphalt with neon cyan edge lines, magenta kerbs
+and amber marker caps; stilt towers (a slim core up to 3.4 m, then a
+cantilevered block, so the car passes under) and masts where the trees stood,
+taller the further they are from the road; neon sign boards facing the road
+and glow bollards for the bushes; cargo pods for the rocks; mid-rise blocks on
+the farmhouse pads; town buildings dark under a neon roofline; lit lamp heads;
+neon gantries; cyan tyre trails. The car becomes one cyberpunk street
+machine cut to its own axles, track and tyres (the truck too): box flares over
+both axles with a pinched waist between them, a blunt wide nose under a long
+bonnet, a Kamm tail with a ducktail, a segmented light bar with angled fangs
+over a slatted grille and side intakes, a splitter with canards, bonnet and
+engine-cover vents with lit slits, fender vents and rear intakes, louvres over
+the rear glass, a sensor pod and antennas, a spoiler on swept uprights with end
+plates and a shark fin, a strake diffuser, quad hexagonal thrusters, a lit
+shoulder line, lit wheel rings and underglow. Inside,
+the real car's cabin keeps its envelope and kit but is dressed in near-black
+trim with a lit violet cage, neon harnesses and seat stripes, dark dials in
+lit cyan rings with magenta needles, light lines along the dash lip, door cards
+and roof edges, and a translucent heads-up display over the binnacle. A bloom
+pass runs only while the mode is on. Session-only; never saved; the Garage
+preview and the splash stay daytime.
+
 ## Cars
 
 Every car is a lofted low-poly hull: a list of cross-section stations along

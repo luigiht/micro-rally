@@ -1454,3 +1454,109 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
     now states that the Vercel deployment uses Vercel Web Analytics
     (cookie-free); the in-app privacy page still says "no analytics" and
     should be reconciled by the owner.
+
+92. **2026-11-02 — Nightcity: a hidden cyberpunk re-skin on the N key.** By
+    request, `N` (unbound until now, and left out of the controls table on
+    purpose) turns the stage into a neon night city and the car into a
+    futuristic wedge, mid-run and in place; `N` again restores the day.
+    Nothing in the sim changes: same road, same colliders, same clock, so a
+    Nightcity run is an ordinary run and records stay comparable. The flag is
+    `uiStore.nightcity`, routed like `H` through `KeyboardControls` and the
+    session, session-only and never saved; the HUD shows a "Nightcity" tag
+    that hides with the rest of the chrome. Design choices, in order of
+    weight. **(a) Look as data.** `render/theme/WorldTheme.ts` (pure TS)
+    describes everything the stage renderer needs to know about colour and
+    light: sky, fog range, hemisphere and sun, terrain mode, road colours,
+    gates, walls, which scenery kit set, tyre-mark ink. `dayTheme(region)`
+    reproduces the daytime look exactly (pinned by a test against the old
+    constants, which moved to `road/roadColors.ts`); `NIGHTCITY_THEME` is a
+    constant. `SceneLights`, `RoadBuilder`, the town builders, `GateBuilder`
+    and `SkidMarks` take their colours from it. **(b) Re-dress in place.**
+    `StageRenderer.setTheme` swaps the terrain's one shared material (the
+    worker's baked per-face colours are simply ignored by a flat dark
+    material: no re-mesh, no worker round trip), disposes and rebuilds the
+    road, gates and town meshes in the new colours (about a thousand samples,
+    cheap), and rebuilds the `SceneryChunkManager` with the theme's kits,
+    reloading the chunks around the car in the same call so there is no empty
+    frame. The builders dispose their GPU resources but not their place in
+    the scene graph, so the renderer removes each group before rebuilding.
+    `StageDrive` stays keyed on seed, index and attempt: the toggle must never
+    remount the run. **(c) Neon as HDR vertex colours.** A `ThemeColor` may
+    carry a `glow`; above one, `themeColor` bakes the hex that many times
+    over into the colour attribute, and `patchNeon` (an `onBeforeCompile`
+    patch on the merged surfaces' standard materials) draws any face whose
+    vertex colour exceeds one as emission instead of lit surface. So the road
+    and town builders paint neon lines and kerbs by colour alone, with no
+    extra material groups, and a bloom pass with a luminance threshold of one
+    lifts exactly those faces. Instanced glow kits need no patch: an unlit
+    `MeshBasicMaterial` with vertex colours passes the HDR per-instance tint
+    straight through. Verified against three r186: the standard fragment
+    shader declares `totalEmissiveRadiance` before `color_fragment`, `vColor`
+    is a vec4 under `USE_COLOR || USE_COLOR_ALPHA` (also defined for
+    `setColorAt` kits), and `Color` never clamps (a test pins the chunk
+    order). **(d) Kits as data.** The inline kit list left
+    `SceneryChunkManager` for `scenery/kits/RallyKits.ts`, unchanged in
+    output (the trunk stretch and rock sink became `place` hooks); `KindKit`
+    gained `accept`, `place` and `colorAt`, and the manager takes a kit list
+    and owns it. `NightcityKits.ts` dresses the same props: trees become
+    **stilt towers** (a core inside the 0.45 m tree collider up to 3.4 m, the
+    truck's roof height, then a cantilevered block, so the car passes under
+    the overhang and nothing it can drive through is drawn) in three tiers by
+    distance from the road (kiosk within 12 m, mid to 30 m, tall beyond) so
+    the isometric and cinematic cameras keep their view, or **masts**, or
+    nothing: three towers and two masts in ten tree slots, because 110 trees
+    per 100 m is far too dense for buildings; bushes become neon sign boards
+    (turned to face the road through the renderer's cached nearest-road
+    query) and bollards; rocks cargo pods; farmhouses mid-rise blocks on the
+    same pads; town buildings keep their geometry under dark tints with a
+    neon roofline trim per style (planters dropped); lamp heads are relit by
+    a glow box that encloses the day head; cones and boards stay. Glow parts
+    stand 1-3 cm proud of the body they light so nothing z-fights. Four hues
+    by hash (cyan, magenta, amber, violet). **(e) One car.** Rather than nine
+    cyberpunk liveries, `render/car/NightcityHull.ts` cuts one hull from the
+    active spec's axles, track, tyre radius and cabin offsets, so the wheels
+    sit in their wells on every catalogue car, the truck included, and the
+    canopy clears the first-person eye (pinned per car by a test). After a
+    first plain wedge the shape was pushed toward the cyberpunk games' street
+    machines by request: `sideAt(z)` gives the flank half-width along the
+    car, box flares (+10 cm) over each axle running to the bumpers and
+    blending into a pinched waist under the canopy, with a taper to a blunt
+    nose face; every station and every flank-mounted part reads its x from
+    it, so vents, intakes and arch lips seat on the surface on any car. Flat
+    detail on the top faces is painted as deck decals (bonnet centre panel,
+    vents with amber slits, a dark engine cover with magenta slits, the roof
+    strip) because a box laid on a sloping bonnet floats; the kit adds a
+    segmented light bar with angled fangs, slatted grille, side intakes with
+    lit edges, splitter and canards, side skirts with a lit underline, fender
+    vents, rear intakes, louvres along the rear-glass slope, a sensor pod and
+    antennas, a spoiler on swept prism uprights with end plates and a shark
+    fin, a strake diffuser and quad hexagonal thrusters (`Lamp` gained
+    `sides`).
+    The hull's `CABIN_MIN_HEIGHT` is 5 cm, so deck and bonnet stations keep
+    the roof 4 cm over the belt and the glass lands on the canopy alone; the
+    nose and tail light bars are glow boxes rather than cap decals for the
+    same reason. `CarHullMesh` gained a `glow` multiplier for the unlit faces
+    (`CarHull.ts` is untouched, already over the file guideline). Dark rims
+    with lit rings and an additive vertex-alpha underglow plane in the wheels
+    group finish it. The cabin follows by request: `InteriorPalette` gained
+    an optional `glow` (emissive intensity for the accent-coloured parts:
+    accent, harness, seat stripe, cage tubes, dial rings and needles), every
+    car's `InteriorSpec` is reused with `NIGHTCITY_INTERIOR_PALETTE` swapped
+    in (near-black trim, a violet cage kept just under the bloom threshold,
+    cyan and magenta accents above it), `Dial` has a `neon` face, and
+    `NightcityCabin` lays light lines along the dash lip, door cards and roof
+    edges plus a translucent heads-up pane with lit data bars at eye level,
+    all sized from the car's envelope; the kit and dimensions are the real
+    car's, so the interior tests still hold. The Garage preview and the
+    splash demo pass nothing and stay daytime. **(f) Bloom
+    only in the mode.** `NightcityEffects` mounts `@react-three/postprocessing`
+    (installed since the scaffold, unused until now) with a mipmap bloom at
+    threshold one and an ACES tone-mapping effect, because the composer forces
+    the renderer's tone mapping off while mounted and the car's shading would
+    otherwise change contrast on the toggle. Rule 4 is honoured in that the
+    mode is itself the switch and the day pays nothing; a Settings flag is
+    deferred to the quality tiers of milestone 7, since a setting that only
+    matters in a hidden mode would give the mode away. Nothing in the mode
+    animates (no flicker, no pulsing underglow), so reduced motion needs no
+    variant. The toggle rebuilds in one frame on purpose: a half-themed world
+    would read as a bug.

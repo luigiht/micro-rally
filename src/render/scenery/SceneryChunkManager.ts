@@ -1,62 +1,28 @@
-import {
-  BufferGeometry,
-  Color,
-  ConeGeometry,
-  CylinderGeometry,
-  DodecahedronGeometry,
-  Group,
-  IcosahedronGeometry,
-  InstancedMesh,
-  MeshStandardMaterial,
-  Object3D,
-} from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import type { RegionPalette } from '@/game/stage/regions';
+import { type BufferGeometry, Color, Group, InstancedMesh, type Material, Object3D } from 'three';
 import type { Prop, PropKind } from '@/game/stage/SceneryScatter';
 import { ChunkStreamer, chunkKey } from '../ChunkStreamer';
-import { buildingRoofGeometry, buildingWallsGeometry } from './BuildingGeometry';
-import { houseRoofGeometry, houseWallsGeometry } from './HouseGeometry';
-import { buildingPlantersGeometry } from './PlanterGeometry';
-import { arrowBoardGeometry, coneGeometry, lampPostGeometry } from './StreetFurnitureGeometry';
 
-interface KindKit {
+/** One instanced mesh per chunk: which props feed it, what it draws them with and how. */
+export interface KindKit {
   sources: readonly PropKind[];
   geometry: BufferGeometry;
-  material: MeshStandardMaterial;
+  material: Material;
   /** Per-instance colour pair (variant 0 / 1); null = material colour. */
   tint: readonly [Color, Color] | null;
   castShadow: boolean;
   /** Geometry carries its own colours (multiplied by the tint). */
   vertexColors?: boolean;
-  /** Only instances with one of these variants get this kit (flower boxes on some houses, not all). */
-  variants?: readonly number[];
+  /** Take only some of the source props (flower boxes on some houses, one tower in three trees). */
+  accept?: (p: Prop) => boolean;
+  /** Adjust the instance transform after the default position, heading and uniform scale are set. */
+  place?: (p: Prop, dummy: Object3D) => void;
+  /** Per-instance colour computed from the prop, in place of `tint`. */
+  colorAt?: (p: Prop, out: Color) => void;
 }
 
-function foliageGeometry(): BufferGeometry {
-  // Foliage starts 1.3 m up so the trunk shows, in the tree and in its shadow.
-  const low = new ConeGeometry(1.35, 2.6, 7).translate(0, 2.6, 0);
-  const high = new ConeGeometry(0.95, 2.1, 7).translate(0, 3.8, 0);
-  const merged = mergeGeometries([low, high])!;
-  low.dispose();
-  high.dispose();
-  return merged;
-}
-
-function canopyGeometry(): BufferGeometry {
-  const parts = [
-    new IcosahedronGeometry(1.5, 0).translate(0, 3.1, 0),
-    new IcosahedronGeometry(1.05, 0).translate(0.9, 2.7, 0.3),
-    new IcosahedronGeometry(0.95, 0).translate(-0.7, 3.6, -0.4),
-  ];
-  const merged = mergeGeometries(parts)!;
-  for (const p of parts) p.dispose();
-  return merged;
-}
-
-/** Instanced, chunked roadside props: cone pines, round broadleaf trees, blob bushes, faceted rocks, houses. */
+/** Instanced, chunked roadside props, drawn with whichever kits the theme supplies; owns and disposes the kits. */
 export class SceneryChunkManager {
   readonly group = new Group();
-  private readonly kits: KindKit[];
   private readonly buckets = new Map<number, Prop[]>();
   private readonly live = new Map<number, InstancedMesh[]>();
   private readonly streamer: ChunkStreamer;
@@ -65,136 +31,11 @@ export class SceneryChunkManager {
 
   constructor(
     props: readonly Prop[],
-    palette: RegionPalette,
+    private readonly kits: readonly KindKit[],
     size: number,
     radius: number,
-    shadows: boolean,
-    /** Snow regions: roofs under snow and paler walls, so houses sit into the white landscape. */
-    snow = false,
   ) {
     this.group.name = 'scenery';
-    const pine = [new Color(palette.foliage), new Color(palette.foliageAlt)] as const;
-    const leaf = [new Color(palette.canopy), new Color(palette.canopyAlt)] as const;
-    const mat = (color: string, vertexColors = false) =>
-      new MeshStandardMaterial({ color, flatShading: true, roughness: 0.9, vertexColors });
-    const walls = snow
-      ? ([new Color('#e9e6dd'), new Color('#cfc3a8')] as const)
-      : ([new Color('#efe6cf'), new Color('#d9b26b')] as const);
-    const roofs = snow
-      ? ([new Color('#eef2f5'), new Color('#e4e9ee')] as const)
-      : ([new Color('#b5523c'), new Color('#4a5160')] as const);
-    // Town buildings: warmer render than the farmhouses, slate or terracotta roofs, all under snow in alpine towns.
-    const townWalls = snow
-      ? ([new Color('#e6e2d8'), new Color('#d3c6ad')] as const)
-      : ([new Color('#f1e4c8'), new Color('#dcc8a3')] as const);
-    const townRoofs = snow
-      ? ([new Color('#eef2f5'), new Color('#e4e9ee')] as const)
-      : ([new Color('#a8503a'), new Color('#4e5668')] as const);
-    this.kits = [
-      {
-        sources: ['tree'],
-        geometry: foliageGeometry(),
-        material: mat('#ffffff'),
-        tint: pine,
-        castShadow: shadows,
-      },
-      {
-        sources: ['broadleaf'],
-        geometry: canopyGeometry(),
-        material: mat('#ffffff'),
-        tint: leaf,
-        castShadow: shadows,
-      },
-      {
-        sources: ['tree', 'broadleaf'],
-        geometry: new CylinderGeometry(0.16, 0.24, 1.6, 5).translate(0, 0.8, 0),
-        material: mat(palette.trunk),
-        tint: null,
-        castShadow: shadows,
-      },
-      {
-        sources: ['bush'],
-        geometry: new IcosahedronGeometry(0.9, 0).translate(0, 0.45, 0),
-        material: mat('#ffffff'),
-        tint: pine,
-        castShadow: false,
-      },
-      {
-        sources: ['rock'],
-        geometry: new DodecahedronGeometry(0.9, 0).translate(0, 0.25, 0),
-        material: mat(palette.boulder),
-        tint: null,
-        castShadow: shadows,
-      },
-      {
-        sources: ['house'],
-        geometry: houseWallsGeometry(),
-        material: mat('#ffffff', true),
-        tint: walls,
-        castShadow: shadows,
-        vertexColors: true,
-      },
-      {
-        sources: ['house'],
-        geometry: houseRoofGeometry(),
-        material: mat('#ffffff', true),
-        tint: roofs,
-        castShadow: shadows,
-        vertexColors: true,
-      },
-      // Town buildings: walls and roofs tinted per variant like the houses, in four footprints,
-      // and untinted flower boxes under the windows of the houses and shops.
-      ...(['townhouse', 'shop', 'tower', 'hall'] as const).flatMap((style): KindKit[] => {
-        const planters = buildingPlantersGeometry(style);
-        return [
-          {
-            sources: [style],
-            geometry: buildingWallsGeometry(style),
-            material: mat('#ffffff', true),
-            tint: townWalls,
-            castShadow: shadows,
-            vertexColors: true,
-          },
-          {
-            sources: [style],
-            geometry: buildingRoofGeometry(style),
-            material: mat('#ffffff', true),
-            tint: townRoofs,
-            castShadow: shadows,
-            vertexColors: true,
-          },
-          ...(planters
-            ? [
-                {
-                  sources: [style] as const,
-                  geometry: planters,
-                  material: mat('#ffffff', true),
-                  tint: null,
-                  castShadow: false,
-                  vertexColors: true,
-                  variants: [1],
-                },
-              ]
-            : []),
-        ];
-      }),
-      // Town street furniture keeps its own painted colours.
-      ...(
-        [
-          ['cone', coneGeometry()],
-          ['arrowLeft', arrowBoardGeometry('left')],
-          ['arrowRight', arrowBoardGeometry('right')],
-          ['lamp', lampPostGeometry()],
-        ] as const
-      ).map(([kind, geometry]): KindKit => ({
-        sources: [kind],
-        geometry,
-        material: mat('#ffffff', true),
-        tint: null,
-        castShadow: shadows,
-        vertexColors: true,
-      })),
-    ];
     for (const p of props) {
       const key = chunkKey(Math.floor(p.x / size), Math.floor(p.z / size));
       const list = this.buckets.get(key);
@@ -221,22 +62,20 @@ export class SceneryChunkManager {
     if (!props) return;
     const meshes: InstancedMesh[] = [];
     for (const kit of this.kits) {
-      const items = props.filter(
-        (p) => kit.sources.includes(p.kind) && (kit.variants?.includes(p.variant) ?? true),
-      );
+      const items = props.filter((p) => kit.sources.includes(p.kind) && (kit.accept?.(p) ?? true));
       if (items.length === 0) continue;
       const mesh = new InstancedMesh(kit.geometry, kit.material, items.length);
-      const isTrunk = kit.sources.length > 1;
       items.forEach((p, i) => {
-        const rock = p.kind === 'rock';
-        this.dummy.position.set(p.x, p.y - (rock ? 0.2 * p.scale : 0), p.z);
-        this.dummy.rotation.set(rock ? p.rotation : 0, p.rotation, 0);
+        this.dummy.position.set(p.x, p.y, p.z);
+        this.dummy.rotation.set(0, p.rotation, 0);
         this.dummy.scale.setScalar(p.scale);
-        // Broadleaf canopies sit higher, so stretch their trunks.
-        if (isTrunk && p.kind === 'broadleaf') this.dummy.scale.y *= 1.6;
+        kit.place?.(p, this.dummy);
         this.dummy.updateMatrix();
         mesh.setMatrixAt(i, this.dummy.matrix);
-        if (kit.tint) {
+        if (kit.colorAt) {
+          kit.colorAt(p, this.color);
+          mesh.setColorAt(i, this.color);
+        } else if (kit.tint) {
           this.color.copy(kit.tint[p.variant ? 1 : 0]);
           // Houses keep their palette; foliage varies a little per instance.
           if (!kit.vertexColors)

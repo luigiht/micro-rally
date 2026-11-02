@@ -9,13 +9,10 @@ import {
   type TownDef,
 } from '@/game/stage/Town';
 import { stubCut } from '@/game/stage/TownJunctions';
-import {
-  KERB_COLOR,
-  LINE_COLOR,
-  LINE_ABOVE_DECK,
-  PAVEMENT_COLOR,
-  ROAD_COLORS,
-} from '../road/RoadBuilder';
+import { LINE_ABOVE_DECK } from '../road/RoadBuilder';
+import { patchNeon } from '../theme/NeonMaterial';
+import { themeColor } from '../theme/themeColor';
+import type { RoadTheme } from '../theme/WorldTheme';
 
 const STRIP_STEP = 4;
 const LINE_INSET = 0.35;
@@ -53,12 +50,13 @@ export class TownStreetBuilder {
     town: TownDef,
     private readonly field: GroundQuery,
     halfWidth: number,
+    road: RoadTheme,
   ) {
     this.group.name = 'town-streets';
-    const tarmac = new Color(ROAD_COLORS.tarmac);
-    const pavement = new Color(PAVEMENT_COLOR);
-    const line = new Color(LINE_COLOR);
-    const kerb = new Color(KERB_COLOR);
+    const tarmac = new Color(road.surface ?? road.surfaces.tarmac);
+    const pavement = new Color(road.pavement);
+    const line = themeColor(road.line);
+    const kerb = themeColor(road.kerb);
     for (const st of town.streets) {
       if (st.route) continue;
       const dx = st.x1 - st.x0;
@@ -101,6 +99,7 @@ export class TownStreetBuilder {
       polygonOffsetFactor: -2,
       polygonOffsetUnits: -2,
     });
+    if (road.neon) patchNeon(this.material);
     const mesh = new Mesh(this.geometry, this.material);
     mesh.receiveShadow = true;
     mesh.matrixAutoUpdate = false;

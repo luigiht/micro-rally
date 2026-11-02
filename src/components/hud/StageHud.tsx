@@ -153,6 +153,7 @@ export function StageHud() {
   const result = useStageHudStore((s) => s.result);
   const replay = useUiStore((s) => s.replay);
   const hidden = useUiStore((s) => s.hudHidden);
+  const nightcity = useUiStore((s) => s.nightcity);
   const money = useGameStore((s) => s.money);
   if (gateCount === 0) return null;
   // With the HUD hidden (H) only what the player must see stays: the start signal and the result.
@@ -179,6 +180,15 @@ export function StageHud() {
         {penalties > 0 && (
           <p className="pixel-tag mt-3 bg-rally px-2 py-1 text-[10px] text-paper">
             {fill(m.stage.penalties, { s: penalties })}
+          </p>
+        )}
+        {nightcity && (
+          <p
+            role="status"
+            data-testid="nightcity-tag"
+            className="pixel-tag mt-3 bg-ink px-2 py-1 text-[10px] text-paper"
+          >
+            {m.stage.nightcityTag}
           </p>
         )}
         {replay && <ReplayBar />}

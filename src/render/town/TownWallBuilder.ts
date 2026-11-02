@@ -1,14 +1,13 @@
 import { BoxGeometry, BufferGeometry, Color, Group, Mesh, MeshStandardMaterial } from 'three';
 import { KERB_LIFT, WALL_HALF, type GroundQuery, type TownDef } from '@/game/stage/Town';
 import { merge, paint } from '../scenery/HouseGeometry';
+import type { WallTheme } from '../theme/WorldTheme';
 
 /** Garden walls: a plastered run with a pale coping, sunk into the slope so no gap opens under them. */
 const WALL_HEIGHT = 1.1;
 const SINK = 0.6;
 const CAP_HEIGHT = 0.12;
 const CAP_OVERHANG = 0.06;
-const BODY = new Color('#c9c0b0');
-const CAP = new Color('#e3dccf');
 
 /** Every garden wall of the village as one merged, flat-shaded mesh. */
 export class TownWallBuilder {
@@ -16,8 +15,10 @@ export class TownWallBuilder {
   private readonly geometry: BufferGeometry | null;
   private readonly material: MeshStandardMaterial;
 
-  constructor(town: TownDef, field: GroundQuery) {
+  constructor(town: TownDef, field: GroundQuery, walls: WallTheme) {
     this.group.name = 'town-walls';
+    const BODY = new Color(walls.body);
+    const CAP = new Color(walls.cap);
     const parts: BufferGeometry[] = [];
     for (const w of town.walls) {
       const len = Math.hypot(w.x1 - w.x0, w.z1 - w.z0);

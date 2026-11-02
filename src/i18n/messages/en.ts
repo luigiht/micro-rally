@@ -254,6 +254,7 @@ export const en = {
     replayTag: 'Replay',
     exitReplay: 'Exit replay',
     replayHint: 'Esc exits · C switches camera',
+    nightcityTag: 'Nightcity',
     resetHint: 'Lost? Press R to return to the last checkpoint.',
   },
 };

@@ -8,6 +8,7 @@ import { RoadFollower } from '@/game/stage/RoadFollower';
 import { createStageWorld } from '@/game/stage/StageWorld';
 import { CAR_SPECS } from '@/game/vehicle/CarSpec';
 import { StageRenderer } from '@/render/stage/StageRenderer';
+import { dayTheme } from '@/render/theme/WorldTheme';
 import type { CameraRigFrame } from './cameras/CameraRig';
 import { ChaseCameraRig } from './cameras/ChaseCameraRig';
 import { CarModel, type CarModelHandle } from './CarModel';
@@ -104,10 +105,9 @@ export function DemoDrive({ paused }: { paused: boolean }) {
     }
   });
 
-  const palette = REGIONS[world.stage.region].palette;
   return (
     <>
-      <SceneLights sky={palette.sky} fog={palette.fog} sunRef={sun} />
+      <SceneLights lighting={dayTheme(REGIONS[world.stage.region]).lighting} sunRef={sun} />
       <group ref={group} />
       <CarModel ref={car} spec={spec} />
     </>

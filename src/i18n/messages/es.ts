@@ -269,6 +269,7 @@ export const es: Messages = {
     replayTag: 'Repetición',
     exitReplay: 'Salir de la repetición',
     replayHint: 'Esc sale · C cambia la cámara',
+    nightcityTag: 'Nightcity',
     resetHint: '¿Perdido? Pulsa R para volver al último control.',
   },
 };

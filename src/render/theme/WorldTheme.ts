@@ -1,0 +1,225 @@
+import type { RegionDef, RegionId } from '@/game/stage/regions';
+import type { Surface } from '@/game/vehicle/surfaces';
+import {
+  CAP_COLOR,
+  KERB_COLOR,
+  LINE_COLOR,
+  PAVEMENT_COLOR,
+  POST_COLOR,
+  ROAD_COLORS,
+} from '../road/roadColors';
+
+/**
+ * Everything the stage renderer needs to know about colour and light, as plain
+ * data. `dayTheme` reproduces a region's daytime look exactly; `NIGHTCITY_THEME`
+ * is the hidden cyberpunk re-skin the N key toggles. Pure TS: the builders turn
+ * these into three.js colours and materials through `themeColor.ts`.
+ */
+
+/**
+ * A colour that may glow. `glow` > 1 bakes the colour that many times over into
+ * vertex colours (HDR, so the neon shader patch and bloom pick it up) or sets a
+ * material's emissive intensity; 0 < glow < 1 is the faint self-light only a
+ * material can show (the start gantry's tiles). A plain string never glows.
+ */
+export type ThemeColor = string | { hex: string; glow: number };
+
+export interface ThemeLighting {
+  background: string;
+  fog: string;
+  fogNear: number;
+  fogFar: number;
+  hemiSky: string;
+  hemiGround: string;
+  hemiIntensity: number;
+  sunColor: string;
+  sunIntensity: number;
+}
+
+export interface RoadTheme {
+  /** Daytime carriageway colour per surface. */
+  surfaces: Readonly<Record<Surface, string>>;
+  /** Overrides `surfaces` on every stage when set (one dark asphalt at night). */
+  surface: string | null;
+  /** Lay snow patches over snow stages' asphalt. */
+  snowPatches: boolean;
+  /** Verge strips either side of the ribbon (the region's shoulder by day). */
+  verge: string;
+  line: ThemeColor;
+  pavement: string;
+  kerb: ThemeColor;
+  post: string;
+  cap: ThemeColor;
+  /** Patch the surface material so HDR vertex colours are drawn as emission. */
+  neon: boolean;
+}
+
+export interface GateTheme {
+  post: string;
+  /** Alternating gantry tiles. */
+  start: readonly [ThemeColor, ThemeColor];
+  finish: readonly [ThemeColor, ThemeColor];
+  board: ThemeColor;
+  clock: ThemeColor;
+  ink: string;
+}
+
+export interface WallTheme {
+  body: string;
+  cap: string;
+}
+
+/** `palette`: the worker's baked per-face colours; `flat`: one colour, the bake ignored. */
+export type TerrainTheme = { mode: 'palette' } | { mode: 'flat'; color: string };
+
+export type SceneryKitId = 'rally' | 'nightcity';
+
+export interface SkidInk {
+  color: ThemeColor;
+  opacity: number;
+}
+
+export interface WorldTheme {
+  id: 'day' | 'nightcity';
+  lighting: ThemeLighting;
+  terrain: TerrainTheme;
+  road: RoadTheme;
+  gates: GateTheme;
+  walls: WallTheme;
+  scenery: { kit: SceneryKitId };
+  /** Tyre-mark ink on every surface; null keeps the per-surface table. */
+  skidInk: SkidInk | null;
+}
+
+/** The hues Nightcity is lit in; kits and the car pick from these by hash. */
+export const NEON = {
+  cyan: '#19e6ff',
+  magenta: '#ff2bd6',
+  amber: '#ffb020',
+  violet: '#7a3cff',
+} as const;
+
+const DAY_LIGHTING = {
+  fogNear: 70,
+  fogFar: 260,
+  hemiSky: '#fff6e0',
+  hemiGround: '#7fa05f',
+  hemiIntensity: 1.9,
+  sunColor: '#ffffff',
+  sunIntensity: 2.6,
+} as const;
+
+const DAY_GATES: GateTheme = {
+  post: '#d9d4c7',
+  start: [
+    { hex: '#4f9d69', glow: 0.25 },
+    { hex: '#f4f1e8', glow: 0.25 },
+  ],
+  finish: ['#2b2a33', '#f4f1e8'],
+  board: '#f4f1e8',
+  clock: '#f2c14e',
+  ink: '#2b2a33',
+};
+
+const DAY_WALLS: WallTheme = { body: '#c9c0b0', cap: '#e3dccf' };
+
+/** The daytime road: region shoulder for the verges, white lines, concrete pavements. */
+export function dayRoad(shoulder: string): RoadTheme {
+  return {
+    surfaces: ROAD_COLORS,
+    surface: null,
+    snowPatches: true,
+    verge: shoulder,
+    line: LINE_COLOR,
+    pavement: PAVEMENT_COLOR,
+    kerb: KERB_COLOR,
+    post: POST_COLOR,
+    cap: CAP_COLOR,
+    neon: false,
+  };
+}
+
+const DAY = new Map<RegionId, WorldTheme>();
+
+/** A region's daytime look, as the game has always drawn it. Memoised, so a theme can be compared by identity. */
+export function dayTheme(region: RegionDef): WorldTheme {
+  let theme = DAY.get(region.id);
+  if (!theme) {
+    theme = {
+      id: 'day',
+      lighting: { background: region.palette.sky, fog: region.palette.fog, ...DAY_LIGHTING },
+      terrain: { mode: 'palette' },
+      road: dayRoad(region.palette.shoulder),
+      gates: DAY_GATES,
+      walls: DAY_WALLS,
+      scenery: { kit: 'rally' },
+      skidInk: null,
+    };
+    DAY.set(region.id, theme);
+  }
+  return theme;
+}
+
+/** Daytime theme for a world without a region (the test track): only sky and fog differ. */
+export function flatTheme(sky: string, fog: string, shoulder = '#8fbf6a'): WorldTheme {
+  return {
+    id: 'day',
+    lighting: { background: sky, fog, ...DAY_LIGHTING },
+    terrain: { mode: 'palette' },
+    road: dayRoad(shoulder),
+    gates: DAY_GATES,
+    walls: DAY_WALLS,
+    scenery: { kit: 'rally' },
+    skidInk: null,
+  };
+}
+
+/**
+ * Nightcity: pitch-black sky, a cold moon, dark ground and asphalt, and every
+ * line, kerb, cap and tile in neon. The fog sits just above the background so
+ * towers dissolve into the dark without a band, and closer than by day.
+ */
+export const NIGHTCITY_THEME: WorldTheme = {
+  id: 'nightcity',
+  lighting: {
+    background: '#02030a',
+    fog: '#07080f',
+    fogNear: 40,
+    fogFar: 200,
+    hemiSky: '#4a5680',
+    hemiGround: '#0c0e16',
+    hemiIntensity: 1.6,
+    sunColor: '#8d9cd8',
+    sunIntensity: 1.0,
+  },
+  terrain: { mode: 'flat', color: '#1a1e2b' },
+  road: {
+    surfaces: ROAD_COLORS,
+    surface: '#2b2f3b',
+    snowPatches: false,
+    verge: '#1c2030',
+    line: { hex: NEON.cyan, glow: 2.2 },
+    pavement: '#323645',
+    kerb: { hex: NEON.magenta, glow: 1.8 },
+    post: '#15171f',
+    cap: { hex: NEON.amber, glow: 2.5 },
+    neon: true,
+  },
+  gates: {
+    post: '#15171f',
+    start: [
+      { hex: NEON.cyan, glow: 2.5 },
+      { hex: NEON.violet, glow: 2.5 },
+    ],
+    finish: [
+      { hex: NEON.magenta, glow: 2.5 },
+      { hex: NEON.amber, glow: 2.5 },
+    ],
+    board: '#1a1c26',
+    clock: { hex: NEON.amber, glow: 2.5 },
+    ink: '#05060a',
+  },
+  walls: { body: '#1e2130', cap: '#2e3345' },
+  scenery: { kit: 'nightcity' },
+  skidInk: { color: { hex: NEON.cyan, glow: 2 }, opacity: 0.85 },
+};

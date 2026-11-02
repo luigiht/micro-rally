@@ -1,11 +1,13 @@
 import { createControlInput, type ControlInput } from '@/game/vehicle/ControlInput';
 
-export type KeyAction = 'reset' | 'camera' | 'debug' | 'hud';
+export type KeyAction = 'reset' | 'camera' | 'debug' | 'hud' | 'nightcity';
 
 const ACTIONS: Readonly<Record<string, KeyAction>> = {
   KeyR: 'reset',
   KeyC: 'camera',
   KeyH: 'hud',
+  // Hidden: N is not listed in the controls table on purpose.
+  KeyN: 'nightcity',
   Backquote: 'debug',
 };
 

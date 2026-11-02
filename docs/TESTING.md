@@ -37,7 +37,13 @@ cover the pure-TS core and anything else that can run without a browser:
   `gameStore.server`.
 - **Rendering geometry built in pure TS**: `carHull` (lofted hulls, wells,
   decals, glow groups), `houseGeometry`, `buildingGeometry`,
-  `streetFurnitureGeometry`, `interiorSpecs`.
+  `streetFurnitureGeometry`, `interiorSpecs`, `nightcityHull` (the one
+  Nightcity body fits every catalogue car and clears the first-person eye).
+- **Themes and kits**: `worldTheme` (the day theme equals the old constants;
+  Nightcity carries HDR neon), `neonMaterial` (the shader patch and three's
+  chunk order), `rallyKits` (the extracted daytime kits), `nightcityKits`
+  (every prop kind dressed, towers inside the tree collider, tiers by
+  distance, signs facing the road), `skidMarks` (`setInk`).
 - **Cameras and replay**: `cameraRigs`, `cinematicCamera` (director rules,
   framing, cuts), `replayTrack`.
 - **i18n**: every locale carries the same keys.
@@ -53,13 +59,14 @@ port outside CI. One worker, Chromium only, with software WebGL
 (`--use-angle=swiftshader`): rendering is CPU-bound, so parallel pages would
 starve each other's frame loops.
 
-| Spec             | Covers                                                                 |
-| ---------------- | ---------------------------------------------------------------------- |
-| `smoke.spec.ts`  | Start a game, drive, the progress bar moves                            |
-| `camera.spec.ts` | `C` cycles the four cameras and Settings shows and sets the same view  |
-| `hud.spec.ts`    | `H` hides and shows the HUD chrome; Esc opens a dialog over it         |
-| `mobile.spec.ts` | Phone-landscape profile: touch pads, pause menu, Garage in the toolbar |
-| `save.spec.ts`   | Game IDs, the save API, continuing a game                              |
+| Spec                | Covers                                                                             |
+| ------------------- | ---------------------------------------------------------------------------------- |
+| `smoke.spec.ts`     | Start a game, drive, the progress bar moves                                        |
+| `camera.spec.ts`    | `C` cycles the four cameras and Settings shows and sets the same view              |
+| `hud.spec.ts`       | `H` hides and shows the HUD chrome; Esc opens a dialog over it                     |
+| `nightcity.spec.ts` | `N` toggles the hidden Nightcity re-skin in place; the clock and progress bar stay |
+| `mobile.spec.ts`    | Phone-landscape profile: touch pads, pause menu, Garage in the toolbar             |
+| `save.spec.ts`      | Game IDs, the save API, continuing a game                                          |
 
 Tips: run the suite on its own with nothing else on port 3100 and no heavy
 process alongside, because the camera spec is sensitive to load. Press keys
@@ -83,8 +90,8 @@ pattern used throughout the project:
    for the proving ground.
 3. Fill the driver name and Game ID, press Drive, wait for the canvas
    (`[data-testid="game-canvas"] canvas`) and about 3.6 s of countdown.
-4. Hold `KeyW` for a second or two, press `KeyC` to change camera or `KeyH`
-   to hide the HUD, and take `page.screenshot()`.
+4. Hold `KeyW` for a second or two, press `KeyC` to change camera, `KeyH`
+   to hide the HUD or `KeyN` for Nightcity, and take `page.screenshot()`.
 
 Useful stages: game seed 6, stage index 2 is a forest stage with a town
 (spawn about 690 m for the town entry, 1983 m for a finish in three

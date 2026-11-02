@@ -3,6 +3,7 @@
 import type { Ref } from 'react';
 import type { DirectionalLight } from 'three';
 import type { VehiclePose } from '@/game/vehicle/interpolatePose';
+import type { ThemeLighting } from '@/render/theme/WorldTheme';
 
 const SHADOW_OFFSET = [8, 14, 6] as const;
 
@@ -18,21 +19,25 @@ export function followSun(light: DirectionalLight, pose: Readonly<VehiclePose>):
 }
 
 interface SceneLightsProps {
-  sky: string;
-  fog: string;
+  lighting: ThemeLighting;
   sunRef: Ref<DirectionalLight>;
 }
 
-/** Sky colour, distance fog and the two lights every drive scene uses. */
-export function SceneLights({ sky, fog, sunRef }: SceneLightsProps) {
+/**
+ * Sky colour, distance fog and the two lights every drive scene uses, from the
+ * theme. The sun's colour and intensity are props, not constructor args, so the
+ * same light (and its shadow map) survives a theme change.
+ */
+export function SceneLights({ lighting: l, sunRef }: SceneLightsProps) {
   return (
     <>
-      <color attach="background" args={[sky]} />
-      <fog attach="fog" args={[fog, 70, 260]} />
-      <hemisphereLight args={['#fff6e0', '#7fa05f', 1.9]} />
+      <color attach="background" args={[l.background]} />
+      <fog attach="fog" args={[l.fog, l.fogNear, l.fogFar]} />
+      <hemisphereLight args={[l.hemiSky, l.hemiGround, l.hemiIntensity]} />
       <directionalLight
         ref={sunRef}
-        intensity={2.6}
+        color={l.sunColor}
+        intensity={l.sunIntensity}
         castShadow
         shadow-mapSize={[2048, 2048]}
         shadow-camera-left={-30}

@@ -8,13 +8,11 @@ import {
 } from 'three';
 import type { StageDef } from '@/game/stage/StageGenerator';
 import type { TerrainField } from '@/game/stage/TerrainField';
+import { themedMaterial, themeGlow, themeHex } from '../theme/themeColor';
+import type { GateTheme, ThemeColor } from '../theme/WorldTheme';
 
 type ArchStyle = 'start' | 'finish';
 
-const BANNER: Readonly<Record<ArchStyle, [string, string]>> = {
-  start: ['#4f9d69', '#f4f1e8'],
-  finish: ['#2b2a33', '#f4f1e8'],
-};
 const HEIGHT = 4.4;
 const TILES = 10;
 
@@ -25,11 +23,6 @@ const HOUR_ANGLE = (2 + 50 / 60) * (Math.PI / 6);
 const MINUTE_ANGLE = 50 * (Math.PI / 30);
 /** Layers sit this far in front of each other: flat to the eye, no z-fighting. */
 const LAYER = 0.003;
-const COLORS = {
-  board: '#f4f1e8',
-  clock: '#f2c14e',
-  ink: '#2b2a33',
-} as const;
 
 /**
  * Start gantry and finish gantry built from boxes; checkpoints are a pair of
@@ -41,7 +34,11 @@ export class GateBuilder {
   private readonly geometries: BufferGeometry[] = [];
   private readonly materials = new Map<string, MeshStandardMaterial>();
 
-  constructor(stage: StageDef, field: TerrainField) {
+  constructor(
+    stage: StageDef,
+    field: TerrainField,
+    private readonly theme: GateTheme,
+  ) {
     this.group.name = 'gates';
     const sample = { x: 0, z: 0, heading: 0 };
     stage.path.sample(stage.startDistance, sample);
@@ -58,16 +55,11 @@ export class GateBuilder {
     for (const m of this.materials.values()) m.dispose();
   }
 
-  private material(color: string, emissive = false): MeshStandardMaterial {
-    const key = color + (emissive ? '*' : '');
+  private material(color: ThemeColor): MeshStandardMaterial {
+    const key = `${themeHex(color)}*${themeGlow(color)}`;
     let m = this.materials.get(key);
     if (!m) {
-      m = new MeshStandardMaterial({
-        color,
-        flatShading: true,
-        emissive: emissive ? color : '#000000',
-        emissiveIntensity: emissive ? 0.25 : 0,
-      });
+      m = themedMaterial(color);
       this.materials.set(key, m);
     }
     return m;
@@ -111,16 +103,17 @@ export class GateBuilder {
       const board = new Group();
       board.position.set(px, field.heightAt(px, pz), pz);
       board.rotation.y = heading;
-      const plate = new Mesh(plateGeo, this.material(COLORS.board));
+      const { board: plateColor, clock, ink } = this.theme;
+      const plate = new Mesh(plateGeo, this.material(plateColor));
       plate.castShadow = true;
       board.add(plate);
       // Positive z-rotation reads clockwise from the -z side the driver sees.
-      const parts: [BufferGeometry, string, number, number][] = [
-        [ringGeo, COLORS.ink, 0, front - LAYER],
-        [faceGeo, COLORS.clock, 0, front - LAYER * 2],
-        [hourGeo, COLORS.ink, HOUR_ANGLE, front - LAYER * 3],
-        [minuteGeo, COLORS.ink, MINUTE_ANGLE, front - LAYER * 3],
-        [hubGeo, COLORS.ink, 0, front - LAYER * 4],
+      const parts: [BufferGeometry, ThemeColor, number, number][] = [
+        [ringGeo, ink, 0, front - LAYER],
+        [faceGeo, clock, 0, front - LAYER * 2],
+        [hourGeo, ink, HOUR_ANGLE, front - LAYER * 3],
+        [minuteGeo, ink, MINUTE_ANGLE, front - LAYER * 3],
+        [hubGeo, ink, 0, front - LAYER * 4],
       ];
       for (const [geo, color, spin, depth] of parts) {
         const m = new Mesh(geo, this.material(color));
@@ -148,10 +141,10 @@ export class GateBuilder {
     const arch = new Group();
     arch.position.set(x, field.heightAt(x, z), z);
     arch.rotation.y = heading;
-    const [primary, secondary] = BANNER[style];
+    const [primary, secondary] = style === 'start' ? this.theme.start : this.theme.finish;
     const postGeo = this.box(0.35, HEIGHT, 0.35);
     for (const side of [-1, 1]) {
-      const post = new Mesh(postGeo, this.material('#d9d4c7'));
+      const post = new Mesh(postGeo, this.material(this.theme.post));
       post.position.set(side * half, HEIGHT / 2, 0);
       post.castShadow = true;
       arch.add(post);
@@ -160,7 +153,7 @@ export class GateBuilder {
     const tileGeo = this.box(tileW, 0.9, 0.3);
     for (let i = 0; i < TILES; i++) {
       const color = i % 2 === 0 ? primary : secondary;
-      const tile = new Mesh(tileGeo, this.material(color, style !== 'finish'));
+      const tile = new Mesh(tileGeo, this.material(color));
       tile.position.set(-half + tileW * (i + 0.5), HEIGHT - 0.45, 0);
       arch.add(tile);
     }

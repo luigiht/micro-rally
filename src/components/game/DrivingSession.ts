@@ -293,6 +293,8 @@ export class DrivingSession {
       useTelemetryStore.getState().toggleDebug();
     } else if (action === 'hud') {
       useUiStore.getState().toggleHud();
+    } else if (action === 'nightcity') {
+      useUiStore.getState().toggleNightcity();
     }
   };
 

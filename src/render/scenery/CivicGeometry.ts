@@ -137,7 +137,7 @@ function arch(facing: 'z' | 'x', sign: 1 | -1, wall: number, u: number, y: numbe
 /* ----------------------------------------------------------------- tower */
 
 /** Footprint 6 × 6, three storeys of 2.8 m under a pyramid roof. */
-const TOWER = { w: 6, d: 6, wall: 8.4, roof: 2.6, overhang: 0.4 } as const;
+export const TOWER = { w: 6, d: 6, wall: 8.4, roof: 2.6, overhang: 0.4 } as const;
 const towerTop = FLOOR + TOWER.wall;
 /** Height of the tower's eave line (the bottom of the slopes). */
 const towerEave = towerTop - ROOF_SEAT + EAVE;
@@ -189,7 +189,7 @@ export function towerRoofParts(): BufferGeometry[] {
  * Footprint 12 × 9. The 6.5 m block stands 0.9 m back from the footprint
  * front so the portico steps come forward onto the plinth.
  */
-const HALL = { w: 12, d: 8.1, z: 0.45, wall: 6.5, roof: 2.4, overhang: 0.4 } as const;
+export const HALL = { w: 12, d: 8.1, z: 0.45, wall: 6.5, roof: 2.4, overhang: 0.4 } as const;
 const hallTop = FLOOR + HALL.wall;
 const hallFront = HALL.z - HALL.d / 2;
 /** The portico floor: three 0.2 m steps above the plinth. */

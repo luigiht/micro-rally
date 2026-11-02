@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type Mesh, type BufferAttribute } from 'three';
+import { Color, type Mesh, type BufferAttribute } from 'three';
 import { createWheelContacts } from '@/game/vehicle/wheelContacts';
 import { SkidMarks } from '@/render/effects/SkidMarks';
 
@@ -68,6 +68,22 @@ describe('SkidMarks', () => {
     const n = marks.quadCount;
     drive(marks, 1, 1, 500, t);
     expect(marks.quadCount).toBe(n);
+    marks.dispose();
+  });
+  it('setInk overrides the per-surface ink for new marks and clears back to the table', () => {
+    const marks = new SkidMarks({ capacity: 64 });
+    marks.setInk({ color: new Color(2, 0.4, 0.1), opacity: 1 });
+    const t = drive(marks, 20, 1);
+    expect(marks.quadCount).toBeGreaterThan(0);
+    const color = (marks.mesh as Mesh).geometry.getAttribute('color') as BufferAttribute;
+    expect(color.getX(0)).toBeCloseTo(2);
+    expect(color.getY(0)).toBeCloseTo(0.4);
+    marks.setInk(null);
+    const before = marks.quadCount;
+    drive(marks, 20, 1, 20, t);
+    expect(marks.quadCount).toBeGreaterThan(before);
+    // Back on the tarmac table: rubber-black, nowhere near HDR.
+    expect(color.getX(before * 4)).toBeLessThan(0.2);
     marks.dispose();
   });
 });

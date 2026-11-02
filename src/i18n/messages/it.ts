@@ -269,6 +269,7 @@ export const it: Messages = {
     replayTag: 'Replay',
     exitReplay: 'Esci dal replay',
     replayHint: 'Esc esce · C cambia telecamera',
+    nightcityTag: 'Nightcity',
     resetHint: 'Perso? Premi R per tornare all’ultimo controllo.',
   },
 };

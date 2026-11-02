@@ -1,7 +1,14 @@
 import { BoxGeometry, type BufferGeometry, Color } from 'three';
 import { HOUSE_SLAB_TOP } from '@/game/stage/SceneryScatter';
 import type { BuildingStyle } from '@/game/stage/Town';
-import { hallRoofParts, hallWallParts, towerRoofParts, towerWallParts } from './CivicGeometry';
+import {
+  HALL,
+  hallRoofParts,
+  hallWallParts,
+  TOWER,
+  towerRoofParts,
+  towerWallParts,
+} from './CivicGeometry';
 import { box, gableGeometry, merge, paint, window } from './HouseGeometry';
 
 /**
@@ -209,6 +216,16 @@ function shopRoofParts(): BufferGeometry[] {
     box(0.4, 0.9, 0.4, -2.6, top + 0.65, 1.6, CAP),
   ];
 }
+
+/** Where each style's walls end: footprint, wall-top height and the footprint's z offset, for trims laid on the outside. */
+export const BUILDING_OUTLINE: Readonly<
+  Record<BuildingStyle, { w: number; d: number; top: number; z: number }>
+> = {
+  townhouse: { w: TOWNHOUSE.w, d: TOWNHOUSE.d, top: FLOOR + TOWNHOUSE.wall, z: 0 },
+  shop: { w: SHOP.w, d: SHOP.d, top: FLOOR + SHOP.wall, z: 0 },
+  tower: { w: TOWER.w, d: TOWER.d, top: FLOOR + TOWER.wall, z: 0 },
+  hall: { w: HALL.w, d: HALL.d, top: FLOOR + HALL.wall, z: HALL.z },
+};
 
 /* ------------------------------------------------------------------- API */
 

@@ -1,8 +1,16 @@
 import { BufferAttribute, BufferGeometry, Group, Mesh, MeshStandardMaterial } from 'three';
 import type { TerrainField } from '@/game/stage/TerrainField';
 import { ChunkStreamer, chunkKey } from '../ChunkStreamer';
+import type { TerrainTheme } from '../theme/WorldTheme';
 import { meshTerrainChunk, type ChunkMeshData, type TerrainColors } from './meshTerrainChunk';
 import type { TerrainWorkerRequest } from './terrain.worker';
+
+/** The one material every chunk shares: the worker's baked colours by day, a single dark tone at night. */
+export function terrainMaterial(theme: TerrainTheme): MeshStandardMaterial {
+  return theme.mode === 'flat'
+    ? new MeshStandardMaterial({ color: theme.color, flatShading: true, roughness: 0.95 })
+    : new MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.95 });
+}
 
 export interface TerrainChunkOptions {
   size: number;
@@ -13,11 +21,7 @@ export interface TerrainChunkOptions {
 /** Streams terrain chunks around the car; meshing happens in a Web Worker. */
 export class TerrainChunkManager {
   readonly group = new Group();
-  private readonly material = new MeshStandardMaterial({
-    vertexColors: true,
-    flatShading: true,
-    roughness: 0.95,
-  });
+  private material: MeshStandardMaterial;
   private readonly meshes = new Map<number, Mesh>();
   private readonly streamer: ChunkStreamer;
   private worker: Worker | null = null;
@@ -30,8 +34,10 @@ export class TerrainChunkManager {
     private readonly colors: TerrainColors,
     private readonly amplitude: number,
     private readonly opts: TerrainChunkOptions,
+    theme: TerrainTheme = { mode: 'palette' },
   ) {
     this.group.name = 'terrain';
+    this.material = terrainMaterial(theme);
     this.streamer = new ChunkStreamer(opts.size, opts.radius, this.request, this.drop);
     try {
       this.worker = new Worker(new URL('./terrain.worker.ts', import.meta.url), { type: 'module' });
@@ -64,6 +70,14 @@ export class TerrainChunkManager {
 
   get loadedCount(): number {
     return this.meshes.size;
+  }
+
+  /** Swap the shared material on every loaded chunk and all to come; the baked geometry is untouched. */
+  setMaterial(theme: TerrainTheme): void {
+    const next = terrainMaterial(theme);
+    for (const mesh of this.meshes.values()) mesh.material = next;
+    this.material.dispose();
+    this.material = next;
   }
 
   dispose(): void {

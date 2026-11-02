@@ -16,16 +16,10 @@ import { ROAD_LIFT, TRENCH_OUT, type TerrainField } from '@/game/stage/TerrainFi
 import { halfWidthAt } from '@/game/stage/RoadWidth';
 import { KERB_LIFT, townFade } from '@/game/stage/Town';
 import { routeOpenings, type Openings } from '@/game/stage/TownKerbs';
-import type { Surface } from '@/game/vehicle/surfaces';
+import { patchNeon } from '../theme/NeonMaterial';
+import { themeColor, themedMaterial } from '../theme/themeColor';
+import type { RoadTheme } from '../theme/WorldTheme';
 
-export const ROAD_COLORS: Readonly<Record<Surface, string>> = {
-  tarmac: '#55565e',
-  gravel: '#a98e68',
-  mud: '#6b4d33',
-  /** Snow stages are asphalt under drifting snow: this is the dusting, blended over tarmac. */
-  snow: '#e9eef2',
-  grass: '#8fbf6a',
-};
 /**
  * Snow stages: asphalt with snow lying in patches every ~28 m, the same cover
  * across the full width, so a clear stretch is bare out to the edge lines
@@ -37,7 +31,6 @@ const PATCH_PERIOD = 14;
 const PATCH_FROM = 0.3;
 const PATCH_TO = 0.7;
 const SNOW_COVER = 0.45;
-export const LINE_COLOR = '#f4f1e8';
 /**
  * Terrain-coloured verge strips either side of the ribbon, built from the
  * same samples, so road and verge share their edge vertices and meet flush;
@@ -50,10 +43,6 @@ const SAMPLES_PER_PIECE = 100;
 export const LINE_ABOVE_DECK = 0.02;
 export const LINE_LIFT = ROAD_LIFT + LINE_ABOVE_DECK;
 const LINE_WIDTH = 0.22;
-/** Through a town the verges become pavements: pale concrete standing a kerb's height above the road. */
-export const PAVEMENT_COLOR = '#a6a39b';
-/** The kerb's vertical face, a shade darker than the pavement it carries. */
-export const KERB_COLOR = '#8d8a82';
 
 /** Integer mix hash to 0..1; a plain multiply-mod ramps instead of scattering. */
 function hash01(k: number): number {
@@ -120,10 +109,14 @@ export class RoadBuilder {
   private readonly verge: Color;
   private readonly scratch = { x: 0, z: 0, heading: 0 };
 
-  /** `shoulder` is the region palette's verge colour, so the strips match the terrain beside them. */
-  constructor(stage: StageDef, field: TerrainField, shoulder: string) {
+  /** The theme's verge is the region's shoulder by day, so the strips match the terrain beside them. */
+  constructor(
+    stage: StageDef,
+    field: TerrainField,
+    private readonly theme: RoadTheme,
+  ) {
     this.group.name = 'road';
-    this.verge = new Color(shoulder);
+    this.verge = new Color(theme.verge);
     const openings: Openings = stage.town
       ? routeOpenings(stage.town, stage)
       : { left: [], right: [] };
@@ -135,6 +128,7 @@ export class RoadBuilder {
       polygonOffsetFactor: -2,
       polygonOffsetUnits: -2,
     });
+    if (theme.neon) patchNeon(roadMat);
     this.materials.push(roadMat);
     const path = stage.path;
     for (let s0 = 0; s0 < path.count - 1; s0 += SAMPLES_PER_PIECE) {
@@ -163,14 +157,17 @@ export class RoadBuilder {
   ): BufferGeometry {
     const path = stage.path;
     const sp = path.spacing;
+    const theme = this.theme;
     const snowy = stage.surface === 'snow';
-    const road = new Color(snowy ? ROAD_COLORS.tarmac : ROAD_COLORS[stage.surface]);
-    const dust = new Color(ROAD_COLORS.snow);
+    const surfaces = theme.surfaces;
+    const tarmac = theme.surface ?? surfaces.tarmac;
+    const road = new Color(theme.surface ?? (snowy ? surfaces.tarmac : surfaces[stage.surface]));
+    const dust = new Color(surfaces.snow);
     const tint = new Color();
-    const line = new Color(LINE_COLOR);
-    const paved = { color: new Color(ROAD_COLORS.tarmac), lift: ROAD_LIFT };
-    const pavement = { color: new Color(PAVEMENT_COLOR), lift: ROAD_LIFT + KERB_LIFT };
-    const kerb = new Color(KERB_COLOR);
+    const line = themeColor(theme.line);
+    const paved = { color: new Color(tarmac), lift: ROAD_LIFT };
+    const pavement = { color: new Color(theme.pavement), lift: ROAD_LIFT + KERB_LIFT };
+    const kerb = themeColor(theme.kerb);
     const town = stage.town;
     // A station is a cross-section of the ribbon: every sample, plus the exact ends of each
     // junction opening, where the verge and edge line stop and the junction surface takes over.
@@ -220,7 +217,7 @@ export class RoadBuilder {
         b: (hw) => hw,
         lift: ROAD_LIFT,
         color: road,
-        cover: snowy ? snowCover : undefined,
+        cover: snowy && theme.snowPatches ? snowCover : undefined,
         shaded: true,
         town: paved,
       },
@@ -339,8 +336,8 @@ export class RoadBuilder {
     const postGeo = new BoxGeometry(0.14, 0.9, 0.14).translate(0, 0.45, 0);
     const capGeo = new BoxGeometry(0.16, 0.18, 0.16).translate(0, 0.98, 0);
     this.geometries.push(postGeo, capGeo);
-    const postMat = new MeshStandardMaterial({ color: '#f4f1e8', flatShading: true });
-    const capMat = new MeshStandardMaterial({ color: '#e8623a', flatShading: true });
+    const postMat = themedMaterial(this.theme.post);
+    const capMat = themedMaterial(this.theme.cap);
     this.materials.push(postMat, capMat);
     const posts = new InstancedMesh(postGeo, postMat, count);
     const caps = new InstancedMesh(capGeo, capMat, count);

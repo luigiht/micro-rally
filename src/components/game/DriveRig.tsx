@@ -9,9 +9,12 @@ import type { VehiclePose } from '@/game/vehicle/interpolatePose';
 import { createWheelContacts, wheelContacts } from '@/game/vehicle/wheelContacts';
 import type { CameraMode } from '@/lib/cameraMode';
 import { SkidMarks } from '@/render/effects/SkidMarks';
+import { themeColor } from '@/render/theme/themeColor';
+import type { WorldTheme } from '@/render/theme/WorldTheme';
 import { useGameStore } from '@/state/gameStore';
 import { CarModel, type CarModelHandle } from './CarModel';
 import { DrivingSession, type DriveWorld } from './DrivingSession';
+import { NightcityEffects } from './NightcityEffects';
 import { followSun, SceneLights } from './SceneLights';
 import { usePrefersReducedMotion } from './usePrefersReducedMotion';
 
@@ -23,15 +26,15 @@ function resolveActiveSpec(): CarSpec {
 
 interface DriveRigProps {
   world: DriveWorld;
-  sky: string;
-  fog: string;
+  /** Sky, fog, lights and tyre-mark ink; the stage builders take the same theme through `StageRenderer`. */
+  theme: WorldTheme;
   /** Called every frame with the interpolated car pose (e.g. to stream chunks). */
   onPose?: (pose: Readonly<VehiclePose>) => void;
   children?: ReactNode;
 }
 
 /** Car, lights and the driving session for any world. */
-export function DriveRig({ world, sky, fog, onPose, children }: DriveRigProps) {
+export function DriveRig({ world, theme, onPose, children }: DriveRigProps) {
   const camera = useThree((s) => s.camera) as PerspectiveCamera;
   const gl = useThree((s) => s.gl);
   const scene = useThree((s) => s.scene);
@@ -74,6 +77,12 @@ export function DriveRig({ world, sky, fog, onPose, children }: DriveRigProps) {
     };
   }, [scene, world]);
 
+  // The theme's ink (neon trails in Nightcity) overrides the per-surface table; runs after the marks exist.
+  useEffect(() => {
+    const ink = theme.skidInk;
+    marks.current?.setInk(ink ? { color: themeColor(ink.color), opacity: ink.opacity } : null);
+  }, [theme, scene, world]);
+
   // Garage changes land immediately: retune the live sim and, if the cabin height
   // differs, rebuild the first-person rig around the new eye.
   useEffect(() => {
@@ -100,11 +109,13 @@ export function DriveRig({ world, sky, fog, onPose, children }: DriveRigProps) {
     if (sun.current) followSun(sun.current, pose);
   });
 
+  const nightcity = theme.id === 'nightcity';
   return (
     <>
-      <SceneLights sky={sky} fog={fog} sunRef={sun} />
+      <SceneLights lighting={theme.lighting} sunRef={sun} />
       {children}
-      <CarModel ref={car} spec={spec} />
+      <CarModel ref={car} spec={spec} nightcity={nightcity} />
+      {nightcity && <NightcityEffects />}
     </>
   );
 }

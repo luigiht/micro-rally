@@ -9,6 +9,26 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Added
 
+- **Nightcity**, a hidden mode on `N` (not in the controls table): the stage
+  is re-dressed in place as a cyberpunk night city, with the run, the clock
+  and the records untouched. Pitch-black sky, a cold moon, dark ground and
+  asphalt, neon edge lines, kerbs and marker caps, stilt towers and masts
+  where the trees stood, neon signs and bollards for the bushes, cargo pods
+  for the rocks, mid-rise blocks on the farmhouse pads, dark town buildings
+  under a neon roofline, lit lamp heads, neon gantries and cyan tyre trails.
+  The car becomes one cyberpunk street machine cut to its own axles and
+  track: box flares over both axles with a pinched waist, a blunt wide nose
+  under a long bonnet, a Kamm tail with a ducktail, a segmented light bar
+  with angled fangs over a slatted grille and side intakes, a splitter with
+  canards, bonnet and engine-cover vents with lit slits, fender vents, rear
+  intakes, louvres over the rear glass, a sensor pod and antennas, a spoiler
+  on swept uprights with end plates and a shark fin, a strake diffuser, quad
+  hexagonal thrusters, lit wheel rings and underglow. The cabin follows in the interior view: near-black trim, a lit
+  violet cage, neon harnesses and seat stripes, dark dials in lit cyan rings
+  with magenta needles, light lines along the dash lip, door cards and roof,
+  and a translucent heads-up display over the binnacle. A bloom pass runs
+  only while the mode is on. `N` again restores the day. Session-only, never
+  saved. [92]
 - `LICENSE`: all rights reserved. The repository is public for viewing; no
   licence to use, copy, modify or redistribute is granted.
 - `H` hides and shows the HUD chrome (clock, tags, money, toolbar, progress

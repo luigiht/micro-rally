@@ -91,6 +91,20 @@ flowchart LR
   flower-box and street-furniture kits (`render/scenery/BuildingGeometry.ts`,
   `CivicGeometry.ts`, `PlanterGeometry.ts`, `StreetFurnitureGeometry.ts`).
 
+- **Themes (Nightcity).** `render/theme/WorldTheme.ts` is the look as data:
+  sky, fog, lights, terrain mode, road, gate and wall colours, scenery kit
+  set and tyre-mark ink. `dayTheme(region)` is today's look; `NIGHTCITY_THEME`
+  the hidden cyberpunk one that `N` toggles through `uiStore.nightcity`.
+  `StageRenderer.setTheme` re-dresses a stage in place: terrain material
+  swap, road/gates/town rebuilt in the theme's colours, scenery rebuilt with
+  the theme's kits (`scenery/kits/RallyKits.ts`, `NightcityKits.ts`, chosen
+  by `sceneryKits.ts`). Neon is HDR vertex colour: `themeColor` bakes a
+  glowing colour above one and `theme/NeonMaterial.ts` patches the merged
+  surfaces' materials to draw such faces as emission; glow kits use an unlit
+  material. `DriveRig` passes the theme to `SceneLights`, the tyre marks, the
+  car (`bodies/NightcityBody.tsx` over `render/car/NightcityHull.ts`, one
+  parametric hull for every spec) and mounts `NightcityEffects` (bloom +
+  ACES tone mapping) only while the mode is on.
 - `DrivingSession` (components/game) is a plain class held in a ref. It owns
   the sim, the stepper, input, the camera rig and the `StageRun`, and
   publishes telemetry/HUD snapshots to Zustand at 10 Hz. It also records the

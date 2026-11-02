@@ -8,13 +8,10 @@ import {
   type KerbPoint,
   type Pt,
 } from '@/game/stage/TownKerbs';
-import {
-  KERB_COLOR,
-  LINE_COLOR,
-  LINE_ABOVE_DECK,
-  PAVEMENT_COLOR,
-  ROAD_COLORS,
-} from '../road/RoadBuilder';
+import { LINE_ABOVE_DECK } from '../road/RoadBuilder';
+import { patchNeon } from '../theme/NeonMaterial';
+import { themeColor } from '../theme/themeColor';
+import type { RoadTheme } from '../theme/WorldTheme';
 
 /** The pavement starts this far over the tarmac so no seam shows along the kerb. */
 const PAVEMENT_OVERLAP = 0.05;
@@ -38,16 +35,21 @@ export class TownJunctionBuilder {
   private readonly material: MeshStandardMaterial;
   private readonly pos: number[] = [];
   private readonly col: number[] = [];
-  private readonly tarmac = new Color(ROAD_COLORS.tarmac);
-  private readonly pavement = new Color(PAVEMENT_COLOR);
-  private readonly line = new Color(LINE_COLOR);
-  private readonly kerb = new Color(KERB_COLOR);
+  private readonly tarmac: Color;
+  private readonly pavement: Color;
+  private readonly line: Color;
+  private readonly kerb: Color;
 
   constructor(
     private readonly stage: StageDef,
     private readonly field: GroundQuery,
+    road: RoadTheme,
   ) {
     this.group.name = 'town-junctions';
+    this.tarmac = new Color(road.surface ?? road.surfaces.tarmac);
+    this.pavement = new Color(road.pavement);
+    this.line = themeColor(road.line);
+    this.kerb = themeColor(road.kerb);
     for (const j of stage.town?.junctions ?? []) {
       const kerbs = junctionKerbs(j, stage, stage.halfWidth);
       for (const o of kerbs.outlines) {
@@ -73,6 +75,7 @@ export class TownJunctionBuilder {
       polygonOffsetFactor: -2,
       polygonOffsetUnits: -2,
     });
+    if (road.neon) patchNeon(this.material);
     const mesh = new Mesh(this.geometry, this.material);
     mesh.receiveShadow = true;
     mesh.matrixAutoUpdate = false;

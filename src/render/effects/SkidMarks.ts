@@ -140,6 +140,8 @@ export class SkidMarks {
   private readonly birth: BufferAttribute;
   private readonly trails: WheelTrail[] = [];
   private readonly ink = new Map<Surface, Color>();
+  /** A theme's ink for every surface (Nightcity's neon trails); null keeps the per-surface table. */
+  private override: { color: Color; opacity: number } | null = null;
   private head = 0;
   private written = 0;
   readonly options: Readonly<SkidMarkOptions>;
@@ -204,11 +206,16 @@ export class SkidMarks {
     return this.written;
   }
 
+  /** Draw every new mark in this ink regardless of surface, or null for the per-surface table. Existing marks keep theirs. */
+  setInk(ink: { color: Color; opacity: number } | null): void {
+    this.override = ink ? { color: ink.color.clone(), opacity: ink.opacity } : null;
+  }
+
   /** Call once per frame with the four contacts, the surface under the car and the sim clock. */
   update(contacts: readonly WheelContact[], surface: Surface, time: number, dt: number): void {
     this.material.uniforms.uTime!.value = time;
-    const ink = INK[surface];
-    const color = this.ink.get(surface)!;
+    const ink = this.override ?? INK[surface];
+    const color = this.override?.color ?? this.ink.get(surface)!;
     for (let i = 0; i < WHEEL_COUNT; i++) {
       const c = contacts[i]!;
       const t = this.trails[i]!;
