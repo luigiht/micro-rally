@@ -1,6 +1,13 @@
 import type { Surface } from '../vehicle/surfaces';
 
-export const PRIZE_PER_KM = 120;
+/**
+ * Prize per kilometre at par pace on tarmac. Tuned so that a stage of the
+ * usual 1.5–2 km pays about $300–400 at par and $250–300 at 1.3× par: three
+ * or four stages buy the next upgrade level (level 1 runs $350–900, level 2
+ * $600–1600) even before the loop bonus, and the first dealership car
+ * ($4500) comes after a dozen.
+ */
+export const PRIZE_PER_KM = 200;
 
 export const SURFACE_DIFFICULTY: Readonly<Record<Surface, number>> = {
   tarmac: 1,

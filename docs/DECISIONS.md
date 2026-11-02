@@ -1280,3 +1280,16 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
     failed once stage building grew heavier. Tests: side streets of
     different junctions keep their ground apart (0.4 m unless forced), some
     are shortened, cones stay on their shortened street.
+
+85. **2026-11-02 — Prize per kilometre raised from 120 to 200.** Stages run
+    1.5–2 km with a par around two minutes, so at par a stage paid about
+    $240 and a player at 1.3–1.5× par, with the odd tree to pay for, netted
+    $130–190: the average level-1 upgrade ($557 across the seven) took four
+    or five stages, the turbo ($900) seven. At 200 a stage pays $350–400 at
+    par, $280–310 at 1.3× par and $230–250 at 1.5× par, so three stages buy
+    any level-1 upgrade but the turbo and four buy that or an average
+    level 2, before the +25%-per-loop bonus; the first dealership car
+    ($4500) comes after about a dozen stages at par. The pace curve (+25%
+    for beating par by a fifth, sliding to a 0.3 floor at double par), the
+    surface factors and the upgrade prices are unchanged; the prize test
+    reads the constant instead of repeating it.
