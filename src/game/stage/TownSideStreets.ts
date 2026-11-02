@@ -1,7 +1,17 @@
-import { FRONT_SETBACK, type Arm, type BuildingStyle, type Junction } from './Town';
+import {
+  FRONT_SETBACK,
+  JUNCTION_REACH,
+  PAVEMENT_WIDTH,
+  type Arm,
+  type BuildingStyle,
+  type Footprint,
+  type Junction,
+  type Street,
+} from './Town';
 import { wedges } from './TownJunctions';
 import { meet, type JunctionKerbs } from './TownKerbs';
 import {
+  apart,
   at,
   BUILDING_SIZE,
   forward,
@@ -42,15 +52,127 @@ const WALL_ROOM = 0.3;
 const PLANT_GAP = 0.8;
 /** Terraces down a side street start this far from the junction, past the facade corner of the widest wedge. */
 export const ROW_SETBACK = 16;
+/** A side street shortened to clear another junction's keeps at least this much carriageway. */
+export const MIN_STUB_LENGTH = 20;
+/** Pavements of side streets from different junctions keep this much apart. */
+const STUB_GAP = 0.5;
+const CLEAR_STEP = 0.25;
 
-/** A blocked side street waiting for its buildings. */
+/** A blocked side street waiting to be fitted among the others, laid and given its buildings. */
 export interface StubSite {
   j: Pt;
   heading: number;
   hw: number;
+  /** Carriageway length from the junction: `STUB_LENGTH` unless cut down to clear another junction's street. */
+  length: number;
   endStyle?: BuildingStyle;
+  /** A direction board for the route's turn stands before this street's cones. */
+  arrowTurn?: 1 | -1;
   /** Half width of the building closing the end, once it stands. */
   endHx?: number;
+}
+
+/** How far down a side street its cones stand: part-way, or short of a shortened street's end. */
+export function coneDistance(s: StubSite): number {
+  return Math.min(CONE_DISTANCE, s.length - 4);
+}
+
+/** A plan to fit a side street: its length, and the other streets to cut down for it. */
+export interface StubPlan {
+  length: number;
+  cuts: [StubSite, number][];
+}
+
+/** The ground a side street of `length` takes from `j` along `heading`: carriageway, pavements and the pavement across its end, as one box. */
+function ground(j: Pt, heading: number, hw: number, length: number): Footprint {
+  const half = (length + PAVEMENT_WIDTH) / 2;
+  const c = at(j, heading, half, 0);
+  return { x: c.x, z: c.z, yaw: heading, hx: hw + PAVEMENT_WIDTH, hz: half };
+}
+
+function corridor(s: StubSite, length: number): Footprint {
+  return ground(s.j, s.heading, s.hw, length);
+}
+
+/** The ground a laid side street takes, pavements included. */
+export function streetGround(st: Street): Footprint {
+  const dx = st.x1 - st.x0;
+  const dz = st.z1 - st.z0;
+  return ground({ x: st.x0, z: st.z0 }, Math.atan2(dx, dz), st.halfWidth, Math.hypot(dx, dz));
+}
+
+/**
+ * The longest `a` can be before its ground comes within `STUB_GAP` of `b`'s
+ * (`b` at its current length); `STUB_LENGTH` when they never meet. Streets
+ * from the same junction share its mouth and never clash.
+ */
+export function clearLength(a: StubSite, b: StubSite): number {
+  if (Math.hypot(a.j.x - b.j.x, a.j.z - b.j.z) < 1e-6) return STUB_LENGTH;
+  const other = corridor(b, b.length);
+  // The length grows in steps until the two boxes come within the gap; the last clear step stands.
+  for (let l = CLEAR_STEP; l <= STUB_LENGTH; l += CLEAR_STEP)
+    if (!apart(corridor(a, l), other, STUB_GAP)) return l - CLEAR_STEP;
+  return STUB_LENGTH;
+}
+
+/**
+ * Lengths for `s` and `o` when they can only clear each other by both
+ * giving way (streets facing each other from two corners): the longest `o`
+ * can keep, down to the minimum, that leaves `s` at least as much. Null when
+ * even that is not enough.
+ */
+function splitLengths(s: StubSite, o: StubSite): [number, number] | null {
+  for (let l = STUB_LENGTH; l >= MIN_STUB_LENGTH; l -= CLEAR_STEP) {
+    const la = clearLength(s, { ...o, length: l });
+    if (la >= l) return [la, l];
+  }
+  return null;
+}
+
+/**
+ * Fit a side street among those already planned. Where its pavement would
+ * run into another junction's street, whichever of the two keeps more
+ * street is cut down, never below `MIN_STUB_LENGTH`; streets that can only
+ * clear each other by both giving way split the room between them. Null
+ * when a clash cannot be cleared that way; with `force` the new street is
+ * kept anyway, cut to what fits beside the other at the minimum but never
+ * shorter than its junction's cut, for a corner's streets, which the
+ * junction cannot do without.
+ */
+export function planStub(stubs: readonly StubSite[], s: StubSite, force: boolean): StubPlan | null {
+  let length = s.length;
+  const cuts: [StubSite, number][] = [];
+  for (const o of stubs) {
+    const la = clearLength(s, o);
+    if (la >= length) continue;
+    const lo = clearLength(o, { ...s, length });
+    if (lo >= MIN_STUB_LENGTH && lo >= la) {
+      cuts.push([o, lo]);
+      continue;
+    }
+    if (la >= MIN_STUB_LENGTH) {
+      length = la;
+      continue;
+    }
+    const split = splitLengths({ ...s, length }, o);
+    if (split) {
+      length = Math.min(length, split[0]);
+      cuts.push([o, split[1]]);
+      continue;
+    }
+    if (!force) return null;
+    cuts.push([o, MIN_STUB_LENGTH]);
+    length = Math.max(
+      s.hw + JUNCTION_REACH + 2,
+      Math.min(length, clearLength(s, { ...o, length: MIN_STUB_LENGTH })),
+    );
+  }
+  return { length, cuts };
+}
+
+export function applyPlan(s: StubSite, plan: StubPlan): void {
+  s.length = plan.length;
+  for (const [o, l] of plan.cuts) o.length = Math.min(o.length, l);
 }
 
 /** The route's facades through the town, the houses' side of the pavement. */
@@ -59,26 +181,28 @@ export interface RouteFacades {
   right: Facade;
 }
 
-/** Lay a blocked side street from junction `j`: the carriageway and the cones across it. */
-export function sideStreet(
-  site: Site,
-  stubs: StubSite[],
-  j: Pt,
-  heading: number,
-  hw: number,
-  endStyle?: BuildingStyle,
-): void {
-  site.streets.push(street(j, at(j, heading, STUB_LENGTH, 0), hw, false));
-  const b = at(j, heading, CONE_DISTANCE, 0);
-  site.cones.push({ x: b.x, z: b.z, yaw: heading, halfLength: hw - CONE_MARGIN });
-  stubs.push({ j, heading, hw, ...(endStyle ? { endStyle } : {}) });
+/** A blocked side street from junction `j` at full length, to be fitted among the others before it is laid. */
+export function stubSite(j: Pt, heading: number, hw: number, endStyle?: BuildingStyle): StubSite {
+  return { j, heading, hw, length: STUB_LENGTH, ...(endStyle ? { endStyle } : {}) };
+}
+
+/** Lay a fitted side street: the carriageway, the cones across it and any direction board before them. */
+export function layStub(site: Site, s: StubSite): void {
+  site.streets.push(street(s.j, at(s.j, s.heading, s.length, 0), s.hw, false));
+  const cones = coneDistance(s);
+  const b = at(s.j, s.heading, cones, 0);
+  site.cones.push({ x: b.x, z: b.z, yaw: s.heading, halfLength: s.hw - CONE_MARGIN });
+  if (s.arrowTurn !== undefined) {
+    const a = at(s.j, s.heading, cones - ARROW_AHEAD_OF_CONES, 0);
+    site.arrows.push({ x: a.x, z: a.z, yaw: s.heading, turn: s.arrowTurn });
+  }
 }
 
 /** The building that closes a side street, facing back up it; a wall across the end where it cannot stand. */
 export function stubEnd(site: Site, s: StubSite): void {
   const style = s.endStyle ?? (site.rand() < 0.5 ? 'townhouse' : 'shop');
   const { hx, hz } = BUILDING_SIZE[style];
-  const front = STUB_LENGTH + FRONT_SETBACK;
+  const front = s.length + FRONT_SETBACK;
   const c = at(s.j, s.heading, front + hz, 0);
   const variant = site.rand() < 0.5 ? 0 : 1;
   if (place(site, { style, x: c.x, z: c.z, yaw: s.heading, hx, hz, variant })) {
@@ -91,7 +215,7 @@ export function stubEnd(site: Site, s: StubSite): void {
 
 /** Terraces down both sides of a side street, and walls closing the corners at its end. */
 export function stubRows(site: Site, s: StubSite): void {
-  const front = STUB_LENGTH + FRONT_SETBACK;
+  const front = s.length + FRONT_SETBACK;
   const end = front - 0.6;
   for (const side of [1, -1] as const) {
     row(site, straightFacade(s.j, s.heading, s.hw, side, end), ROW_SETBACK, end);

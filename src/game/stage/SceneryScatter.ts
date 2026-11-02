@@ -177,14 +177,14 @@ export function scatterScenery(field: TerrainField): Prop[] {
   // Flatten a pad under each house so the slab, door sill and step meet level ground,
   // and a terrace under each town building so it steps down the hill on level footing.
   // The pad is pulled back from the facade (local -z) so its blend stops at the pavement's edge.
-  const inset = (TERRACE_FRONT - TERRACE_MARGIN) / 2;
+  const inset = (TERRACE_FRONT + TERRACE_MARGIN) / 2;
   const terraces = (stage.town?.buildings ?? []).map((b) => ({
     x: b.x + Math.sin(b.yaw) * inset,
     z: b.z + Math.cos(b.yaw) * inset,
     y: buildingBaseHeight(b, field),
     radius: Math.hypot(b.hx, b.hz) + TERRACE_MARGIN,
     hx: b.hx + TERRACE_MARGIN,
-    hz: b.hz - inset + TERRACE_MARGIN,
+    hz: b.hz + TERRACE_MARGIN - inset,
     yaw: b.yaw,
     blend: TERRACE_BLEND,
   }));

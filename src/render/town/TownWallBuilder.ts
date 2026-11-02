@@ -1,5 +1,5 @@
 import { BoxGeometry, BufferGeometry, Color, Group, Mesh, MeshStandardMaterial } from 'three';
-import { WALL_HALF, type GroundQuery, type TownDef } from '@/game/stage/Town';
+import { KERB_LIFT, WALL_HALF, type GroundQuery, type TownDef } from '@/game/stage/Town';
 import { merge, paint } from '../scenery/HouseGeometry';
 
 /** Garden walls: a plastered run with a pale coping, sunk into the slope so no gap opens under them. */
@@ -23,8 +23,9 @@ export class TownWallBuilder {
       const len = Math.hypot(w.x1 - w.x0, w.z1 - w.z0);
       if (len < 0.05) continue;
       const yaw = Math.atan2(w.x1 - w.x0, w.z1 - w.z0);
-      const y0 = field.heightAt(w.x0, w.z0);
-      const y1 = field.heightAt(w.x1, w.z1);
+      // Walls stand at the back of the pavement, at its level.
+      const y0 = field.deckAt(w.x0, w.z0) + KERB_LIFT;
+      const y1 = field.deckAt(w.x1, w.z1) + KERB_LIFT;
       const top = Math.max(y0, y1) + WALL_HEIGHT;
       const bottom = Math.min(y0, y1) - SINK;
       const body = paint(new BoxGeometry(WALL_HALF * 2, top - bottom, len), BODY).translate(

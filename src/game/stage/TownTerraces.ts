@@ -9,6 +9,7 @@ import {
   type Planting,
   type Street,
   type Wall,
+  type Footprint,
 } from './Town';
 
 /** Footprint half extents per style: `hx` across the front, `hz` deep. */
@@ -289,7 +290,7 @@ export function straightFacade(
 }
 
 /** True when the two footprints are at least `gap` apart along some edge axis (so never overlapping). */
-export function apart(a: Building, b: Building, gap: number): boolean {
+export function apart(a: Footprint, b: Footprint, gap: number): boolean {
   const ca = buildingCorners(a);
   const cb = buildingCorners(b);
   for (const r of [a, b]) {

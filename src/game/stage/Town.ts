@@ -191,8 +191,23 @@ function segmentDistance(x0: number, z0: number, x1: number, z1: number, x: numb
 }
 /** Cones stand this far apart across a closed street. */
 export const CONE_SPACING = 1.5;
-/** Pavements stand this far above the road deck. */
-export const KERB_LIFT = 0.04;
+/** Pavements stand this far above the carriageway, behind a vertical kerb face. */
+export const KERB_LIFT = 0.1;
+/** The physics surface climbs the kerb over this distance, so a wheel mounts it as a bump rather than a wall. */
+export const KERB_RAMP = 0.3;
+/** The route turns from the stage surface into town tarmac, verges into pavements, over this distance either side. */
+export const TOWN_FADE = 40;
+
+/** How far into the town the route is at path distance `along`: 0 on the open road, 1 inside, easing over `TOWN_FADE`. */
+export function townFade(town: TownDef, along: number): number {
+  const ease = (e0: number, e1: number, x: number) => {
+    const t = Math.min(1, Math.max(0, (x - e0) / (e1 - e0)));
+    return t * t * (3 - 2 * t);
+  };
+  return (
+    ease(town.from - TOWN_FADE, town.from, along) * (1 - ease(town.to, town.to + TOWN_FADE, along))
+  );
+}
 /**
  * Junction plates reach this far beyond the carriageway edge around the
  * polygon corner the route's arc cuts; side-street plates begin there, and
@@ -205,11 +220,17 @@ const LAMP_OFFSET = 1.0;
 
 /** Whatever answers the driving-surface height, usually the stage's `TerrainField`. */
 export interface GroundQuery {
+  /** The surface wheels ride on, kerbs included. */
   heightAt(x: number, z: number): number;
+  /** The same surface without the pavements' kerb lift: what tarmac, kerb faces and pavements are built on. */
+  deckAt(x: number, z: number): number;
 }
 
 /** World positions of a building's four footprint corners (local x is the left axis (cos, -sin), local z forward (sin, cos)). */
-export function buildingCorners(b: Building): [number, number][] {
+/** An oriented box on the ground: a building's footprint, or any other rectangle of ground laid out the same way. */
+export type Footprint = Pick<Building, 'x' | 'z' | 'yaw' | 'hx' | 'hz'>;
+
+export function buildingCorners(b: Footprint): [number, number][] {
   const sy = Math.sin(b.yaw);
   const cy = Math.cos(b.yaw);
   return (
@@ -229,7 +250,7 @@ export function buildingCorners(b: Building): [number, number][] {
  */
 export function buildingBaseHeight(b: Building, ground: GroundQuery): number {
   const [, , fr, fl] = buildingCorners(b);
-  return (ground.heightAt(fr![0], fr![1]) + ground.heightAt(fl![0], fl![1])) / 2;
+  return (ground.deckAt(fr![0], fr![1]) + ground.deckAt(fl![0], fl![1])) / 2 + KERB_LIFT;
 }
 
 /**
@@ -275,7 +296,7 @@ export function townProps(
       out.push({
         kind: 'cone',
         x,
-        y: ground.heightAt(x, z),
+        y: ground.deckAt(x, z),
         z,
         scale: 1,
         rotation: r.yaw,
@@ -287,7 +308,7 @@ export function townProps(
     out.push({
       kind: a.turn > 0 ? 'arrowLeft' : 'arrowRight',
       x: a.x,
-      y: ground.heightAt(a.x, a.z) + KERB_LIFT,
+      y: ground.deckAt(a.x, a.z),
       z: a.z,
       scale: 1,
       rotation: a.yaw,
@@ -320,7 +341,7 @@ export function townProps(
       out.push({
         kind: 'lamp',
         x,
-        y: ground.heightAt(x, z) + KERB_LIFT,
+        y: ground.deckAt(x, z) + KERB_LIFT,
         z,
         scale: 1,
         rotation: side > 0 ? heading : heading + Math.PI,

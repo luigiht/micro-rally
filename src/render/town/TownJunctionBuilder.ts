@@ -11,7 +11,7 @@ import {
 import {
   KERB_COLOR,
   LINE_COLOR,
-  LINE_LIFT,
+  LINE_ABOVE_DECK,
   PAVEMENT_COLOR,
   ROAD_COLORS,
 } from '../road/RoadBuilder';
@@ -52,7 +52,7 @@ export class TownJunctionBuilder {
       const kerbs = junctionKerbs(j, stage, stage.halfWidth);
       for (const o of kerbs.outlines) {
         this.strip(o.points, -PAVEMENT_OVERLAP, PAVEMENT_WIDTH, KERB_LIFT, this.pavement);
-        this.strip(o.points, -LINE_INSET - LINE_WIDTH, -LINE_INSET, LINE_LIFT, this.line);
+        this.strip(o.points, -LINE_INSET - LINE_WIDTH, -LINE_INSET, LINE_ABOVE_DECK, this.line);
         this.face(o.points);
       }
       this.fill(kerbs.surface);
@@ -82,7 +82,7 @@ export class TownJunctionBuilder {
   /** Band between offsets `o0` and `o1` along the kerb normals, each vertex on the ground there plus `lift`. */
   private strip(points: KerbPoint[], o0: number, o1: number, lift: number, c: Color): void {
     const at = (p: KerbPoint, o: number) =>
-      this.field.heightAt(p.x + p.nx * o, p.z + p.nz * o) + lift;
+      this.field.deckAt(p.x + p.nx * o, p.z + p.nz * o) + lift;
     for (let i = 0; i + 1 < points.length; i++) {
       const p = points[i]!;
       const q = points[i + 1]!;
@@ -146,8 +146,8 @@ export class TownJunctionBuilder {
       const tx = q.x - p.x;
       const tz = q.z - p.z;
       if (tx * tx + tz * tz < 1e-8) continue;
-      const yp = this.field.heightAt(p.x, p.z);
-      const yq = this.field.heightAt(q.x, q.z);
+      const yp = this.field.deckAt(p.x, p.z);
+      const yq = this.field.deckAt(q.x, q.z);
       // With the pavement on the left of travel the face must look right, toward the road.
       const leftward = p.nx * tz - p.nz * tx > 0;
       const low = [
@@ -177,7 +177,7 @@ export class TownJunctionBuilder {
       area += poly[k]!.x * poly[i]!.z - poly[i]!.x * poly[k]!.z;
     // Positive shoelace area in (x, z) is clockwise seen from above (y up): reverse it.
     const pts = area > 0 ? [...poly].reverse() : poly;
-    const ys = pts.map((v) => this.field.heightAt(v.x, v.z));
+    const ys = pts.map((v) => this.field.deckAt(v.x, v.z));
     const c = this.tarmac;
     for (let i = 1; i + 1 < pts.length; i++) {
       for (const k of [0, i, i + 1]) {

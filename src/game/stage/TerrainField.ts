@@ -6,7 +6,16 @@ import { REGIONS } from './regions';
 import { createRoadHit } from './RoadPath';
 import { halfWidthAt } from './RoadWidth';
 import type { StageDef } from './StageGenerator';
-import { JUNCTION_REACH, PLATEAU_BLEND, plateauDistance, type TownDef } from './Town';
+import {
+  JUNCTION_REACH,
+  KERB_LIFT,
+  KERB_RAMP,
+  PAVEMENT_WIDTH,
+  PLATEAU_BLEND,
+  plateauDistance,
+  townFade,
+  type TownDef,
+} from './Town';
 import { junctionKerbs, type JunctionSurface } from './TownKerbs';
 
 const FLAT_MARGIN = 3;
@@ -43,10 +52,13 @@ export const TOWN_RELIEF_MAX = 0.4;
 /** Side streets climb no faster than this, beyond the junction zone where they follow the route's deck. */
 const STUB_GRADE = 0.08;
 
+/** Samples across a side street's deck at its junction zone's end, from the street's right edge to its left. */
+const PROFILE_SAMPLES = 7;
+
 /**
  * A blocked side street's deck: the route's own deck through the junction
- * zone, then a straight climb from the deck at the zone's end (`yZone`)
- * toward the ground at the stub's end (`y1`).
+ * zone, then a straight climb from the deck across the zone's end
+ * (`profile`) toward the ground at the stub's end (`y1`).
  */
 interface StubDeck {
   x0: number;
@@ -55,14 +67,29 @@ interface StubDeck {
   dz: number;
   len: number;
   hw: number;
+  /** The route's deck across the zone's end, `PROFILE_SAMPLES` from the street's right edge to its left. */
+  profile: Float64Array;
+  /** The middle of `profile`: the deck on the axis at the zone's end. */
   yZone: number;
   y1: number;
+}
+
+/** `s.profile` interpolated at `lat` metres to the street's left, held at the edges. */
+function profileAt(s: StubDeck, lat: number): number {
+  const n = s.profile.length - 1;
+  const u = Math.min(n, Math.max(0, ((lat + s.hw) / (2 * s.hw)) * n));
+  const i = Math.min(n - 1, Math.floor(u));
+  const f = u - i;
+  return s.profile[i]! * (1 - f) + s.profile[i + 1]! * f;
 }
 
 interface StreetHit {
   deck: number;
   distance: number;
   hw: number;
+  /** Path distance of the route hit; NaN for a side street. */
+  along: number;
+  stub: boolean;
 }
 
 /**
@@ -119,8 +146,22 @@ export class TerrainField implements TerrainQuery {
   private readonly stubs: StubDeck[];
   /** Each junction's tarmac, trenched like a carriageway so the junction surface sits clear of the terrain. */
   private readonly junctions: JunctionSurface[];
-  private readonly street: StreetHit = { deck: 0, distance: Infinity, hw: 0 };
-  private readonly stubScratch: StreetHit = { deck: 0, distance: Infinity, hw: 0 };
+  private readonly street: StreetHit = {
+    deck: 0,
+    distance: Infinity,
+    hw: 0,
+    along: NaN,
+    stub: false,
+  };
+  private readonly stubScratch: StreetHit = {
+    deck: 0,
+    distance: Infinity,
+    hw: 0,
+    along: NaN,
+    stub: true,
+  };
+  /** Whether the last `deckAt` found a street in reach (its hit is then in `street`). */
+  private nearStreet = false;
 
   constructor(readonly stage: StageDef) {
     const region = REGIONS[stage.region];
@@ -184,15 +225,37 @@ export class TerrainField implements TerrainQuery {
       const dz = s.z1 - s.z0;
       const len = Math.hypot(dx, dz);
       const zoneEnd = Math.min(len, s.halfWidth + JUNCTION_REACH);
-      const zx = s.x0 + (dx / len) * zoneEnd;
-      const zz = s.z0 + (dz / len) * zoneEnd;
-      const yZone = this.stage.path.nearest(zx, zz, this.corridor, this.hit)
-        ? this.roadHeightAt(this.hit.along)
-        : this.groundHeight(zx, zz);
+      // The route's deck across the zone's end: the street carries those levels on from there,
+      // so where the route leaves its reach (or another stretch of it comes within reach) the
+      // deck does not step.
+      const ux = dx / len;
+      const uz = dz / len;
+      const ex = s.x0 + ux * zoneEnd;
+      const ez = s.z0 + uz * zoneEnd;
+      const routeAt = (x: number, z: number) =>
+        this.stage.path.nearest(x, z, this.corridor, this.hit)
+          ? this.roadHeightAt(this.hit.along)
+          : this.groundHeight(x, z);
+      const profile = new Float64Array(PROFILE_SAMPLES);
+      for (let i = 0; i < PROFILE_SAMPLES; i++) {
+        const lat = -s.halfWidth + (2 * s.halfWidth * i) / (PROFILE_SAMPLES - 1);
+        profile[i] = routeAt(ex + uz * lat, ez - ux * lat);
+      }
+      const yZone = profile[(PROFILE_SAMPLES - 1) / 2]!;
       const end = this.groundHeight(s.x1, s.z1);
       const climb = Math.max(0, len - zoneEnd);
       const rise = Math.max(-climb * STUB_GRADE, Math.min(climb * STUB_GRADE, end - yZone));
-      out.push({ x0: s.x0, z0: s.z0, dx, dz, len, hw: s.halfWidth, yZone, y1: yZone + rise });
+      out.push({
+        x0: s.x0,
+        z0: s.z0,
+        dx,
+        dz,
+        len,
+        hw: s.halfWidth,
+        profile,
+        yZone,
+        y1: yZone + rise,
+      });
     }
     return out;
   }
@@ -216,13 +279,17 @@ export class TerrainField implements TerrainQuery {
       found = true;
       const zone = (s.hw + JUNCTION_REACH) / s.len;
       if (t <= zone && routeDeck !== null) {
-        // The mouth takes the route's deck exactly (which tilts across the street where the route
-        // climbs), easing to the street's own level by the end of the zone, where the ramp starts.
-        const w = zone > 0 ? t / zone : 1;
-        out.deck = routeDeck + (s.yZone - routeDeck) * w;
+        // Through the junction zone the street is the route's own deck, so plates and the
+        // ribbon meet without a step.
+        out.deck = routeDeck;
       } else {
+        // Beyond it the street carries on from the deck across the zone's end and ramps to
+        // its end level: the route past the zone (which may bend away, or loop back within
+        // reach near the street's end) has no say. Continuous at the zone's end.
+        const lat = ((x - s.x0) * s.dz - (z - s.z0) * s.dx) / s.len;
+        const start = profileAt(s, lat);
         const ramp = zone >= 1 ? 0 : Math.max(0, (t - zone) / (1 - zone));
-        out.deck = s.yZone + (s.y1 - s.yZone) * ramp;
+        out.deck = start + (s.y1 - start) * ramp;
       }
       out.distance = distance;
       out.hw = s.hw;
@@ -241,6 +308,8 @@ export class TerrainField implements TerrainQuery {
       out.hw = halfWidthAt(this.stage, this.hit.along);
       out.deck = this.roadHeightAt(this.hit.along);
       out.distance = this.hit.distance;
+      out.along = this.hit.along;
+      out.stub = false;
       found = true;
     }
     if (this.stubs.length > 0 && plateauDistance(this.town!, x, z) < this.corridor) {
@@ -252,6 +321,8 @@ export class TerrainField implements TerrainQuery {
         out.deck = s.deck;
         out.distance = s.distance;
         out.hw = s.hw;
+        out.along = NaN;
+        out.stub = true;
         found = true;
       }
     }
@@ -332,13 +403,39 @@ export class TerrainField implements TerrainQuery {
     return out;
   }
 
-  heightAt(x: number, z: number): number {
+  /** The surface without the pavements' kerb lift: the deck tarmac, kerb faces and pavements are built on. */
+  deckAt(x: number, z: number): number {
     const base = this.groundHeight(x, z);
     const st = this.street;
-    if (!this.nearestStreet(x, z, st)) return this.applyPads(x, z, base);
+    this.nearStreet = this.nearestStreet(x, z, st);
+    if (!this.nearStreet) return this.applyPads(x, z, base);
     const deck = st.deck + ROAD_LIFT;
     const t = smoothstep(st.hw + FLAT_MARGIN, st.hw + FLAT_MARGIN + BLEND_WIDTH, st.distance);
     return this.applyPads(x, z, deck + (base - deck) * t);
+  }
+
+  /**
+   * The surface wheels ride on: the deck, plus the kerb lift over a town
+   * pavement (a strip `PAVEMENT_WIDTH` wide outside every carriageway and
+   * junction surface), climbed over `KERB_RAMP` so a wheel mounts it as a bump.
+   */
+  heightAt(x: number, z: number): number {
+    const h = this.deckAt(x, z);
+    const town = this.town;
+    if (!town || !this.nearStreet) return h;
+    const st = this.street;
+    const fade = st.stub ? 1 : townFade(town, st.along);
+    if (fade <= 0) return h;
+    let out = st.distance - st.hw;
+    for (const js of this.junctions) {
+      if (Math.hypot(x - js.x, z - js.z) > js.zone) continue;
+      out = Math.min(out, js.distance(x, z));
+    }
+    if (out <= 0 || out >= PAVEMENT_WIDTH + 0.4) return h;
+    const onto =
+      smoothstep(0, KERB_RAMP, out) *
+      (1 - smoothstep(PAVEMENT_WIDTH - 0.3, PAVEMENT_WIDTH + 0.4, out));
+    return h + KERB_LIFT * fade * onto;
   }
 
   /** Town streets are paved whatever the stage surface; the route through the town counts as one of them. */

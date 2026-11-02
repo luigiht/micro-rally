@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createRoadHit } from '@/game/stage/RoadPath';
+import { MIN_STUB_LENGTH, streetGround, STUB_LENGTH } from '@/game/stage/TownSideStreets';
 import { generateStage, stageBrief, type StageDef } from '@/game/stage/StageGenerator';
 import { markerDistances } from '@/game/stage/RoadMarkers';
 import { propObstacles, scatterScenery } from '@/game/stage/SceneryScatter';
@@ -8,6 +9,7 @@ import {
   buildingBaseHeight,
   buildingCorners,
   FRONT_SETBACK,
+  KERB_LIFT,
   onTownStreet,
   plateauDistance,
   streetDistance,
@@ -15,8 +17,8 @@ import {
   townObstacles,
   townProps,
   type TownDef,
+  JUNCTION_REACH,
 } from '@/game/stage/Town';
-import { STUB_LENGTH } from '@/game/stage/TownGenerator';
 import { apart } from '@/game/stage/TownTerraces';
 import { hasTown, NARROW_HALF_WIDTH } from '@/game/stage/TownPlan';
 import { halfWidthAt } from '@/game/stage/RoadWidth';
@@ -330,7 +332,10 @@ describe('town generator', () => {
       for (const r of town.cones) {
         const stub = town.streets.find((st) => !st.route && streetDistance(st, r.x, r.z) < 1e-6);
         if (!stub) problems.push(`cones off their stub ${stage.seed}`);
-        if (Math.hypot(r.x - stub!.x0, r.z - stub!.z0) > STUB_LENGTH)
+        if (
+          Math.hypot(r.x - stub!.x0, r.z - stub!.z0) >
+          Math.hypot(stub!.x1 - stub!.x0, stub!.z1 - stub!.z0) - 3
+        )
           problems.push(`cones past stub ${stage.seed}`);
         if (r.halfLength > stub!.halfWidth) problems.push(`cones on the pavement ${stage.seed}`);
       }
@@ -352,6 +357,36 @@ describe('town generator', () => {
         if (d >= town.from && d <= town.to) problems.push(`post in town ${stage.seed}`);
       expect(problems).toEqual([]);
     }
+  });
+
+  it('keeps side streets of different junctions apart, cutting the later one down, never below the minimum', () => {
+    let shortened = 0;
+    for (const stage of townStages()) {
+      const town = stage.town!;
+      const stubs = town.streets.filter((st) => !st.route);
+      const problems: string[] = [];
+      for (const st of stubs) {
+        const len = Math.hypot(st.x1 - st.x0, st.z1 - st.z0);
+        if (len < STUB_LENGTH - 1e-6) shortened++;
+        if (len < MIN_STUB_LENGTH - 1e-6 && len < st.halfWidth + JUNCTION_REACH + 4 - 1e-6)
+          problems.push(`stub ${len.toFixed(1)} m`);
+      }
+      // Two streets with different mouths: their ground (pavements and the one across each end) stays
+      // apart; only corner streets forced below the minimum may still touch.
+      for (let i = 0; i < stubs.length; i++)
+        for (let k = i + 1; k < stubs.length; k++) {
+          const a = stubs[i]!;
+          const b = stubs[k]!;
+          if (Math.hypot(a.x0 - b.x0, a.z0 - b.z0) < 1e-6) continue;
+          const la = Math.hypot(a.x1 - a.x0, a.z1 - a.z0);
+          const lb = Math.hypot(b.x1 - b.x0, b.z1 - b.z0);
+          const forced = la < MIN_STUB_LENGTH - 1e-6 || lb < MIN_STUB_LENGTH - 1e-6;
+          if (!apart(streetGround(a), streetGround(b), forced ? 0 : 0.4))
+            problems.push(`stubs ${i},${k} too close (${la.toFixed(1)} m, ${lb.toFixed(1)} m)`);
+        }
+      expect(problems, `${seedOf(stage)}/${stage.index}`).toEqual([]);
+    }
+    expect(shortened).toBeGreaterThan(0);
   });
 
   it('keeps the generator invariants: no self-approach, grade-limited streets, buildings on the ground', () => {
@@ -381,18 +416,20 @@ describe('town generator', () => {
           prev = h;
         }
       }
-      // Every building stands on a terrace levelled with the pavement at its door: the back corners
-      // meet the base height exactly, the front corners sit on the pavement's edge.
+      // Every building stands on a terrace levelled with the pavement at its door: the deck under
+      // the back corners meets the base height exactly; the front corners sit a kerb above the deck,
+      // give or take the fall of a steep street along a wide front (up to 12.5 % over a 10 m shop),
+      // which the 1.75 m foundation absorbs.
       const props = scatterScenery(field);
       for (const b of town.buildings) {
         const base = buildingBaseHeight(b, field);
         const [br, bl, fr, fl] = buildingCorners(b);
         for (const [x, z] of [br!, bl!])
-          if (Math.abs(field.heightAt(x, z) - base) > 0.03)
-            problems.push(`terrace ${stage.seed}: ${(field.heightAt(x, z) - base).toFixed(2)}`);
+          if (Math.abs(field.deckAt(x, z) - base) > 0.03)
+            problems.push(`terrace ${stage.seed}: ${(field.deckAt(x, z) - base).toFixed(2)}`);
         for (const [x, z] of [fr!, fl!])
-          if (Math.abs(field.heightAt(x, z) - base) > 0.12)
-            problems.push(`door step ${stage.seed}: ${(field.heightAt(x, z) - base).toFixed(2)}`);
+          if (Math.abs(field.deckAt(x, z) + KERB_LIFT - base) > 0.65)
+            problems.push(`door step ${stage.seed}: ${(field.deckAt(x, z) - base).toFixed(2)}`);
       }
       expect(props.filter((p) => p.kind === b0Kind(town)).length).toBeGreaterThan(0);
       expect(problems, `${stage.seed}/${stage.index}`).toEqual([]);

@@ -5,11 +5,12 @@ import { FRONT_SETBACK, streetDistance, type Junction, type TownDef } from './To
 import { junctionKerbs } from './TownKerbs';
 import { tangentLength } from './TownPlan';
 import {
-  ARROW_AHEAD_OF_CONES,
-  CONE_DISTANCE,
   junctionWalls,
   plantCorners,
-  sideStreet,
+  applyPlan,
+  layStub,
+  planStub,
+  stubSite,
   stubEnd,
   stubRows,
   type Corner,
@@ -87,17 +88,31 @@ function cornerStreets(
     ],
   };
   site.junctions.push(junction);
-  // The first corner's blocked straight ends in the town hall, the landmark the driver brakes toward.
-  sideStreet(site, stubs, c, hin, leg.halfWidth, first ? 'hall' : undefined);
-  sideStreet(site, stubs, c, hout + Math.PI, leg.halfWidth);
-  const a = at(c, hin, CONE_DISTANCE - ARROW_AHEAD_OF_CONES, 0);
-  site.arrows.push({ x: a.x, z: a.z, yaw: hin, turn: leg.turn > 0 ? 1 : -1 });
+  // The first corner's blocked straight ends in the town hall, the landmark the driver brakes toward,
+  // and carries the direction board. A corner cannot do without its streets: each is fitted among
+  // those already planned, cut down to what fits if it must.
+  const on = stubSite(c, hin, leg.halfWidth, first ? 'hall' : undefined);
+  on.arrowTurn = leg.turn > 0 ? 1 : -1;
+  for (const s of [on, stubSite(c, hout + Math.PI, leg.halfWidth)]) {
+    applyPlan(s, planStub(stubs, s, true)!);
+    stubs.push(s);
+  }
 }
 
-/** A crossroads halfway along a straight: two blocked arms square to the route. */
+/**
+ * A crossroads halfway along a straight: two blocked arms square to the
+ * route. Optional, so it only goes in where both its streets fit among the
+ * streets already planned without cutting any below the minimum.
+ */
 function crossroadsStreets(site: Site, stubs: StubSite[], leg: TracedLeg): void {
   const h = leg.headingIn;
   const m = at(leg.points[0]!, h, leg.length / 2, 0);
+  const pair = ([1, -1] as const).map((side) =>
+    stubSite(m, h + (side * Math.PI) / 2, leg.halfWidth),
+  );
+  const plans = pair.map((s) => planStub(stubs, s, false));
+  if (plans.some((p) => p === null)) return;
+  pair.forEach((s, k) => applyPlan(s, plans[k]!));
   site.junctions.push({
     x: m.x,
     z: m.z,
@@ -108,8 +123,7 @@ function crossroadsStreets(site: Site, stubs: StubSite[], leg: TracedLeg): void 
       { heading: h - Math.PI / 2, halfWidth: leg.halfWidth, role: 'blocked' },
     ],
   });
-  for (const side of [1, -1] as const)
-    sideStreet(site, stubs, m, h + (side * Math.PI) / 2, leg.halfWidth);
+  stubs.push(...pair);
 }
 
 /**
@@ -158,18 +172,23 @@ export function layoutTown(trace: TownTrace, path: RoadPath, seed: number, base:
   };
   const stubs: StubSite[] = [];
   const legs = trace.legs;
-  // Every street and junction first, so each house can be checked against all of them.
+  // Every street and junction first, so each house can be checked against all of them. The
+  // corners' streets are planned before any crossroads, so a crossroads whose streets would run
+  // into them is left out rather than cutting them down; then every side street is laid.
   let corners = 0;
   legs.forEach((leg, i) => {
     if (leg.kind === 'straight') {
       site.streets.push(street(leg.points[0]!, leg.points[1]!, leg.halfWidth, true));
-      if (hasCrossroads(legs, i)) crossroadsStreets(site, stubs, leg);
       return;
     }
     for (let k = 0; k < leg.points.length - 1; k++)
       site.streets.push(street(leg.points[k]!, leg.points[k + 1]!, leg.halfWidth, true));
     if (leg.kind === 'corner') cornerStreets(site, stubs, legs, i, corners++ === 0);
   });
+  legs.forEach((leg, i) => {
+    if (leg.kind === 'straight' && hasCrossroads(legs, i)) crossroadsStreets(site, stubs, leg);
+  });
+  for (const s of stubs) layStub(site, s);
   const hit = createRoadHit();
   path.nearest(trace.entry.x, trace.entry.z, 20, hit);
   const from = hit.along;

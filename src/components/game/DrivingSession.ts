@@ -231,10 +231,6 @@ export class DrivingSession {
       useSettingsStore.getState().cycleCamera();
     } else if (action === 'debug') {
       useTelemetryStore.getState().toggleDebug();
-    } else if (action === 'pause') {
-      const ui = useUiStore.getState();
-      if (ui.panel) ui.closePanel();
-      else ui.openPanel('game');
     }
   };
 

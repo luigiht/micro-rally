@@ -1192,8 +1192,23 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
     the terrace row on that side ends where a wall along it begins, so
     pavement, kerb line and facades agree.
     Every kerb, on the ribbon in town, round the junctions and along the
-    side streets, has a 4 cm vertical face toward the carriageway, so the
-    pavement no longer reads as a slab floating over the road. Every kerb point carries its exact normal, so
+    side streets, is a raised shape: the pavement stands 10 cm above the
+    carriageway behind a vertical kerb face, and the physics surface
+    (`heightAt`) climbs it over 30 cm so a wheel mounts it as a bump, while
+    tarmac, kerb faces and pavements are built on `deckAt`, the same surface
+    without that lift, each vertex at its own position. A side street's deck
+    takes the route's deck exactly through the junction zone; beyond it the
+    street carries on from the route's deck sampled across the zone's end
+    (seven samples over its width, interpolated by offset) and ramps from
+    that to its own end level, so the surface is continuous wherever the
+    nearest street changes and the route past the zone has no say in it
+    (ramping from the route's deck under each point had stepped 0.4 m
+    where the route bent out of reach or another stretch of it came within
+    reach near a street's end; easing toward the street's own level inside
+    the zone had put a crease across every kerb return). The ribbon
+    eases into a town over 40 m (`townFade`): the surface colour toward
+    tarmac, the verges up into pavements, the kerb faces growing with them,
+    instead of switching at the town's first sample. Every kerb point carries its exact normal, so
     the pavement band and the edge line are offset strips that meet the
     ribbon's and the side-street plates' sections vertex for vertex: the
     route edge is sampled with the ribbon's own convention (`routeEdge`,
@@ -1229,3 +1244,39 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
     every opening end lies on a kerb outline, the ribbon-edge convention,
     cone rows on the carriageway with no collider, and greenery clear of
     streets and floors.
+
+84. **2026-11-02 — Side streets fitted among each other; edge lines on the
+    deck; Esc belongs to the HUD.** Every blocked side street was laid at
+    the full `STUB_LENGTH` from its junction, so in about one village in ten
+    the end of one ran into the side of another junction's street, or two
+    corners' streets met head-on (pavement over carriageway, a 0.7 m cliff
+    in the deck where the nearest street changed). Streets are now planned
+    before they are laid: `planStub` fits each new one against every street
+    already planned, and where their ground (carriageway, pavements and the
+    pavement across the end, as exact boxes) would come within 0.5 m,
+    whichever of the two keeps more street is cut down, never below
+    `MIN_STUB_LENGTH` (20 m); streets that can only clear each other by
+    both giving way split the room between them. The corners' streets are
+    planned first and cannot be dropped (a corner's junction has four arms),
+    so one that still cannot fit is forced down to what clears the other at
+    the minimum, never shorter than its junction's cut plus 2 m; a
+    crossroads is optional and is left out altogether when its streets
+    cannot fit without cutting anything below the minimum. Over 150
+    villages, 19 of 1192 side streets are shortened and one is forced
+    (15.5 m); none overlap. Every consumer of a street's length (plates,
+    cones at `coneDistance`, direction boards, end buildings, terraces,
+    the terrain's stub deck) now takes it from the street itself. The stub
+    deck beyond the junction zone carries on from the route's deck sampled
+    across the zone's end rather than under each point, so a route bending
+    out of reach or looping back within it no longer steps the deck. The
+    junction and side-street builders lifted their white edge lines by the
+    ribbon's `LINE_LIFT` on top of a deck that already carries `ROAD_LIFT`,
+    8 cm above the ribbon's own lines: invisible from above, a floating,
+    disconnected line in the chase camera. The line now stands
+    `LINE_ABOVE_DECK` (2 cm) over the carriageway everywhere. Esc moved from
+    the driving controls (attached when the drive rig mounts, after the
+    world is built) to the HUD toolbar, so it closes a panel from the
+    moment the HUD shows; the camera e2e test pressed it in that window and
+    failed once stage building grew heavier. Tests: side streets of
+    different junctions keep their ground apart (0.4 m unless forced), some
+    are shortened, cones stay on their shortened street.

@@ -1,12 +1,11 @@
 import { createControlInput, type ControlInput } from '@/game/vehicle/ControlInput';
 
-export type KeyAction = 'reset' | 'camera' | 'debug' | 'pause';
+export type KeyAction = 'reset' | 'camera' | 'debug';
 
 const ACTIONS: Readonly<Record<string, KeyAction>> = {
   KeyR: 'reset',
   KeyC: 'camera',
   Backquote: 'debug',
-  Escape: 'pause',
 };
 
 const DRIVING_KEYS = new Set([
@@ -53,11 +52,7 @@ export class KeyboardControls {
   }
 
   private readonly handleDown = (e: KeyboardEvent): void => {
-    // Esc closes panels even when a form control inside one has focus.
-    if (e.code === 'Escape' && !e.repeat) {
-      this.onAction('pause');
-      return;
-    }
+    // Esc is the HUD's: it closes panels from the moment the HUD shows, before the session exists.
     if (isTyping(e.target)) return;
     if (DRIVING_KEYS.has(e.code)) {
       e.preventDefault();

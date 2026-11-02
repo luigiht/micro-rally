@@ -14,7 +14,7 @@ import type { StageDef } from '@/game/stage/StageGenerator';
 import { markerDistances } from '@/game/stage/RoadMarkers';
 import { ROAD_LIFT, TRENCH_OUT, type TerrainField } from '@/game/stage/TerrainField';
 import { halfWidthAt } from '@/game/stage/RoadWidth';
-import { KERB_LIFT } from '@/game/stage/Town';
+import { KERB_LIFT, townFade } from '@/game/stage/Town';
 import { routeOpenings, type Openings } from '@/game/stage/TownKerbs';
 import type { Surface } from '@/game/vehicle/surfaces';
 
@@ -46,7 +46,9 @@ export const LINE_COLOR = '#f4f1e8';
  */
 const VERGE_WIDTH = 2;
 const SAMPLES_PER_PIECE = 100;
-export const LINE_LIFT = 0.1;
+/** The edge line stands this far above the carriageway it is painted on. */
+export const LINE_ABOVE_DECK = 0.02;
+export const LINE_LIFT = ROAD_LIFT + LINE_ABOVE_DECK;
 const LINE_WIDTH = 0.22;
 /** Through a town the verges become pavements: pale concrete standing a kerb's height above the road. */
 export const PAVEMENT_COLOR = '#a6a39b';
@@ -281,16 +283,16 @@ export class RoadBuilder {
     const pos: number[] = [];
     const col: number[] = [];
     const index: number[] = [];
+    // Into and out of a town the ribbon eases over TOWN_FADE: the surface colour toward tarmac, the
+    // verges up into pavements, the kerb faces growing with them.
     const vertex = (st: Station, e: number, strip: Strip, raise = 0) => {
-      const urban =
-        strip.town !== undefined && town !== undefined && st.d >= town.from && st.d <= town.to;
-      const y = st.y + (urban ? strip.town!.lift : strip.lift) + raise;
+      const t = strip.town !== undefined && town !== undefined ? townFade(town, st.d) : 0;
+      const y = st.y + strip.lift + (t > 0 ? (strip.town!.lift - strip.lift) * t : 0) + raise * t;
       const shade = strip.shaded ? st.shade : 1;
-      const c = urban
-        ? strip.town!.color
-        : strip.cover
-          ? tint.copy(strip.color).lerp(dust, strip.cover(st.k))
-          : strip.color;
+      const c = strip.cover
+        ? tint.copy(strip.color).lerp(dust, strip.cover(st.k) * (1 - t))
+        : tint.copy(strip.color);
+      if (t > 0) c.lerp(strip.town!.color, t);
       pos.push(st.x + st.lx * e, y, st.z + st.lz * e);
       col.push(c.r * shade, c.g * shade, c.b * shade);
     };
@@ -301,7 +303,7 @@ export class RoadBuilder {
         const q = stations[k + 1]!;
         if (strip.side !== undefined && open(strip.side, (p.d + q.d) / 2)) continue;
         const mid = (p.d + q.d) / 2;
-        if (strip.rise !== undefined && !(town && mid >= town.from && mid <= town.to)) continue;
+        if (strip.rise !== undefined && (!town || townFade(town, mid) < 0.02)) continue;
         const base = pos.length / 3;
         // a is the right-hand edge; wind counter-clockwise seen from above. A kerb face raises one edge instead.
         const ra = strip.rise !== undefined && strip.rise < 0 ? -strip.rise : 0;
