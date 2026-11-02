@@ -1281,15 +1281,19 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
     different junctions keep their ground apart (0.4 m unless forced), some
     are shortened, cones stay on their shortened street.
 
-85. **2026-11-02 — Prize per kilometre raised from 120 to 200.** Stages run
+85. **2026-11-02 — Prize per kilometre raised from 120 to 800.** Stages run
     1.5–2 km with a par around two minutes, so at par a stage paid about
     $240 and a player at 1.3–1.5× par, with the odd tree to pay for, netted
-    $130–190: the average level-1 upgrade ($557 across the seven) took four
-    or five stages, the turbo ($900) seven. At 200 a stage pays $350–400 at
-    par, $280–310 at 1.3× par and $230–250 at 1.5× par, so three stages buy
-    any level-1 upgrade but the turbo and four buy that or an average
-    level 2, before the +25%-per-loop bonus; the first dealership car
-    ($4500) comes after about a dozen stages at par. The pace curve (+25%
-    for beating par by a fifth, sliding to a 0.3 floor at double par), the
-    surface factors and the upgrade prices are unchanged; the prize test
-    reads the constant instead of repeating it.
+    $130–190: the first dealership car ($4500) was twenty-odd stages away
+    and even the average level-1 upgrade ($557) took four or five. A first
+    pass to 200 aimed at an upgrade level every three or four stages; the
+    intent was a new car on that cadence, so the constant is 800: a stage
+    pays about $1500 at par, $1200 at 1.3× par and $1000 at 1.5× par, the
+    coupé ($4500) comes after three stages at par or four at a middling
+    pace, and the dearer cars ($6500–26000) follow every four to seven
+    stages as the +25%-per-loop bonus grows, the whole dealership in about
+    forty stages. Upgrade levels ($350–1600) become small change bought
+    between cars, which suits an incremental shop; their prices, the pace
+    curve (+25% for beating par by a fifth, sliding to a 0.3 floor at
+    double par) and the surface factors are unchanged. The prize test reads
+    the constant instead of repeating it.
