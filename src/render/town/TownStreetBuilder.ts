@@ -65,7 +65,13 @@ export class TownStreetBuilder {
     this.geometry.setIndex(this.idx);
     this.geometry.computeVertexNormals();
     this.geometry.computeBoundingSphere();
-    this.material = new MeshStandardMaterial({ vertexColors: true, roughness: 0.75 });
+    this.material = new MeshStandardMaterial({
+      vertexColors: true,
+      roughness: 0.75,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -2,
+    });
     const mesh = new Mesh(this.geometry, this.material);
     mesh.receiveShadow = true;
     mesh.matrixAutoUpdate = false;

@@ -64,6 +64,8 @@ const SEARCH_STEP = 0.5;
 const MOUTH_OVERLAP = 0.5;
 /** Reported depth anywhere inside the paved ground: the polygons share internal edges, so true depth is not available. */
 const INSIDE = -2;
+/** Fill polygons overlap their neighbours by this much along shared edges, so no hairline opens between them. */
+const SEAM = 0.06;
 
 const forward = (h: number): Pt => ({ x: Math.sin(h), z: Math.cos(h) });
 const left = (h: number): Pt => ({ x: Math.cos(h), z: -Math.sin(h) });
@@ -135,6 +137,24 @@ function arc(c: Pt, r: number, from: Pt, to: Pt, out: KerbPoint[]): void {
   }
 }
 
+/**
+ * A kerb return's crescent from the outline points `from` the return's first
+ * point to its last: the corner where the two edges meet, then the return.
+ * The straight edges are pulled a seam into the neighbouring carriageways,
+ * so no hairline opens between fill polygons.
+ */
+function crescentOf(points: KerbPoint[], from: number, corner: Pt): Pt[] {
+  const first = points[from]!;
+  const last = points[points.length - 1]!;
+  const out: Pt[] = [
+    { x: corner.x - (first.nx + last.nx) * SEAM, z: corner.z - (first.nz + last.nz) * SEAM },
+    { x: first.x - first.nx * SEAM, z: first.z - first.nz * SEAM },
+  ];
+  for (let k = from + 1; k < points.length - 1; k++) out.push({ x: points[k]!.x, z: points[k]!.z });
+  out.push({ x: last.x - last.nx * SEAM, z: last.z - last.nz * SEAM });
+  return out;
+}
+
 /** Kerb between two blocked arms: both edges straight, the classic fillet between them, and its crescent. */
 function stubStub(
   j: Junction,
@@ -154,8 +174,7 @@ function stubStub(
   const from = points.length - 1;
   arc(c, FILLET, points[from]!, stubEdge(j, w.b, -1, tb), points);
   points.push(stubEdge(j, w.b, -1, tb));
-  const crescent: Pt[] = [{ x: w.px, z: w.pz }];
-  for (let k = from; k < points.length; k++) crescent.push({ x: points[k]!.x, z: points[k]!.z });
+  const crescent = crescentOf(points, from, { x: w.px, z: w.pz });
   points.push(...stubRun(j, w.b, -1, tb, cutB).slice(1));
   return { outline: { points }, crescent };
 }
@@ -302,7 +321,7 @@ function routeStub(
   const mouth = stubEdge(j, stub, sign, Number.isNaN(tMouth) ? Math.min(tStar, cut - 0.1) : tMouth);
   let points: KerbPoint[];
   let dr: number;
-  const crescent: Pt[] = [{ x: mouth.x, z: mouth.z }];
+  let crescent: Pt[] = [];
   if (Number.isNaN(tStar)) {
     // No return fits: a sharp kerb corner where the two edges meet.
     stage.path.nearest(w.px, w.pz, 60, hit);
@@ -319,7 +338,7 @@ function routeStub(
     const from = points.length - 1;
     arc(c, FILLET, points[from]!, tr, points);
     points.push(tr);
-    for (let k = from; k < points.length; k++) crescent.push({ x: points[k]!.x, z: points[k]!.z });
+    crescent = crescentOf(points, from, mouth);
   }
   const dCut = role === 'in' ? dr - CUT_MARGIN : dr + CUT_MARGIN;
   const dir = role === 'in' ? -1 : 1;
@@ -395,8 +414,7 @@ function straightThrough(
   const from = points.length - 1;
   arc(c, FILLET, points[from]!, tr, points);
   points.push(tr);
-  const crescent: Pt[] = [{ x: mouth.x, z: mouth.z }];
-  for (let k = from; k < points.length; k++) crescent.push({ x: points[k]!.x, z: points[k]!.z });
+  const crescent = crescentOf(points, from, mouth);
   let dCut: number;
   if (sr > 0) {
     // The return lies on the apron: follow its edge back to the bend's tangent in pieces.
@@ -486,11 +504,14 @@ export function junctionKerbs(
       });
       const other = -apron.sign as 1 | -1;
       const reach = apron.knee - apron.back;
+      // The apron reaches a seam past the junction, over the start of the arm's strip.
+      const f = forward(arm.heading);
+      const past = (p: Pt): Pt => ({ x: p.x + f.x * SEAM, z: p.z + f.z * SEAM });
       polygons.push([
         along(apron.back),
         corner(other, -(reach + MOUTH_OVERLAP)),
-        corner(other, 0),
-        along(apron.knee),
+        past(corner(other, 0)),
+        past(along(apron.knee)),
       ]);
       polygons.push([corner(1, 0), corner(-1, 0), corner(-1, cut), corner(1, cut)]);
       continue;

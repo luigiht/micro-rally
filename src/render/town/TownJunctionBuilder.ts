@@ -1,4 +1,5 @@
 import { BufferAttribute, BufferGeometry, Color, Group, Mesh, MeshStandardMaterial } from 'three';
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { StageDef } from '@/game/stage/StageGenerator';
 import { KERB_LIFT, PAVEMENT_WIDTH, type GroundQuery } from '@/game/stage/Town';
 import {
@@ -48,12 +49,22 @@ export class TownJunctionBuilder {
       }
       this.fill(kerbs.surface);
     }
-    this.geometry = new BufferGeometry();
-    this.geometry.setAttribute('position', new BufferAttribute(Float32Array.from(this.pos), 3));
-    this.geometry.setAttribute('color', new BufferAttribute(Float32Array.from(this.col), 3));
+    const raw = new BufferGeometry();
+    raw.setAttribute('position', new BufferAttribute(Float32Array.from(this.pos), 3));
+    raw.setAttribute('color', new BufferAttribute(Float32Array.from(this.col), 3));
+    // Weld the fans and strips so the normals smooth across their seams instead of faceting the tarmac.
+    this.geometry = mergeVertices(raw, 1e-3);
+    raw.dispose();
     this.geometry.computeVertexNormals();
     this.geometry.computeBoundingSphere();
-    this.material = new MeshStandardMaterial({ vertexColors: true, roughness: 0.75 });
+    // Offset like the ribbon, so the surface wins depth ties with the terrain beneath it.
+    this.material = new MeshStandardMaterial({
+      vertexColors: true,
+      roughness: 0.75,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -2,
+    });
     const mesh = new Mesh(this.geometry, this.material);
     mesh.receiveShadow = true;
     mesh.matrixAutoUpdate = false;

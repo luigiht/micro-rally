@@ -1188,6 +1188,12 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
     edges meet), from the same geometry as the kerbs, flush with the ribbon;
     `TerrainField` trenches the ground under those same polygons so no
     terrain reaches the fill, and the pavement starts 5 cm over the tarmac.
+    Fill polygons overlap their neighbours by a 6 cm seam along shared
+    edges and the junction and side-street surfaces carry the ribbon's
+    depth offset, so neither a hairline between polygons nor a coplanar
+    terrain triangle can show through; the junction mesh is welded so its
+    normals smooth across the fans and strips instead of faceting the
+    tarmac.
     A rounded-union distance field was tried first for the fill and trench;
     it is only a true fillet at right angles and left crescents of ground
     showing at skewed wedges. Side streets lost their stop line. The
