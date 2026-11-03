@@ -3,7 +3,7 @@ import { inOasis, OASIS_WATER_ABOVE } from '@/game/stage/Oases';
 import { REGION_CYCLE, REGIONS } from '@/game/stage/regions';
 import { createRoadHit } from '@/game/stage/RoadPath';
 import { scatterScenery } from '@/game/stage/SceneryScatter';
-import { generateStage, stageRegion } from '@/game/stage/StageGenerator';
+import { generateStage, stageBrief, stageHasTown, stageRegion } from '@/game/stage/StageGenerator';
 import { TerrainField } from '@/game/stage/TerrainField';
 import { SURFACES } from '@/game/vehicle/surfaces';
 import { OasisBuilder } from '@/render/terrain/OasisBuilder';
@@ -24,6 +24,19 @@ function fieldFor(seed: number): TerrainField {
 }
 
 describe('Desert stages', () => {
+  it('never carry a town, even on a town index', () => {
+    // Index 11 is a desert stage on a town index: no village, and the brief charges no town time.
+    expect(stageRegion(11).region).toBe('desert');
+    expect(stageHasTown(11)).toBe(false);
+    for (let i = 0; i < 48; i++)
+      if (stageRegion(i).region === 'desert') expect(stageHasTown(i)).toBe(false);
+    for (const seed of [1, 2, 3]) {
+      const stage = generateStage(seed, 11);
+      expect(stage.town).toBeUndefined();
+      expect(stageBrief(seed, 11).parTime).toBe(stage.parTime);
+    }
+  });
+
   it('sit in the cycle on a packed-sand piste through soft sand', () => {
     expect(REGION_CYCLE).toHaveLength(12);
     expect(stageRegion(DESERT_INDEX).region).toBe('desert');

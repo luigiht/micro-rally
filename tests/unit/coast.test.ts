@@ -2,10 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { REGION_CYCLE, REGIONS } from '@/game/stage/regions';
 import { createRoadHit } from '@/game/stage/RoadPath';
 import { scatterScenery } from '@/game/stage/SceneryScatter';
-import { generateStage, stageRegion } from '@/game/stage/StageGenerator';
+import { generateStage, stageHasTown, stageRegion } from '@/game/stage/StageGenerator';
 import { createStageWorld } from '@/game/stage/StageWorld';
 import { TerrainField } from '@/game/stage/TerrainField';
-import { hasTown } from '@/game/stage/TownPlan';
 import { SeaWallBuilder } from '@/render/road/SeaWallBuilder';
 import { meshTerrainChunk, terrainColors } from '@/render/terrain/meshTerrainChunk';
 import { SeaPlane } from '@/render/terrain/SeaPlane';
@@ -47,7 +46,7 @@ function fieldFor(seed: number): TerrainField {
 }
 
 describe('region cycle', () => {
-  it('never shows a region three stages running, shares the cycle evenly and keeps towns off the coast', () => {
+  it('never shows a region three stages running, shares the cycle evenly and keeps towns to forest and alpine', () => {
     const n = REGION_CYCLE.length;
     for (let i = 0; i < n; i++) {
       const [a, b, c] = [i, i + 1, i + 2].map((k) => REGION_CYCLE[k % n]);
@@ -59,12 +58,11 @@ describe('region cycle', () => {
     expect(stageRegion(3).region).toBe('alpine');
     expect(stageRegion(COAST_INDEX).region).toBe('coast');
     const townRegions = new Set<string>();
-    for (let i = 0; i < 36; i++) {
-      if (!hasTown(i)) continue;
-      expect(stageRegion(i).region).not.toBe('coast');
+    for (let i = 0; i < 48; i++) {
+      if (!stageHasTown(i)) continue;
       townRegions.add(stageRegion(i).region);
     }
-    expect([...townRegions].sort()).toEqual(['alpine', 'desert', 'forest']);
+    expect([...townRegions].sort()).toEqual(['alpine', 'forest']);
   });
 });
 

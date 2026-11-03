@@ -1806,3 +1806,16 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      with the replay clock, so they hold and fade on the same schedule they
      did live. Recording intensities rather than raw slips keeps the replay
      faithful to the car's tuning at the time and the track ignorant of specs.
+
+103. **2026-11-03 — Towns are a regional property.** The twelve-stage cycle
+     put a desert stage on a town index (the twelfth), so the desert grew a
+     village; by request it must not. Reshuffling the cycle again would have
+     moved the early stages or starved a region (every third index must be
+     a town-building region, and Forest and Alpine have six slots between
+     them for four town indices, two of which must also stay open road for
+     the tests and the fixtures). Instead each region says whether it builds
+     villages (`towns`), and `stageHasTown` is the town rule everywhere the
+     brief and the generator need it: every third stage, except in regions
+     that build none, the coast and the desert. The cycle, the fixtures and
+     stages 1–11 are unchanged; the desert's stages stay open road whatever
+     index they land on, and so would any future region that opts out.

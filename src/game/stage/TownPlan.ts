@@ -15,8 +15,8 @@ export function tangentLength(turn: number): number {
  * to the player), the same in every game and in whichever region the
  * progression puts there. Never index 0 (the splash demo and the smoke
  * tests drive it) nor index 3 (the alpine stage the curvature test
- * compares), never two in a row, and never on a Coast stage: `REGION_CYCLE`
- * keeps these indices on Forest and Alpine.
+ * compares), never two in a row. Regions that build no villages (the coast,
+ * the desert) skip theirs: see `stageHasTown`.
  */
 const TOWN_EVERY = 3;
 export function hasTown(index: number): boolean {

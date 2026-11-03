@@ -272,7 +272,7 @@ export const TERRACE_FRONT = 0.2;
 export function townProps(
   town: TownDef,
   ground: GroundQuery,
-  treeKind: 'tree' | 'broadleaf' | 'palm' = 'tree',
+  treeKind: 'tree' | 'broadleaf' = 'tree',
 ): Prop[] {
   const out: Prop[] = [];
   for (const b of town.buildings)

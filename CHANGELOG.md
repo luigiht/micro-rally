@@ -50,6 +50,8 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Changed
 
+- Desert stages build no villages: a town index that falls on one (stage 12,
+  for one) stays open road, as on the Coast. [104]
 - The Tricolore Coupé loses the white pinstripes on its bonnet and the cream
   headlamp slots behind its lamp pod; the roof and engine cover keep theirs.
 - Coast stages show a road glyph of their own in the Game panel's stage

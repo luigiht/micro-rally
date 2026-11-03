@@ -230,15 +230,7 @@ export function scatterScenery(field: TerrainField): Prop[] {
   kept.push(...houses, ...oasisProps(oases, field));
   if (stage.town)
     kept.push(
-      ...townProps(
-        stage.town,
-        field,
-        REGIONS[stage.region].oases
-          ? 'palm'
-          : density.broadleaf > density.trees
-            ? 'broadleaf'
-            : 'tree',
-      ),
+      ...townProps(stage.town, field, density.broadleaf > density.trees ? 'broadleaf' : 'tree'),
     );
   return kept;
 }

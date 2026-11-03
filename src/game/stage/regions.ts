@@ -55,6 +55,8 @@ export interface RegionDef {
   coast?: CoastDef;
   /** Set when the region's stages have oases. */
   oases?: OasisDef;
+  /** Whether the town stages (every third, see `stageHasTown`) build a village here: the cliff road and the dunes have none. */
+  towns: boolean;
   /** Hills by default; `dunes` makes them a dune sea (see `TerrainField.duneHeight`). */
   terrain: { amplitude: number; frequency: number; dunes?: boolean };
   /** Road curviness 0..1. */
@@ -109,6 +111,7 @@ const FOREST: RegionDef = {
   baseLength: 1800,
   scenery: { trees: 110, broadleaf: 26, bushes: 16, rocks: 5, houses: 0.9 },
   parSpeed: 15,
+  towns: true,
 };
 
 /**
@@ -147,6 +150,7 @@ const ALPINE: RegionDef = {
   baseLength: 1500,
   scenery: { trees: 78, broadleaf: 6, bushes: 6, rocks: 14, houses: 0.7 },
   parSpeed: 14,
+  towns: true,
 };
 
 /**
@@ -180,6 +184,7 @@ const COAST: RegionDef = {
   baseLength: 1600,
   scenery: { trees: 80, broadleaf: 24, bushes: 90, rocks: 24, houses: 0 },
   parSpeed: 15,
+  towns: false,
   coast: { seaLevel: 0, sand: '#e8d9ab', sandWet: '#c4ad86', sea: '#3b8fb5' },
 };
 
@@ -212,6 +217,7 @@ const DESERT: RegionDef = {
   baseLength: 1900,
   scenery: { trees: 0, broadleaf: 0, bushes: 10, rocks: 8, houses: 0 },
   parSpeed: 16,
+  towns: false,
   oases: { every: 260, radius: 11, palms: 8 },
 };
 
@@ -228,8 +234,9 @@ export const REGIONS: Readonly<Record<RegionId, RegionDef>> = {
  * The progression: a fixed twelve-stage cycle of ones and twos (Forest ×2,
  * Alpine ×2, Coast, Forest, Desert, Coast, Alpine, Coast, Desert ×2), laid so
  * that no region shows three stages running, each gets three of every
- * twelve, and the town stages (every third, see `hasTown`) fall on Forest,
- * Alpine and Desert: the cliff road has no villages. Stage 1 is Forest and
+ * twelve, and the town stages (every third, see `stageHasTown`) build their
+ * village on Forest and Alpine only: the cliff road and the dunes have none,
+ * so the twelfth stage, a desert, stays open road. Stage 1 is Forest and
  * stage 4 Alpine, as they always were; stage 5 is the first Coast and stage 7
  * the first Desert.
  */

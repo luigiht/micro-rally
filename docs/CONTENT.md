@@ -37,7 +37,8 @@ identical every time it is driven and records are fair.
 
 ## Towns
 
-Every third stage (stages 3, 6, 9, …, in whichever region falls there)
+Every third stage (stages 3, 6, 9, …, in whichever region falls there,
+except the Coast and the Desert, which build none)
 carries a town between 30 % and 55 % of the way along.
 
 - **Plan.** An entry straight of 60 or 80 m, two to four middle legs
@@ -140,7 +141,8 @@ A Desert stage is a piste of packed sand through a dune sea, with oases.
   1.4 m under the lowest point of its rim and blending back over 9 m, a pool
   of water standing 0.45 m over its floor, a ring of six to ten date palms on
   the rim and a few scrub bushes at the water. The wild scatter keeps out of
-  the pools. Villages, where the cycle puts them, plant palms in their yards.
+  the pools. No villages: a town index that falls on a desert stage stays
+  open road.
 - **Scenery.** Dry scrub and sandstone boulders, sparse; no pines, no farms.
 
 ## Hidden mode: Nightcity

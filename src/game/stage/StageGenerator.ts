@@ -117,6 +117,11 @@ export function stageRegion(index: number): { region: RegionId; loop: number } {
   };
 }
 
+/** A town on every third stage (`hasTown`), except in regions that build none: the coast and the desert. */
+export function stageHasTown(index: number): boolean {
+  return hasTown(index) && REGIONS[stageRegion(index).region].towns;
+}
+
 /** Keep checkpoint boards out of the town and in order; the finish stays where the brief put it. */
 function placeGates(
   path: RoadPath,
@@ -182,7 +187,7 @@ function drawBrief(
 export function stageBrief(gameSeed: number, index: number): StageBrief {
   const { region, loop } = stageRegion(index);
   const seed = hashSeed(gameSeed, region, index);
-  return drawBrief(mulberry32(seed), seed, index, region, loop, hasTown(index));
+  return drawBrief(mulberry32(seed), seed, index, region, loop, stageHasTown(index));
 }
 
 /** The stage's RNG stream positioned after the brief's five draws, where the walk starts. */
@@ -197,8 +202,7 @@ export function generateStage(gameSeed: number, index: number): StageDef {
   const { region, loop } = stageRegion(index);
   const def = REGIONS[region];
   const seed = hashSeed(gameSeed, region, index);
-  // Coast stages never fall on a town index; the guard keeps it so if the cycle ever changes.
-  const withTown = hasTown(index) && !def.coast;
+  const withTown = stageHasTown(index);
   const brief = drawBrief(mulberry32(seed), seed, index, region, loop, withTown);
   const { surface, length } = brief;
   const twist = def.twistiness * (1 + 0.15 * Math.min(loop, 4));

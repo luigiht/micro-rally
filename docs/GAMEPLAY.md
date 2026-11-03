@@ -64,8 +64,9 @@ here as of 2 November 2026.
 - Every third stage, that is stages 3, 6, 9 and so on, carries a town: the
   route leaves the open road, threads a village of right-angle corners,
   narrow streets and blocked side streets, and rejoins the stage. The cycle
-  puts those stages on Forest, Alpine and Desert; the Coast road has no
-  villages.
+  puts most of those stages on Forest and Alpine; the Coast road and the
+  Desert build no villages, so a town index that falls there (stage 12,
+  for one) stays open road.
 - Any stage up to the first unfinished one can be driven again from the
   Game panel's stage list.
 
