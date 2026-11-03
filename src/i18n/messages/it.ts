@@ -249,6 +249,8 @@ export const it: Messages = {
     mud: 'Fango',
     snow: 'Neve',
     grass: 'Erba',
+    sand: 'Sabbia',
+    dune: 'Dune',
   },
   stage: {
     go: 'VIA!',

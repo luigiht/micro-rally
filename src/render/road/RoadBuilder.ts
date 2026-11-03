@@ -139,7 +139,8 @@ export class RoadBuilder {
       mesh.receiveShadow = true;
       this.group.add(mesh);
     }
-    this.buildMarkers(stage, field);
+    // A sand piste is marked by nothing but its own colour: no posts, as no lines.
+    if (stage.surface !== 'sand') this.buildMarkers(stage, field);
   }
 
   dispose(): void {
@@ -210,7 +211,27 @@ export class RoadBuilder {
     };
     const open = (side: number, d: number) =>
       (side > 0 ? openings.left : openings.right).some((o) => d > o.from && d < o.to);
-    // Road, two verges and two edge lines; lateral extents follow the local half width.
+    // Road, two verges and two edge lines; lateral extents follow the local half width. A sand
+    // piste has no painted lines: its packed sand reads against the dunes on its own.
+    const lined = stage.surface !== 'sand';
+    const edgeLines: Strip[] = [
+      {
+        a: (hw) => hw - 0.35 - LINE_WIDTH,
+        b: (hw) => hw - 0.35,
+        lift: LINE_LIFT,
+        color: line,
+        shaded: false,
+        side: 1,
+      },
+      {
+        a: (hw) => -hw + 0.35,
+        b: (hw) => -hw + 0.35 + LINE_WIDTH,
+        lift: LINE_LIFT,
+        color: line,
+        shaded: false,
+        side: -1,
+      },
+    ];
     const strips: Strip[] = [
       {
         a: (hw) => -hw,
@@ -239,22 +260,7 @@ export class RoadBuilder {
         town: pavement,
         side: -1,
       },
-      {
-        a: (hw) => hw - 0.35 - LINE_WIDTH,
-        b: (hw) => hw - 0.35,
-        lift: LINE_LIFT,
-        color: line,
-        shaded: false,
-        side: 1,
-      },
-      {
-        a: (hw) => -hw + 0.35,
-        b: (hw) => -hw + 0.35 + LINE_WIDTH,
-        lift: LINE_LIFT,
-        color: line,
-        shaded: false,
-        side: -1,
-      },
+      ...(lined ? edgeLines : []),
       // Kerb faces in town, each wound with its raised edge placed so the face looks at the carriageway.
       {
         a: (hw) => hw,

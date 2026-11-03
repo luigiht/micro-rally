@@ -38,6 +38,8 @@ const SURFACE_PAR: Readonly<Record<Surface, number>> = {
   mud: 0.85,
   snow: 0.82,
   grass: 0.8,
+  sand: 0.9,
+  dune: 0.8,
 };
 
 const NAME_HEADS = [

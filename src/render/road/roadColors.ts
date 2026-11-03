@@ -8,6 +8,9 @@ export const ROAD_COLORS: Readonly<Record<Surface, string>> = {
   /** Snow stages are asphalt under drifting snow: this is the dusting, blended over tarmac. */
   snow: '#e9eef2',
   grass: '#8fbf6a',
+  /** Packed sand, close to the dunes either side and just a touch darker and warmer, so the piste reads without shouting. */
+  sand: '#cfb07a',
+  dune: '#e0c58b',
 };
 /** White edge lines, 2 cm over the deck. */
 export const LINE_COLOR = '#f4f1e8';

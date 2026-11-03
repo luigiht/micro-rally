@@ -1,4 +1,5 @@
 import {
+  BoxGeometry,
   BufferGeometry,
   Color,
   ConeGeometry,
@@ -31,6 +32,35 @@ function canopyGeometry(): BufferGeometry {
     new IcosahedronGeometry(1.05, 0).translate(0.9, 2.7, 0.3),
     new IcosahedronGeometry(0.95, 0).translate(-0.7, 3.6, -0.4),
   ];
+  const merged = mergeGeometries(parts)!;
+  for (const p of parts) p.dispose();
+  return merged;
+}
+
+/** A date palm's trunk: slim, tapering, leaning a little. */
+const PALM_LEAN = 0.1;
+const PALM_HEIGHT = 4.4;
+
+function palmTrunkGeometry(): BufferGeometry {
+  const g = new CylinderGeometry(0.13, 0.22, PALM_HEIGHT, 6).translate(0, PALM_HEIGHT / 2, 0);
+  g.rotateZ(PALM_LEAN);
+  return g;
+}
+
+/** Seven drooping fronds and a knot of dates at the top of the leaning trunk. */
+function palmCrownGeometry(): BufferGeometry {
+  const parts: BufferGeometry[] = [];
+  const topX = -Math.sin(PALM_LEAN) * PALM_HEIGHT;
+  const topY = Math.cos(PALM_LEAN) * PALM_HEIGHT;
+  for (let i = 0; i < 7; i++) {
+    // Non-indexed like the date knot, so the parts merge.
+    const frond = new BoxGeometry(0.5, 0.08, 2.4).translate(0, 0, 1.2).toNonIndexed();
+    frond.rotateX(0.55 + (i % 2) * 0.25);
+    frond.rotateY((Math.PI * 2 * i) / 7);
+    frond.translate(topX, topY, 0);
+    parts.push(frond);
+  }
+  parts.push(new IcosahedronGeometry(0.35, 0).translate(topX, topY - 0.2, 0));
   const merged = mergeGeometries(parts)!;
   for (const p of parts) p.dispose();
   return merged;
@@ -72,6 +102,20 @@ export function rallyKits(palette: RegionPalette, shadows: boolean, snow: boolea
     {
       sources: ['broadleaf'],
       geometry: canopyGeometry(),
+      material: mat('#ffffff'),
+      tint: leaf,
+      castShadow: shadows,
+    },
+    {
+      sources: ['palm'],
+      geometry: palmTrunkGeometry(),
+      material: mat(palette.trunk),
+      tint: null,
+      castShadow: shadows,
+    },
+    {
+      sources: ['palm'],
+      geometry: palmCrownGeometry(),
       material: mat('#ffffff'),
       tint: leaf,
       castShadow: shadows,

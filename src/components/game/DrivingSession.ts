@@ -1,7 +1,7 @@
 import type { PerspectiveCamera } from 'three';
 import { stagePrize } from '@/game/economy/prize';
 import { FixedStepper } from '@/game/loop/FixedStepper';
-import { ReplayTrack } from '@/game/replay/ReplayTrack';
+import { type ReplayMarks, ReplayTrack } from '@/game/replay/ReplayTrack';
 import { StageRun } from '@/game/stage/StageRun';
 import type { StageDef } from '@/game/stage/StageGenerator';
 import type { CarSpec } from '@/game/vehicle/CarSpec';
@@ -9,6 +9,7 @@ import { resolveObstacleCollisions, type ObstacleGrid } from '@/game/vehicle/Col
 import { createControlInput, mergeControlInput } from '@/game/vehicle/ControlInput';
 import { createVehiclePose, interpolatePose } from '@/game/vehicle/interpolatePose';
 import type { TerrainQuery } from '@/game/vehicle/Terrain';
+import { axleMarkIntensities } from '@/game/vehicle/wheelContacts';
 import { DEFAULT_ENV, VehicleSim, type SpawnPose } from '@/game/vehicle/VehicleSim';
 import { useGameStore } from '@/state/gameStore';
 import { useSettingsStore } from '@/state/settingsStore';
@@ -46,6 +47,7 @@ export class DrivingSession {
   readonly run: StageRun | null;
   private readonly stepper = new FixedStepper();
   private readonly track = new ReplayTrack(this.stepper.stepSize);
+  private readonly axleMarks = { front: 0, rear: 0 };
   /** Seconds into the replay while one is playing; null while driving. */
   private replayTime: number | null = null;
   private tailLeft = 0;
@@ -165,6 +167,17 @@ export class DrivingSession {
     return this.replayTime !== null;
   }
 
+  /** Seconds into the replay, or null while driving: the clock the replay's tyre marks are stamped with. */
+  get replayClock(): number | null {
+    return this.replayTime;
+  }
+
+  /** The tyre marks the recording laid at this moment of the replay; null while driving. */
+  replayMarks(out: ReplayMarks): ReplayMarks | null {
+    if (this.replayTime === null) return null;
+    return this.track.sampleMarks(this.replayTime, out);
+  }
+
   /** A rig for `mode` around the current car; the cinematic rig also gets the stage to place its cameras beside its road. */
   private buildRig(mode: CameraMode): CameraRig {
     return createCameraRig(
@@ -224,10 +237,16 @@ export class DrivingSession {
   private recordStep(run: StageRun | null, dt: number): void {
     if (!run) return;
     if (run.phase === 'running') {
-      this.track.record(this.sim.state);
+      this.track.record(
+        this.sim.state,
+        axleMarkIntensities(this.sim.state, this.sim.spec, this.axleMarks),
+      );
       this.tailLeft = REPLAY_TAIL;
     } else if (run.phase === 'finished' && this.tailLeft > 0) {
-      this.track.record(this.sim.state);
+      this.track.record(
+        this.sim.state,
+        axleMarkIntensities(this.sim.state, this.sim.spec, this.axleMarks),
+      );
       this.tailLeft -= dt;
     }
   }

@@ -1,8 +1,8 @@
 # Micro Rally
 
 A cozy, flat-shaded low-poly rally game for the browser. Drive procedural
-point-to-point stages through forests, alpine passes, hill-top villages and
-along sea cliffs, earn prize money, upgrade your car and buy new ones. No
+point-to-point stages through forests, alpine passes, hill-top villages,
+along sea cliffs and over desert dunes, earn prize money, upgrade your car and buy new ones. No
 accounts, no ads, no cookies: a Game ID is all you need to continue on
 another device.
 
@@ -13,8 +13,9 @@ another device.
 - **Procedural stages.** Every stage is generated from your game's seed: a
   winding road through terrain, checkpoint gates in order and a finish line,
   with a par time, prize money for finishing and repair fees for hitting the
-  scenery. Regions cycle Forest, Alpine and Coast (a cliff road over the
-  sea) in ones and twos, and lengthen every six stages.
+  scenery. Regions cycle Forest, Alpine, Coast (a cliff road over the sea)
+  and Desert (a sand piste through dunes and oases) in ones and twos, and
+  lengthen every six stages.
 - **Towns.** Every third stage threads a hill village: right-angle corners
   laid as arcs, narrow old-town streets, blocked side streets closed by
   cones, terraced houses behind garden walls, kerbed pavements and lamp

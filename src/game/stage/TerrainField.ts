@@ -4,6 +4,7 @@ import type { Surface } from '../vehicle/surfaces';
 import type { TerrainQuery } from '../vehicle/Terrain';
 import { Coastline } from './Coastline';
 import { CoastShape } from './CoastShape';
+import type { Oasis } from './Oases';
 import { REGIONS, reliefAmplitude } from './regions';
 import { createRoadHit } from './RoadPath';
 import { halfWidthAt } from './RoadWidth';
@@ -141,6 +142,10 @@ export class TerrainField implements TerrainQuery {
   private readonly frequency: number;
   /** The coast the stage runs along, on Coast stages. */
   readonly coast: Coastline | null;
+  /** Dune sea instead of hills. */
+  private readonly dunes: boolean;
+  /** The oases, on dune stages: set by `scatterScenery` with their pads, read by the renderer for the pools. */
+  oases: Oasis[] = [];
   private readonly roadHeights: Float64Array;
   private readonly hit = createRoadHit();
   private readonly offroad: Surface;
@@ -176,6 +181,7 @@ export class TerrainField implements TerrainQuery {
     this.noise = createNoise2D(mulberry32(hashSeed(stage.seed, 'terrain')));
     this.amplitude = reliefAmplitude(region, stage.loop);
     this.frequency = region.terrain.frequency;
+    this.dunes = region.terrain.dunes === true;
     this.coast = region.coast
       ? new Coastline(
           stage,
@@ -206,6 +212,7 @@ export class TerrainField implements TerrainQuery {
   /** The hills alone (the coast, on a Coast stage): before the town plateau, the road bed and any pads. */
   baseHeight(x: number, z: number): number {
     if (this.coast) return this.coast.ground(x, z);
+    if (this.dunes) return this.duneHeight(x, z);
     const f = this.frequency;
     const n = this.noise;
     return (
@@ -215,6 +222,20 @@ export class TerrainField implements TerrainQuery {
         0.11 * n(x * f * 2.3, z * f * 2.3) +
         0.04 * n(x * f * 5.1, z * f * 5.1))
     );
+  }
+
+  /** A dune sea: long ridges with sharp crests, stretched downwind, over a rolling sand floor. */
+  private duneHeight(x: number, z: number): number {
+    const f = this.frequency;
+    const n = this.noise;
+    const a = this.amplitude;
+    // Across the ridges (u) the noise runs four times faster than along them (v), so they stretch downwind.
+    const u = x * 0.83 + z * 0.56;
+    const v = -x * 0.56 + z * 0.83;
+    const ridge = 1 - Math.abs(n(u * f * 1.7 + 3.3, v * f * 0.4));
+    const floor =
+      0.55 * n(x * f * 0.5 + 9.1, z * f * 0.5) + 0.25 * n(x * f * 1.3, z * f * 1.3 + 5.5);
+    return a * (0.85 * ridge * ridge - 0.3 + 0.6 * floor) + 0.25 * n(x * 0.06, z * 0.06);
   }
 
   /**

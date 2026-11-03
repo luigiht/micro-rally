@@ -32,8 +32,10 @@ here as of 2 November 2026.
 5. **Finish.** The result panel shows the time, par, previous best, prize
    money and repairs, with Drive it again, Watch replay and Next stage.
 6. **Replay.** The run is recorded every physics step from GO until three
-   seconds past the finish. During the replay the car follows the recording,
-   the clock, checkpoints and progress bar replay with it, driving keys do
+   seconds past the finish, tyre scrub included. During the replay the car
+   follows the recording, the clock, checkpoints and progress bar replay
+   with it, the tyre marks are laid again as the car passes (braking
+   lock-ups and slides alike), driving keys do
    nothing, `C` and Settings still switch camera, and `H` still hides the
    HUD. Esc, "Exit replay" or the end of the recording returns to the
    result panel.
@@ -42,9 +44,10 @@ here as of 2 November 2026.
 
 - **Par time** is the stage length divided by the region's par speed (15 m/s
   Forest, 14 m/s Alpine) times a surface factor (tarmac 1.12, gravel 1,
-  mud 0.85, snow 0.82), plus 12 s when the stage has a town.
+  mud 0.85, snow 0.82, sand 0.9), plus 12 s when the stage has a town.
 - **Prize** = $800 per kilometre × surface difficulty (tarmac 1, grass 1.1,
-  gravel 1.15, mud 1.3, snow 1.35) × pace factor × (1 + 0.25 per loop).
+  gravel 1.15, sand 1.2, mud 1.3, snow 1.35) × pace factor × (1 + 0.25 per
+  loop).
   The pace factor rises to +25 % for beating par by 20 % and falls to a 0.3
   floor at double par. Repair fees are deducted at the finish. A stage of
   the usual 1.5–2 km pays about $1500 at par.
@@ -53,15 +56,16 @@ here as of 2 November 2026.
 
 ## Progression
 
-- Stages run through a nine-stage cycle of regions: Forest ×2, Alpine ×2,
-  Coast, Forest, Coast ×2, Alpine, then round again, so the same scenery
-  never shows more than twice in a row and each region gets three stages in
-  nine. Every six stages the roads lengthen by 25 % and the bends tighten a
+- Stages run through a twelve-stage cycle of regions: Forest ×2, Alpine ×2,
+  Coast, Forest, Desert, Coast, Alpine, Coast, Desert ×2, then round again,
+  so the same scenery never shows more than twice in a row and each region
+  gets three stages in twelve. Every six stages the roads lengthen by 25 % and the bends tighten a
   little, so there is always a next stage.
 - Every third stage, that is stages 3, 6, 9 and so on, carries a town: the
   route leaves the open road, threads a village of right-angle corners,
   narrow streets and blocked side streets, and rejoins the stage. The cycle
-  puts those stages on Forest and Alpine; the Coast road has no villages.
+  puts those stages on Forest, Alpine and Desert; the Coast road has no
+  villages.
 - Any stage up to the first unfinished one can be driven again from the
   Game panel's stage list.
 
@@ -72,14 +76,14 @@ here as of 2 November 2026.
 | Forest | gravel 3, tarmac 1, mud 1         | grass    | amplitude 22, soft                             | 1800 m      | 15 m/s    |
 | Alpine | snow 3 (dusted asphalt), tarmac 1 | snow     | amplitude 34, sharper bends                    | 1500 m      | 14 m/s    |
 | Coast  | tarmac, 11 m wide                 | grass    | cliff road 5–35 m over the sea, hairpin stacks | 1600 m      | 15 m/s    |
+| Desert | sand                              | dune     | dunes of 11 m relief, oases                    | 1900 m      | 16 m/s    |
 
 On a Coast stage the road follows the shore a few metres back from a
 terraced cliff, the sea below to seaward, a scrub hillside above, and once or
 twice climbs that hillside in a stack of two hairpins before coming back
 down. A rough dry-stone wall runs along whichever edge the ground falls away
 (the car bounces off it); where the cliff is low the bank is sand the car can
-drive down and back up. Desert and Night
-exist as names only (Forest clones) and are not yet in the loop. Each stage
+drive down and back up. Night exists as a name only (a Forest clone) and is not yet in the loop. Each stage
 also rolls a weather (clear or overcast) into its brief; rendering does not
 react to it yet.
 

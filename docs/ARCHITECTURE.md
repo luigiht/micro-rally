@@ -70,6 +70,11 @@ flowchart LR
   colliders, the mesher paints the mask rock and the shore sand, and the
   renderer draws the walls (`render/road/SeaWallBuilder.ts` over
   `StoneWallGeometry.ts`) and the sea (`render/terrain/SeaPlane.ts`).
+- Desert (`game/stage/Oases.ts`): `TerrainField.duneHeight` is the dune sea;
+  `planOases` picks level hollows off the road from the stage seed,
+  `scatterScenery` sinks them as pads and rings them with palms, and the
+  renderer draws the pools (`render/terrain/OasisBuilder.ts`); the palm is a
+  prop kind with its own kit.
 - Towns (`game/stage/Town.ts`, `TownPlan.ts`, `TownGenerator.ts`): every
   third stage (3, 6, 9, …), whatever its region, carries one; `planTown` draws
   the route through a hill town as legs (straights with 60°–105° corners laid

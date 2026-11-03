@@ -9,6 +9,7 @@ import type { RoadNear } from '../scenery/kits/NightcityKits';
 import { sceneryKitsFor } from '../scenery/kits/sceneryKits';
 import { SceneryChunkManager } from '../scenery/SceneryChunkManager';
 import { terrainColors } from '../terrain/meshTerrainChunk';
+import { OasisBuilder } from '../terrain/OasisBuilder';
 import { SeaPlane } from '../terrain/SeaPlane';
 import { TerrainChunkManager } from '../terrain/TerrainChunkManager';
 import { dayTheme, type WorldTheme } from '../theme/WorldTheme';
@@ -43,6 +44,7 @@ interface Surfaces {
   walls: TownWallBuilder | null;
   seawall: SeaWallBuilder | null;
   sea: SeaPlane | null;
+  pools: OasisBuilder | null;
 }
 
 /**
@@ -152,9 +154,10 @@ export class StageRenderer {
       walls: town ? new TownWallBuilder(town, field, theme.walls) : null,
       seawall: field.coast ? new SeaWallBuilder(field.coast, field, theme.seawall) : null,
       sea: field.coast ? new SeaPlane(field.coast.seaLevel, theme.sea) : null,
+      pools: field.oases.length > 0 ? new OasisBuilder(field.oases, theme.sea) : null,
     };
     this.group.add(s.road.group, s.gates.group);
-    for (const b of [s.town, s.junctions, s.walls, s.seawall, s.sea])
+    for (const b of [s.town, s.junctions, s.walls, s.seawall, s.sea, s.pools])
       if (b) this.group.add(b.group);
     return s;
   }
@@ -162,7 +165,7 @@ export class StageRenderer {
   /** The builders dispose their GPU resources but not their place in the scene; remove them first. */
   private disposeSurfaces(): void {
     const s = this.surfaces;
-    for (const b of [s.road, s.gates, s.town, s.junctions, s.walls, s.seawall, s.sea]) {
+    for (const b of [s.road, s.gates, s.town, s.junctions, s.walls, s.seawall, s.sea, s.pools]) {
       if (!b) continue;
       this.group.remove(b.group);
       b.dispose();

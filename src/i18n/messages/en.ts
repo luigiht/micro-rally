@@ -234,6 +234,8 @@ export const en = {
     mud: 'Mud',
     snow: 'Snow',
     grass: 'Grass',
+    sand: 'Sand',
+    dune: 'Dunes',
   },
   stage: {
     go: 'GO!',

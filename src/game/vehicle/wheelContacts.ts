@@ -46,20 +46,18 @@ export function createWheelContacts(): WheelContact[] {
   return out;
 }
 
-/**
- * Fill `out` with the four contact patches for a car at `pose` (the rendered,
- * interpolated pose) using the sim's slip readings. Allocation-free.
- */
-export function wheelContacts(
-  out: WheelContact[],
-  pose: Readonly<ContactPose>,
+/** How hard each axle's tyres are scrubbing, 0..1: what the marks are drawn from, and what a replay records. */
+export interface AxleMarks {
+  front: number;
+  rear: number;
+}
+
+/** Mark intensity per axle from the sim's slip, spin and handbrake readings; 0 when airborne or crawling. */
+export function axleMarkIntensities(
   s: Readonly<VehicleState>,
   spec: CarSpec,
-  terrain: TerrainQuery,
-): void {
-  const sinY = Math.sin(pose.yaw);
-  const cosY = Math.cos(pose.yaw);
-  const half = spec.trackWidth / 2;
+  out: AxleMarks = { front: 0, rear: 0 },
+): AxleMarks {
   const grip = SURFACES[s.surface].grip * spec.tyreGrip;
   const peakF = grip / spec.corneringFront;
   const peakR = (grip * REAR_GRIP_BIAS) / spec.corneringRear;
@@ -77,6 +75,23 @@ export function wheelContacts(
       smoothstep(SPIN_START, SPIN_FULL, s.spinRear),
       s.handbrake ? 1 : 0,
     );
+  out.front = front;
+  out.rear = rear;
+  return out;
+}
+
+/** Place the four contact patches for a car at `pose` with the given axle intensities. Allocation-free. */
+export function placeWheelContacts(
+  out: WheelContact[],
+  pose: Readonly<ContactPose>,
+  spec: CarSpec,
+  terrain: TerrainQuery,
+  front: number,
+  rear: number,
+): void {
+  const sinY = Math.sin(pose.yaw);
+  const cosY = Math.cos(pose.yaw);
+  const half = spec.trackWidth / 2;
   for (let i = 0; i < WHEEL_COUNT; i++) {
     const along = i < 2 ? spec.cgToFront : -spec.cgToRear;
     const side = i % 2 === 0 ? half : -half;
@@ -86,4 +101,21 @@ export function wheelContacts(
     c.y = terrain.heightAt(c.x, c.z);
     c.intensity = i < 2 ? front : rear;
   }
+}
+
+const SCRATCH: AxleMarks = { front: 0, rear: 0 };
+
+/**
+ * Fill `out` with the four contact patches for a car at `pose` (the rendered,
+ * interpolated pose) using the sim's slip readings. Allocation-free.
+ */
+export function wheelContacts(
+  out: WheelContact[],
+  pose: Readonly<ContactPose>,
+  s: Readonly<VehicleState>,
+  spec: CarSpec,
+  terrain: TerrainQuery,
+): void {
+  const m = axleMarkIntensities(s, spec, SCRATCH);
+  placeWheelContacts(out, pose, spec, terrain, m.front, m.rear);
 }

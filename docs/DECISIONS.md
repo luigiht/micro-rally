@@ -1754,3 +1754,55 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      so each stone is a rounded, flat-shaded pebble rather than a brick; the
      tint range narrows and the tilts halve, so the wall reads as one calm
      rounded line of stone.
+
+101. **2026-11-03 — Desert: dunes, oases and two sand surfaces.** By
+     request, a desert of dunes with oases whose road is sand yet still
+     reads. **(a) Two surfaces, not a recolour.** The piste is a new `sand`
+     surface (grip 0.66, drag 0.06, between gravel and grass; par 0.9, prize
+     ×1.2) and the ground off it a new `dune` surface (grip 0.5, drag 0.2,
+     like mud), because a sand road the player can see should say "Sand" in
+     the panel and be felt as sand, and soft dunes must be slower than the
+     piste or every bend is cut across them. The `Surface` union carries both
+     through physics, par, prize, road colour, tyre ink, the stage-list glyph
+     (sand ripples, shared by both) and the three dictionaries; the typed
+     records made the compiler list every site. The piste's colour is a shade
+     darker and redder than the dune sand; by request it carries no painted
+     edge lines (a piste has none), so the colour alone makes it legible, and
+     it went a touch darker for that. **(b) Dunes** are a terrain kind on the
+     region (`terrain.dunes`): ridged noise (one minus the absolute value,
+     squared) stretched four to one downwind over a rolling floor, 11 m of
+     relief, so crests are sharp and ridges long; the road bed's smoothing
+     and 12 % limiter grade the piste through them as cuttings and banks
+     without special handling. **(c) Oases** are planned from the stage seed
+     along the road (`Oases.ts`), 30–65 m off it, clear of every part of the
+     road, of a town and of each other, trying five spots a step and keeping
+     the first whose rim's eight sample points lie within 4 m of one another;
+     each is a level pad 1.4 m under the lowest rim point with a 9 m blend, so
+     the water (0.45 m over the floor) stands below the sand all round, which
+     a mean-height floor did not guarantee on a dune slope. The pools are
+     flat discs reaching under the slope; the palms (a new prop kind: a
+     leaning tapered trunk, seven drooping fronds and a knot of dates, covered
+     by the night kit's masts) ring the rim once the pads are set so they
+     stand at the right height, and the wild scatter keeps out of the pools.
+     **(d) The cycle** grows to twelve (Forest ×2, Alpine ×2, Coast, Forest,
+     Desert, Coast, Alpine, Coast, Desert ×2): no three alike, three of each,
+     towns on Forest, Alpine and Desert, never Coast, and stages 1–6 exactly
+     as before, so the coast tests and the kerb fixtures hold; the two
+     later-loop open-road fixtures were re-recorded at indices 15 (Alpine) and
+     12 (Forest).
+
+102. **2026-11-03 — Replays lay their own tyre marks.** The replay drove the
+     car from the recording while the mark renderer was told to stay idle
+     (the sim's frozen slip would otherwise have drawn a smear), so a replay
+     showed only the fading leftovers of the live run, and a braking lock-up
+     near the finish was gone by the time the replay reached it. By request
+     the marks replay too. The intensity maths moved out of `wheelContacts`
+     into `axleMarkIntensities` (per axle, from slip, spin, handbrake, speed
+     and grounding) and `placeWheelContacts` (the four patches for a pose),
+     so the session can record the two intensities and the surface with each
+     sample (three more floats, 21 in all) and the rig can place marks from
+     them without a sim state. Entering and leaving the replay wipes the
+     buffer (`SkidMarks.clear`), and marks laid during playback are stamped
+     with the replay clock, so they hold and fade on the same schedule they
+     did live. Recording intensities rather than raw slips keeps the replay
+     faithful to the car's tuning at the time and the track ignorant of specs.

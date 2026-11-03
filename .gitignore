@@ -24,3 +24,6 @@ blob-report/
 
 # Reference photos and 3D models used only for measuring, never shipped
 context/
+
+# STL exports from tests/unit/exportCarStl.test.ts
+exports/

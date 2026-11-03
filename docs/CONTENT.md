@@ -68,9 +68,10 @@ carries a town between 30 % and 55 % of the way along.
 | Forest | pale sky, two greens, brown trunks; on mud the trees turn autumn (golden larches, orange and rust canopies) | gravel, tarmac, mud           | clear           |
 | Alpine | pale grey sky, near-white ground, frosted pines                                                             | snow (dusted asphalt), tarmac | overcast, clear |
 | Coast  | pale blue sky, dry scrub and limestone, maritime pines, sand and a teal sea                                 | tarmac                        | clear           |
+| Desert | pale sky, warm haze, pale to golden sand, sandstone, date palms and dry scrub, teal pools                   | sand                          | clear           |
 
-Desert and Night are placeholders cloned from Forest and not yet in the
-progression loop.
+Night is a placeholder cloned from Forest and not yet in the progression
+loop.
 
 ## Coast
 
@@ -119,6 +120,28 @@ retainer wherever the ground falls away beside it.
   tilt, faces past 37° of tilt elsewhere; sand under a metre above the sea,
   wet sand under it. Nightcity keeps the layout and darkens the sea and the
   wall.
+
+## Desert
+
+A Desert stage is a piste of packed sand through a dune sea, with oases.
+
+- **Dunes.** The ground is ridged noise stretched downwind: long dune ridges
+  with sharp crests over a rolling sand floor, about 11 m of relief, pale on
+  the floor and golden on the crests, sandstone where a cut is steep. The
+  road bed is graded through them like any other, so the piste runs in
+  cuttings and on banks.
+- **Road.** The `sand` surface: packed sand only a touch darker and warmer
+  than the dunes, with no painted edge lines and no verge posts (a piste has
+  neither), so it reads from the car by that small difference alone; a
+  little looser than gravel. Off the piste the ground is `dune`, soft
+  sand the car wallows in.
+- **Oases.** Along the road every 180–340 m, 30–65 m off it on either side,
+  where the dunes are level enough: a hollow 11 m across (give or take) sunk
+  1.4 m under the lowest point of its rim and blending back over 9 m, a pool
+  of water standing 0.45 m over its floor, a ring of six to ten date palms on
+  the rim and a few scrub bushes at the water. The wild scatter keeps out of
+  the pools. Villages, where the cycle puts them, plant palms in their yards.
+- **Scenery.** Dry scrub and sandstone boulders, sparse; no pines, no farms.
 
 ## Hidden mode: Nightcity
 
@@ -182,18 +205,20 @@ the cameras.
 
 ## Surfaces
 
-| Surface | Where                                                   | Feel                            |
-| ------- | ------------------------------------------------------- | ------------------------------- |
-| tarmac  | some Forest and Alpine stages, every Coast stage, towns | most grip, highest par speed    |
-| gravel  | most Forest stages                                      | the reference surface           |
-| mud     | some Forest stages                                      | slow and slippery               |
-| snow    | most Alpine stages, and off road there                  | least grip, dusted asphalt look |
-| grass   | off the road everywhere else                            | heavy drag                      |
+| Surface | Where                                                   | Feel                                      |
+| ------- | ------------------------------------------------------- | ----------------------------------------- |
+| tarmac  | some Forest and Alpine stages, every Coast stage, towns | most grip, highest par speed              |
+| gravel  | most Forest stages                                      | the reference surface                     |
+| mud     | some Forest stages                                      | slow and slippery                         |
+| snow    | most Alpine stages, and off road there                  | least grip, dusted asphalt look           |
+| sand    | every Desert stage                                      | packed piste, a little looser than gravel |
+| dune    | off the road in the Desert                              | soft sand, the car wallows                |
+| grass   | off the road everywhere else                            | heavy drag                                |
 
 Tyre marks are drawn per surface into a single fading ring-buffer mesh.
 
 ## Not yet built
 
 Sound and engine note, post-processing and quality tiers, weather effects
-and night, the Desert region, pace notes and live splits, gamepad
+and night, pace notes and live splits, gamepad
 input, and the Capacitor mobile shells. See [PLAN.md](PLAN.md).

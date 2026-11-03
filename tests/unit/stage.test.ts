@@ -95,15 +95,16 @@ describe('StageGenerator', () => {
     }
   });
 
-  it('follows the region cycle, never three alike, every region three times in nine', () => {
-    const regions = Array.from({ length: 36 }, (_, i) => stageRegion(i).region);
-    expect(regions.slice(0, 9)).toEqual([...REGION_CYCLE]);
-    expect(regions.slice(9, 18)).toEqual([...REGION_CYCLE]);
+  it('follows the region cycle, never three alike, every region three times a cycle', () => {
+    const n = REGION_CYCLE.length;
+    const regions = Array.from({ length: 3 * n }, (_, i) => stageRegion(i).region);
+    expect(regions.slice(0, n)).toEqual([...REGION_CYCLE]);
+    expect(regions.slice(n, 2 * n)).toEqual([...REGION_CYCLE]);
     for (let i = 2; i < regions.length; i++) {
       expect(regions[i - 2] === regions[i - 1] && regions[i - 1] === regions[i]).toBe(false);
     }
-    for (const id of ['forest', 'alpine', 'coast'])
-      expect(regions.slice(0, 9).filter((r) => r === id)).toHaveLength(3);
+    for (const id of ['forest', 'alpine', 'coast', 'desert'])
+      expect(regions.slice(0, n).filter((r) => r === id)).toHaveLength(3);
     for (let seed = 1; seed <= 6; seed++) {
       const alpine = generateStage(seed, 3);
       expect(['snow', 'tarmac']).toContain(alpine.surface);

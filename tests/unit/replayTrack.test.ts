@@ -31,6 +31,25 @@ function state(over: Partial<VehicleState>): VehicleState {
 }
 
 describe('ReplayTrack', () => {
+  it('records the tyre-mark scrub per axle and the surface, and plays them back blended', () => {
+    const track = new ReplayTrack(DT);
+    track.record(state({ surface: 'gravel' } as Partial<VehicleState>), { front: 0, rear: 1 });
+    track.record(state({ surface: 'tarmac' } as Partial<VehicleState>), { front: 1, rear: 0 });
+    const marks = { front: -1, rear: -1, surface: 'snow' as const };
+    track.sampleMarks(DT * 0.25, marks);
+    expect(marks.front).toBeCloseTo(0.25, 6);
+    expect(marks.rear).toBeCloseTo(0.75, 6);
+    // The surface is discrete and takes the later sample's.
+    expect(marks.surface).toBe('tarmac');
+    // A sample recorded without marks lays none.
+    track.clear();
+    track.record(state({ surface: 'mud' } as Partial<VehicleState>));
+    track.sampleMarks(0, marks);
+    expect(marks.front).toBe(0);
+    expect(marks.rear).toBe(0);
+    expect(marks.surface).toBe('mud');
+  });
+
   it('records one sample per step and reports the duration as the time of the last sample', () => {
     const track = new ReplayTrack(DT);
     expect(track.duration).toBe(0);

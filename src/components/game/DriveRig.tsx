@@ -6,8 +6,13 @@ import type { DirectionalLight, PerspectiveCamera } from 'three';
 import { applyUpgrades } from '@/game/economy/upgrades';
 import { CAR_SPECS, type CarSpec } from '@/game/vehicle/CarSpec';
 import type { VehiclePose } from '@/game/vehicle/interpolatePose';
-import { createWheelContacts, wheelContacts } from '@/game/vehicle/wheelContacts';
+import {
+  createWheelContacts,
+  placeWheelContacts,
+  wheelContacts,
+} from '@/game/vehicle/wheelContacts';
 import type { CameraMode } from '@/lib/cameraMode';
+import type { ReplayMarks } from '@/game/replay/ReplayTrack';
 import { SkidMarks } from '@/render/effects/SkidMarks';
 import { themeColor } from '@/render/theme/themeColor';
 import type { WorldTheme } from '@/render/theme/WorldTheme';
@@ -49,6 +54,8 @@ export function DriveRig({ world, theme, onPose, children }: DriveRigProps) {
   const sun = useRef<DirectionalLight>(null);
   const view = useRef<CameraMode | null>(null);
   const marks = useRef<SkidMarks | null>(null);
+  const wasReplaying = useRef(false);
+  const replayMarks = useRef<ReplayMarks>({ front: 0, rear: 0, surface: 'tarmac' });
   const contacts = useMemo(() => createWheelContacts(), []);
 
   useEffect(() => {
@@ -100,10 +107,23 @@ export function DriveRig({ world, theme, onPose, children }: DriveRigProps) {
     const pose = s.pose;
     car.current?.apply(pose);
     const m = marks.current;
-    // The replay drives the pose from the recording; the sim's frozen slip must not keep drawing marks.
-    if (m && !s.replaying) {
-      wheelContacts(contacts, pose, s.sim.state, s.sim.spec, world.terrain);
-      m.update(contacts, s.sim.state.surface, s.time, dt);
+    if (m) {
+      // Entering or leaving the replay wipes the marks: the replay lays the run's own again from its
+      // recording, stamped with the replay clock, and the sim's frozen slip must not draw meanwhile.
+      if (s.replaying !== wasReplaying.current) {
+        wasReplaying.current = s.replaying;
+        m.clear();
+      }
+      if (!s.replaying) {
+        wheelContacts(contacts, pose, s.sim.state, s.sim.spec, world.terrain);
+        m.update(contacts, s.sim.state.surface, s.time, dt);
+      } else {
+        const rm = s.replayMarks(replayMarks.current);
+        if (rm) {
+          placeWheelContacts(contacts, pose, s.sim.spec, world.terrain, rm.front, rm.rear);
+          m.update(contacts, rm.surface, s.replayClock ?? 0, dt);
+        }
+      }
     }
     poseCallback.current?.(pose);
     if (sun.current) followSun(sun.current, pose);

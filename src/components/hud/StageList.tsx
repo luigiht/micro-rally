@@ -19,6 +19,8 @@ const SURFACE_ICON: Readonly<Record<Surface, PixelIconName>> = {
   mud: 'mud',
   snow: 'snow',
   grass: 'grass',
+  sand: 'sand',
+  dune: 'sand',
 };
 
 /** Coast stages show a winding road rather than the tarmac glyph every one of them would share. */

@@ -10,6 +10,7 @@ import { dayTheme, NIGHTCITY_THEME } from '@/render/theme/WorldTheme';
 const KINDS: PropKind[] = [
   'tree',
   'broadleaf',
+  'palm',
   'bush',
   'rock',
   'house',

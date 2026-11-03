@@ -1,4 +1,4 @@
-export type Surface = 'tarmac' | 'gravel' | 'mud' | 'snow' | 'grass';
+export type Surface = 'tarmac' | 'gravel' | 'mud' | 'snow' | 'grass' | 'sand' | 'dune';
 
 export interface SurfaceProps {
   /** Friction coefficient multiplier. */
@@ -13,6 +13,18 @@ export const SURFACES: Readonly<Record<Surface, SurfaceProps>> = {
   grass: { grip: 0.62, drag: 0.12 },
   mud: { grip: 0.55, drag: 0.22 },
   snow: { grip: 0.42, drag: 0.05 },
+  /** A packed-sand piste: a little looser than gravel. */
+  sand: { grip: 0.66, drag: 0.06 },
+  /** Soft sand off the piste: the car wallows. */
+  dune: { grip: 0.5, drag: 0.2 },
 };
 
-export const SURFACE_LIST: readonly Surface[] = ['tarmac', 'gravel', 'grass', 'mud', 'snow'];
+export const SURFACE_LIST: readonly Surface[] = [
+  'tarmac',
+  'gravel',
+  'grass',
+  'mud',
+  'snow',
+  'sand',
+  'dune',
+];

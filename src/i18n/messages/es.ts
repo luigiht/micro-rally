@@ -249,6 +249,8 @@ export const es: Messages = {
     mud: 'Barro',
     snow: 'Nieve',
     grass: 'Hierba',
+    sand: 'Arena',
+    dune: 'Dunas',
   },
   stage: {
     go: '¡YA!',

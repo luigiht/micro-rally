@@ -28,6 +28,13 @@ export interface SceneryDensity {
   houses: number;
 }
 
+/** A region whose stages have oases (see `Oases`): how often along the road, how wide the pool, how many palms. */
+export interface OasisDef {
+  every: number;
+  radius: number;
+  palms: number;
+}
+
 /** A region whose stages run along the sea (see `Coastline`): where the water stands and what the shore wears. */
 export interface CoastDef {
   seaLevel: number;
@@ -46,7 +53,10 @@ export interface RegionDef {
   surfacePalettes?: Partial<Record<Surface, RegionPalette>>;
   /** Set when the region's stages run along the sea. */
   coast?: CoastDef;
-  terrain: { amplitude: number; frequency: number };
+  /** Set when the region's stages have oases. */
+  oases?: OasisDef;
+  /** Hills by default; `dunes` makes them a dune sea (see `TerrainField.duneHeight`). */
+  terrain: { amplitude: number; frequency: number; dunes?: boolean };
   /** Road curviness 0..1. */
   twistiness: number;
   baseLength: number;
@@ -173,21 +183,55 @@ const COAST: RegionDef = {
   coast: { seaLevel: 0, sand: '#e8d9ab', sandWet: '#c4ad86', sea: '#3b8fb5' },
 };
 
+/**
+ * Dunes and oases: a packed-sand piste through long dune ridges, soft sand
+ * off it, date palms and dry scrub round pools of water in the hollows.
+ * Villages where the cycle puts them.
+ */
+const DESERT: RegionDef = {
+  id: 'desert',
+  surfaces: [['sand', 1]],
+  offroad: 'dune',
+  weathers: [['clear', 1]],
+  palette: {
+    sky: '#e3ecf0',
+    fog: '#ead9b8',
+    grassLow: '#dfc389',
+    grassHigh: '#f0dcaa',
+    rock: '#b8966c',
+    shoulder: '#d9be86',
+    foliage: '#8c9a58',
+    foliageAlt: '#a99f5c',
+    canopy: '#5e9a4d',
+    canopyAlt: '#4c8b43',
+    trunk: '#8a6a44',
+    boulder: '#b39572',
+  },
+  terrain: { amplitude: 11, frequency: 1 / 300, dunes: true },
+  twistiness: 0.75,
+  baseLength: 1900,
+  scenery: { trees: 0, broadleaf: 0, bushes: 10, rocks: 8, houses: 0 },
+  parSpeed: 16,
+  oases: { every: 260, radius: 11, palms: 8 },
+};
+
 export const REGIONS: Readonly<Record<RegionId, RegionDef>> = {
   forest: FOREST,
   alpine: ALPINE,
   coast: COAST,
-  // Forest clones until milestone 8 gives each region its own look; not in the cycle.
-  desert: { ...FOREST, id: 'desert' },
+  desert: DESERT,
+  // A Forest clone until it gets a look of its own; not in the cycle.
   night: { ...FOREST, id: 'night' },
 };
 
 /**
- * The progression: a fixed nine-stage cycle of ones and twos (Forest ×2,
- * Alpine ×2, Coast, Forest, Coast ×2, Alpine), laid so that no region shows
- * three stages running, each gets three of every nine, and the town stages
- * (every third, see `hasTown`) fall on Forest and Alpine: the cliff road has
- * no villages. Stage 1 is Forest and stage 4 Alpine, as they always were.
+ * The progression: a fixed twelve-stage cycle of ones and twos (Forest ×2,
+ * Alpine ×2, Coast, Forest, Desert, Coast, Alpine, Coast, Desert ×2), laid so
+ * that no region shows three stages running, each gets three of every
+ * twelve, and the town stages (every third, see `hasTown`) fall on Forest,
+ * Alpine and Desert: the cliff road has no villages. Stage 1 is Forest and
+ * stage 4 Alpine, as they always were; stage 5 is the first Coast and stage 7
+ * the first Desert.
  */
 export const REGION_CYCLE: readonly RegionId[] = [
   'forest',
@@ -196,9 +240,12 @@ export const REGION_CYCLE: readonly RegionId[] = [
   'alpine',
   'coast',
   'forest',
-  'coast',
+  'desert',
   'coast',
   'alpine',
+  'coast',
+  'desert',
+  'desert',
 ];
 /** Stages per difficulty loop: every sixth stage the roads grow 25 % longer and bend tighter. */
 export const STAGES_PER_LOOP = 6;

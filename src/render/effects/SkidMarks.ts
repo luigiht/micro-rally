@@ -49,6 +49,8 @@ const INK: Readonly<Record<Surface, { color: string; opacity: number }>> = {
   grass: { color: '#46602a', opacity: 0.6 },
   mud: { color: '#2f2012', opacity: 0.65 },
   snow: { color: '#aebccb', opacity: 0.75 },
+  sand: { color: '#a3835a', opacity: 0.5 },
+  dune: { color: '#c9ad78', opacity: 0.55 },
 };
 
 const VERTEX = /* glsl */ `
@@ -204,6 +206,17 @@ export class SkidMarks {
   /** Quads written so far (for tests and the debug overlay). */
   get quadCount(): number {
     return this.written;
+  }
+
+  /** Wipe every mark and start the strips afresh: the replay lays the run's marks again from its recording. */
+  clear(): void {
+    this.intensity.array.fill(0);
+    this.intensity.addUpdateRange(0, this.intensity.count);
+    this.intensity.needsUpdate = true;
+    this.geometry.setDrawRange(0, 0);
+    this.head = 0;
+    this.written = 0;
+    for (let i = 0; i < WHEEL_COUNT; i++) this.trails[i] = createTrail();
   }
 
   /** Draw every new mark in this ink regardless of surface, or null for the per-surface table. Existing marks keep theirs. */

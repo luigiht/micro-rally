@@ -1,5 +1,6 @@
 import { hashSeed, mulberry32 } from '../rng';
 import type { Obstacle } from '../vehicle/Collisions';
+import { inOasis, oasisPads, oasisProps, planOases } from './Oases';
 import { REGIONS } from './regions';
 import { createRoadHit, type RoadSample } from './RoadPath';
 import type { TerrainField } from './TerrainField';
@@ -16,6 +17,7 @@ import {
 export type PropKind =
   | 'tree'
   | 'broadleaf'
+  | 'palm'
   | 'bush'
   | 'rock'
   | 'house'
@@ -70,6 +72,7 @@ const TOWN_HOUSE_CLEARANCE = 40;
 export const CANOPY_RADIUS: Readonly<Partial<Record<PropKind, number>>> = {
   tree: 1.4,
   broadleaf: 2.2,
+  palm: 1.8,
 };
 const CANOPY_CELL = 6;
 
@@ -110,6 +113,7 @@ class CanopyGrid {
 const COLLIDER_RADIUS: Readonly<Record<PropKind, number>> = {
   tree: 0.45,
   broadleaf: 0.4,
+  palm: 0.3,
   bush: 0,
   rock: 0.85,
   house: 0,
@@ -190,6 +194,9 @@ export function scatterScenery(field: TerrainField): Prop[] {
     }
   }
   const houses = scatterHouses(field);
+  // Oases sink their hollows into the dunes alongside the house pads; their palms come once the pads are set.
+  const oases = planOases(field);
+  field.oases = oases;
   // Flatten a pad under each house so the slab, door sill and step meet level ground,
   // and a terrace under each town building so it steps down the hill on level footing.
   // The pad is pulled back from the facade (local -z) so its blend stops at the pavement's edge.
@@ -212,15 +219,26 @@ export function scatterScenery(field: TerrainField): Prop[] {
       radius: HOUSE_PAD_RADIUS * h.scale,
     })),
     ...terraces,
+    ...oasisPads(oases),
   ]);
-  // Nothing grows through a house: drop trees, bushes and rocks inside its footprint.
-  const kept = props.filter((p) =>
-    houses.every((h) => Math.hypot(h.x - p.x, h.z - p.z) >= HOUSE_CLEAR_RADIUS * h.scale),
+  // Nothing grows through a house or in a pool: drop trees, bushes and rocks inside their footprints.
+  const kept = props.filter(
+    (p) =>
+      houses.every((h) => Math.hypot(h.x - p.x, h.z - p.z) >= HOUSE_CLEAR_RADIUS * h.scale) &&
+      !inOasis(oases, p.x, p.z),
   );
-  kept.push(...houses);
+  kept.push(...houses, ...oasisProps(oases, field));
   if (stage.town)
     kept.push(
-      ...townProps(stage.town, field, density.broadleaf > density.trees ? 'broadleaf' : 'tree'),
+      ...townProps(
+        stage.town,
+        field,
+        REGIONS[stage.region].oases
+          ? 'palm'
+          : density.broadleaf > density.trees
+            ? 'broadleaf'
+            : 'tree',
+      ),
     );
   return kept;
 }

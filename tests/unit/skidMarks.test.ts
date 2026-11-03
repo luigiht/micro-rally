@@ -51,6 +51,21 @@ describe('SkidMarks', () => {
     marks.dispose();
   });
 
+  it('clear wipes every mark and lays fresh strips afterwards', () => {
+    const marks = new SkidMarks({ capacity: 64 });
+    const t = drive(marks, 20, 1);
+    expect(marks.quadCount).toBeGreaterThan(0);
+    marks.clear();
+    expect(marks.quadCount).toBe(0);
+    expect(drawn(marks)).toBe(0);
+    const intensity = marks.mesh.geometry.getAttribute('aIntensity') as BufferAttribute;
+    for (let i = 0; i < intensity.count; i++) expect(intensity.getX(i)).toBe(0);
+    drive(marks, 20, 1, 50, t);
+    expect(marks.quadCount).toBeGreaterThan(8);
+    expect(drawn(marks)).toBe(marks.quadCount);
+    marks.dispose();
+  });
+
   it('recycles the oldest quads instead of growing', () => {
     const marks = new SkidMarks({ capacity: 8 });
     const positions = marks.mesh.geometry.getAttribute('position') as BufferAttribute;

@@ -32,7 +32,8 @@ cover the pure-TS core and anything else that can run without a browser:
 - **Stages and towns**: `stage` (generation invariants, regions, curvature),
   `coast` (the region cycle, hairpins and grade, water and beach, the fall
   and climb either side of the road, the retainers and their colliders, the
-  rock mask and shore colours), `town`, `townJunctions`, `townKerbs`, `roadMarkers`, `roadFollower`,
+  rock mask and shore colours), `desert` (the cycle, the two sand surfaces,
+  dunes, oases and their palms, the pools), `town`, `townJunctions`, `townKerbs`, `roadMarkers`, `roadFollower`,
   `stageHistory`. `fixtures/openRoad.json` pins six open-road stages
   byte-for-byte so town work can never move a road that has no town (keys
   are `gameSeed/index`; the four index-0 and index-3 entries date from
@@ -113,3 +114,13 @@ seconds); game seed 3, stage index 5 is an alpine town. Launch Chromium with
 - A significant technical choice gets a numbered entry at the end of
   [DECISIONS.md](DECISIONS.md), and user-visible changes a line in
   [../CHANGELOG.md](../CHANGELOG.md).
+
+## Export tools
+
+`tests/unit/exportCarStl.test.ts` is a dev tool wearing a test's clothes: run
+with `CAR_STL=<carId> pnpm exec vitest run tests/unit/exportCarStl.test.ts`
+it renders that car's `CarModel` with `@react-three/test-renderer` (no
+browser, no WebGL), walks every visible mesh with its world transform and
+writes a binary STL in metres (X right, Y forward, Z up) to `exports/`
+(ignored by git) and to the Downloads folder. Without `CAR_STL` it skips,
+so `pnpm test` is unaffected.

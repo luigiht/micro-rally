@@ -1,8 +1,16 @@
 import type { VehiclePose } from '../vehicle/interpolatePose';
+import { SURFACE_LIST, type Surface } from '../vehicle/surfaces';
 import type { VehicleState } from '../vehicle/VehicleSim';
+import type { AxleMarks } from '../vehicle/wheelContacts';
 
 /** Floats per sample, in the order `record` writes them. */
-const FIELDS = 18;
+const FIELDS = 21;
+const NO_MARKS: Readonly<AxleMarks> = { front: 0, rear: 0 };
+
+/** What a replay lays as tyre marks at a moment: each axle's scrub and the surface under the car. */
+export interface ReplayMarks extends AxleMarks {
+  surface: Surface;
+}
 const INITIAL_SAMPLES = 4096;
 
 function lerp(a: number, b: number, t: number): number {
@@ -19,7 +27,9 @@ function lerpAngle(a: number, b: number, t: number): number {
 /**
  * The car's run, recorded one sample per fixed sim step from the start
  * signal until a few seconds past the finish, and played back as a pose at
- * any time, blended between the two samples either side. Pure data: the
+ * any time, blended between the two samples either side; each sample also
+ * carries the tyre-mark scrub per axle and the surface, so a replay lays the
+ * marks the run did, braking lock-ups included. Pure data: the
  * driving session records into it and reads from it; nothing here knows
  * about rendering. Samples live in one flat buffer that doubles when full,
  * so a run costs a few megabytes at most and recording never allocates per
@@ -45,7 +55,7 @@ export class ReplayTrack {
     this.count = 0;
   }
 
-  record(s: Readonly<VehicleState>): void {
+  record(s: Readonly<VehicleState>, marks: Readonly<AxleMarks> = NO_MARKS): void {
     if ((this.count + 1) * FIELDS > this.data.length) {
       const grown = new Float32Array(this.data.length * 2);
       grown.set(this.data);
@@ -70,8 +80,28 @@ export class ReplayTrack {
     d[i++] = s.rpm;
     d[i++] = s.gear;
     d[i++] = s.grounded ? 1 : 0;
-    d[i] = s.turboActive ? 1 : 0;
+    d[i++] = s.turboActive ? 1 : 0;
+    d[i++] = marks.front;
+    d[i++] = marks.rear;
+    d[i] = Math.max(0, SURFACE_LIST.indexOf(s.surface));
     this.count++;
+  }
+
+  /** The tyre marks to lay `time` seconds into the run: axle scrub blended between samples, the surface from the later one. */
+  sampleMarks(time: number, out: ReplayMarks): ReplayMarks {
+    if (this.count === 0) return out;
+    const last = this.count - 1;
+    const f = Math.min(Math.max(time / this.dt, 0), last);
+    const i = Math.min(Math.floor(f), Math.max(0, last - 1));
+    const j = Math.min(i + 1, last);
+    const t = f - i;
+    const a = i * FIELDS;
+    const b = j * FIELDS;
+    const d = this.data;
+    out.front = lerp(d[a + 18]!, d[b + 18]!, t);
+    out.rear = lerp(d[a + 19]!, d[b + 19]!, t);
+    out.surface = SURFACE_LIST[d[b + 20]!] ?? 'tarmac';
+    return out;
   }
 
   /** The pose `time` seconds into the run (clamped to the track), blended between the samples either side. */

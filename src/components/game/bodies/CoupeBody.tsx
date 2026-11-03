@@ -7,7 +7,7 @@ import { wellsFor, type HullSpec, type HullStation } from '@/render/car/CarHull'
 import { ArchLip, Box, Disc, Lamp, Prism } from '../CarParts';
 import { CarHullMesh } from './CarHullMesh';
 
-/** Airline-style livery: white shell, green / white / red bands, green bonnet band, red roof. */
+/** Airline-style livery: white shell, green / white / red bands, a red-and-green bonnet, red roof. */
 const K = {
   body: '#f4f1ea',
   green: '#157f4a',
@@ -59,10 +59,9 @@ const HULL: HullSpec = {
   // Three 4 cm bands just under the belt crease over the doors, body colour below.
   stripeBand: [0.2, 0.0],
   deck: [
-    // Bonnet: red centre band with white pinstripes and green flanks, as the top view shows.
+    // Bonnet: red centre band meeting green flanks, no pinstripes between (they read as two white bars from above).
     { x0: -0.14, x1: 0.14, z0: 0.62, z1: 1.9, color: K.red },
-    { x0: 0.14, x1: 0.18, z0: 0.62, z1: 1.9, color: K.white, mirror: true },
-    { x0: 0.18, x1: 0.46, z0: 0.62, z1: 1.9, color: K.green, mirror: true },
+    { x0: 0.14, x1: 0.46, z0: 0.62, z1: 1.9, color: K.green, mirror: true },
     // Rear engine cover: same band set, then horizontal louvre slats across it.
     { x0: -0.14, x1: 0.14, z0: -1.72, z1: -0.56, color: K.red },
     { x0: 0.14, x1: 0.18, z0: -1.72, z1: -0.56, color: K.white, mirror: true },
@@ -165,8 +164,7 @@ export function CoupeBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Ref<Gro
           <Box p={[(X_BELT - 0.004) * side, 0.66, 0.1]} s={[0.012, 0.3, 0.3]} c={K.white} />
           <Box p={[(X_BELT + 0.003) * side, 0.66, 0.1]} s={[0.012, 0.22, 0.05]} c={K.trim} />
           <Box p={[0.8 * side, 0.4, 0.1]} s={[0.04, 0.05, 1.2]} c={K.trim} />
-          {/* Headlamp slot under the pop-up lid; round tail lamps; exhaust */}
-          <Box p={[0.5 * side, 0.56, 1.87]} s={[0.34, 0.07, 0.03]} c={K.head} glow={0.4} />
+          {/* Round tail lamps; exhaust (the nose carries only the lamp pod) */}
           <Disc p={[0.58 * side, 0.6, -1.86]} radius={0.1} depth={0.03} c={K.trim} />
           <Disc p={[0.58 * side, 0.6, -1.87]} radius={0.08} depth={0.03} c={K.tail} />
           <Box p={[0.3 * side, 0.48, -1.86]} s={[0.14, 0.05, 0.02]} c={K.body} />
