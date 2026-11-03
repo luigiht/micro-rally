@@ -1,4 +1,5 @@
 import { ObstacleGrid } from '../vehicle/Collisions';
+import { seaWallObstacles } from './Coastline';
 import { propObstacles, scatterScenery, type Prop } from './SceneryScatter';
 import { generateStage, type StageDef } from './StageGenerator';
 import { TerrainField } from './TerrainField';
@@ -17,7 +18,10 @@ export function createStageWorld(gameSeed: number, index: number): StageWorld {
   const stage = generateStage(gameSeed, index);
   const field = new TerrainField(stage);
   const props = scatterScenery(field);
-  const boxes = stage.town ? townObstacles(stage.town) : [];
+  const boxes = [
+    ...(stage.town ? townObstacles(stage.town) : []),
+    ...(field.coast ? seaWallObstacles(field.coast) : []),
+  ];
   return {
     gameSeed,
     stage,

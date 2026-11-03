@@ -2,7 +2,9 @@ import { createNoise2D, type NoiseFunction2D } from 'simplex-noise';
 import { hashSeed, mulberry32 } from '../rng';
 import type { Surface } from '../vehicle/surfaces';
 import type { TerrainQuery } from '../vehicle/Terrain';
-import { REGIONS } from './regions';
+import { Coastline } from './Coastline';
+import { CoastShape } from './CoastShape';
+import { REGIONS, reliefAmplitude } from './regions';
 import { createRoadHit } from './RoadPath';
 import { halfWidthAt } from './RoadWidth';
 import type { StageDef } from './StageGenerator';
@@ -20,6 +22,8 @@ import { junctionKerbs, type JunctionSurface } from './TownKerbs';
 
 const FLAT_MARGIN = 3;
 const BLEND_WIDTH = 16;
+/** On a Coast stage the verges give way to the ground over this much instead, so the cliff edge and the cut show. */
+const COAST_BLEND = 9;
 /**
  * The road ribbon is drawn this far above the smoothed road profile; the
  * verge (flat margin) sits at the same level, so ribbon and terrain meet
@@ -116,6 +120,8 @@ export interface TerrainSample {
   roadBlend: number;
   /** Unsigned distance to the road centreline (Infinity when far). */
   roadDistance: number;
+  /** How rocky the ground is here, 0..1: the coast's cliff band and outcrops; 0 elsewhere. */
+  rock?: number;
 }
 
 function smoothstep(e0: number, e1: number, x: number): number {
@@ -133,6 +139,8 @@ export class TerrainField implements TerrainQuery {
   private readonly noise: NoiseFunction2D;
   private readonly amplitude: number;
   private readonly frequency: number;
+  /** The coast the stage runs along, on Coast stages. */
+  readonly coast: Coastline | null;
   private readonly roadHeights: Float64Array;
   private readonly hit = createRoadHit();
   private readonly offroad: Surface;
@@ -166,8 +174,14 @@ export class TerrainField implements TerrainQuery {
   constructor(readonly stage: StageDef) {
     const region = REGIONS[stage.region];
     this.noise = createNoise2D(mulberry32(hashSeed(stage.seed, 'terrain')));
-    this.amplitude = region.terrain.amplitude * (1 + 0.15 * Math.min(stage.loop, 4));
+    this.amplitude = reliefAmplitude(region, stage.loop);
     this.frequency = region.terrain.frequency;
+    this.coast = region.coast
+      ? new Coastline(
+          stage,
+          new CoastShape(stage.seed, region.coast.seaLevel, this.amplitude, this.frequency),
+        )
+      : null;
     this.offroad = region.offroad;
     this.corridor = stage.halfWidth + FLAT_MARGIN + BLEND_WIDTH;
     this.town = stage.town ?? null;
@@ -189,8 +203,9 @@ export class TerrainField implements TerrainQuery {
     this.pads = [...pads];
   }
 
-  /** The hills alone: noise, before the town plateau, the road bed and any pads. */
+  /** The hills alone (the coast, on a Coast stage): before the town plateau, the road bed and any pads. */
   baseHeight(x: number, z: number): number {
+    if (this.coast) return this.coast.ground(x, z);
     const f = this.frequency;
     const n = this.noise;
     return (
@@ -375,9 +390,15 @@ export class TerrainField implements TerrainQuery {
     return this.roadHeights[i]! + (this.roadHeights[i + 1]! - this.roadHeights[i]!) * (f - i);
   }
 
+  /** How far beyond the verge the deck gives way to the ground: shorter beside a coast road. */
+  private blendWidth(st: StreetHit): number {
+    return this.coast && !st.stub ? COAST_BLEND : BLEND_WIDTH;
+  }
+
   sample(x: number, z: number, out: TerrainSample): TerrainSample {
     const base = this.groundHeight(x, z);
     const st = this.street;
+    out.rock = this.coast ? this.coast.rockiness(x, z) : 0;
     if (!this.nearestStreet(x, z, st)) {
       out.height = this.applyPads(x, z, base);
       out.roadBlend = 0;
@@ -386,7 +407,7 @@ export class TerrainField implements TerrainQuery {
     }
     const deck = st.deck + ROAD_LIFT;
     const hw = st.hw;
-    const t = smoothstep(hw + FLAT_MARGIN, hw + FLAT_MARGIN + BLEND_WIDTH, st.distance);
+    const t = smoothstep(hw + FLAT_MARGIN, hw + FLAT_MARGIN + this.blendWidth(st), st.distance);
     let trench =
       (ROAD_LIFT + ROAD_BED_DROP) * (1 - smoothstep(hw - TRENCH_IN, hw + TRENCH_OUT, st.distance));
     for (const js of this.junctions) {
@@ -410,7 +431,11 @@ export class TerrainField implements TerrainQuery {
     this.nearStreet = this.nearestStreet(x, z, st);
     if (!this.nearStreet) return this.applyPads(x, z, base);
     const deck = st.deck + ROAD_LIFT;
-    const t = smoothstep(st.hw + FLAT_MARGIN, st.hw + FLAT_MARGIN + BLEND_WIDTH, st.distance);
+    const t = smoothstep(
+      st.hw + FLAT_MARGIN,
+      st.hw + FLAT_MARGIN + this.blendWidth(st),
+      st.distance,
+    );
     return this.applyPads(x, z, deck + (base - deck) * t);
   }
 

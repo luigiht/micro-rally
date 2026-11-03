@@ -1560,3 +1560,197 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
     animates (no flicker, no pulsing underglow), so reduced motion needs no
     variant. The toggle rebuilds in one frame on purpose: a half-themed world
     would read as a bug.
+
+93. **2026-11-03 — Regions in pairs; towns and the difficulty loop no longer
+    derived from the block size.** The progression ran each region for three
+    stages, and by request the same scenery must never show more than twice
+    in a row, so `STAGES_PER_REGION` is 2 (Forest ×2, Alpine ×2, round
+    again). The order stays fixed rather than seeded: stage N is then the
+    same region in every game, index 0 stays Forest for the splash demo and
+    the smoke tests, and index 3 stays Alpine for the curvature test; with
+    more regions in the loop later the pairs give the variety on their own.
+    Two things had been derived from the block size and are now their own
+    constants so it could shrink without side effects. `hasTown` keeps its
+    own `TOWN_EVERY` of three (towns on stages 3, 6, 9, …, as before, now in
+    whichever region falls there; doubling the town frequency was not asked
+    for and index 3 must stay town-free), and the difficulty `loop` steps
+    every `STAGES_PER_LOOP` = 6 stages instead of once per region cycle,
+    which would have shortened the 25 % length step from six stages to four.
+    Keeping both cadences also keeps every stage whose region did not move
+    (indices 0, 1, 3, 8, 10, 11, 12, …) identical, since the seed is hashed
+    from region and index; records on the others were set on a road that no
+    longer sits at that number and are left in place rather than wiped.
+
+94. **2026-11-03 — Autumn trees on Forest mud stages.** By request the mud
+    stages read as autumn. `RegionDef` gained an optional `surfacePalettes`
+    map and `stagePalette(stage)` resolves the palette a stage is drawn in
+    (its region's, or the one its surface swaps in), so a surface can
+    re-dress a region without a new region, theme or scenery kit:
+    `sceneryKitsFor` now takes the stage rather than the region and hands the
+    resolved palette to `rallyKits`. Only the four tree fields change (every
+    other pine a golden larch, the broadleaves orange and rust; the bushes
+    share the pine tints, so some turn gold too). Sky, fog, grass, shoulder,
+    rock and trunk keep the summer values and the terrain worker still reads
+    the region palette, so the ground, the lighting and the `dayTheme` memo
+    are untouched. The override is a full palette built once at module load
+    rather than a partial merged per call, so it compares by identity like
+    the region's. Nightcity ignores it (its own kit); the Forest clones
+    (Coast, Desert, Night placeholders) inherit it until milestone 8 gives
+    them palettes of their own.
+
+95. **2026-11-03 — Coast: a cliff road laid out from the road itself, and a
+    nine-stage region cycle.** By request: a tarmac region along a stone
+    cliff, mountain on one side, a human-made stone retainer most of the way
+    on the other with a beach and the sea below, tight curves, the road
+    tracing the coastline. **(a) The coast is derived from the road, not the
+    road from a coast.** The open-road walk caps its heading at 72° from the
+    stage axis (`MAX_DEVIATION`), so every open road is a single-valued
+    curve over that axis. `Coastline` tabulates the road's offset across the
+    axis per metre of axis and measures everything from it: a point's
+    seaward distance is the road's offset at its axis coordinate minus its
+    own, so the sea is always to the right of travel and a jog inland never
+    leaves one strip of ground sea on both sides, which a nearest-road rule
+    would do. Features are a little compressed on the legs that cut across
+    the axis (a cliff reads steeper there); accepted for the robustness. The
+    road's own height is a function of the axis coordinate (5–22 m above the
+    sea), so `buildRoadHeights` smooths an already smooth line and the
+    ground under the carriageway matches the deck. **(b) Profile.** Seaward:
+    a 2.5 m ledge, then a slope that is a 61° cliff where the road is 9 m
+    up or more and a 24° sand bank where it is low (so leaving the road
+    there is a drive down to the beach and back, not a fall), a beach a
+    metre above the water up to 60 m wide and absent at headlands, then the
+    seabed to −9 m. Inland: a face 11–21 m wide whose slope swings along the road
+    between a scrubby 39° bank and a sheer 66° wall, with ledges and rubble
+    on it, then hills with the region's relief; a constant slope rendered as
+    one smooth ramp, which no cliff is. Both verges blend from the deck over
+    8–10 m instead of 16 so neither side is softened into a hillside. **(c) The retainer** stands
+    2.1 m beyond the edge (marker posts at 1.4 m stay in front) wherever the
+    road is at least 9 m up, broken 10 m either side of the start and every
+    gate so the arches and boards never pierce it, short runs dropped and
+    short gaps closed. It is built as overlapping box runs in one merged mesh
+    (like the garden walls) and filed as oriented box colliders, so the car
+    bounces off it rather than driving over the drop; where there is no wall
+    there is no drop to speak of. Rendered in its own grey (`seawall` on the
+    theme) since the garden walls' sandstone read as plaster. **(d) The sea**
+    is one flat plane at sea level that follows the car; the mesher paints
+    faces under a metre above it sand and under it wet sand, and turns faces
+    to rock from 32° of tilt instead of 44° so the cliff and the sheer face
+    read as limestone rather than khaki once the verge blend has softened
+    their facets, and the sea colour sits on the theme (region's by day,
+    near-black in Nightcity). Nothing animates, so reduced motion needs no
+    variant, and the plane is part of the region rather than a toggleable
+    extra. **(e) Scenery.** Seaward only rocks (cliff, beach, shallows down
+    to −0.6 m); inland nothing but rocks and bushes on the face, the pines
+    and broadleaves above it; no farms, since their level pads would cut
+    terraces into the face. **(f) The cycle.** With three regions in pairs,
+    towns on every third stage would have fallen on the same two regions for
+    ever (3 divides 2 × 3) and Forest would have lost its villages. Rather
+    than change the town cadence (decision 86) or the pairs rule (decision
+    93), `REGION_CYCLE` is a hand-laid nine-stage sequence, Forest ×2,
+    Alpine ×2, Coast, Forest, Coast ×2, Alpine: no three alike (ones are
+    allowed, the rule was "two at most"), three of each per nine, stage 1
+    still Forest and stage 4 still Alpine (the splash demo and the curvature
+    test), and the town indices on Forest and Alpine only, so the coast
+    needs no town plateau cut into a cliff. The two later-loop open-road
+    fixtures were re-recorded again at indices that are still open road.
+
+96. **2026-11-03 — Coast: a hillside inland, not a wall.** The first cut
+    (decision 95) put a face 11–21 m high straight above the inland verge;
+    played, it read as a step beside the road rather than a mountain, and
+    the reference the request pointed to (a Garraf-style corniche) has a low
+    road cut, then a 30°–40° hillside of scrub and pines over pale limestone
+    with outcrops, bushes right down to the tarmac and scrub even on the
+    seaward rock. `Coastline.mountain` is now a cut bank up to 2 m high that
+    comes and goes along the road, then a hillside whose slope swings
+    between 24° and 37°, with outcrops and the region's relief fading in
+    well off the verge. The inland verge blends over 10 m: a short blend
+    compresses the cut and the first metres of hill into one steep bank,
+    which was most of the step. Trees start 5 m beyond the inland edge
+    instead of 18 m, bushes and rocks anywhere; seaward, bushes are allowed
+    on the cliff above the beach. The coast turns to rock from 37° of tilt
+    instead of 32° so the hillside stays green, its rock goes paler and its
+    scrub greener, and the prop densities roughly triple, since half of
+    every draw lands seaward and is mostly dropped.
+    The probe that followed showed the step was mostly a measuring error:
+    the across-axis offset of decision 95 runs 1/cos θ long beside a leg that
+    cuts across the axis at angle θ, so on a 60° leg a 30° hill rendered at
+    49° and near the 72° cap almost vertical, cliff and hill alike. The
+    offset is now multiplied by the cosine of the road's local angle (from
+    the tabulated road's slope across the axis), which is the true
+    perpendicular distance beside a straight leg and only an approximation
+    far out, where it merely shifts the shoreline a little.
+
+97. **2026-11-03 — Coast: the land first, then the road, with hairpin
+    stacks and low-poly cliffs.** Two more requests landed on the coast:
+    cliff walls like a low-poly cliff pack (big flat facets, steps and
+    ledges, ochre rock) and stretches of road like a mountain corniche, with
+    stacked hairpins. The second cannot be had under decisions 95–96: a
+    terrain derived from a single-valued road cannot put a leg above another
+    leg, and the heading cap that made the road single-valued forbids the
+    U-turns. So the coast is now built the way the other regions are, land
+    first. `CoastShape` is the lie of the land in axis coordinates, seeded
+    from the stage: a meandering water line, a beach, a rock band whose
+    height and grade vary along the shore (62° terraced rock where tall, a
+    sandy bank where low), a scrub hillside with terraced outcrops where a
+    noise mask says rock, and the region's relief further in. `CoastRoad`
+    draws the road on it: along the shore a shelf back from the cliff top,
+    and once a stage (twice past 2.2 km) a stack of two hairpins, left then
+    right so the road keeps its direction, legs 140–180 m, radii 20–24 m,
+    then a long diagonal back down at 10 %; the climb between stacked legs is
+    their spacing times the hill's slope spread over a hairpin and a leg, so
+    the 12 % limiter is honoured and the deck rarely leaves the ground.
+    `Coastline` keeps only what the stage needs of that: the ground and the
+    rock mask in world space, the shore distance and slope for the scatter,
+    and the retaining walls, now per side, standing wherever the ground 10 m
+    beyond an edge lies 3 m or more below the road's, which puts them on the
+    seaward edge of the shore road and the outer edge of every hairpin leg
+    without a rule saying so. The self-approach rule of 52 m does not apply to
+    coast stages (stacked legs are 40–48 m apart; the corridors do not meet).
+    The low-poly cliff look is a terrace function on the horizontal run
+    (flat treads, steep risers, the same average slope) under the 2 m mesh,
+    its ledges broken by noise, and a rock mask carried in `TerrainSample`
+    so the mesher paints the band and the outcrops rock whatever their tilt
+    and the scrub slopes green; the coast's rock goes ochre. Scenery is placed
+    by terrain rather than by side: rocks above the water, scrub from the dry
+    sand on anything under 54°, trees 3 m up on anything under 42° off the
+    outcrops.
+
+98. **2026-11-03 — Coast: long bends on the shore road, one strip of
+    parapet.** Played, the shore road zigzagged: the water line carried a
+    5 m ripple with a 33 m period, which the road inherited as a bend every
+    few car lengths, and the parapet made it worse because every 3 m box had
+    its own level top, so the wall stepped along every grade and bend. By
+    request the shore now meanders in two octaves only (60 m bays on a 285 m
+    period, 18 m bends on 110 m), nothing tighter than about 100 m of
+    radius; the hairpin stacks keep the tight turns. `SeaWallBuilder` lays
+    each run as one continuous flat-shaded strip (outer and inner faces, top,
+    coping and end faces) through stations every 3 m whose across-wall
+    direction averages the segments either side, so the coping follows the
+    deck without steps or slits. The colliders stay 4 m boxes.
+
+99. **2026-11-03 — Coast barriers: block walls and guardrails in turn.** The
+    parapet of decision 98 read from the car as a thin, broken sheet: one
+    0.5 m slab whose only visible part at eye level is its top band, ending
+    abruptly at every gap. By request, with a dry-stone wall and a W-beam
+    guardrail as references, the walls are now built as runs of two kinds in
+    turn, 36–72 m each from the stage seed (`Coastline.barrierRuns`), over
+    the same wall intervals and the same box colliders. A block wall is two
+    staggered courses of concrete blocks, each box its own length, height,
+    thickness, set, yaw and tint between the theme's two greys, so it reads
+    as laid blocks rather than a slab. A guardrail is a strip extruded along
+    the run with a six-point W profile whose two ridges face the traffic,
+    rendered double-sided and a little metallic, on posts every 2 m; at an
+    end nothing continues from it turns down to the ground and flares away
+    from the road over 2.2 m, as the real terminals do, and where a block
+    wall follows it keeps full height to the joint, which is the transition.
+    Three meshes (blocks with vertex colours, posts, beams) replace the one
+    strip. The theme gains `guardrail` colours; `seawall` goes concrete grey.
+
+100. **2026-11-03 — Coast wall: fewer, rounder stones.** The knocked-about
+     blocks and lumps of decision 100 read as busy brickwork from the car. By
+     request the wall is now two courses of big stones, 0.6–1.1 m long, every
+     one a 2×2×2-facet box whose vertices are drawn 45 % of the way toward the
+     sphere (corners and edges move, face centres stay), with 5 % jitter,
+     so each stone is a rounded, flat-shaded pebble rather than a brick; the
+     tint range narrows and the tilts halve, so the wall reads as one calm
+     rounded line of stone.

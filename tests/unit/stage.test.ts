@@ -8,7 +8,8 @@ import {
   scatterScenery,
 } from '@/game/stage/SceneryScatter';
 import { MARKER_CLEARANCE, MARKER_SPACING, markerDistances } from '@/game/stage/RoadMarkers';
-import { generateStage, stageRegion } from '@/game/stage/StageGenerator';
+import { REGION_CYCLE, REGIONS, stagePalette } from '@/game/stage/regions';
+import { generateStage, stageBrief, stageRegion } from '@/game/stage/StageGenerator';
 import { StageRun, TREE_PENALTY_SECONDS } from '@/game/stage/StageRun';
 import { ROAD_BED_DROP, ROAD_LIFT, TRENCH_OUT, TerrainField } from '@/game/stage/TerrainField';
 import { ObstacleGrid, resolveObstacleCollisions } from '@/game/vehicle/Collisions';
@@ -94,15 +95,15 @@ describe('StageGenerator', () => {
     }
   });
 
-  it('alternates three forest stages with three alpine ones', () => {
-    expect([0, 2, 3, 5, 6, 9].map((i) => stageRegion(i).region)).toEqual([
-      'forest',
-      'forest',
-      'alpine',
-      'alpine',
-      'forest',
-      'alpine',
-    ]);
+  it('follows the region cycle, never three alike, every region three times in nine', () => {
+    const regions = Array.from({ length: 36 }, (_, i) => stageRegion(i).region);
+    expect(regions.slice(0, 9)).toEqual([...REGION_CYCLE]);
+    expect(regions.slice(9, 18)).toEqual([...REGION_CYCLE]);
+    for (let i = 2; i < regions.length; i++) {
+      expect(regions[i - 2] === regions[i - 1] && regions[i - 1] === regions[i]).toBe(false);
+    }
+    for (const id of ['forest', 'alpine', 'coast'])
+      expect(regions.slice(0, 9).filter((r) => r === id)).toHaveLength(3);
     for (let seed = 1; seed <= 6; seed++) {
       const alpine = generateStage(seed, 3);
       expect(['snow', 'tarmac']).toContain(alpine.surface);
@@ -133,10 +134,30 @@ describe('StageGenerator', () => {
     expect(curvature(3)).toBeGreaterThan(curvature(0) * 1.15);
   });
 
-  it('loops regions and grows stages on later loops', () => {
+  it('steps the difficulty loop every six stages, apart from the region cycle', () => {
     expect(stageRegion(0)).toEqual({ region: 'forest', loop: 0 });
-    const later = stageRegion(30);
-    expect(later.loop).toBeGreaterThan(0);
+    expect(stageRegion(5).loop).toBe(0);
+    expect(stageRegion(6).loop).toBe(1);
+    expect(stageRegion(30).loop).toBe(5);
+  });
+});
+
+describe('stagePalette', () => {
+  it('forest mud stages wear autumn in the trees only; every other stage keeps its region palette', () => {
+    const summer = REGIONS.forest.palette;
+    const autumn = stagePalette({ region: 'forest', surface: 'mud' });
+    expect(autumn).not.toBe(summer);
+    expect(stagePalette({ region: 'forest', surface: 'mud' })).toBe(autumn);
+    const treeKeys = ['foliage', 'foliageAlt', 'canopy', 'canopyAlt'];
+    for (const key of Object.keys(summer) as (keyof typeof summer)[]) {
+      expect(autumn[key] === summer[key]).toBe(!treeKeys.includes(key));
+    }
+    expect(stagePalette({ region: 'forest', surface: 'gravel' })).toBe(summer);
+    expect(stagePalette({ region: 'forest', surface: 'tarmac' })).toBe(summer);
+    expect(stagePalette({ region: 'alpine', surface: 'snow' })).toBe(REGIONS.alpine.palette);
+    // Mud is a forest surface the generator actually draws, so autumn is reachable.
+    const briefs = Array.from({ length: 24 }, (_, seed) => stageBrief(seed + 1, 1));
+    expect(briefs.some((b) => b.surface === 'mud')).toBe(true);
   });
 });
 

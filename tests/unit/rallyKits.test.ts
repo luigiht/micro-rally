@@ -1,8 +1,9 @@
-import { Object3D } from 'three';
+import { Color, MeshStandardMaterial, Object3D } from 'three';
 import { describe, expect, it } from 'vitest';
 import { REGIONS } from '@/game/stage/regions';
 import type { Prop, PropKind } from '@/game/stage/SceneryScatter';
 import { rallyKits } from '@/render/scenery/kits/RallyKits';
+import type { KindKit } from '@/render/scenery/SceneryChunkManager';
 import { sceneryKitsFor } from '@/render/scenery/kits/sceneryKits';
 import { dayTheme, NIGHTCITY_THEME } from '@/render/theme/WorldTheme';
 
@@ -76,9 +77,41 @@ describe('rallyKits', () => {
     }
   });
 
+  it('forest mud stages dress the trees in autumn and nothing else', () => {
+    const near = () => ({ dist: 50, x: 0, z: 0 });
+    const theme = dayTheme(REGIONS.forest);
+    const summer = sceneryKitsFor(theme, { region: 'forest', surface: 'gravel' }, true, near);
+    const autumn = sceneryKitsFor(theme, { region: 'forest', surface: 'mud' }, true, near);
+    const tint = (kits: KindKit[], kind: PropKind) =>
+      kits.find((k) => k.sources.includes(kind) && k.tint)!.tint!.map((c) => c.getHexString());
+    expect(tint(autumn, 'broadleaf')).not.toEqual(tint(summer, 'broadleaf'));
+    expect(tint(autumn, 'tree')).not.toEqual(tint(summer, 'tree'));
+    // Warm: orange and rust canopies, a golden larch for every other pine.
+    for (const hex of [...tint(autumn, 'broadleaf'), tint(autumn, 'tree')[1]!]) {
+      const c = new Color('#' + hex);
+      expect(c.r).toBeGreaterThan(c.g);
+      expect(c.g).toBeGreaterThan(c.b);
+    }
+    // Houses, rocks and trunks keep the summer colours.
+    expect(tint(autumn, 'house')).toEqual(tint(summer, 'house'));
+    const trunk = (kits: KindKit[]) =>
+      (
+        kits.find((k) => k.sources.length === 2)!.material as MeshStandardMaterial
+      ).color.getHexString();
+    expect(trunk(autumn)).toBe(trunk(summer));
+    for (const k of [...summer, ...autumn]) {
+      k.geometry.dispose();
+      k.material.dispose();
+    }
+  });
+
   it('sceneryKitsFor picks the rally kits by day and a set covering every kind at night', () => {
     for (const theme of [dayTheme(REGIONS.forest), NIGHTCITY_THEME]) {
-      const kits = sceneryKitsFor(theme, REGIONS.forest, true, () => ({ dist: 50, x: 0, z: 0 }));
+      const kits = sceneryKitsFor(theme, { region: 'forest', surface: 'gravel' }, true, () => ({
+        dist: 50,
+        x: 0,
+        z: 0,
+      }));
       for (const kind of KINDS) expect(kits.some((k) => k.sources.includes(kind))).toBe(true);
       for (const k of kits) {
         k.geometry.dispose();

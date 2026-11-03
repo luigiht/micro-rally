@@ -135,6 +135,7 @@ export function scatterScenery(field: TerrainField): Prop[] {
   const sample: RoadSample = { x: 0, z: 0, heading: 0 };
   const props: Prop[] = [];
   const canopies = new CanopyGrid();
+  const coast = field.coast;
   const kinds: readonly [PropKind, number][] = [
     ['tree', density.trees],
     ['broadleaf', density.broadleaf],
@@ -164,6 +165,21 @@ export function scatterScenery(field: TerrainField): Prop[] {
         // Keep every part of the road (including other bends) clear, and the town plateau.
         if (path.nearest(x, z, stage.halfWidth + MIN_CLEARANCE, hit)) continue;
         if (stage.town && townBlocks(stage.town, x, z)) continue;
+        if (coast) {
+          // Rocks anywhere above the water; scrub from the dry sand inland on anything but a cliff face;
+          // trees above the beach on gentle ground that is not bare rock.
+          const y = field.heightAt(x, z);
+          if (kind === 'rock') {
+            if (y < coast.seaLevel - 0.6) continue;
+          } else if (kind === 'bush') {
+            if (coast.shoreDistance(x, z) < 2 || coast.slopeAt(x, z) > 1.4) continue;
+          } else if (
+            y < coast.seaLevel + 3 ||
+            coast.slopeAt(x, z) > 0.9 ||
+            coast.rockiness(x, z) > 0.6
+          )
+            continue;
+        }
         // Trees keep their canopies apart; a rejected spot is simply skipped.
         const canopy = CANOPY_RADIUS[kind];
         if (canopy !== undefined && canopies.overlaps(x, z, canopy * scale)) continue;

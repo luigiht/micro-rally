@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { stageBrief } from '@/game/stage/StageGenerator';
+import { stageBrief, type StageBrief } from '@/game/stage/StageGenerator';
 import { frontierStage, stageWindow } from '@/game/stage/StageHistory';
 import type { Surface } from '@/game/vehicle/surfaces';
 import { fill, formatTime } from '@/i18n/format';
@@ -20,6 +20,11 @@ const SURFACE_ICON: Readonly<Record<Surface, PixelIconName>> = {
   snow: 'snow',
   grass: 'grass',
 };
+
+/** Coast stages show a winding road rather than the tarmac glyph every one of them would share. */
+function stageIcon(b: StageBrief): PixelIconName {
+  return b.region === 'coast' ? 'coast' : SURFACE_ICON[b.surface];
+}
 
 /**
  * Each item reserves a fixed compact slot; the button sits on top of it and
@@ -108,7 +113,7 @@ export function StageList() {
                 className={`${driving ? 'pixel-btn' : 'pixel-btn-ghost'} ${BUTTON} ${left ? 'right-0' : 'left-0'}`}
               >
                 <span className="mr-2 tabular-nums">{b.index + 1}</span>
-                <PixelIcon name={SURFACE_ICON[b.surface]} />
+                <PixelIcon name={stageIcon(b)} />
                 <span className={`${DETAIL} ${left ? DETAIL_LEFT : DETAIL_RIGHT}`}>{b.name}</span>
                 <span className="sr-only">, {surface}</span>
                 {b.index === frontier && <span className="sr-only">, {m.game.currentStage}</span>}

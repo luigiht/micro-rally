@@ -2,7 +2,10 @@
  * One-bit glyphs (8×8 unless noted) drawn as crisp SVG rects in the current text colour.
  * `garage` is a car seen head-on; `handbrake` is a pedal pad with grip
  * ridges; the surface glyphs are a road with a dashed centre line, pebbles,
- * a puddle, a snowflake and grass blades.
+ * a puddle, a snowflake and grass blades; `coast` (16×16) is a road running
+ * away from the viewer, wide at the foot and bending right as it narrows,
+ * its centre line dashed, shown for Coast stages instead of the surface
+ * glyph.
  */
 export type PixelIconName =
   | 'restart'
@@ -21,7 +24,8 @@ export type PixelIconName =
   | 'gravel'
   | 'mud'
   | 'snow'
-  | 'grass';
+  | 'grass'
+  | 'coast';
 
 const GLYPHS: Record<PixelIconName, readonly string[]> = {
   restart: [
@@ -200,6 +204,25 @@ const GLYPHS: Record<PixelIconName, readonly string[]> = {
     '.##.#.##',
     '.#..#.#.',
     '########',
+  ],
+  // 16×16: a road running away from the viewer, wide at the foot, bending right as it narrows, its centre line dashed.
+  coast: [
+    '........####....',
+    '........##.#....',
+    '........####....',
+    '.......#####....',
+    '.......##.##....',
+    '......######....',
+    '.....######.....',
+    '....###.###.....',
+    '....#######.....',
+    '...########.....',
+    '...###..###.....',
+    '...#########....',
+    '...#########....',
+    '..####..####....',
+    '..##########....',
+    '..##########....',
   ],
 };
 

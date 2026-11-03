@@ -5,6 +5,39 @@ tags yet: `main` is deployed continuously, so entries are grouped by the day
 they landed. The numbered entries in [docs/DECISIONS.md](docs/DECISIONS.md)
 hold the reasoning behind each change; the numbers in brackets point there.
 
+## 2026-11-03
+
+### Added
+
+- **Coast**, a third region in the rotation: a tarmac corniche along a
+  terraced low-poly rock cliff, a sandy beach and a flat teal sea to seaward,
+  a scrub-and-pine hillside with ochre outcrops above, and once or twice a
+  stage a stack of two hairpins climbing that hillside before a long run
+  back down. The road is a lane wider than the other tarmac roads, bends no
+  tighter than about 50 m on the shore and turns its hairpins without a
+  kink. Along whichever edge the ground falls away, the outer side of every
+  hairpin leg, runs a dry-stone wall of big rounded stones; the car bounces
+  off it. Where the cliff is low the bank is sand the car can drive down and
+  back up. Regions now run through a nine-stage cycle (Forest ×2, Alpine ×2,
+  Coast, Forest, Coast ×2, Alpine) that keeps the no-three-in-a-row rule and
+  puts every third stage's town on Forest and Alpine; stage numbers from 5
+  on are new roads. [95–101]
+- Autumn on the mud: Forest stages on mud dress their trees in autumn
+  colours, with evergreen pines beside golden larches, orange and rust
+  broadleaf canopies and gold among the bushes. Sky, ground, road and trunks
+  stay as they were. [94]
+
+### Changed
+
+- Coast stages show a road glyph of their own in the Game panel's stage
+  list, a road running away and bending, instead of the tarmac glyph every
+  one of them would share.
+- The same region never shows for three stages running (it used to run in
+  threes); the cycle is described under Coast above. Towns stay on every
+  third stage (3, 6, 9, …) and the 25 % length step still comes every six
+  stages. Stages whose region moved are new roads at that number, so an
+  existing record there was set on a different road. [93, 95]
+
 ## 2026-11-02
 
 ### Added

@@ -22,7 +22,7 @@ self.onmessage = (e: MessageEvent<TerrainWorkerRequest>) => {
     field = new TerrainField(stage);
     // Scenery placement registers the level pads under houses on the field; the props themselves are not needed here.
     scatterScenery(field);
-    colors = terrainColors(region.palette);
+    colors = terrainColors(region.palette, region.coast);
     amplitude = region.terrain.amplitude;
     return;
   }

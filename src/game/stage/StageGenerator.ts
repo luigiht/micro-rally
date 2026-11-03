@@ -2,10 +2,25 @@ import { hashSeed, mulberry32, pickWeighted } from '../rng';
 import type { Surface } from '../vehicle/surfaces';
 import type { SpawnPose } from '../vehicle/VehicleSim';
 import type { Gate } from './Checkpoints';
-import { REGION_ORDER, REGIONS, STAGES_PER_REGION, type RegionId, type Weather } from './regions';
+import {
+  REGION_CYCLE,
+  REGIONS,
+  STAGES_PER_LOOP,
+  type RegionId,
+  type Weather,
+  reliefAmplitude,
+} from './regions';
 import type { RoadPath, RoadSample } from './RoadPath';
 import type { TownDef } from './Town';
-import { buildCentreline, RUNOUT, selfApproachOk, START_DISTANCE } from './Centreline';
+import {
+  buildCentreline,
+  type Centreline,
+  RUNOUT,
+  selfApproachOk,
+  START_DISTANCE,
+} from './Centreline';
+import { buildCoastRoad } from './CoastRoad';
+import { CoastShape } from './CoastShape';
 import { buildWidths } from './RoadWidth';
 import { layoutTown } from './TownGenerator';
 import { hasTown, planTown } from './TownPlan';
@@ -69,7 +84,7 @@ export interface StageBrief {
   seed: number;
   index: number;
   region: RegionId;
-  /** How many times the region loop has wrapped (harder, longer variants). */
+  /** Difficulty loop, stepping every `STAGES_PER_LOOP` stages (harder, longer variants). */
   loop: number;
   /** Procedural place name (a proper noun, not translated). */
   name: string;
@@ -92,11 +107,12 @@ export interface StageDef extends StageBrief {
   widths?: Float64Array;
 }
 
+/** The region from `REGION_CYCLE`; the difficulty loop steps on its own cadence. */
 export function stageRegion(index: number): { region: RegionId; loop: number } {
-  const perLoop = STAGES_PER_REGION * REGION_ORDER.length;
-  const loop = Math.floor(index / perLoop);
-  const region = REGION_ORDER[Math.floor((index % perLoop) / STAGES_PER_REGION)]!;
-  return { region, loop };
+  return {
+    region: REGION_CYCLE[index % REGION_CYCLE.length]!,
+    loop: Math.floor(index / STAGES_PER_LOOP),
+  };
 }
 
 /** Keep checkpoint boards out of the town and in order; the finish stays where the brief put it. */
@@ -179,17 +195,34 @@ export function generateStage(gameSeed: number, index: number): StageDef {
   const { region, loop } = stageRegion(index);
   const def = REGIONS[region];
   const seed = hashSeed(gameSeed, region, index);
-  const withTown = hasTown(index);
+  // Coast stages never fall on a town index; the guard keeps it so if the cycle ever changes.
+  const withTown = hasTown(index) && !def.coast;
   const brief = drawBrief(mulberry32(seed), seed, index, region, loop, withTown);
   const { surface, length } = brief;
   const twist = def.twistiness * (1 + 0.15 * Math.min(loop, 4));
-  const halfWidth = surface === 'tarmac' ? 4.5 : 4;
+  // The corniche is a lane wider: dark tarmac between pale verges reads narrower than a gravel road whose shoulders blend into it.
+  const halfWidth = def.coast ? 5.5 : surface === 'tarmac' ? 4.5 : 4;
   const total = START_DISTANCE + length + RUNOUT;
   // The town draws from its own seed so the brief and the walk keep their streams. The walk is
   // rebuilt with the plan mirrored if the town fouls the open road around it, and without a town
   // if that fails too, so the stage's own invariants always hold.
   const plan = withTown ? planTown(seed, START_DISTANCE, length, halfWidth) : null;
-  let built = buildCentreline(resume(seed), total, twist, plan);
+  // A coast road is drawn on the coast's ground (shore-following, with hairpin stacks) rather than walked.
+  let built: Centreline = def.coast
+    ? {
+        path: buildCoastRoad(
+          resume(seed),
+          total,
+          new CoastShape(
+            seed,
+            def.coast.seaLevel,
+            reliefAmplitude(def, loop),
+            def.terrain.frequency,
+          ),
+        ).path,
+        trace: null,
+      }
+    : buildCentreline(resume(seed), total, twist, plan);
   const fouls = (c: typeof built) => {
     if (!c.trace) return false;
     const t = layoutTown(c.trace, c.path, seed, halfWidth);

@@ -1,5 +1,4 @@
 import { hashSeed, mulberry32 } from '../rng';
-import { STAGES_PER_REGION } from './regions';
 
 /** Corner arcs: 12 m, or 10 m on the sharpest (over 95°) corners. */
 export function cornerRadius(turn: number): number {
@@ -12,13 +11,16 @@ export function tangentLength(turn: number): number {
 }
 
 /**
- * Every third stage carries a town: the last stage of each region's run
- * (indices 2, 5, 8, …, stages 3, 6, 9, … to the player), the same in every
- * game. Never index 0 (the splash demo and the smoke tests drive it) nor
- * index 3 (the alpine stage the curvature test compares), never two in a row.
+ * Every third stage carries a town (indices 2, 5, 8, …, stages 3, 6, 9, …
+ * to the player), the same in every game and in whichever region the
+ * progression puts there. Never index 0 (the splash demo and the smoke
+ * tests drive it) nor index 3 (the alpine stage the curvature test
+ * compares), never two in a row, and never on a Coast stage: `REGION_CYCLE`
+ * keeps these indices on Forest and Alpine.
  */
+const TOWN_EVERY = 3;
 export function hasTown(index: number): boolean {
-  return index % STAGES_PER_REGION === STAGES_PER_REGION - 1;
+  return index % TOWN_EVERY === TOWN_EVERY - 1;
 }
 
 /** Half width of the narrow old-town streets some towns have through their middle. */

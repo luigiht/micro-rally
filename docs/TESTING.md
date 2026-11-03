@@ -30,9 +30,14 @@ cover the pure-TS core and anything else that can run without a browser:
   determinism, every car composed under power), `controlInput`,
   `fixedStepper`, `collisions`, `wheelContacts`, `skidMarks`.
 - **Stages and towns**: `stage` (generation invariants, regions, curvature),
-  `town`, `townJunctions`, `townKerbs`, `roadMarkers`, `roadFollower`,
+  `coast` (the region cycle, hairpins and grade, water and beach, the fall
+  and climb either side of the road, the retainers and their colliders, the
+  rock mask and shore colours), `town`, `townJunctions`, `townKerbs`, `roadMarkers`, `roadFollower`,
   `stageHistory`. `fixtures/openRoad.json` pins six open-road stages
-  byte-for-byte so town work can never move a road that has no town.
+  byte-for-byte so town work can never move a road that has no town (keys
+  are `gameSeed/index`; the four index-0 and index-3 entries date from
+  before towns, the two later-loop ones were re-recorded on 2026-11-03 when
+  the region cycle changed).
 - **Economy and saves**: `prize`, `garage`, `save`, `saveManager`,
   `gameStore.server`.
 - **Rendering geometry built in pure TS**: `carHull` (lofted hulls, wells,

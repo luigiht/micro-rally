@@ -37,8 +37,8 @@ identical every time it is driven and records are fair.
 
 ## Towns
 
-Every third stage (the last of each region's run) carries a town between
-30 % and 55 % of the way along.
+Every third stage (stages 3, 6, 9, …, in whichever region falls there)
+carries a town between 30 % and 55 % of the way along.
 
 - **Plan.** An entry straight of 60 or 80 m, two to four middle legs
   (straights ending in 60°, 90° or 105° corners laid as 12 m arcs, or tight
@@ -63,13 +63,62 @@ Every third stage (the last of each region's run) carries a town between
 
 ## Regions
 
-| Region | Palette                                         | Surfaces                      | Weather         |
-| ------ | ----------------------------------------------- | ----------------------------- | --------------- |
-| Forest | pale sky, two greens, brown trunks              | gravel, tarmac, mud           | clear           |
-| Alpine | pale grey sky, near-white ground, frosted pines | snow (dusted asphalt), tarmac | overcast, clear |
+| Region | Palette                                                                                                     | Surfaces                      | Weather         |
+| ------ | ----------------------------------------------------------------------------------------------------------- | ----------------------------- | --------------- |
+| Forest | pale sky, two greens, brown trunks; on mud the trees turn autumn (golden larches, orange and rust canopies) | gravel, tarmac, mud           | clear           |
+| Alpine | pale grey sky, near-white ground, frosted pines                                                             | snow (dusted asphalt), tarmac | overcast, clear |
+| Coast  | pale blue sky, dry scrub and limestone, maritime pines, sand and a teal sea                                 | tarmac                        | clear           |
 
-Coast, Desert and Night are placeholders cloned from Forest and not yet in
-the progression loop.
+Desert and Night are placeholders cloned from Forest and not yet in the
+progression loop.
+
+## Coast
+
+A Coast stage is a cliff road with the sea to seaward and a hairpin stack or
+two. The lie of the land comes first (`CoastShape.ts`): along the stage axis
+the water line meanders in bays and headlands, and from it the ground climbs
+across a beach, a terraced rock band (the cliff) and a scrub hillside with
+outcrops, with the region's relief further in. The road is then drawn on that
+ground (`CoastRoad.ts`): it follows the shore a shelf back from the cliff
+top, and once a stage (twice on a long one) turns inland and climbs the
+hillside in a stack of two hairpins, left then right so it keeps its
+direction, before a long diagonal back down to the shelf. The terrain
+(`Coastline.ts`) cuts the road in with the usual corridor and stands the
+retainer wherever the ground falls away beside it.
+
+- **Road.** Tarmac 11 m wide (a lane more than the other tarmac roads, whose
+  dark deck between pale verges reads narrower than gravel), 5–35 m above
+  the sea, sweeping with the shore in bends no tighter than about 50 m; hairpins of about 20 m radius joining contour legs
+  44–52 m apart up the slope, each arc fitted to leave one leg and land on the
+  next tangentially, every leg under the 12 % grade limit (the climb between
+  stacked legs is their spacing times the hill's slope, spread over a hairpin
+  and a leg).
+- **Shore.** The water line, a dry-sand beach up to 30 m wide a metre above
+  the sea (a couple of metres at a headland), then the cliff band:
+  4–24 m tall; where tall it stands at 62° and is terraced into 4 m runs of
+  flat tread and steep riser, their ledges broken up by noise, so the facets
+  read as low-poly rock; where low it is a sandy bank the car can climb.
+  Beyond the water the seabed falls to 9 m under a flat sea plane that
+  follows the car.
+- **Hillside.** 22°–27° above the cliff, terraced into 6 m steps where a
+  noise mask says rock, scrub elsewhere, with the region's relief from 60 m
+  in.
+- **Walls.** Along whichever road edge the ground lies 3 m or more lower
+  10 m out (both edges on a spur, the outer edge of every hairpin leg), broken
+  10 m either side of the start and every gate, runs under 12 m dropped and
+  gaps under 6 m closed, stands a dry-stone wall about 1.2 m high: two
+  staggered courses of big rounded stones, each a box with its corners and
+  edges drawn in toward a sphere, 0.6–1.1 m long with its own height,
+  thickness, set, tilt and grey, the upper course bedded into the lower so
+  the uneven top opens no holes. It collides: the car bounces off it. The
+  marker posts stand in front of it.
+- **Scenery.** Rocks anywhere above the water; scrub from 2 m inland on
+  slopes under 54°; pines and broadleaves 3 m above the sea on slopes under
+  42° and off the outcrops; no farms.
+- **Colours.** The cliff band and the outcrops are ochre rock whatever their
+  tilt, faces past 37° of tilt elsewhere; sand under a metre above the sea,
+  wet sand under it. Nightcity keeps the layout and darkens the sea and the
+  wall.
 
 ## Hidden mode: Nightcity
 
@@ -133,18 +182,18 @@ the cameras.
 
 ## Surfaces
 
-| Surface | Where                                  | Feel                            |
-| ------- | -------------------------------------- | ------------------------------- |
-| tarmac  | some Forest and Alpine stages, towns   | most grip, highest par speed    |
-| gravel  | most Forest stages                     | the reference surface           |
-| mud     | some Forest stages                     | slow and slippery               |
-| snow    | most Alpine stages, and off road there | least grip, dusted asphalt look |
-| grass   | off the road everywhere else           | heavy drag                      |
+| Surface | Where                                                   | Feel                            |
+| ------- | ------------------------------------------------------- | ------------------------------- |
+| tarmac  | some Forest and Alpine stages, every Coast stage, towns | most grip, highest par speed    |
+| gravel  | most Forest stages                                      | the reference surface           |
+| mud     | some Forest stages                                      | slow and slippery               |
+| snow    | most Alpine stages, and off road there                  | least grip, dusted asphalt look |
+| grass   | off the road everywhere else                            | heavy drag                      |
 
 Tyre marks are drawn per surface into a single fading ring-buffer mesh.
 
 ## Not yet built
 
 Sound and engine note, post-processing and quality tiers, weather effects
-and night, Coast and Desert regions, pace notes and live splits, gamepad
+and night, the Desert region, pace notes and live splits, gamepad
 input, and the Capacitor mobile shells. See [PLAN.md](PLAN.md).

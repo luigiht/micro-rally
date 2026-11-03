@@ -4,10 +4,12 @@ import { createRoadHit } from '@/game/stage/RoadPath';
 import type { Prop } from '@/game/stage/SceneryScatter';
 import type { StageWorld } from '@/game/stage/StageWorld';
 import { RoadBuilder } from '../road/RoadBuilder';
+import { SeaWallBuilder } from '../road/SeaWallBuilder';
 import type { RoadNear } from '../scenery/kits/NightcityKits';
 import { sceneryKitsFor } from '../scenery/kits/sceneryKits';
 import { SceneryChunkManager } from '../scenery/SceneryChunkManager';
 import { terrainColors } from '../terrain/meshTerrainChunk';
+import { SeaPlane } from '../terrain/SeaPlane';
 import { TerrainChunkManager } from '../terrain/TerrainChunkManager';
 import { dayTheme, type WorldTheme } from '../theme/WorldTheme';
 import { TownJunctionBuilder } from '../town/TownJunctionBuilder';
@@ -39,6 +41,8 @@ interface Surfaces {
   town: TownStreetBuilder | null;
   junctions: TownJunctionBuilder | null;
   walls: TownWallBuilder | null;
+  seawall: SeaWallBuilder | null;
+  sea: SeaPlane | null;
 }
 
 /**
@@ -69,7 +73,7 @@ export class StageRenderer {
       world.gameSeed,
       world.stage.index,
       world.field,
-      terrainColors(region.palette),
+      terrainColors(region.palette, region.coast),
       region.terrain.amplitude,
       { size: 64, resolution: opts.terrainResolution, radius: opts.terrainRadius },
       theme.terrain,
@@ -84,6 +88,7 @@ export class StageRenderer {
     this.lastZ = z;
     this.terrain.update(x, z);
     this.scenery.update(x, z);
+    this.surfaces.sea?.update(x, z);
   }
 
   /** Re-dress the stage in another theme, in one frame: a half-themed world would read as a bug. */
@@ -96,7 +101,10 @@ export class StageRenderer {
     this.group.remove(this.scenery.group);
     this.scenery.dispose();
     this.scenery = this.buildScenery(theme);
-    if (Number.isFinite(this.lastX)) this.scenery.update(this.lastX, this.lastZ);
+    if (Number.isFinite(this.lastX)) {
+      this.scenery.update(this.lastX, this.lastZ);
+      this.surfaces.sea?.update(this.lastX, this.lastZ);
+    }
   }
 
   dispose(): void {
@@ -123,10 +131,9 @@ export class StageRenderer {
   };
 
   private buildScenery(theme: WorldTheme): SceneryChunkManager {
-    const region = REGIONS[this.world.stage.region];
     const scenery = new SceneryChunkManager(
       this.world.props,
-      sceneryKitsFor(theme, region, this.opts.shadows, this.near),
+      sceneryKitsFor(theme, this.world.stage, this.opts.shadows, this.near),
       96,
       this.opts.sceneryRadius,
     );
@@ -143,18 +150,19 @@ export class StageRenderer {
       town: town ? new TownStreetBuilder(town, field, stage.halfWidth, theme.road) : null,
       junctions: town ? new TownJunctionBuilder(stage, field, theme.road) : null,
       walls: town ? new TownWallBuilder(town, field, theme.walls) : null,
+      seawall: field.coast ? new SeaWallBuilder(field.coast, field, theme.seawall) : null,
+      sea: field.coast ? new SeaPlane(field.coast.seaLevel, theme.sea) : null,
     };
     this.group.add(s.road.group, s.gates.group);
-    if (s.town) this.group.add(s.town.group);
-    if (s.junctions) this.group.add(s.junctions.group);
-    if (s.walls) this.group.add(s.walls.group);
+    for (const b of [s.town, s.junctions, s.walls, s.seawall, s.sea])
+      if (b) this.group.add(b.group);
     return s;
   }
 
   /** The builders dispose their GPU resources but not their place in the scene; remove them first. */
   private disposeSurfaces(): void {
     const s = this.surfaces;
-    for (const b of [s.road, s.gates, s.town, s.junctions, s.walls]) {
+    for (const b of [s.road, s.gates, s.town, s.junctions, s.walls, s.seawall, s.sea]) {
       if (!b) continue;
       this.group.remove(b.group);
       b.dispose();

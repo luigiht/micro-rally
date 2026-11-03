@@ -86,6 +86,10 @@ export interface WorldTheme {
   road: RoadTheme;
   gates: GateTheme;
   walls: WallTheme;
+  /** The coast's block walls: concrete, between `body` and `cap` block by block. */
+  seawall: WallTheme;
+  /** The sea plane on Coast stages. */
+  sea: string;
   scenery: { kit: SceneryKitId };
   /** Tyre-mark ink on every surface; null keeps the per-surface table. */
   skidInk: SkidInk | null;
@@ -122,6 +126,9 @@ const DAY_GATES: GateTheme = {
 };
 
 const DAY_WALLS: WallTheme = { body: '#c9c0b0', cap: '#e3dccf' };
+/** Concrete blocks for the coast's walls; the sea itself is the region's, with a default for worlds without a coast. */
+const DAY_SEAWALL: WallTheme = { body: '#aeaba3', cap: '#d6d3cb' };
+const DAY_SEA = '#3b8fb5';
 
 /** The daytime road: region shoulder for the verges, white lines, concrete pavements. */
 export function dayRoad(shoulder: string): RoadTheme {
@@ -152,6 +159,8 @@ export function dayTheme(region: RegionDef): WorldTheme {
       road: dayRoad(region.palette.shoulder),
       gates: DAY_GATES,
       walls: DAY_WALLS,
+      seawall: DAY_SEAWALL,
+      sea: region.coast?.sea ?? DAY_SEA,
       scenery: { kit: 'rally' },
       skidInk: null,
     };
@@ -169,6 +178,8 @@ export function flatTheme(sky: string, fog: string, shoulder = '#8fbf6a'): World
     road: dayRoad(shoulder),
     gates: DAY_GATES,
     walls: DAY_WALLS,
+    seawall: DAY_SEAWALL,
+    sea: DAY_SEA,
     scenery: { kit: 'rally' },
     skidInk: null,
   };
@@ -220,6 +231,8 @@ export const NIGHTCITY_THEME: WorldTheme = {
     ink: '#05060a',
   },
   walls: { body: '#1e2130', cap: '#2e3345' },
+  seawall: { body: '#171a26', cap: '#2a2f41' },
+  sea: '#0a1424',
   scenery: { kit: 'nightcity' },
   skidInk: { color: { hex: NEON.cyan, glow: 2 }, opacity: 0.85 },
 };

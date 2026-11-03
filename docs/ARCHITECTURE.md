@@ -60,8 +60,18 @@ flowchart LR
   Renderer --> Streets[TownStreetBuilder\nTownJunctionBuilder, TownWallBuilder]
 ```
 
+- Coast (`game/stage/CoastShape.ts`, `CoastRoad.ts`, `Coastline.ts`): the
+  shape is the lie of the land in stage-axis coordinates (water line, beach,
+  terraced cliff band, hillside), the road is drawn on it with hairpin
+  stacks, and the coastline reads the ground in world space and lays the
+  retaining walls on whichever side falls away; `TerrainField.baseHeight`
+  delegates to it and carries its rock mask in every sample, `SceneryScatter`
+  reads its shore distance and slope, `StageWorld` adds its wall boxes as
+  colliders, the mesher paints the mask rock and the shore sand, and the
+  renderer draws the walls (`render/road/SeaWallBuilder.ts` over
+  `StoneWallGeometry.ts`) and the sea (`render/terrain/SeaPlane.ts`).
 - Towns (`game/stage/Town.ts`, `TownPlan.ts`, `TownGenerator.ts`): every
-  third stage, the last of each region's run, carries one; `planTown` draws
+  third stage (3, 6, 9, …), whatever its region, carries one; `planTown` draws
   the route through a hill town as legs (straights with 60°–105° corners laid
   as 12 m arcs, tight curves, a narrow old-town section), validated against
   the self-approach rule; the centreline builder (`Centreline.ts`) steers
@@ -98,7 +108,9 @@ flowchart LR
   `StageRenderer.setTheme` re-dresses a stage in place: terrain material
   swap, road/gates/town rebuilt in the theme's colours, scenery rebuilt with
   the theme's kits (`scenery/kits/RallyKits.ts`, `NightcityKits.ts`, chosen
-  by `sceneryKits.ts`). Neon is HDR vertex colour: `themeColor` bakes a
+  by `sceneryKits.ts`, which tints the rally props in `stagePalette(stage)`:
+  the region's palette, or the one its surface swaps in, autumn on Forest
+  mud). Neon is HDR vertex colour: `themeColor` bakes a
   glowing colour above one and `theme/NeonMaterial.ts` patches the merged
   surfaces' materials to draw such faces as emission; glow kits use an unlit
   material. `DriveRig` passes the theme to `SceneLights`, the tyre marks, the

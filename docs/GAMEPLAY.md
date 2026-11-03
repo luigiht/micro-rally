@@ -53,25 +53,35 @@ here as of 2 November 2026.
 
 ## Progression
 
-- Stages run in a loop of regions, three per region: Forest ×3, then
-  Alpine ×3, then round again. Each loop lengthens stages by 25 % and
-  tightens the bends a little, so there is always a next stage.
-- Stage 3 of every region, that is stages 3, 6, 9 and so on, carries a town:
-  the route leaves the open road, threads a village of right-angle corners,
-  narrow streets and blocked side streets, and rejoins the stage.
+- Stages run through a nine-stage cycle of regions: Forest ×2, Alpine ×2,
+  Coast, Forest, Coast ×2, Alpine, then round again, so the same scenery
+  never shows more than twice in a row and each region gets three stages in
+  nine. Every six stages the roads lengthen by 25 % and the bends tighten a
+  little, so there is always a next stage.
+- Every third stage, that is stages 3, 6, 9 and so on, carries a town: the
+  route leaves the open road, threads a village of right-angle corners,
+  narrow streets and blocked side streets, and rejoins the stage. The cycle
+  puts those stages on Forest and Alpine; the Coast road has no villages.
 - Any stage up to the first unfinished one can be driven again from the
   Game panel's stage list.
 
 ## Regions
 
-| Region | Surfaces (weight)                 | Off road | Terrain                     | Base length | Par speed |
-| ------ | --------------------------------- | -------- | --------------------------- | ----------- | --------- |
-| Forest | gravel 3, tarmac 1, mud 1         | grass    | amplitude 22, soft          | 1800 m      | 15 m/s    |
-| Alpine | snow 3 (dusted asphalt), tarmac 1 | snow     | amplitude 34, sharper bends | 1500 m      | 14 m/s    |
+| Region | Surfaces (weight)                 | Off road | Terrain                                        | Base length | Par speed |
+| ------ | --------------------------------- | -------- | ---------------------------------------------- | ----------- | --------- |
+| Forest | gravel 3, tarmac 1, mud 1         | grass    | amplitude 22, soft                             | 1800 m      | 15 m/s    |
+| Alpine | snow 3 (dusted asphalt), tarmac 1 | snow     | amplitude 34, sharper bends                    | 1500 m      | 14 m/s    |
+| Coast  | tarmac, 11 m wide                 | grass    | cliff road 5–35 m over the sea, hairpin stacks | 1600 m      | 15 m/s    |
 
-Coast, Desert and Night exist as names only (Forest clones) and are not yet
-in the loop. Each stage also rolls a weather (clear or overcast) into its
-brief; rendering does not react to it yet.
+On a Coast stage the road follows the shore a few metres back from a
+terraced cliff, the sea below to seaward, a scrub hillside above, and once or
+twice climbs that hillside in a stack of two hairpins before coming back
+down. A rough dry-stone wall runs along whichever edge the ground falls away
+(the car bounces off it); where the cliff is low the bank is sand the car can
+drive down and back up. Desert and Night
+exist as names only (Forest clones) and are not yet in the loop. Each stage
+also rolls a weather (clear or overcast) into its brief; rendering does not
+react to it yet.
 
 ## Cameras
 

@@ -2,11 +2,11 @@
 
 Status legend: [x] done · [~] in progress · [ ] not started
 
-**Where things stand (2 November 2026).** Milestones 1–4 are done. Of 5–8,
+**Where things stand (3 November 2026).** Milestones 1–4 are done. Of 5–8,
 the Garage, car models, economy, saves and Game IDs, i18n, Settings (language
-and camera), the touch HUD, the Alpine region, towns on every third stage,
+and camera), the touch HUD, the Alpine and Coast regions, towns on every third stage,
 the cinematic camera, replays and Vercel deployment are in; sound,
-post-processing and quality tiers, weather and night, Coast and Desert, pace
+post-processing and quality tiers, weather and night, Desert, pace
 notes and live splits, and the service-park hub are not. Milestone 9
 (Capacitor) has not started. What the game does today is described in
 [GAMEPLAY.md](GAMEPLAY.md) and [CONTENT.md](CONTENT.md); day-by-day changes
@@ -90,10 +90,12 @@ are in [../CHANGELOG.md](../CHANGELOG.md).
 
 - [x] Alpine region in the loop: snow-dusted asphalt (or cleared tarmac), snowfields, frosted pines, bigger hills, sharper bends
 
+- [x] Coast region in the cycle: the land first (a meandering water line, a beach, a terraced low-poly rock band, a scrub hillside with outcrops), then a wide tarmac corniche drawn on it that follows the shore and climbs the hillside in fitted hairpin stacks; dry-stone walls of rounded stones (colliders) on whichever edge the ground falls away, a flat sea that follows the car, sand, wet-sand and rock-mask ground colours, scenery placed by terrain
+
 - [x] Deploy-ready for Vercel: Supabase Postgres save store (migration in `supabase/`), URL resolution from Vercel env, security headers, `docs/DEPLOY.md`
 
 - [x] Hidden Nightcity mode on `N`: the stage re-dressed in place as a neon night city (themes as data, HDR vertex-colour neon, stilt towers and signs where the scenery stood, one parametric cyberpunk car, bloom only while on)
 
-- [x] Town sections on every third stage (the last of each region's run): the route threads a level street grid with right-angle turns, blocked side streets closed by cones, direction boards, low-poly buildings, pavements and lamp posts; reworked as villages with unbroken facades and garden walls behind every pavement, kerb-return junctions traced exactly against the ribbon, flower boxes under the windows, and trees and bushes in the yards and walled corners
+- [x] Town sections on every third stage: the route threads a level street grid with right-angle turns, blocked side streets closed by cones, direction boards, low-poly buildings, pavements and lamp posts; reworked as villages with unbroken facades and garden walls behind every pavement, kerb-return junctions traced exactly against the ribbon, flower boxes under the windows, and trees and bushes in the yards and walled corners
 
 ## 9. Capacitor iOS/Android, docs/ANDROID.md — [ ]
