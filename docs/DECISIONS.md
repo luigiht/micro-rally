@@ -1854,3 +1854,28 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      cards reach the hull's belt, because at first the sun disc and the
      bull's horn showed over the cards through the back-face-culled shell
      from the driver's seat. The rear was then reworked by request from a photo of the car's tail, in two passes: the engine deck behind the cabin rises to 1.34 m (the belt climbs along the rear window as a haunch) and the hull closes at −1.9 m in a dark bay wall; two full-size spares stand in that wall upright like the road wheels, tread to the rear, side by side on a carrier tube with the plate in the slot between them and their tops up under the wing (a first pass had them facing backward, lower, under a deck slab, and was corrected: the photo shows their treads); wedge uprights carry the wing with the tail lamps on its trailing edge, and by request the white plates first put on the uprights became white work lights lying low on the back of each rear fender (seated with `fenderPoint`); the centre fin's leading edge lies a centimetre inside the rear window from the deck to the roof's rear corner (a first pass left a wedge of air between a vertical edge and the glass), its top runs down to the wing's underside and it stands in the slot between the spares; the rear fender's lip is cut back to −70° so it ends beside them. The whole body also stands 0.1 m higher over its wheels (`BUGGY_LIFT`: the body group is lifted, the wishbone and damper ends on the hubs are lowered to match, and `cabinDrop` 0.11 → 0.21 lifts the cabin and the eye with it; cg 0.72 m), the long-travel stance of the real car. Its mud flaps are bolted to the spare carrier's tube inside the body group (`CarModel` skips its chassis-hung pair for bodies that hang their own, `OWN_FLAPS`), so by request they ride and lean with the body instead of staying put with the wheels. The spares and wing are what the chase camera sees all stage. Two more requests followed. The bull of two wedges and six tubes read as ridiculous, so it is now the supplied side-view icon: `render/car/SvgSilhouette.ts` reads the SVG path subset icons use (M L H V C S Z, absolute and relative), flattens each cubic into four chords, triangulates each closed subpath with three's `ShapeUtils` and extrudes it 2 cm along x with outward-wound caps and walls (SVG right is +z, so the right-facing bull charges toward the nose on both doors without mirroring; a first pass mapped SVG left forward, having taken the icon's raised tail curl for its head, and put the tail in the sun); `BullSilhouette.ts` holds the path data, credited in CREDITS.md, and builds the slab once per size. And the exhausts, two stubs floating under the spares, now run under the floor from the engine bay to just past the carrier tube, tucked up against it in the slot between the spares, with a belly pan, the differential and driveshafts, trailing arms and a cross tube added under the bay so the open rear reads as a frame rather than empty air.
+
+105. **2026-11-03 — The splash demo car turns smoothly.** `RoadPath.sample`
+     reports the heading of the 2 m segment under the point, so the
+     attract-mode `RoadFollower` set the car's yaw in steps, several a second
+     at 17 m/s, and its yaw rate (a per-frame difference) spiked at every
+     sample and sat at zero between: the steering, the body lean (from
+     `latAccel`) and the chase camera's roll and heading all stuttered
+     through every bend. The follower now blends the path's per-sample
+     central-difference headings along the segment, so the heading turns
+     continuously, points the velocity (which the chase camera leans toward)
+     the same way, and eases its yaw rate toward the measured one at 5/s, so
+     a curvature step between samples becomes a short ramp in lean and
+     steering rather than a kick. `sample()` itself is unchanged: gates,
+     boards, towns and the fixtures read the segment heading as before. A
+     test drives 40 s and pins the per-frame yaw step under 0.03 rad, the
+     per-frame lateral-g step under 1.5 m/s² and the heading within 0.1 rad
+     of the road's own direction under the car, so it does not crab.
+
+106. **2026-11-03 — A random car behind the splash.** The attract-mode drive
+     always showed the starter hatch; by request it now draws a dealership
+     car at random with each lap's stage (`randomDraw` in `DemoDrive`, from
+     `CATALOG_IDS`, so the two specials appear too), re-mounting the
+     `CarModel` by id and building the follower and the chase rig for that
+     car's wheelbase, tyres and `bodyScale`, so the truck and the buggy are
+     framed as they are in the game. The splash stays daytime.

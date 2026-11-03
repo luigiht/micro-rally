@@ -41,7 +41,8 @@ another device.
   touch devices with a pause menu; keyboard on desktop. The layout adapts
   to phones in landscape, with safe-area insets.
 - **Attract-mode splash.** The start screen plays a live drive through a
-  freshly generated stage behind the card.
+  freshly generated stage behind the card, in a different dealership car
+  each lap.
 - **Three languages** (English, Spanish, Italian), switchable from the splash
   footer or Settings.
 - **Accessibility.** Keyboard-only play, visible focus, labelled controls,

@@ -8,6 +8,8 @@ import type { StageDef } from './StageGenerator';
 const PITCH_PROBE = 2;
 /** Coast this far past the finish before looping back to the start. */
 const OVERRUN = 20;
+/** Rate (1/s) at which the yaw rate follows the road's curvature, so a curvature step at a sample becomes a short ramp. */
+const YAW_RATE_FOLLOW = 5;
 
 function wrapAngle(a: number): number {
   let r = a % (2 * Math.PI);
@@ -18,9 +20,11 @@ function wrapAngle(a: number): number {
 
 /**
  * Drives a car pose along the road centreline at a steady speed, no physics:
- * position and heading come from the arc-length sample, height and pitch
- * from the terrain, steering and lateral g from the heading rate. Used for
- * the attract-mode splash backdrop.
+ * position from the arc-length sample, heading blended between the path's
+ * per-sample headings so it turns continuously (the sample's own heading is
+ * its 2 m segment's and steps at every sample, several times a second at
+ * road speed), height and pitch from the terrain, steering and lateral g
+ * from an eased heading rate. Used for the attract-mode splash backdrop.
  */
 export class RoadFollower {
   readonly pose: VehiclePose = createVehiclePose();
@@ -30,6 +34,7 @@ export class RoadFollower {
   private readonly wheelRadius: number;
   private readonly sample: RoadSample = { x: 0, z: 0, heading: 0 };
   private pitch = 0;
+  private yawRate = 0;
 
   constructor(
     private readonly stage: StageDef,
@@ -57,14 +62,24 @@ export class RoadFollower {
     return true;
   }
 
+  /** Heading at `distance`: the path's per-sample (central-difference) headings blended along the segment. */
+  private headingAt(distance: number): number {
+    const path = this.stage.path;
+    const f = Math.min(Math.max(distance / path.spacing, 0), path.count - 1.000001);
+    const i = Math.floor(f);
+    const h0 = path.headings[i]!;
+    return wrapAngle(h0 + wrapAngle(path.headings[i + 1]! - h0) * (f - i));
+  }
+
   private place(dt: number, prevHeading: number | null): void {
     const p = this.pose;
     const s = this.stage.path.sample(this.distance, this.sample);
-    const fx = Math.sin(s.heading);
-    const fz = Math.cos(s.heading);
+    const yaw = this.headingAt(this.distance);
+    const fx = Math.sin(yaw);
+    const fz = Math.cos(yaw);
     p.x = s.x;
     p.z = s.z;
-    p.yaw = s.heading;
+    p.yaw = yaw;
     p.y = this.terrain.heightAt(s.x, s.z);
     p.groundHeight = p.y;
     // Positive pitch dips the nose, i.e. the ground ahead is lower.
@@ -76,12 +91,16 @@ export class RoadFollower {
     p.pitch = this.pitch;
     p.roll = 0;
     p.speed = this.speed;
+    // The velocity points the way the car faces: the chase camera leans toward it.
     p.vx = fx * this.speed;
     p.vz = fz * this.speed;
-    const yawRate = prevHeading === null || dt <= 0 ? 0 : wrapAngle(s.heading - prevHeading) / dt;
-    p.yawRate = yawRate;
-    p.latAccel = this.speed * yawRate;
-    p.steerAngle = Math.atan((this.wheelbase * yawRate) / this.speed);
+    // Eased toward the measured rate, so lean and steering ramp rather than kick where the curvature changes.
+    const rate = prevHeading === null || dt <= 0 ? 0 : wrapAngle(yaw - prevHeading) / dt;
+    this.yawRate =
+      dt > 0 ? this.yawRate + (rate - this.yawRate) * Math.min(1, YAW_RATE_FOLLOW * dt) : 0;
+    p.yawRate = this.yawRate;
+    p.latAccel = this.speed * this.yawRate;
+    p.steerAngle = Math.atan((this.wheelbase * this.yawRate) / this.speed);
     p.wheelAngle = wrapAngle(p.wheelAngle + (this.speed * dt) / this.wheelRadius);
     p.rpm = 2800 + this.speed * 60;
     p.grounded = true;

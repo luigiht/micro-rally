@@ -3,6 +3,7 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { DirectionalLight, Group, PerspectiveCamera } from 'three';
+import { CATALOG_IDS } from '@/game/economy/cars';
 import { REGIONS } from '@/game/stage/regions';
 import { RoadFollower } from '@/game/stage/RoadFollower';
 import { createStageWorld } from '@/game/stage/StageWorld';
@@ -14,7 +15,6 @@ import { ChaseCameraRig } from './cameras/ChaseCameraRig';
 import { CarModel, type CarModelHandle } from './CarModel';
 import { followSun, SceneLights } from './SceneLights';
 
-const spec = CAR_SPECS.hatchback;
 /** Cap the step so a background tab coming back doesn't teleport the car. */
 const MAX_STEP = 0.05;
 /** On wide screens the view slides right so the car drives beside the centred card, not under it. */
@@ -27,6 +27,16 @@ function randomSeed(): number {
   return buf[0]!;
 }
 
+/** A fresh stage and a car from the dealership, drawn together for each lap. */
+interface Draw {
+  seed: number;
+  carId: (typeof CATALOG_IDS)[number];
+}
+
+function randomDraw(): Draw {
+  return { seed: randomSeed(), carId: CATALOG_IDS[randomSeed() % CATALOG_IDS.length]! };
+}
+
 /** Everything mutable that lives for one generated world. */
 interface Lap {
   follower: RoadFollower;
@@ -37,15 +47,16 @@ interface Lap {
 }
 
 /**
- * Attract-mode drive behind the splash: a fresh stage, the car following the
- * road by itself under the chase camera. Each lap regenerates the world.
- * `paused` (reduced motion) parks the car and holds the camera still.
+ * Attract-mode drive behind the splash: a fresh stage and a random dealership
+ * car, following the road by itself under the chase camera. Each lap draws
+ * both again. `paused` (reduced motion) parks the car and holds the camera still.
  */
 export function DemoDrive({ paused }: { paused: boolean }) {
   const camera = useThree((s) => s.camera) as PerspectiveCamera;
   const size = useThree((s) => s.size);
-  const [seed, setSeed] = useState(randomSeed);
-  const world = useMemo(() => createStageWorld(seed, 0), [seed]);
+  const [draw, setDraw] = useState(randomDraw);
+  const spec = CAR_SPECS[draw.carId];
+  const world = useMemo(() => createStageWorld(draw.seed, 0), [draw.seed]);
   const group = useRef<Group>(null);
   const car = useRef<CarModelHandle>(null);
   const sun = useRef<DirectionalLight>(null);
@@ -72,7 +83,7 @@ export function DemoDrive({ paused }: { paused: boolean }) {
     group.current?.add(renderer.group);
     lap.current = {
       follower,
-      rig: new ChaseCameraRig(world.field),
+      rig: new ChaseCameraRig(world.field, spec.bodyScale),
       renderer,
       frame: { camera, target: follower.pose, dt: 0, reducedMotion: false },
       snapped: false,
@@ -81,14 +92,14 @@ export function DemoDrive({ paused }: { paused: boolean }) {
       renderer.dispose();
       lap.current = null;
     };
-  }, [world, camera]);
+  }, [world, camera, spec]);
 
   useFrame((_, dt) => {
     const l = lap.current;
     if (!l) return;
     const step = Math.min(dt, MAX_STEP);
     if (!pausedRef.current && l.follower.advance(step)) {
-      setSeed(randomSeed());
+      setDraw(randomDraw());
       return;
     }
     const pose = l.follower.pose;
@@ -109,7 +120,7 @@ export function DemoDrive({ paused }: { paused: boolean }) {
     <>
       <SceneLights lighting={dayTheme(REGIONS[world.stage.region]).lighting} sunRef={sun} />
       <group ref={group} />
-      <CarModel ref={car} spec={spec} />
+      <CarModel key={spec.id} ref={car} spec={spec} />
     </>
   );
 }

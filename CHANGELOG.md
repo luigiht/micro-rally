@@ -47,6 +47,8 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Fixed
 
+- The car driving behind the splash turns smoothly through bends: its heading,
+  steering and lean used to step at every 2 m road sample. [105]
 - The replay now lays the run's tyre marks as it plays, braking lock-ups
   included: each sample records the scrub per axle and the surface, and the
   marks are wiped and laid again from the recording while the car follows it.
@@ -55,6 +57,9 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Changed
 
+- The drive behind the splash picks a random dealership car with each lap's
+  stage, the truck and the buggy included, instead of always the starter
+  hatch. [106]
 - Desert stages build no villages: a town index that falls on one (stage 12,
   for one) stays open road, as on the Coast. [103]
 - The Tricolore Coupé loses the white pinstripes on its bonnet and the cream
