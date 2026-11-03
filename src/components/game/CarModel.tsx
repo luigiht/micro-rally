@@ -5,6 +5,7 @@ import { Color, type Group } from 'three';
 import type { CarId, CarSpec } from '@/game/vehicle/CarSpec';
 import type { VehiclePose } from '@/game/vehicle/interpolatePose';
 import type { CameraMode } from '@/lib/cameraMode';
+import { BuggyBody } from './bodies/BuggyBody';
 import { CoupeBody } from './bodies/CoupeBody';
 import { DakarTruckBody } from './bodies/DakarTruckBody';
 import { FocusHatchBody } from './bodies/FocusHatchBody';
@@ -29,6 +30,9 @@ export interface CarModelHandle {
 /** Wheels can rise this far into their wells before the body bottoms out (matches the sim). */
 const MAX_WHEEL_LIFT = 0.35;
 
+/** Bodies that hang their own mud flaps (the buggy's hang from its spare carrier, inside the leaning body). */
+const OWN_FLAPS: ReadonlySet<CarId> = new Set<CarId>(['buggy']);
+
 /** Wheel rim colour per car; cream by default. */
 const RIM: Partial<Record<CarId, string>> = {
   t16: '#f4f1ea',
@@ -37,6 +41,7 @@ const RIM: Partial<Record<CarId, string>> = {
   s1: '#f4f1ea',
   focus: '#f4f1ea',
   dakar: '#f0741f',
+  buggy: '#b7b4ac',
 };
 
 interface WheelProps {
@@ -104,6 +109,8 @@ function BodyFor({
       return <FocusHatchBody spec={spec} cabinRef={cabinRef} />;
     case 'dakar':
       return <DakarTruckBody spec={spec} cabinRef={cabinRef} />;
+    case 'buggy':
+      return <BuggyBody spec={spec} cabinRef={cabinRef} />;
     default:
       return <HatchbackBody spec={spec} cabinRef={cabinRef} />;
   }
@@ -181,9 +188,13 @@ export function CarModel({
         </group>
         <BodyFor spec={spec} cabinRef={cabin} nightcity={nightcity} />
       </group>
-      {/* Mud flaps hang off the chassis, not the leaning body; sized to the wheel. */}
-      <Box p={[half, 0.75 * r, rear - 1.3 * r]} s={[0.9 * r, 0.8 * r, 0.03]} c={C.trim} />
-      <Box p={[-half, 0.75 * r, rear - 1.3 * r]} s={[0.9 * r, 0.8 * r, 0.03]} c={C.trim} />
+      {/* Mud flaps hang off the chassis, not the leaning body; sized to the wheel. Some day bodies hang their own. */}
+      {(nightcity || !OWN_FLAPS.has(spec.id)) && (
+        <>
+          <Box p={[half, 0.75 * r, rear - 1.3 * r]} s={[0.9 * r, 0.8 * r, 0.03]} c={C.trim} />
+          <Box p={[-half, 0.75 * r, rear - 1.3 * r]} s={[0.9 * r, 0.8 * r, 0.03]} c={C.trim} />
+        </>
+      )}
       <group ref={wheels}>
         <Wheel
           x={half}

@@ -161,7 +161,7 @@ Each level costs the previous price times the growth factor, rounded to $10.
 
 ### Dealership
 
-Nine cars in showroom order, each a distinct procedural body (see
+Ten cars in showroom order, each a distinct procedural body (see
 [CONTENT.md](CONTENT.md)). Buying is one-off; switching between owned cars
 is free. Showroom bars for power, grip and agility are derived from the
 physics so they cannot drift from the truth.
@@ -177,6 +177,7 @@ physics so they cannot drift from the truth.
 | Edelweiss S1        | $18,000 | Short-wheelbase Group B coupé    |
 | Albion RS Hatch     | $21,000 | Three-door WRC hatch             |
 | Sirocco Dakar Truck | $26,000 | "Special": a rally-raid truck    |
+| Toro Dakar Buggy    | $32,000 | "Special": a rally-raid buggy    |
 
 ## Settings
 

@@ -141,6 +141,9 @@ export const es: Messages = {
     dakar: {
       name: 'Sirocco Dakar Truck',
     },
+    buggy: {
+      name: 'Toro Dakar Buggy',
+    },
   },
   touch: {
     left: 'Girar a la izquierda',

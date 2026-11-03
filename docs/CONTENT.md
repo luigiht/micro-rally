@@ -194,6 +194,16 @@ dashboard kit and palette.
 | `s1`        | Edelweiss S1        | Sport Quattro S1 E2-shaped coupé      | 1090 kg | `S1CoupeBody.tsx`    |
 | `focus`     | Albion RS Hatch     | Castrol-Focus-style three-door WRC    | 1230 kg | `FocusHatchBody.tsx` |
 | `dakar`     | Sirocco Dakar Truck | Rally-raid truck, twice a car's size  | 2600 kg | `DakarTruckBody.tsx` |
+| `buggy`     | Toro Dakar Buggy    | SMG-style two-wheel-drive raid buggy  | 1450 kg | `BuggyBody.tsx`      |
+
+The buggy's mudguards are not part of its hull: `render/car/FenderShell.ts`
+lofts a thick half-ring shell around each axle from an outline of
+[angle, radius] pairs (a flat-topped ring piece with a chamfered outer edge,
+mirrored both sides, the arch underside in trim), so they stand proud of a
+narrow tub the way a raid buggy's do, and `fenderPoint` seats sponsor discs
+on the dome. The tub cuts wells at the rear axle only; the nose sits inboard
+of the front tyres with wishbones and coil-overs in the gap. Behind the cabin a tall engine deck closes in a dark bay wall, and two full-size spares stand in it upright like the road wheels, tread to the rear, side by side on a carrier tube with the plate in the slot between them, up under a rear wing on wedge uprights (tail lamps on its trailing edge, white work lights low on the back of each rear fender); a centre fin runs from the rear window down to the wing, and the mud flaps hang from the carrier tube so they move with the body, not the wheels. The exhausts run under the floor from the engine bay out past that tube, and the underside carries a belly pan, the differential with its driveshafts, trailing arms and a cross tube, so the open rear reads as a frame. The whole body stands 0.1 m higher over its wheels than its heights say, the stance of long-travel springs at full droop. The livery is a yellow sun with a red charging bull on each door (a side-view icon silhouette extruded 2 cm from SVG path data by `render/car/SvgSilhouette.ts`, credited in CREDITS.md), white letter blocks across the bonnet and painted lamp pods on
+the nose.
 
 Two further specs, `pickup` and `monster`, exist in `CarSpec.ts` for tuning
 tests but are not on sale.

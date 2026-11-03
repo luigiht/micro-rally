@@ -9,6 +9,11 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Added
 
+- **Toro Dakar Buggy**, a second "Special" after the truck at $32,000: a
+  two-wheel-drive rally-raid buggy with a navy tub under a narrow mid-car
+  cabin, free-standing mudguards over 0.47 m tyres, a yellow sun with a red
+  charging bull on each door, white lettering and twin lamp pods on the
+  nose, a roof intake box, exposed front suspension, a tall stance over its wheels and two upright spare wheels across the tail under a rear wing. A naturally aspirated V8 drives the rear axle through six gears on soft long-travel springs; its cabin shares the truck's raid console. [104]
 - **Desert**, a fourth region: a piste of packed sand (a new `sand` surface,
   a little looser than gravel, with soft `dune` sand off it that the car
   wallows in) graded through a dune sea of long sharp-crested ridges, and
@@ -18,7 +23,7 @@ hold the reasoning behind each change; the numbers in brackets point there.
   difference alone. The region cycle grows to twelve stages (Forest
   ×2, Alpine ×2, Coast, Forest, Desert, Coast, Alpine, Coast, Desert ×2);
   stage 7 is the first desert, and stage numbers from 7 on are new roads.
-  [102]
+  [101]
 - **Coast**, a third region in the rotation: a tarmac corniche along a
   terraced low-poly rock cliff, a sandy beach and a flat teal sea to seaward,
   a scrub-and-pine hillside with ochre outcrops above, and once or twice a
@@ -31,7 +36,7 @@ hold the reasoning behind each change; the numbers in brackets point there.
   back up. Regions now run through a nine-stage cycle (Forest ×2, Alpine ×2,
   Coast, Forest, Coast ×2, Alpine) that keeps the no-three-in-a-row rule and
   puts every third stage's town on Forest and Alpine; stage numbers from 5
-  on were new roads. [95–101]
+  on were new roads. [95–100]
 - A dev tool exports any car as a binary STL in metres
   (`CAR_STL=<carId> pnpm exec vitest run tests/unit/exportCarStl.test.ts`),
   rendering its model headlessly; see [docs/TESTING.md](docs/TESTING.md).
@@ -46,12 +51,12 @@ hold the reasoning behind each change; the numbers in brackets point there.
   included: each sample records the scrub per axle and the surface, and the
   marks are wiped and laid again from the recording while the car follows it.
   Before, the replay showed whatever marks were left over from the live run.
-  [103]
+  [102]
 
 ### Changed
 
 - Desert stages build no villages: a town index that falls on one (stage 12,
-  for one) stays open road, as on the Coast. [104]
+  for one) stays open road, as on the Coast. [103]
 - The Tricolore Coupé loses the white pinstripes on its bonnet and the cream
   headlamp slots behind its lamp pod; the roof and engine cover keep theirs.
 - Coast stages show a road glyph of their own in the Game panel's stage

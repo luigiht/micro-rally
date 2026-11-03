@@ -42,7 +42,7 @@ cover the pure-TS core and anything else that can run without a browser:
 - **Economy and saves**: `prize`, `garage`, `save`, `saveManager`,
   `gameStore.server`.
 - **Rendering geometry built in pure TS**: `carHull` (lofted hulls, wells,
-  decals, glow groups), `houseGeometry`, `buildingGeometry`,
+  decals, glow groups), `fenderShell` (the buggy's free-standing mudguards: mirrored, clear of the tyre, wound outward), `svgSilhouette` (the SVG path reader and the extruded bull), `houseGeometry`, `buildingGeometry`,
   `streetFurnitureGeometry`, `interiorSpecs`, `nightcityHull` (the one
   Nightcity body fits every catalogue car and clears the first-person eye).
 - **Themes and kits**: `worldTheme` (the day theme equals the old constants;

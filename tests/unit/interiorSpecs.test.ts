@@ -38,9 +38,10 @@ describe('interior specs', () => {
     const dashes = new Set(Object.values(INTERIORS).map((s) => s.dash));
     expect(cages.size).toBeGreaterThanOrEqual(4);
     expect(dashes.size).toBe(3);
-    // The raid kit belongs to the truck alone.
+    // The raid kit belongs to the two rally-raid machines alone.
     expect(INTERIORS.dakar.raidKit).toBe(true);
-    expect(Object.values(INTERIORS).filter((s) => s.raidKit)).toHaveLength(1);
+    expect(INTERIORS.buggy.raidKit).toBe(true);
+    expect(Object.values(INTERIORS).filter((s) => s.raidKit)).toHaveLength(2);
   });
 
   it('keep the rim clear of the binnacle hood and the hub ahead of and below the eye', () => {

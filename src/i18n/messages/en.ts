@@ -134,6 +134,9 @@ export const en = {
     dakar: {
       name: 'Sirocco Dakar Truck',
     },
+    buggy: {
+      name: 'Toro Dakar Buggy',
+    },
   },
   touch: {
     left: 'Steer left',

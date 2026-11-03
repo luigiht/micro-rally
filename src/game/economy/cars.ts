@@ -11,6 +11,7 @@ export const CATALOG_IDS = [
   's1',
   'focus',
   'dakar',
+  'buggy',
 ] as const;
 export type CatalogCarId = (typeof CATALOG_IDS)[number];
 
@@ -31,6 +32,7 @@ export const CAR_CATALOG: readonly CarListing[] = [
   { id: 's1', price: 18000 },
   { id: 'focus', price: 21000 },
   { id: 'dakar', price: 26000, special: true },
+  { id: 'buggy', price: 32000, special: true },
 ];
 
 export function isCatalogCar(id: string): id is CatalogCarId {

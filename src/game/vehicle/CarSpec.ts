@@ -8,6 +8,7 @@ export type CarId =
   | 's1'
   | 'focus'
   | 'dakar'
+  | 'buggy'
   | 'pickup'
   | 'monster';
 
@@ -292,6 +293,48 @@ export const CAR_SPECS: Readonly<Record<CarId, CarSpec>> = {
     cabinDrop: 1.25,
     cabinForward: 2.1,
     bodyScale: 2.0,
+  },
+  /**
+   * Two-wheel-drive rally-raid buggy: 3.0 m wheelbase, 1.8 m track, 0.47 m
+   * tyres on long-travel springs, a big naturally aspirated V8 driving the
+   * rear axle alone. Light for its size (1.45 t) but tall and draggy, with
+   * the soft suspension soaking up bumps; the body stands 0.1 m higher over
+   * its wheels than a car's would (`BUGGY_LIFT`), so the driver sits mid-car
+   * 0.21 m higher than in a hatch. Grip is the shared dealership setup.
+   */
+  buggy: {
+    ...BASE,
+    id: 'buggy',
+    mass: 1450,
+    cgToFront: 1.55,
+    cgToRear: 1.45,
+    cgHeight: 0.72,
+    trackWidth: 1.8,
+    yawInertiaScale: 1.45,
+    wheelRadius: 0.47,
+    maxSteer: 0.5,
+    steerFalloffSpeed: 24,
+    peakTorque: 520,
+    idleRpm: 1000,
+    redlineRpm: 6800,
+    torqueCurve: [
+      [0, 0.65],
+      [0.3, 0.9],
+      [0.55, 1.0],
+      [0.8, 0.95],
+      [1.0, 0.8],
+    ],
+    gearRatios: [3.4, 2.3, 1.7, 1.3, 1.05, 0.88],
+    finalDrive: 4.3,
+    frontDrive: 0,
+    brakeDecel: 9.5,
+    dragCoeff: 1.4,
+    rollingResistance: 15,
+    suspensionStiffness: 240,
+    suspensionDamping: 20,
+    cabinDrop: 0.21,
+    cabinForward: -0.1,
+    bodyScale: 1.25,
   },
   pickup: {
     ...BASE,

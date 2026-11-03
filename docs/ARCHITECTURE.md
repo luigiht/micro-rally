@@ -22,7 +22,9 @@ flowchart TD
   workers, particles, skid marks. Each builder returns disposables.
 - **Car models** — `components/game/CarModel` builds every car from
   primitives (`bodies/*Body.tsx`) around shared wheels, interior and an
-  imperative handle; the GLBs in `assets/` are measurement references only.
+  imperative handle; the lofted hulls (`render/car/CarHull.ts`) and the
+  buggy's free-standing mudguards (`render/car/FenderShell.ts`) are pure TS
+  builders. The GLBs in `assets/` are measurement references only.
 - **`src/components/game`** — R3F `<Canvas>`, scene graph, camera rigs. The
   frame loop accumulates time and steps the sim at a fixed 120 Hz, then
   interpolates transforms for rendering.

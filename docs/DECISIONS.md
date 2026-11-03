@@ -1819,3 +1819,38 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      that build none, the coast and the desert. The cycle, the fixtures and
      stages 1–11 are unchanged; the desert's stages stay open road whatever
      index they land on, and so would any future region that opts out.
+
+104. **2026-11-03 — Toro Dakar Buggy, a second special; free-standing fender
+     shells.** By request, a rally-raid buggy after the truck, from six
+     reference photos of the 2014 SMG two-wheel-drive buggy: navy over a
+     yellow sun with a red charging bull on each door, four lamps in two nose
+     pods under white lettering, a wide roof intake box, separate mudguards
+     standing over 37-inch tyres, exposed front suspension. The `buggy` spec
+     is 1.45 t on a 3.0 m wheelbase and 1.8 m track with 0.47 m tyres, a
+     520 N·m naturally aspirated V8 on the rear axle alone (rear-drive like
+     the coupé), six gears, soft long-travel springs (240/20) and plenty of
+     drag (1.4), with the shared dealership grip; the cabin sits 0.11 m above
+     and 0.1 m behind the hatchback's and `bodyScale` is 1.25. Price 32 000,
+     after the truck, tagged `special`, so the two raid machines close the
+     list. The lofted hull can cut an arch into a flank but cannot stand a
+     mudguard above a narrow tub, so `render/car/FenderShell.ts` lofts a
+     thick half-ring shell around an axle from an outer outline of
+     [angle, radius] pairs: a flat-topped ring piece with a chamfered outer
+     edge, mirrored both sides, arch underside in trim, wound outward (a test
+     checks the enclosed volume against the ring area) and emitted as a
+     `HullMesh`; `CarHullMesh` split into `VertexColorMesh` with hull and
+     fender wrappers over it, and `fenderPoint` seats parts on the dome. The
+     tub cuts wells at the rear axle only; the nose sits inboard of the front
+     tyres with wishbones and red coil-overs in the gap. The stripe band
+     carries no colour on this car but still shapes the nose and tail panels,
+     so the cap decals (lamp pods, tail lamps, rear mesh) land on bands of
+     the right height; the hull builder's bands are the only way to place a
+     cap decal vertically. The bull is two convex prisms (torso, lowered
+     head) and six tubes (legs, horn, tail) proud of the door over a yellow
+     disc, an original mark rather than the trade one. The cabin shares the
+     truck's raid console (the test now allows the two raid machines) under a
+     navy cage with red harnesses; its floor sits at 0.3 in the cabin frame,
+     sill height, and its dash top 5 cm over the screen base so the door
+     cards reach the hull's belt, because at first the sun disc and the
+     bull's horn showed over the cards through the back-face-culled shell
+     from the driver's seat. The rear was then reworked by request from a photo of the car's tail, in two passes: the engine deck behind the cabin rises to 1.34 m (the belt climbs along the rear window as a haunch) and the hull closes at −1.9 m in a dark bay wall; two full-size spares stand in that wall upright like the road wheels, tread to the rear, side by side on a carrier tube with the plate in the slot between them and their tops up under the wing (a first pass had them facing backward, lower, under a deck slab, and was corrected: the photo shows their treads); wedge uprights carry the wing with the tail lamps on its trailing edge, and by request the white plates first put on the uprights became white work lights lying low on the back of each rear fender (seated with `fenderPoint`); the centre fin's leading edge lies a centimetre inside the rear window from the deck to the roof's rear corner (a first pass left a wedge of air between a vertical edge and the glass), its top runs down to the wing's underside and it stands in the slot between the spares; the rear fender's lip is cut back to −70° so it ends beside them. The whole body also stands 0.1 m higher over its wheels (`BUGGY_LIFT`: the body group is lifted, the wishbone and damper ends on the hubs are lowered to match, and `cabinDrop` 0.11 → 0.21 lifts the cabin and the eye with it; cg 0.72 m), the long-travel stance of the real car. Its mud flaps are bolted to the spare carrier's tube inside the body group (`CarModel` skips its chassis-hung pair for bodies that hang their own, `OWN_FLAPS`), so by request they ride and lean with the body instead of staying put with the wheels. The spares and wing are what the chase camera sees all stage. Two more requests followed. The bull of two wedges and six tubes read as ridiculous, so it is now the supplied side-view icon: `render/car/SvgSilhouette.ts` reads the SVG path subset icons use (M L H V C S Z, absolute and relative), flattens each cubic into four chords, triangulates each closed subpath with three's `ShapeUtils` and extrudes it 2 cm along x with outward-wound caps and walls (SVG right is +z, so the right-facing bull charges toward the nose on both doors without mirroring; a first pass mapped SVG left forward, having taken the icon's raised tail curl for its head, and put the tail in the sun); `BullSilhouette.ts` holds the path data, credited in CREDITS.md, and builds the slab once per size. And the exhausts, two stubs floating under the spares, now run under the floor from the engine bay to just past the carrier tube, tucked up against it in the slot between the spares, with a belly pan, the differential and driveshafts, trailing arms and a cross tube added under the bay so the open rear reads as a frame rather than empty air.

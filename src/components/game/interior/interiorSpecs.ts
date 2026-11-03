@@ -321,6 +321,46 @@ export const INTERIORS: Readonly<Record<CarId, InteriorSpec>> = {
       accent: '#f0741f',
     },
   }),
+  /**
+   * Rally-raid buggy: a wide two-seat tub with the driver mid-car, 0.84 m
+   * over a flat carbon floor at sill height (low enough that the door cards
+   * hide the livery on the flank, which the culled shell would otherwise show
+   * from inside) with the seats on frames, a deep carbon dash under a high
+   * scuttle with the raid console and gauge pod inboard and the tyre-pressure
+   * block outboard, a sequential lever, a digital display behind a small
+   * suede wheel. Navy cage, red harnesses, yellow accents, the co-driver
+   * 0.45 m out.
+   */
+  buggy: base({
+    halfWidth: 0.8,
+    roofY: 1.57,
+    floorY: 0.3,
+    // Dash top 5 cm over the screen base: the door cards (belt = dash top − 6 cm) then reach the hull's belt line.
+    dashTopY: 1.0,
+    cowlZ: 1.05,
+    cowlY: 0.95,
+    clusterRise: 0.03,
+    dashDepth: 0.42,
+    screenTopZ: 0.6,
+    rearZ: -0.92,
+    coDriverX: -0.45,
+    wheelRadius: 0.165,
+    wheelRake: 0.4,
+    dash: 'digital',
+    lever: 'sequential',
+    raidKit: true,
+    palette: {
+      dash: '#1c1c22',
+      lining: '#1f1f26',
+      door: '#1c1c22',
+      cage: '#1f2f6e',
+      seat: '#1f1e24',
+      seatAccent: '#d7262c',
+      harness: '#d7262c',
+      wheel: '#15141a',
+      accent: '#f2c230',
+    },
+  }),
 };
 
 /**
