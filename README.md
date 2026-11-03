@@ -42,7 +42,7 @@ another device.
   to phones in landscape, with safe-area insets.
 - **Attract-mode splash.** The start screen plays a live drive through a
   freshly generated stage behind the card, in a different dealership car
-  each lap.
+  each lap; without hardware graphics it keeps a still backdrop instead.
 - **Three languages** (English, Spanish, Italian), switchable from the splash
   footer or Settings.
 - **Accessibility.** Keyboard-only play, visible focus, labelled controls,

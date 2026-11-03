@@ -65,14 +65,14 @@ port outside CI. One worker, Chromium only, with software WebGL
 (`--use-angle=swiftshader`): rendering is CPU-bound, so parallel pages would
 starve each other's frame loops.
 
-| Spec                | Covers                                                                             |
-| ------------------- | ---------------------------------------------------------------------------------- |
-| `smoke.spec.ts`     | Start a game, drive, the progress bar moves                                        |
-| `camera.spec.ts`    | `C` cycles the four cameras and Settings shows and sets the same view              |
-| `hud.spec.ts`       | `H` hides and shows the HUD chrome; Esc opens a dialog over it                     |
-| `nightcity.spec.ts` | `N` toggles the hidden Nightcity re-skin in place; the clock and progress bar stay |
-| `mobile.spec.ts`    | Phone-landscape profile: touch pads, pause menu, Garage in the toolbar             |
-| `save.spec.ts`      | Game IDs, the save API, continuing a game                                          |
+| Spec                | Covers                                                                                                             |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `smoke.spec.ts`     | The splash keeps its still backdrop under Playwright's software WebGL; start a game, drive, the progress bar moves |
+| `camera.spec.ts`    | `C` cycles the four cameras and Settings shows and sets the same view                                              |
+| `hud.spec.ts`       | `H` hides and shows the HUD chrome; Esc opens a dialog over it                                                     |
+| `nightcity.spec.ts` | `N` toggles the hidden Nightcity re-skin in place; the clock and progress bar stay                                 |
+| `mobile.spec.ts`    | Phone-landscape profile: touch pads, pause menu, Garage in the toolbar                                             |
+| `save.spec.ts`      | Game IDs, the save API, continuing a game                                                                          |
 
 Tips: run the suite on its own with nothing else on port 3100 and no heavy
 process alongside, because the camera spec is sensitive to load. Press keys

@@ -47,6 +47,12 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Fixed
 
+- The start page no longer runs its live drive where WebGL is missing or
+  software-rendered (a headless browser, graphics acceleration switched off),
+  where it cost seconds of main thread per frame; it keeps a painted backdrop
+  there, which elsewhere also shows from the first paint while the scene loads.
+  The pixel font is preloaded from the HTML and the logo is fetched at high
+  priority. [107]
 - The car driving behind the splash turns smoothly through bends: its heading,
   steering and lean used to step at every 2 m road sample. [105]
 - The replay now lays the run's tyre marks as it plays, braking lock-ups

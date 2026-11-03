@@ -11,7 +11,7 @@
   --color-rally: #e8623a;
   --color-moss: #5d8a4a;
   --font-sans: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
-  --font-pixel: 'Press Start 2P', ui-monospace, monospace;
+  --font-pixel: var(--font-pixel-face, 'Press Start 2P'), ui-monospace, monospace;
 }
 
 .font-pixel {

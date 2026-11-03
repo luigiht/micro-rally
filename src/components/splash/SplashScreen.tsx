@@ -8,6 +8,7 @@ import { createGameId, formatGameId, isValidGameId, normalizeGameId } from '@/ga
 import { DRIVER_NAME_MAX, sanitizeDriverName, type SaveFile } from '@/game/save/SaveFile';
 import { fill } from '@/i18n/format';
 import { useMessages } from '@/i18n/useMessages';
+import { canAnimateSplash } from '@/lib/gpu';
 import { readGameParam, writeGameParam } from '@/lib/save/gameUrl';
 import { useGameStore } from '@/state/gameStore';
 import { getSaveManager } from '@/state/saveStore';
@@ -40,6 +41,26 @@ function readPrefill(): Prefill {
 
 function subscribeNoop(): () => void {
   return () => {};
+}
+
+type Backdrop = 'pending' | 'live' | 'still';
+
+/**
+ * The live drive where the GPU can carry it; a still backdrop where WebGL is
+ * missing or software-rendered, where every frame would cost hundreds of
+ * milliseconds of main thread. Probed once on the client (the server and the
+ * hydration pass see `pending`), so the scene's chunk is only fetched when it
+ * will run.
+ */
+let probedBackdrop: Backdrop | null = null;
+
+function backdropSnapshot(): Backdrop {
+  probedBackdrop ??= canAnimateSplash() ? 'live' : 'still';
+  return probedBackdrop;
+}
+
+function useBackdrop(): Backdrop {
+  return useSyncExternalStore(subscribeNoop, backdropSnapshot, () => 'pending');
 }
 
 /** False during SSR and hydration, true once the client owns the tree. */
@@ -177,9 +198,17 @@ function SplashForm() {
 export function SplashScreen() {
   const m = useMessages();
   const hydrated = useHydrated();
+  const backdrop = useBackdrop();
   return (
     <div className="absolute inset-0 overflow-hidden bg-ink">
-      <SplashScene />
+      {/* Sky and ground painted from the first frame: under the drive while it loads, the whole backdrop where it cannot run. */}
+      <div
+        className="absolute inset-0 bg-[linear-gradient(to_bottom,#cfe3e8_0%,#cfe3e8_55%,#8fbf6a_55%,#7ea85c_100%)]"
+        data-testid="splash-backdrop"
+        data-mode={backdrop}
+        aria-hidden="true"
+      />
+      {backdrop === 'live' && <SplashScene />}
       {/* Darken the drive so the card reads; the scene stays visible around it. */}
       <div className="absolute inset-0 bg-ink/45" aria-hidden="true" />
       <div className="absolute inset-0 overflow-y-auto">
@@ -190,6 +219,7 @@ export function SplashScreen() {
                 src={logo}
                 alt={m.meta.title}
                 priority
+                fetchPriority="high"
                 className="mx-auto block h-auto w-60 md:w-72"
               />
             </h1>

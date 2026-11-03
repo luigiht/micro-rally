@@ -6,7 +6,10 @@ test('the splash screen boots, then Drive starts the game', async ({ page }) => 
   await expect(page).toHaveTitle(/Micro Rally/);
   await expect(page.getByRole('heading', { name: 'Micro Rally' })).toBeVisible();
   await expect(page.locator(CANVAS)).toHaveCount(0);
-  await expect(page.locator('[data-testid="splash-scene"] canvas')).toBeVisible();
+  // Playwright's Chromium renders WebGL in software (SwiftShader), where the splash
+  // keeps its still backdrop instead of spending seconds a frame on the live drive.
+  await expect(page.getByTestId('splash-backdrop')).toHaveAttribute('data-mode', 'still');
+  await expect(page.locator('[data-testid="splash-scene"] canvas')).toHaveCount(0);
   await startGame(page);
 });
 

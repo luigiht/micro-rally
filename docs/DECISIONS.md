@@ -1879,3 +1879,31 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      `CarModel` by id and building the follower and the chase rig for that
      car's wheelbase, tyres and `bodyScale`, so the truck and the buggy are
      framed as they are in the game. The splash stays daytime.
+
+107. **2026-11-03 — Splash performance: a still backdrop without a GPU, the
+     font preloaded, the logo prioritised.** A PageSpeed run of the deployed
+     start page scored 60 with a Total Blocking Time of 29 s: Lighthouse's
+     headless Chrome renders WebGL in software (SwiftShader), and the
+     attract-mode drive cost it hundreds of milliseconds per frame for as
+     long as the trace ran (32 s of "Other" main-thread work in the three.js
+     chunk), while the paint metrics were fine (FCP 0.2 s, LCP 0.4 s). The
+     drive is decoration, so `lib/gpu.ts` now probes WebGL once after
+     hydration (a throwaway context, the unmasked renderer name) and the
+     splash keeps a painted sky-and-ground backdrop, with no canvas and no
+     three.js chunk fetched, where WebGL is missing or the renderer is a
+     software rasteriser (SwiftShader, llvmpipe, the Microsoft Basic Render
+     Driver and kin); elsewhere the live drive mounts over that same
+     backdrop, which now also shows from the first paint while the scene
+     loads. The game's own canvas is never gated. The e2e smoke test, whose
+     Chromium runs on SwiftShader, expects the still backdrop. Two smaller
+     items from the same report: the pixel font moves from the fontsource
+     stylesheet to `next/font/local` (the same woff2, the latin subset
+     only), so it is preloaded from the HTML with its `@font-face` inlined
+     instead of sitting at the end of an HTML → CSS → font chain, and
+     `--font-pixel` reads next/font's variable; and the logo, already
+     `priority`, also asks `fetchPriority="high"`, which Next 16 does not add
+     by itself. Left alone: the 14 KiB of "legacy JavaScript" is Next's own
+     polyfill module, imported unconditionally by its client runtime whatever
+     the browser targets (the defaults are already Chrome 111 and Safari
+     16.4); the "document request latency" is the host's; and the unused
+     share of the three.js chunk is what tree-shaking leaves.

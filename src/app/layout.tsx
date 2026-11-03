@@ -1,9 +1,23 @@
 import type { Metadata, Viewport } from 'next';
 import { Analytics } from '@vercel/analytics/next';
+import localFont from 'next/font/local';
 import { en } from '@/i18n/messages/en';
 import { AUTHOR, SITE_URL } from '@/lib/site';
-import '@fontsource/press-start-2p/400.css';
 import './globals.css';
+
+/**
+ * The pixel face, self-hosted from the fontsource package but loaded through
+ * next/font so it is preloaded from the HTML with its @font-face inlined (one
+ * request instead of HTML → CSS → font) and a size-matched fallback stands in
+ * while it arrives. Latin only: the three languages need nothing more.
+ */
+const pixelFont = localFont({
+  src: '../../node_modules/@fontsource/press-start-2p/files/press-start-2p-latin-400-normal.woff2',
+  weight: '400',
+  style: 'normal',
+  display: 'swap',
+  variable: '--font-pixel-face',
+});
 
 const KEYWORDS = [
   'rally game',
@@ -119,7 +133,7 @@ const JSON_LD = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={pixelFont.variable}>
       <body className="font-sans antialiased">
         {children}
         <Analytics />
