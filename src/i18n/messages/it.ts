@@ -37,6 +37,14 @@ export const it: Messages = {
     createdBy: 'Creato da',
     language: 'Lingua',
   },
+  install: {
+    title: 'Installa l’app',
+    android:
+      'Aggiungi Micro Rally alla schermata Home e gioca a schermo intero, senza le barre del browser.',
+    ios: 'Tocca Condividi e poi «Aggiungi alla schermata Home» per giocare a schermo intero, senza le barre del browser.',
+    install: 'Installa',
+    dismiss: 'Non ora',
+  },
   privacy: {
     title: 'Privacy',
     updated: 'Ultimo aggiornamento: 29 ottobre 2026',

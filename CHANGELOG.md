@@ -5,6 +5,24 @@ tags yet: `main` is deployed continuously, so entries are grouped by the day
 they landed. The numbered entries in [docs/DECISIONS.md](docs/DECISIONS.md)
 hold the reasoning behind each change; the numbers in brackets point there.
 
+## 2026-11-04
+
+### Added
+
+- **Install the app** on phones and tablets: a strip under the start card
+  offers to add Micro Rally to the home screen. Android opens the install
+  sheet with one tap; iOS gets the Share → Add to Home Screen steps. "Not
+  now" hides it for two weeks; it never shows once the game runs installed.
+  [108]
+
+### Changed
+
+- The installed app now rotates freely between portrait and landscape
+  instead of being locked to landscape. [108]
+- Home-screen icons are rendered full-bleed, so Android launchers no longer
+  show the mark as a small square on a white disc and iOS no longer paints
+  the corners black. [108]
+
 ## 2026-11-03
 
 ### Added

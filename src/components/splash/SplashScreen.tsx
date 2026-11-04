@@ -14,6 +14,7 @@ import { useGameStore } from '@/state/gameStore';
 import { getSaveManager } from '@/state/saveStore';
 import { PixelIcon } from '@/components/hud/PixelIcon';
 import { InfoDialog } from './InfoDialog';
+import { InstallPrompt } from './InstallPrompt';
 import { SplashFooter } from './SplashFooter';
 
 const SplashScene = dynamic(() => import('./SplashScene').then((m) => m.SplashScene), {
@@ -212,7 +213,7 @@ export function SplashScreen() {
       {/* Darken the drive so the card reads; the scene stays visible around it. */}
       <div className="absolute inset-0 bg-ink/45" aria-hidden="true" />
       <div className="absolute inset-0 overflow-y-auto">
-        <div className="grid min-h-full place-items-center px-4 pt-4 pb-20">
+        <div className="flex min-h-full flex-col items-center justify-center px-4 pt-4 pb-20">
           <section aria-labelledby="splash-title" className="pixel-box w-full max-w-md p-6 md:p-8">
             <h1 id="splash-title">
               <Image
@@ -225,6 +226,7 @@ export function SplashScreen() {
             </h1>
             {hydrated && <SplashForm />}
           </section>
+          {hydrated && <InstallPrompt />}
         </div>
       </div>
       <SplashFooter />

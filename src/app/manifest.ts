@@ -11,7 +11,8 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: '/',
     scope: '/',
     display: 'standalone',
-    orientation: 'landscape',
+    // Not locked: the splash and menus read fine upright, and the player turns the phone to drive.
+    orientation: 'any',
     background_color: '#f4ecd8',
     theme_color: '#f4ecd8',
     lang: 'en',
@@ -20,6 +21,9 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: '/icon0.svg', sizes: 'any', type: 'image/svg+xml' },
       { src: '/icon1.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
       { src: '/icon2.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+      // Full-bleed with the mark inside the 80 % safe circle, so Android's launcher masks keep it whole.
+      { src: '/icons/maskable-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+      { src: '/icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
     ],
     screenshots: [
       {

@@ -1907,3 +1907,31 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      the browser targets (the defaults are already Chrome 111 and Safari
      16.4); the "document request latency" is the host's; and the unused
      share of the three.js chunk is what tree-shaking leaves.
+
+108. **2026-11-04 — Install prompt for phone browsers, free rotation, and
+     launcher icons that survive masking.** Three related changes to how the
+     game lives on a phone. (1) `splash/InstallPrompt` is a strip under the
+     splash card, shown only on coarse pointers and never when the page
+     already runs standalone (`display-mode: standalone` or Safari's
+     `navigator.standalone`). On Android it keeps Chromium's deferred
+     `beforeinstallprompt` event and opens the install sheet from its own
+     Install button; iOS has no such event, so there the strip spells out
+     Share → Add to Home Screen. "Not now" writes a timestamp to local
+     storage and the strip stays away for 14 days (`lib/installPrompt.ts`
+     holds the pure platform detection, including iPadOS reporting as a Mac,
+     and the cool-down; both unit-tested). No service worker was added:
+     Chromium no longer requires one for installability, and offline play is
+     out of scope for now. (2) The manifest's `orientation` goes from
+     `landscape` to `any`: the lock only applied once installed, it made the
+     splash and menus unusable upright, and the HUD already lays out in
+     portrait (screenshot-checked on a Pixel 7 profile). (3) Launcher icons:
+     the favicon is a rounded tile with transparent corners, which Android
+     treats as artwork to shrink onto a white disc, the "small square inside
+     a circle", and iOS paints transparent pixels black. `pnpm brand` now
+     renders full-bleed squares as well: `public/icons/maskable-{192,512}.png`
+     with the gradient edge to edge and the mark scaled to 72 % so it sits
+     inside the 80 % safe circle, listed in the manifest with
+     `purpose: 'maskable'` beside the transparent `any` icons; and
+     `apple-icon.png` the same way at 84 %, opaque, since iOS only rounds the
+     corners. `install.spec.ts` covers the Android, iPhone, installed and
+     desktop cases by dispatching the event or faking `navigator.standalone`.

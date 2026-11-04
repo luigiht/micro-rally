@@ -27,3 +27,6 @@ context/
 
 # STL exports from tests/unit/exportCarStl.test.ts
 exports/
+
+# Remotion walkthrough project, kept local
+my-video/

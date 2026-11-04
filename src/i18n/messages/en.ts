@@ -33,6 +33,13 @@ export const en = {
     createdBy: 'Created by',
     language: 'Language',
   },
+  install: {
+    title: 'Install the app',
+    android: 'Add Micro Rally to your home screen and play full screen, with no browser bars.',
+    ios: 'Tap Share, then “Add to Home Screen”, to play full screen with no browser bars.',
+    install: 'Install',
+    dismiss: 'Not now',
+  },
   privacy: {
     title: 'Privacy',
     updated: 'Last updated: 29 October 2026',
