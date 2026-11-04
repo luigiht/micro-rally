@@ -10,7 +10,9 @@ export default function manifest(): MetadataRoute.Manifest {
     id: '/',
     start_url: '/',
     scope: '/',
-    display: 'standalone',
+    // Edge to edge on Android (system bars hidden, back by an edge swipe); standalone where fullscreen is unsupported.
+    display: 'fullscreen',
+    display_override: ['fullscreen', 'standalone'],
     // Not locked: the splash and menus read fine upright, and the player turns the phone to drive.
     orientation: 'any',
     background_color: '#f4ecd8',

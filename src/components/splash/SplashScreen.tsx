@@ -8,6 +8,7 @@ import { createGameId, formatGameId, isValidGameId, normalizeGameId } from '@/ga
 import { DRIVER_NAME_MAX, sanitizeDriverName, type SaveFile } from '@/game/save/SaveFile';
 import { fill } from '@/i18n/format';
 import { useMessages } from '@/i18n/useMessages';
+import { enterGameFullscreen } from '@/lib/fullscreen';
 import { canAnimateSplash } from '@/lib/gpu';
 import { readGameParam, writeGameParam } from '@/lib/save/gameUrl';
 import { useGameStore } from '@/state/gameStore';
@@ -87,6 +88,7 @@ function SplashForm() {
   const canSubmit = step !== 'checking' && (continuing ? isValidGameId(id) : typedName !== '');
 
   const begin = (save: SaveFile | null, gameId: string) => {
+    enterGameFullscreen();
     const store = useGameStore.getState();
     if (save) store.loadGame(save, typedName || undefined);
     else store.startGame(gameId, typedName);

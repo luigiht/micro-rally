@@ -19,6 +19,9 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 - The installed app now rotates freely between portrait and landscape
   instead of being locked to landscape. [108]
+- On Android the game fills the whole screen: the installed app launches
+  with the status and navigation bars hidden, and in a browser tab Drive
+  asks for fullscreen. Swipe in from an edge to bring the bars back. [109]
 - Home-screen icons are rendered full-bleed, so Android launchers no longer
   show the mark as a small square on a white disc and iOS no longer paints
   the corners black. [108]

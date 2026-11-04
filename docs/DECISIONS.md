@@ -1935,3 +1935,20 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      `apple-icon.png` the same way at 84 %, opaque, since iOS only rounds the
      corners. `install.spec.ts` covers the Android, iPhone, installed and
      desktop cases by dispatching the event or faking `navigator.standalone`.
+
+109. **2026-11-04 — Edge to edge on Android.** Installed with
+     `display: 'standalone'`, the app kept Android's status bar (painted in
+     the paper theme colour) and its navigation bar. The manifest now asks
+     for `fullscreen` with a `display_override` of fullscreen then
+     standalone, so Chrome launches the installed game immersive: both bars
+     hidden, the panel filled to the notch (`viewport-fit=cover` and the
+     HUD's safe-area padding were already in place), bars back on an edge
+     swipe. For a plain browser tab, and as a fallback where the installed
+     mode lands on standalone, `lib/fullscreen.ts` calls
+     `requestFullscreen({ navigationUI: 'hide' })` from the Drive tap (the
+     API needs a gesture) on coarse-pointer devices only, and `GameShell`
+     exits fullscreen when it unmounts back to the splash. Desktop windows
+     are left alone. iOS is unchanged: home-screen web apps there always
+     show the status bar and iPhone Safari has no element fullscreen, so the
+     guard on the method skips it. The mobile e2e test asserts
+     `document.fullscreenElement` is set after Drive on the Pixel profile.
