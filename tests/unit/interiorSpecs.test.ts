@@ -29,6 +29,10 @@ describe('interior specs', () => {
       // Room for the driver's seat inboard of the wall, and the co-driver on the other side.
       expect(s.halfWidth, id).toBeGreaterThan(EYE.x + 0.25);
       expect(s.coDriverX, id).toBeLessThan(0);
+      // Door cards stand clear of the floor and below the eye, so the driver can still see out.
+      const doorTop = s.doorTopY ?? s.dashTopY - 0.06;
+      expect(doorTop, id).toBeGreaterThan(s.floorY + 0.05);
+      expect(doorTop, id).toBeLessThan(EYE.y - 0.05);
       expect(-s.coDriverX, id).toBeLessThan(s.halfWidth - 0.2);
     }
   });

@@ -68,7 +68,7 @@ export function CarInterior({
   }));
 
   const { halfWidth: hw, roofY, floorY, dashTopY, cowlZ, cowlY, dashDepth, screenTopZ, rearZ } = s;
-  const beltY = dashTopY - 0.06;
+  const beltY = s.doorTopY ?? dashTopY - 0.06;
   // Door cards run the whole side, cowl to rear bulkhead, so a glance into a corner never finds a hole.
   const doorZ0 = cowlZ;
   const doorZ1 = rearZ;
@@ -118,7 +118,11 @@ export function CarInterior({
             c={p.door}
           />
           <Box p={[(hw - 0.03) * side, beltY - 0.1, -0.15]} s={[0.06, 0.04, 0.5]} c="#2b2a33" />
-          <Box p={[(hw - 0.02) * side, beltY - 0.3, 0.1]} s={[0.012, 0.03, 0.18]} c={p.accent} />
+          <Box
+            p={[(hw - 0.02) * side, Math.max(floorY + 0.05, beltY - 0.3), 0.1]}
+            s={[0.012, 0.03, 0.18]}
+            c={p.accent}
+          />
         </group>
       ))}
       {/* Rear bulkhead with a shelf where the cabin runs back */}

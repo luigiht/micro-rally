@@ -155,7 +155,9 @@ const SHELL: HullSpec = {
     st(0.4, 0.35, 0.98, 0.5, 0.93, 0.56, 0.9, { xBody: 0.94 }),
     st(0.2, 0.35, 0.98, 0.5, 0.92, 0.56, 0.88, { xBody: 0.95 }),
     st(0.0, 0.35, 0.99, 0.51, 0.92, 0.56, 0.86, { xBody: 0.96 }),
-    st(-0.2, 0.35, 1.0, 0.58, 0.93, 0.65, 0.85, { xBody: 0.97 }),
+    // Held under the 0.62 m cabin floor back to the seats' bulkhead (z -0.3), then climbing to the tail.
+    st(-0.2, 0.35, 1.0, 0.54, 0.93, 0.59, 0.85, { xBody: 0.97 }),
+    st(-0.32, 0.35, 1.005, 0.55, 0.94, 0.6, 0.86, { xBody: 0.975 }),
     st(-0.4, 0.35, 1.01, 0.61, 0.95, 0.68, 0.88, { xBody: 0.98 }),
     st(-0.6, 0.35, 1.03, 0.65, 0.96, 0.72, 0.86, { xBody: 0.99 }),
     // Rear fenders and the tail deck, rising to 0.9 m; the floor lifts over the open bay.
@@ -232,7 +234,8 @@ const CANOPY: HullSpec = {
     cs(0.5, 0.54, 0.62, 0.78, 0.46, 0.94, 0.36, true),
     cs(0.3, 0.54, 0.62, 0.82, 0.44, 1.01, 0.3, true),
     cs(0.0, 0.56, 0.62, 0.84, 0.43, 1.03, 0.27, true),
-    cs(-0.2, 0.62, 0.62, 0.84, 0.4, 1.01, 0.25),
+    cs(-0.2, 0.6, 0.62, 0.84, 0.4, 1.01, 0.25),
+    cs(-0.32, 0.61, 0.61, 0.83, 0.42, 0.97, 0.27),
     cs(-0.45, 0.69, 0.58, 0.8, 0.45, 0.92, 0.3),
     cs(-0.75, 0.75, 0.5, 0.75, 0.5, 0.75, 0.5),
   ],
@@ -241,6 +244,8 @@ const CANOPY: HullSpec = {
 /** Lamp covers (dark ovals on the fender crowns) and the bonnet roundel, laid onto the shell's surface. */
 const LAMP_COVER = { cx: 0.73, cz: 1.765, rx: 0.15, rz: 0.265, lift: 0.008 };
 const BONNET_ROUNDEL = { cx: 0, cz: 1.62, rx: 0.17, rz: 0.17, lift: 0.008 };
+/** The cooling-fan disc, centred on the dark engine cover behind the cockpit and laid onto the deck. */
+const FAN = { cx: 0, cz: -1.1, rx: 0.2, rz: 0.2, lift: 0.008 };
 
 /** A flat-coloured triangle soup lying on the shell, drawn a hair in front of it. */
 function OnHull({ positions, c }: { positions: Float32Array; c: string }) {
@@ -313,21 +318,24 @@ function DeckRoundel({
   );
 }
 
-/** 1970 Le Mans coupé. Coordinates in the root frame; the shell stands on the ground plane. `cabinRef` holds the mirrors. */
+/** 1970 Le Mans coupé. Coordinates in the root frame; the shell stands on the ground plane. `cabinRef` holds the canopy and mirrors. */
 export function LeMansBody({ cabinRef }: { spec: CarSpec; cabinRef: Ref<Group> }) {
-  const [lampL, lampR, roundel] = useMemo(
+  const [lampL, lampR, roundel, fan] = useMemo(
     () => [
       ellipseOnHull(SHELL.stations, LAMP_COVER),
       ellipseOnHull(SHELL.stations, { ...LAMP_COVER, cx: -LAMP_COVER.cx }),
       ellipseOnHull(SHELL.stations, BONNET_ROUNDEL),
+      ellipseOnHull(SHELL.stations, FAN),
     ],
     [],
   );
   return (
     <group>
       <CarHullMesh spec={SHELL} />
-      <CarHullMesh spec={CANOPY} />
+      {/* The canopy rides in the cabin group, which the interior view hides: from the seat its glass is
+          culled anyway, and its lower wall, leaning inboard of the door cards, showed as a sliver. */}
       <group ref={cabinRef}>
+        <CarHullMesh spec={CANOPY} />
         {SIDES.map((side) => (
           <group key={side}>
             <Box p={[0.7 * side, 0.7, 0.98]} s={[0.03, 0.08, 0.03]} c={K.trim} />
@@ -369,14 +377,11 @@ export function LeMansBody({ cabinRef }: { spec: CarSpec; cabinRef: Ref<Group> }
       <Box p={[0, 0.93, -2.0]} s={[0.66, 0.025, 0.18]} c={K.blue} r={[0.2, 0, 0]} />
       {/* Dark toe-board at the foot of the screen, where the bonnet climbs past the cabin floor toward the
           cowl: it hides that rise from the driver's seat and is itself inside the canopy's shoulder line */}
-      <Box p={[0, 0.57, 0.87]} s={[0.88, 0.14, 0.14]} c={K.bay} />
+      <Box p={[0, 0.57, 0.845]} s={[0.88, 0.14, 0.19]} c={K.bay} />
       {/* Open engine bay under the deck: dark wall, the gearbox lump, the cooling fan on top */}
       <Box p={[0, 0.56, -1.7]} s={[1.84, 0.64, 0.3]} c={K.bay} />
       <Box p={[0, 0.4, -1.92]} s={[0.56, 0.3, 0.26]} c={K.steel} />
-      <mesh position={[0, 0.815, -1.1]}>
-        <cylinderGeometry args={[0.2, 0.2, 0.015, 12]} />
-        <meshStandardMaterial color={K.steel} flatShading />
-      </mesh>
+      <OnHull positions={fan} c={K.steel} />
       {/* Bonnet roundel laid onto the nose; rear-deck roundel tilted with the deck's climb toward the tail */}
       <OnHull positions={roundel} c={K.white} />
       <DeckRoundel p={[0.62, 0.74, -0.65]} r={0.2} tilt={0.25} />

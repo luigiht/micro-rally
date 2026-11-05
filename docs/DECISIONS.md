@@ -2275,3 +2275,31 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      lists them nose to tail and interpolated stations (wells, decal
      edges) had been sampling the wrong segment, and a test pins that both
      orders give the same mesh.
+     The cooling-fan disc on the engine cover is the same kind of patch
+     now: as a flat cylinder it was cut by the deck's climb toward the
+     tail, and laid onto the surface it sits flush, centred on the cover.
+
+116. **2026-11-05 — Door-card height per cabin.** In the Le Mans coupé
+     the driver saw the shell's deck and fender tops through the left
+     window, reading as body poking into the cockpit: door cards stop 6 cm
+     under the dash top, and this car's dash is low, so its sides were
+     only 8 cm tall. `InteriorSpec.doorTopY` now sets the card height
+     (omitted keeps the old rule, so no other car changes) and the coupé
+     uses 1.06 in the cabin frame, 8 cm under the eye, a high-sided
+     cockpit like the real car's. The cards are drawn in the interior view
+     only, so standing outside the canopy above it costs nothing. The door
+     pull strap is held at least 5 cm over the floor (it had been sitting
+     under it on low cabins), and the interior test checks every cabin's
+     doors clear the floor and stay under the eye.
+     The glitch the request meant was a thin blue line on the cabin floor
+     beside the wheel. Its colour was the canopy's side glass: the
+     canopy's lower wall leans inboard of the door cards just above the
+     floor and, seen almost edge-on from the seat, some of its faces turn
+     toward the eye. The canopy now rides in the cabin group, which the
+     interior view hides (from the seat its glass is culled anyway and the
+     cabin's own lining and pillars stand in for it). On the way, the
+     shell's deck was found climbing to 0.65 m behind the seats, above
+     the 0.62 m floor; it is now held at 0.59–0.6 m back to the seats'
+     bulkhead (a new station at z −0.32), and the toe-board reaches 5 cm
+     further back over the last rise. The taller door cards stay: they
+     also stop the deck showing through the side window.

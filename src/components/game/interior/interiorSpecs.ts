@@ -48,6 +48,11 @@ export interface InteriorSpec {
   dashDepth: number;
   /** Where the roof lining starts over the screen. */
   screenTopZ: number;
+  /**
+   * Top of the door cards; omitted = 6 cm under the dash top. A low dash in a
+   * tall cockpit needs higher sides, or the body outside shows over them.
+   */
+  doorTopY?: number;
   /** Rear bulkhead or rear glass base. */
   rearZ: number;
   /** Co-driver seat centre (the driver sits at `EYE.x`). */
@@ -345,6 +350,8 @@ export const INTERIORS: Readonly<Record<CarId, InteriorSpec>> = {
     wheelY: 1.0,
     // The roof's front edge is a hand ahead of the eye, as in the car: the helmet sits under the screen top.
     screenTopZ: -0.13,
+    // High cockpit sides: with the default 8 cm cards the deck and fender tops outside showed over them.
+    doorTopY: 1.06,
     rearZ: -0.75,
     wheelRadius: 0.16,
     wheelRake: 0.3,
