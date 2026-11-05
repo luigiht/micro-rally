@@ -15,8 +15,6 @@ function overlaps(a: { x: number; y: number; width: number; height: number }, b:
 
 test('phone landscape: HUD pieces do not overlap and touch pads are shown', async ({ page }) => {
   await startGame(page);
-  // Drive asked the browser for fullscreen on this touch device.
-  await expect.poll(() => page.evaluate(() => document.fullscreenElement !== null)).toBe(true);
   const timer = await box(page.getByTestId('stage-timer'));
   const toolbar = await box(page.getByRole('navigation'));
   const money = await box(page.getByTestId('money'));

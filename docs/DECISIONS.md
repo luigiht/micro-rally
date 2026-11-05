@@ -1951,7 +1951,7 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      are left alone. iOS is unchanged: home-screen web apps there always
      show the status bar and iPhone Safari has no element fullscreen, so the
      guard on the method skips it. The mobile e2e test asserts
-     `document.fullscreenElement` is set after Drive on the Pixel profile.
+     `document.fullscreenElement` is set after Drive on the Pixel profile. Reverted by decision 123.
 
 110. **2026-11-04 — Albion RS Hatch tail after the Mk2 Focus.** By request
      the rear was reworked to read as the road car it is drawn from. The
@@ -2483,3 +2483,12 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      intensity), so shadows on the rock read blue-grey as in the
      reference; the other regions keep the shared day lighting, and the
      theme test pins both.
+
+123. **2026-11-05 — Back to the system bars on mobile (revert of 109).** By
+     request the game no longer takes over the phone's screen: the native
+     status and navigation bars stay visible, as with any app. The manifest
+     is `display: 'standalone'` again (no `display_override`), the Drive tap
+     no longer calls `requestFullscreen`, `GameShell` no longer exits it,
+     `lib/fullscreen.ts` is gone, and the mobile e2e test no longer expects
+     `document.fullscreenElement`. `viewport-fit=cover` and the HUD's
+     safe-area padding stay, so the layout still clears notches and bars.

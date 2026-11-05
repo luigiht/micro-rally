@@ -23,6 +23,9 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Changed
 
+- On phones the game no longer goes fullscreen: the installed app and the
+  browser tab keep the native status and navigation bars, as before
+  2026-11-04. [123]
 - **Richer coast terrain.** The cliffs are now pale grey layered limestone
   with cool blue-grey shadows (the coast's sky light is cooler), with
   buttresses, gullies, crags, grassy ledges, and fallen boulders

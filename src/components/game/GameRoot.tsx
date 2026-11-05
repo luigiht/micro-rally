@@ -1,9 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useEffect } from 'react';
 import { useMessages } from '@/i18n/useMessages';
-import { exitGameFullscreen } from '@/lib/fullscreen';
 import { DebugOverlay } from '@/components/hud/DebugOverlay';
 import { HudToolbar } from '@/components/hud/HudToolbar';
 import { SpeedReadout } from '@/components/hud/SpeedReadout';
@@ -30,13 +28,11 @@ function BootMessage() {
 }
 
 /**
- * Canvas + HUD for the active game; autosaves while mounted and hands the
- * system bars back when it leaves. H hides the HUD
+ * Canvas + HUD for the active game; autosaves while mounted. H hides the HUD
  * chrome for a clean view; dialogs, the countdown and the touch controls stay.
  */
 function GameShell() {
   useAutosave();
-  useEffect(() => exitGameFullscreen, []);
   const hidden = useUiStore((s) => s.hudHidden);
   return (
     <>
