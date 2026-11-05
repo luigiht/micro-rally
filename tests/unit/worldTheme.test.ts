@@ -9,7 +9,13 @@ import {
   ROAD_COLORS,
 } from '@/render/road/roadColors';
 import { themeColor, themeGlow, themeHex } from '@/render/theme/themeColor';
-import { dayTheme, flatTheme, NIGHTCITY_THEME, type ThemeColor } from '@/render/theme/WorldTheme';
+import {
+  COAST_HEMI,
+  dayTheme,
+  flatTheme,
+  NIGHTCITY_THEME,
+  type ThemeColor,
+} from '@/render/theme/WorldTheme';
 
 const HEX = /^#[0-9a-f]{6}$/i;
 
@@ -34,8 +40,9 @@ describe('WorldTheme', () => {
         fog: region.palette.fog,
         fogNear: 70,
         fogFar: 260,
-        hemiSky: '#fff6e0',
-        hemiGround: '#7fa05f',
+        // The coast's sky light is cooler, so its limestone shades blue-grey rather than olive.
+        hemiSky: region.coast ? COAST_HEMI.hemiSky : '#fff6e0',
+        hemiGround: region.coast ? COAST_HEMI.hemiGround : '#7fa05f',
         hemiIntensity: 1.9,
         sunColor: '#ffffff',
         sunIntensity: 2.6,

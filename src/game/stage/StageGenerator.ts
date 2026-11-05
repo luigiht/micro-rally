@@ -287,6 +287,7 @@ export function generateStage(gameSeed: number, index: number): StageDef {
             def.coast.seaLevel,
             reliefAmplitude(def, loop),
             def.terrain.frequency,
+            loop,
           ),
         ).path,
         trace: null,

@@ -10,10 +10,24 @@ import { meshTerrainChunk, terrainColors } from '@/render/terrain/meshTerrainChu
 import { SeaPlane } from '@/render/terrain/SeaPlane';
 import { dayTheme, NIGHTCITY_THEME } from '@/render/theme/WorldTheme';
 
-/** The first Coast stage of the cycle. */
+/** The first Coast stage of the cycle, and one on the hardest difficulty loop. */
 const COAST_INDEX = 4;
+const LATE_COAST_INDEX = 28;
 const SEEDS = [1, 2, 3, 4, 5, 6];
 const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
+
+/** Turns of 150° or more within 90 m: the hairpins of the stacks. */
+function hairpinTurns(headings: ArrayLike<number>, spacing: number): number {
+  const win = Math.round(90 / spacing);
+  let turns = 0;
+  for (let i = 0; i + win < headings.length; i++) {
+    if (Math.abs(wrap(headings[i + win]! - headings[i]!)) > 2.6) {
+      turns++;
+      i += win;
+    }
+  }
+  return turns;
+}
 
 interface Station {
   x: number;
@@ -79,17 +93,8 @@ describe('Coast stages', () => {
         expect(Math.abs(field.roadHeightAt(d + 2) - field.roadHeightAt(d))).toBeLessThanOrEqual(
           0.25,
         );
-      // Somewhere the road doubles back on itself, twice: a hairpin stack turns 150° or more within 90 m, two times.
-      const { headings, spacing } = stage.path;
-      const win = Math.round(90 / spacing);
-      let turns = 0;
-      for (let i = 0; i + win < headings.length; i++) {
-        if (Math.abs(wrap(headings[i + win]! - headings[i]!)) > 2.6) {
-          turns++;
-          i += win;
-        }
-      }
-      expect(turns).toBeGreaterThanOrEqual(2);
+      // Somewhere the road doubles back on itself, twice: a hairpin stack.
+      expect(hairpinTurns(stage.path.headings, stage.path.spacing)).toBeGreaterThanOrEqual(2);
     }
   });
 
@@ -222,6 +227,57 @@ describe('Coast stages', () => {
     expect(wet).toBeGreaterThan(0);
   });
 
+  it('dresses the hillside mostly in grass, with rock and gravel patches, and the cliff band in rock', () => {
+    const region = REGIONS.coast;
+    const colors = terrainColors(region.palette, region.coast);
+    const scree = colors.coast!.scree;
+    const ax = { u: 0, v: 0 };
+    const tally = { inland: 0, green: 0, gravel: 0, cliff: 0, cliffBare: 0 };
+    const isGreen = (r: number, g: number, b: number) => g > r * 1.05 && g > b;
+    for (const seed of [1, 2]) {
+      const field = fieldFor(seed);
+      const shape = field.coast!.shape;
+      const chunks = new Set<string>();
+      for (let u = 300; u <= 1200; u += 300) {
+        const road = shape.shore(u) + shape.roadInland(u);
+        for (const dv of [-12, 60]) {
+          const [x, z] = shape.toWorld(u, road + dv);
+          chunks.add(`${Math.floor(x / 64)},${Math.floor(z / 64)}`);
+        }
+      }
+      for (const key of chunks) {
+        const [cx, cz] = key.split(',').map(Number) as [number, number];
+        const data = meshTerrainChunk(field, colors, region.terrain.amplitude, cx, cz, 64, 32);
+        const { positions: p, colors: c } = data;
+        for (let i = 0; i < p.length; i += 9) {
+          shape.toAxis(
+            (p[i]! + p[i + 3]! + p[i + 6]!) / 3,
+            (p[i + 2]! + p[i + 5]! + p[i + 8]!) / 3,
+            ax,
+          );
+          const shore = shape.shore(ax.u);
+          const [r, g, b] = [c[i]!, c[i + 1]!, c[i + 2]!];
+          const t = ax.v - shore - shape.beachWidth(ax.u);
+          if (shape.cliffHeight(ax.u) > 12 && t > 2 && t < shape.cliffWidth(ax.u) - 2) {
+            tally.cliff++;
+            if (!isGreen(r, g, b)) tally.cliffBare++;
+          }
+          // The hillside proper: 20 m and more inland of the shore road.
+          if (ax.v - shore - shape.roadInland(ax.u) < 20) continue;
+          tally.inland++;
+          if (isGreen(r, g, b)) tally.green++;
+          else if (Math.abs(r / g - scree[0] / scree[1]) < 0.06) tally.gravel++;
+        }
+      }
+    }
+    expect(tally.inland).toBeGreaterThan(5000);
+    expect(tally.green / tally.inland).toBeGreaterThan(0.55);
+    expect(tally.green / tally.inland).toBeLessThan(0.9);
+    expect(tally.gravel / tally.inland).toBeGreaterThan(0.03);
+    expect(tally.cliff).toBeGreaterThan(200);
+    expect(tally.cliffBare / tally.cliff).toBeGreaterThan(0.85);
+  });
+
   it('themes the sea and the wall by day and in Nightcity', () => {
     expect(dayTheme(REGIONS.coast).sea).toBe(REGIONS.coast.coast!.sea);
     expect(dayTheme(REGIONS.forest).sea).toMatch(/^#[0-9a-f]{6}$/i);
@@ -244,14 +300,75 @@ describe('Coast stages', () => {
     }
   });
 
-  it('turns through its hairpins without a kink: no heading step over 10° in 2 m', () => {
+  it('turns through its hairpins without a kink: no heading step over 10° in 2 m, on late loops too', () => {
     for (const seed of SEEDS) {
-      const { headings } = fieldFor(seed).stage.path;
-      let worst = 0;
-      for (let i = 1; i < headings.length; i++)
-        worst = Math.max(worst, Math.abs(wrap(headings[i]! - headings[i - 1]!)));
-      expect((worst * 180) / Math.PI).toBeLessThan(10);
+      for (const stage of [fieldFor(seed).stage, generateStage(seed, LATE_COAST_INDEX)]) {
+        const { headings } = stage.path;
+        let worst = 0;
+        for (let i = 1; i < headings.length; i++)
+          worst = Math.max(worst, Math.abs(wrap(headings[i]! - headings[i - 1]!)));
+        expect((worst * 180) / Math.PI).toBeLessThan(10);
+      }
     }
+  });
+
+  it('keeps late-loop roads grade-limited with their hairpin stacks', () => {
+    for (const seed of SEEDS.slice(0, 3)) {
+      const field = new TerrainField(generateStage(seed, LATE_COAST_INDEX));
+      expect(field.stage.region).toBe('coast');
+      expect(field.stage.loop).toBeGreaterThanOrEqual(4);
+      const { path } = field.stage;
+      for (let d = 0; d < path.length - 2; d += 2)
+        expect(Math.abs(field.roadHeightAt(d + 2) - field.roadHeightAt(d))).toBeLessThanOrEqual(
+          0.25,
+        );
+      expect(hairpinTurns(path.headings, path.spacing)).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it('lie with the sea on either hand of travel, varying from stage to stage', () => {
+    const sides = new Set<number>();
+    for (const seed of [...SEEDS, 7, 8, 9, 10, 11, 12]) {
+      const field = fieldFor(seed);
+      const shape = field.coast!.shape;
+      sides.add(shape.side);
+      // The water lies on the side of travel opposite the land: right of the road when `side` is +1.
+      const path = field.stage.path;
+      const hit = createRoadHit();
+      let agree = 0;
+      let n = 0;
+      for (let u = 200; u <= 1400; u += 100) {
+        const [sx, sz] = shape.toWorld(u, shape.shore(u) - 20);
+        if (!path.nearest(sx, sz, 200, hit)) continue;
+        n++;
+        if (Math.sign(hit.lateral) === -shape.side) agree++;
+      }
+      // A hairpin stack's middle leg runs back along the shore with the sea on its other hand.
+      expect(n).toBeGreaterThan(5);
+      expect(agree / n).toBeGreaterThan(0.7);
+    }
+    expect([...sides].sort()).toEqual([-1, 1]);
+  });
+
+  it('give each stage its own shore, and sharper headlands on later loops', () => {
+    const cornersPerKm = (seed: number, index: number) => {
+      const { headings, spacing, length } = generateStage(seed, index).path;
+      const step = Math.round(10 / spacing);
+      let corners = 0;
+      let inCorner = false;
+      for (let i = step; i < headings.length; i += step) {
+        const tight = Math.abs(wrap(headings[i]! - headings[i - step]!)) / 10 > 1 / 120;
+        if (tight && !inCorner) corners++;
+        inCorner = tight;
+      }
+      return corners / (length / 1000);
+    };
+    const seeds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    const early = seeds.map((s) => cornersPerKm(s, COAST_INDEX));
+    const late = seeds.map((s) => cornersPerKm(s, LATE_COAST_INDEX));
+    const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+    expect(Math.max(...early, ...late) - Math.min(...early, ...late)).toBeGreaterThan(6);
+    expect(mean(late)).toBeGreaterThan(mean(early));
   });
 
   it('builds the wall mesh and a sea plane that follows the car', () => {

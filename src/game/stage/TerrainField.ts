@@ -10,7 +10,7 @@ import {
   type CircuitTrackside,
 } from './CircuitTrackside';
 import { Coastline } from './Coastline';
-import { CoastShape } from './CoastShape';
+import { CoastShape, type CoastSurface } from './CoastShape';
 import type { Oasis } from './Oases';
 import { REGIONS, reliefAmplitude } from './regions';
 import { createRoadHit } from './RoadPath';
@@ -129,6 +129,9 @@ export interface TerrainSample {
   roadDistance: number;
   /** How rocky the ground is here, 0..1: the coast's cliff band and outcrops; 0 elsewhere. */
   rock?: number;
+  /** Coast only, 0..1: gravel and scree, and sun-dried grass. */
+  scree?: number;
+  dry?: number;
 }
 
 function smoothstep(e0: number, e1: number, x: number): number {
@@ -165,6 +168,7 @@ export class TerrainField implements TerrainQuery {
   private readonly stubs: StubDeck[];
   /** Each junction's tarmac, trenched like a carriageway so the junction surface sits clear of the terrain. */
   private readonly junctions: JunctionSurface[];
+  private readonly surfaceScratch: CoastSurface = { rock: 0, scree: 0, dry: 0 };
   private readonly street: StreetHit = {
     deck: 0,
     distance: Infinity,
@@ -195,7 +199,13 @@ export class TerrainField implements TerrainQuery {
     this.coast = region.coast
       ? new Coastline(
           stage,
-          new CoastShape(stage.seed, region.coast.seaLevel, this.amplitude, this.frequency),
+          new CoastShape(
+            stage.seed,
+            region.coast.seaLevel,
+            this.amplitude,
+            this.frequency,
+            stage.loop,
+          ),
         )
       : null;
     this.offroad = region.offroad;
@@ -436,7 +446,16 @@ export class TerrainField implements TerrainQuery {
   sample(x: number, z: number, out: TerrainSample): TerrainSample {
     const base = this.groundHeight(x, z);
     const st = this.street;
-    out.rock = this.coast ? this.coast.rockiness(x, z) : 0;
+    if (this.coast) {
+      const c = this.coast.surface(x, z, this.surfaceScratch);
+      out.rock = c.rock;
+      out.scree = c.scree;
+      out.dry = c.dry;
+    } else {
+      out.rock = 0;
+      out.scree = 0;
+      out.dry = 0;
+    }
     if (!this.nearestStreet(x, z, st)) {
       out.height = this.applyPads(x, z, base);
       out.roadBlend = 0;

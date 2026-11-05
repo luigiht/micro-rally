@@ -2406,3 +2406,80 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      index-7 examples are superseded; the tests moved to seed 6, index 9
      and assert one circuit per ten stages, never two in a row, never with
      a town.
+
+120. **2026-11-05 — Coast stages draw their own character.** Playing them
+     felt repetitive, and a probe of 88 stages over four seeds showed why:
+     every coast had the same road signature (16–28 % of its length on
+     bends under 50 m, 26–37 % on 50–120 m sweepers, 8–11.5 corners/km),
+     where Forest, Alpine and Desert spread from 25 % to 51 % tight and 19 %
+     to 57 % near-straight. `CoastShape` always put the land on the left of
+     travel (the stage heading only rotated the map), its shore used one
+     pair of fixed meander amplitudes and wavelengths, and the difficulty
+     loop's twistiness never reached `buildCoastRoad`. Now `CoastShape`
+     draws, after the axis and the noise so those keep their streams, a
+     `side` (the left axis flips, so `v` always runs toward the land and the
+     whole stage mirrors; `CoastRoad`'s inland normal follows `side`, which
+     turns the stacks right then left), a bay wave of 0.75–1.7× the
+     reference wavelength with an amplitude of wave^1.5 (so the long bays
+     are deeper but gentler, capped at 120 m), and a headland "chop" that
+     sets the short meander's frequency (0.8–1.7×) and holds its curvature,
+     amplitude × frequency², at 0.5–1.5× the reference. The loop (0 to 1
+     over loops 0–4, as `reliefAmplitude` caps) raises that curvature by up
+     to half again, biases the chop jagged and takes up to 4 m off the
+     hairpin radius. Both `CoastShape` callers (the road in `generateStage`,
+     the ground in `TerrainField`) pass the stage's loop, so they still
+     agree. Result over 70 coasts on seven seeds: 7.9–19.4 corners/km and
+     9–33 % tight, the sea on either hand, later loops twistier; the
+     existing grade, kink, wall, beach and scenery tests pass unchanged, and
+     new ones pin the mirroring, the spread and late-loop grades. Every
+     Coast stage's road changed, so the v3 → v4 save migration drops their
+     records, as v2 → v3 did for the circuits. Road-shape set pieces (a
+     beach-level stretch, a cut across a headland, a coast harbour village)
+     and coast weather remain options for later.
+
+121. **2026-11-05 — Coast terrain detail: limestone cliffs and a grassy,
+     gullied hillside.** By request the coast's land should read as rock at
+     the cliff and as hilly grass with rock faces and gravel inland. It was
+     a regular staircase of 4 m terraces coloured one tan, and with the
+     tilt threshold at 37° the road cuttings and terrace risers made broad
+     brown faces. Shape (`CoastShape.ground`): the cliff's terraces get a
+     per-stretch period (0.75–1.25×) and a phase that wander along the shore
+     (`strata`, which starts at 0 so the foot stays continuous), a rib term
+     that steepens buttresses and slackens gullies by ±35 % of the grade, a
+     ridged crag term faded to nothing at the foot and the lip, and a
+     boulder apron over the beach's landward 45 % carried 3 m onto the
+     lowest ledge so the foot has no step; mid-beach is untouched, which
+     the sand test pins. The hillside gets hummocks (1.3 m, plus a 0.25 m
+     octave: a 0.5 m one made a third of the 2 m faces steeper than 40°),
+     downhill gullies ((1 − |noise|)⁴, 2.2 m, deepening inland), outcrop
+     scarps with a wandering step phase and crags, and a domain-warped
+     two-octave outcrop mask tightened from about 26 % of the slope to about
+     13 %. Colour: `CoastShape.surface` returns rock, scree (apron, fans 7 m
+     below outcrops, gully beds, patches) and dry-grass masks in one pass,
+     carried on `TerrainSample` to the mesher, and `coastFaceColor` (its
+     own module, no per-face allocation) mixes dry grass and scrub dots into
+     the grass, scree from 46° of tilt and rock from 60° (lower thresholds
+     turned 40–50 % of the gullied hillside grey), then limestone strata by
+     height with sine warps, lit ledges and ledge plants. Per-face tone
+     jitter stays at ±6 % and stones at 10 % of gravel faces: wider ranges
+     read as triangle confetti. New `CoastDef` tones carry the strata,
+     scree, dry grass and scrub; the coast palette's rock moves from tan
+     (#b8906f) to a limestone body (#ad9e89). A test meshes hillside and
+     cliff chunks and pins 55–90 % green inland, over 3 % gravel and over
+     85 % bare cliff faces; measured 65 %, 10 % and 91 %.
+
+122. **2026-11-05 — Grey coast limestone and a cooler coast sky light.** By
+     request, with a reference of pale grey sea cliffs over bright grass,
+     the coast's rock moves from tan and ochre to greys: body #c4c6c3,
+     light #e4e5e0, a cool dark #949ba2, a faint warm bed #d9d2c0 (the
+     `ochre` tone renamed `rockWarm`), scree #cdccc4 and boulders #bcbfbd;
+     dark and warm beds drop to 14 % and 12 % of the strata, and the cliff
+     ledges take tufts of the palette's bright grass instead of dark scrub.
+     The albedo alone was not enough: sampled in game, the shaded faces of
+     the grey cliff came out olive (about rgb 110,108,74) because the day
+     hemisphere light is a warm sky (#fff6e0) over green ground (#7fa05f),
+     and a face turned from the sun is lit almost only by it. Coast stages
+     now override it (`COAST_HEMI`: sky #e6eef5, ground #a3aa94, same
+     intensity), so shadows on the rock read blue-grey as in the
+     reference; the other regions keep the shared day lighting, and the
+     theme test pins both.

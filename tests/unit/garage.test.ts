@@ -171,6 +171,31 @@ describe('garage in the store', () => {
     ).toEqual([0, 6, 8]);
   });
 
+  it('drops v3 records set on Coast stages, whose roads changed, keeping the rest', () => {
+    const rec = { best: 90, splits: [30, 60, 90] };
+    const v3 = {
+      version: 3,
+      gameId: 'ABCD2345',
+      driverName: 'Ada',
+      gameSeed: 1,
+      money: 10,
+      stageIndex: 8,
+      // 4 and 7 are Coast stages; 9 is a circuit, whose record v3 already kept.
+      records: { 0: rec, 3: rec, 4: rec, 6: rec, 7: rec, 9: rec },
+      carId: 'hatchback',
+      ownedCars: ['hatchback'],
+      upgrades: {},
+      updatedAt: 5,
+    };
+    const save = parseSaveFile(v3)!;
+    expect(save.version).toBe(SAVE_VERSION);
+    expect(
+      Object.keys(save.records)
+        .map(Number)
+        .sort((a, b) => a - b),
+    ).toEqual([0, 3, 6, 9]);
+  });
+
   it('shares one grip setup across the dealership', () => {
     const base = CAR_SPECS.hatchback;
     for (const c of CAR_CATALOG) {

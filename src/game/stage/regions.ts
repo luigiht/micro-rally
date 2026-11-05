@@ -41,6 +41,15 @@ export interface CoastDef {
   sand: string;
   sandWet: string;
   sea: string;
+  /** The limestone's strata, palest and darkest (a cool blue-grey), and its faintly warm beds; the palette's `rock` is the body. */
+  rockLight: string;
+  rockDark: string;
+  rockWarm: string;
+  /** Gravel and scree: the boulder apron, fans below the outcrops, gully beds. */
+  scree: string;
+  /** Sun-dried grass in patches across the hillside, and the dark maquis scrub dotted through it. */
+  grassDry: string;
+  scrub: string;
 }
 
 export interface RegionDef {
@@ -170,14 +179,14 @@ const COAST: RegionDef = {
     fog: '#d9ebf1',
     grassLow: '#5f8f4a',
     grassHigh: '#7da35a',
-    rock: '#b8906f',
+    rock: '#c4c6c3',
     shoulder: '#b3a784',
     foliage: '#4d7d53',
     foliageAlt: '#3a6b49',
     canopy: '#7f9d4b',
     canopyAlt: '#a4a95c',
     trunk: '#7a5a3c',
-    boulder: '#a89e8e',
+    boulder: '#bcbfbd',
   },
   terrain: { amplitude: 16, frequency: 1 / 200 },
   twistiness: 1.25,
@@ -185,7 +194,18 @@ const COAST: RegionDef = {
   scenery: { trees: 80, broadleaf: 24, bushes: 90, rocks: 24, houses: 0 },
   parSpeed: 15,
   towns: false,
-  coast: { seaLevel: 0, sand: '#e8d9ab', sandWet: '#c4ad86', sea: '#3b8fb5' },
+  coast: {
+    seaLevel: 0,
+    sand: '#e8d9ab',
+    sandWet: '#c4ad86',
+    sea: '#3b8fb5',
+    rockLight: '#e4e5e0',
+    rockDark: '#949ba2',
+    rockWarm: '#d9d2c0',
+    scree: '#cdccc4',
+    grassDry: '#98a258',
+    scrub: '#4a7342',
+  },
 };
 
 /**

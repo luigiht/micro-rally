@@ -83,28 +83,50 @@ across a beach, a terraced rock band (the cliff) and a scrub hillside with
 outcrops, with the region's relief further in. The road is then drawn on that
 ground (`CoastRoad.ts`): it follows the shore a shelf back from the cliff
 top, and once a stage (twice on a long one) turns inland and climbs the
-hillside in a stack of two hairpins, left then right so it keeps its
-direction, before a long diagonal back down to the shelf. The terrain
+hillside in a stack of two hairpins, toward the land then away so it keeps
+its direction, before a long diagonal back down to the shelf. The terrain
 (`Coastline.ts`) cuts the road in with the usual corridor and stands the
 retainer wherever the ground falls away beside it.
 
+- **Character.** Each stage draws its own (decision 120). Half the stages are
+  mirrored, with the sea on the left of travel and the stacks climbing right
+  then left. The bays run from short (about 1.4 km between them, 50–60 m
+  deep) to a lazy corniche (about 3 km, up to 120 m deep), and the sharper
+  headlands on them from barely there to a jagged run, their curvature half
+  to one and a half times the reference. The difficulty loop sharpens the
+  headlands (up to 2.25× by loop 4) and tightens the hairpins by up to 4 m,
+  so a late coast is twistier as well as longer.
 - **Road.** Tarmac 11 m wide (a lane more than the other tarmac roads, whose
   dark deck between pale verges reads narrower than gravel), 5–35 m above
-  the sea, sweeping with the shore in bends no tighter than about 50 m; hairpins of about 20 m radius joining contour legs
-  44–52 m apart up the slope, each arc fitted to leave one leg and land on the
+  the sea, sweeping with the shore; hairpins of 18–26 m radius joining contour legs
+  36–52 m apart up the slope, each arc fitted to leave one leg and land on the
   next tangentially, every leg under the 12 % grade limit (the climb between
   stacked legs is their spacing times the hill's slope, spread over a hairpin
   and a leg).
 - **Shore.** The water line, a dry-sand beach up to 30 m wide a metre above
   the sea (a couple of metres at a headland), then the cliff band:
-  4–24 m tall; where tall it stands at 62° and is terraced into 4 m runs of
-  flat tread and steep riser, their ledges broken up by noise, so the facets
-  read as low-poly rock; where low it is a sandy bank the car can climb.
+  4–24 m tall; where tall it stands at 62° and is terraced into 3–5 m runs of
+  flat tread and steep riser whose ledge line wanders along the shore,
+  steepened on buttresses and slackened in the gullies between them (7–16 m
+  apart), with knobbly crags standing out of the face and a boulder apron up
+  to about 1.7 m heaped against its foot over the beach's landward half. It
+  is coloured as pale grey limestone strata: beds about 1.7 m thick in
+  near-white, light grey, faintly warm and cool blue-grey tones that tilt and
+  wander a little across the face, the flatter ledges lit paler and now and
+  then holding a tuft of bright grass. Where low the
+  band is a sandy bank the car can climb.
   Beyond the water the seabed falls to 9 m under a flat sea plane that
   follows the car.
-- **Hillside.** 22°–27° above the cliff, terraced into 6 m steps where a
-  noise mask says rock, scrub elsewhere, with the region's relief from 60 m
-  in.
+- **Hillside.** 22°–27° above the cliff, rolling (hummocks of about 1.3 m)
+  and cut by gullies up to 2.2 m deep that run down it and deepen inland,
+  with the region's relief from 60 m in. About two thirds of it is grass,
+  green and sun-dried in broad patches and dotted with dark maquis; rock
+  scarps (uneven 6 m steps with crags) stand where a warped noise mask says
+  outcrop, about a tenth of the slope; gravel lies in fans below them, on
+  the gully beds and in loose patches. Ground steeper than about 46° (the
+  road cuttings, the scarps' risers) goes to scree, and past 60° to bare
+  rock. `coastFaceColor` does the colouring from `CoastShape.surface`'s
+  rock, scree and dry masks.
 - **Walls.** Along whichever road edge the ground lies 3 m or more lower
   10 m out (both edges on a spur, the outer edge of every hairpin leg), broken
   10 m either side of the start and every gate, runs under 12 m dropped and
@@ -117,8 +139,9 @@ retainer wherever the ground falls away beside it.
 - **Scenery.** Rocks anywhere above the water; scrub from 2 m inland on
   slopes under 54°; pines and broadleaves 3 m above the sea on slopes under
   42° and off the outcrops; no farms.
-- **Colours.** The cliff band and the outcrops are ochre rock whatever their
-  tilt, faces past 37° of tilt elsewhere; sand under a metre above the sea,
+- **Colours.** The cliff band and the outcrops are grey limestone whatever
+  their tilt, ground past 46° of tilt elsewhere scree and past 60° rock (see
+  Hillside); boulders the same pale grey; sand under a metre above the sea,
   wet sand under it. Nightcity keeps the layout and darkens the sea and the
   wall.
 

@@ -1,5 +1,5 @@
 import type { BoxObstacle } from '../vehicle/Collisions';
-import { type AxisPoint, type CoastShape } from './CoastShape';
+import { type AxisPoint, type CoastShape, type CoastSurface } from './CoastShape';
 import type { RoadSample } from './RoadPath';
 import type { StageDef } from './StageGenerator';
 
@@ -72,6 +72,12 @@ export class Coastline {
   rockiness(x: number, z: number): number {
     const a = this.shape.toAxis(x, z, this.ax);
     return this.shape.rockiness(a.u, a.v, x, z);
+  }
+
+  /** Rock, scree and dry grass here, for the terrain's colouring. */
+  surface(x: number, z: number, out: CoastSurface): CoastSurface {
+    const a = this.shape.toAxis(x, z, this.ax);
+    return this.shape.surface(a.u, a.v, x, z, out);
   }
 
   /** Metres inland of the water line; negative at sea. */

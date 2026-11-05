@@ -1,5 +1,6 @@
 import type { CoastDef, RegionPalette } from '@/game/stage/regions';
 import type { TerrainField, TerrainSample } from '@/game/stage/TerrainField';
+import { coastFaceColor, type CoastFace, type CoastTones } from './coastFaceColor';
 
 export type Rgb = readonly [number, number, number];
 
@@ -14,6 +15,8 @@ export interface TerrainColors {
   seaLevel?: number;
   /** Faces turn to rock from this much tilt (1 − normal.y): `ROCK_FROM` unless set, lower on the stony coast. */
   rockFrom?: number;
+  /** Coast stages: strata, scree and scrub tones, coloured by `coastFaceColor` in place of the plain rock blend. */
+  coast?: CoastTones;
 }
 
 /** Hills go rocky past about 44° of tilt; the coast's limestone past about 37°, so its scrub hillside stays green. */
@@ -54,6 +57,16 @@ export function terrainColors(p: RegionPalette, coast?: CoastDef): TerrainColors
     out.sandWet = hexToLinear(coast.sandWet);
     out.seaLevel = coast.seaLevel;
     out.rockFrom = COAST_ROCK_FROM;
+    out.coast = {
+      rock: out.rock,
+      rockLight: hexToLinear(coast.rockLight),
+      rockDark: hexToLinear(coast.rockDark),
+      rockWarm: hexToLinear(coast.rockWarm),
+      ledge: out.grassHigh,
+      scree: hexToLinear(coast.scree),
+      grassDry: hexToLinear(coast.grassDry),
+      scrub: hexToLinear(coast.scrub),
+    };
   }
   return out;
 }
@@ -81,6 +94,8 @@ export function meshTerrainChunk(
   const hs = new Float32Array(n * n);
   const road = new Float32Array(n * n);
   const rock = new Float32Array(n * n);
+  const scree = new Float32Array(n * n);
+  const dry = new Float32Array(n * n);
   const s: TerrainSample = { height: 0, roadBlend: 0, roadDistance: 0 };
   for (let j = 0; j < n; j++) {
     for (let i = 0; i < n; i++) {
@@ -88,6 +103,8 @@ export function meshTerrainChunk(
       hs[j * n + i] = s.height;
       road[j * n + i] = s.roadBlend;
       rock[j * n + i] = s.rock ?? 0;
+      scree[j * n + i] = s.scree ?? 0;
+      dry[j * n + i] = s.dry ?? 0;
     }
   }
 
@@ -96,6 +113,18 @@ export function meshTerrainChunk(
   const normals = new Float32Array(triCount * 9);
   const cols = new Float32Array(triCount * 9);
   let o = 0;
+  const face: CoastFace = {
+    x: 0,
+    z: 0,
+    h: 0,
+    ny: 1,
+    rock: 0,
+    scree: 0,
+    dry: 0,
+    hashA: 0,
+    hashB: 0,
+  };
+  const rgb = [0, 0, 0];
   const emit = (
     ia: number,
     ib: number,
@@ -132,16 +161,37 @@ export function meshTerrainChunk(
     let r = colors.grassLow[0] + (colors.grassHigh[0] - colors.grassLow[0]) * t;
     let g = colors.grassLow[1] + (colors.grassHigh[1] - colors.grassLow[1]) * t;
     let b = colors.grassLow[2] + (colors.grassHigh[2] - colors.grassLow[2]) * t;
-    // Steep faces go rocky; the coast's cliff band and outcrops are rock whatever their tilt.
-    const tilt = Math.min(1, Math.max(0, (1 - ny - (colors.rockFrom ?? ROCK_FROM)) * 4));
-    const rocky = Math.max(tilt, (rock[ia]! + rock[ib]! + rock[ic]!) / 3);
-    r += (colors.rock[0] - r) * rocky;
-    g += (colors.rock[1] - g) * rocky;
-    b += (colors.rock[2] - b) * rocky;
+    let loose = 0;
+    if (colors.coast) {
+      // Coast: strata, scree and scrub from the field's masks and the face's tilt.
+      face.x = (ax + bx + qx) / 3;
+      face.z = (az + bz + qz) / 3;
+      face.h = h;
+      face.ny = ny;
+      face.rock = (rock[ia]! + rock[ib]! + rock[ic]!) / 3;
+      face.scree = loose = (scree[ia]! + scree[ib]! + scree[ic]!) / 3;
+      face.dry = (dry[ia]! + dry[ib]! + dry[ic]!) / 3;
+      face.hashA = hash(seed * 3 + 1, cz * 7919 + cx);
+      face.hashB = hash(seed * 5 + 2, cx * 6151 - cz);
+      rgb[0] = r;
+      rgb[1] = g;
+      rgb[2] = b;
+      coastFaceColor(colors.coast, face, rgb);
+      r = rgb[0]!;
+      g = rgb[1]!;
+      b = rgb[2]!;
+    } else {
+      // Steep faces go rocky.
+      const tilt = Math.min(1, Math.max(0, (1 - ny - (colors.rockFrom ?? ROCK_FROM)) * 4));
+      const rocky = Math.max(tilt, (rock[ia]! + rock[ib]! + rock[ic]!) / 3);
+      r += (colors.rock[0] - r) * rocky;
+      g += (colors.rock[1] - g) * rocky;
+      b += (colors.rock[2] - b) * rocky;
+    }
     if (colors.sand && colors.sandWet) {
-      // Coast: dry sand from the cliff foot to the water and wet sand under it; the cliff above stays rock.
+      // Coast: dry sand from the cliff foot to the water and wet sand under it, the boulder apron excepted.
       const sea = colors.seaLevel ?? 0;
-      const sandy = 1 - Math.min(1, Math.max(0, (h - sea - 1.0) / 1.6));
+      const sandy = (1 - Math.min(1, Math.max(0, (h - sea - 1.0) / 1.6))) * (1 - loose);
       r += (colors.sand[0] - r) * sandy;
       g += (colors.sand[1] - g) * sandy;
       b += (colors.sand[2] - b) * sandy;

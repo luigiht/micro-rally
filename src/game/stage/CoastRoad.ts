@@ -5,8 +5,9 @@ import { RoadPath } from './RoadPath';
 /**
  * The coast road, drawn on the `CoastShape`'s ground: it follows the shore
  * a shelf back from the cliff top, and once or twice a stage turns inland and
- * climbs the hillside in a stack of two hairpins (left, then right, so the
- * road keeps its direction) before a long diagonal back down to the shelf.
+ * climbs the hillside in a stack of two hairpins (toward the land, then away,
+ * so the road keeps its direction: left then right with the sea on the right,
+ * the mirror image with it on the left) before a long diagonal back down.
  * The legs are contour lines of the hillside (the shore road shifted inland
  * across the stage axis), so they never cusp however the shore bends; each
  * hairpin is a circular arc that leaves tangent to the leg below and lands
@@ -28,6 +29,8 @@ const LEG_SPAN = 40;
 /** Contour spacing of the stacked legs; the hairpins' radii follow from where the contours lie. */
 const RADIUS_MIN = 22;
 const RADIUS_SPAN = 4;
+/** On the hardest difficulty loop the stacks' hairpins tighten by up to this much. */
+const RADIUS_HARD = 4;
 /** A hairpin never turns tighter than this, whatever the contours do. */
 const MIN_TURN = 12;
 /** Along the top before the way down. */
@@ -76,15 +79,16 @@ export function buildCoastRoad(rand: () => number, total: number, shape: CoastSh
   /** The shore road and its inland contours, `lift` metres across the axis from it, in world space. */
   const contour = (u: number, lift: number): [number, number] =>
     shape.toWorld(u, shape.shore(u) + shape.roadInland(u) + lift);
-  /** Travel frame along a contour at `u`, heading +u (`dir` 1) or back (−1); the normal always points inland. */
+  /** Travel frame along a contour at `u`, heading +u (`dir` 1) or back (−1); the normal always points inland, on whichever hand the land lies. */
   const frame = (u: number, lift: number, dir: 1 | -1): Frame => {
     const [ax, az] = contour(u - 2, lift);
     const [bx, bz] = contour(u + 2, lift);
     const len = Math.hypot(bx - ax, bz - az) || 1;
     const tx = (dir * (bx - ax)) / len;
     const tz = (dir * (bz - az)) / len;
-    // Left of travel is (tz, −tx); inland is the left of the forward direction.
-    return { tx, tz, nx: dir * tz, nz: -dir * tx };
+    // Left of travel is (tz, −tx); inland is the left of the +u direction, or its right on a mirrored stage.
+    const k = dir * shape.side;
+    return { tx, tz, nx: k * tz, nz: -k * tx };
   };
   /**
    * The turn from (x, z), heading along `f`, onto the contour `lift` inland, to be travelled in
@@ -168,7 +172,7 @@ export function buildCoastRoad(rand: () => number, total: number, shape: CoastSh
   const stack = () => {
     const from = length;
     const leg = LEG_MIN + rand() * LEG_SPAN;
-    const r = RADIUS_MIN + rand() * RADIUS_SPAN;
+    const r = RADIUS_MIN - RADIUS_HARD * shape.difficulty + rand() * RADIUS_SPAN;
     // Leg 1 along the shelf.
     const uA = u;
     for (let d = STEP; d <= leg; d += STEP) push(...contour(uA + d, 0));

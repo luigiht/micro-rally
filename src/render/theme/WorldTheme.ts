@@ -127,6 +127,12 @@ const DAY_LIGHTING = {
   sunIntensity: 2.6,
 } as const;
 
+/**
+ * The coast's sky light: cooler and greyer than inland, where the warm sky and the green ground
+ * bounce turned the shaded side of its pale limestone olive. Shadows on the cliffs read blue-grey.
+ */
+export const COAST_HEMI = { hemiSky: '#e6eef5', hemiGround: '#a3aa94' } as const;
+
 const DAY_GATES: GateTheme = {
   post: '#d9d4c7',
   start: [
@@ -180,7 +186,12 @@ export function dayTheme(region: RegionDef): WorldTheme {
   if (!theme) {
     theme = {
       id: 'day',
-      lighting: { background: region.palette.sky, fog: region.palette.fog, ...DAY_LIGHTING },
+      lighting: {
+        background: region.palette.sky,
+        fog: region.palette.fog,
+        ...DAY_LIGHTING,
+        ...(region.coast ? COAST_HEMI : {}),
+      },
       terrain: { mode: 'palette' },
       road: dayRoad(region.palette.shoulder),
       gates: DAY_GATES,

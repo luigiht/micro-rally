@@ -97,7 +97,9 @@ the last sector board or lap line passed.
 On a Coast stage the road follows the shore a few metres back from a
 terraced cliff, the sea below to seaward, a scrub hillside above, and once or
 twice climbs that hillside in a stack of two hairpins before coming back
-down. A rough dry-stone wall runs along whichever edge the ground falls away
+down. Each coast is its own: the sea lies on the left of travel on about half
+of them, the bays run from short coves to long lazy sweeps, and later loops
+add sharper headlands. A rough dry-stone wall runs along whichever edge the ground falls away
 (the car bounces off it); where the cliff is low the bank is sand the car can
 drive down and back up. Night exists as a name only (a Forest clone) and is not yet in the loop. Each stage
 also rolls a weather (clear or overcast) into its brief; rendering does not

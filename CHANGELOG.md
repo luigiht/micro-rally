@@ -23,6 +23,19 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Changed
 
+- **Richer coast terrain.** The cliffs are now pale grey layered limestone
+  with cool blue-grey shadows (the coast's sky light is cooler), with
+  buttresses, gullies, crags, grassy ledges, and fallen boulders
+  at their foot. The hillside above the road rolls and is cut by gullies:
+  mostly green and sun-dried grass dotted with scrub, with rock scarps,
+  scree fans below them, gravel in the gully beds, and gravel-and-rock road
+  cuttings. [121, 122]
+- **Coast stages vary.** Each one now draws its own shoreline: the sea on
+  the left about half the time (with the hairpin stacks mirrored), bays from
+  short coves to long lazy sweeps, and anything from a smooth corniche to a
+  jagged run of headlands. Later difficulty loops sharpen the headlands and
+  tighten the hairpins. Best times set on Coast stages are dropped, since
+  the roads changed (saves move to version 4). [120]
 - Saves move to version 3. Best times set on stages that are circuits now
   are dropped, since they were for a different road. [117]
 
