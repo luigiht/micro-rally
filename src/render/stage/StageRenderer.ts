@@ -1,8 +1,12 @@
 import { Group } from 'three';
+import { circuitTrackside } from '@/game/stage/CircuitTrackside';
 import { REGIONS } from '@/game/stage/regions';
 import { createRoadHit } from '@/game/stage/RoadPath';
 import type { Prop } from '@/game/stage/SceneryScatter';
 import type { StageWorld } from '@/game/stage/StageWorld';
+import { BarrierBuilder } from '../road/BarrierBuilder';
+import { CircuitDressingBuilder } from '../road/CircuitDressingBuilder';
+import { KerbBuilder } from '../road/KerbBuilder';
 import { RoadBuilder } from '../road/RoadBuilder';
 import { SeaWallBuilder } from '../road/SeaWallBuilder';
 import type { RoadNear } from '../scenery/kits/NightcityKits';
@@ -23,6 +27,12 @@ export interface StageRenderOptions {
   terrainResolution: number;
   sceneryRadius: number;
   shadows: boolean;
+  /** Circuits: the striped kerbs and gravel traps. */
+  kerbs: boolean;
+  /** Circuits: the Armco (the colliders stand either way). */
+  barriers: boolean;
+  /** Circuits: the catch fencing on the Armco, the heaviest of the trackside meshes. */
+  catchFences: boolean;
 }
 
 export const DEFAULT_STAGE_RENDER: StageRenderOptions = {
@@ -30,6 +40,9 @@ export const DEFAULT_STAGE_RENDER: StageRenderOptions = {
   terrainResolution: 32,
   sceneryRadius: 220,
   shadows: true,
+  kerbs: true,
+  barriers: true,
+  catchFences: true,
 };
 
 /** Props further than this from the road count as "far" for the kits that care. */
@@ -45,6 +58,9 @@ interface Surfaces {
   seawall: SeaWallBuilder | null;
   sea: SeaPlane | null;
   pools: OasisBuilder | null;
+  kerbs: KerbBuilder | null;
+  barriers: BarrierBuilder | null;
+  dressing: CircuitDressingBuilder | null;
 }
 
 /**
@@ -155,18 +171,43 @@ export class StageRenderer {
       seawall: field.coast ? new SeaWallBuilder(field.coast, field, theme.seawall) : null,
       sea: field.coast ? new SeaPlane(field.coast.seaLevel, theme.sea) : null,
       pools: field.oases.length > 0 ? new OasisBuilder(field.oases, theme.sea) : null,
+      kerbs: null,
+      barriers: null,
+      dressing: null,
     };
+    const track = circuitTrackside(stage);
+    if (track) {
+      const { circuit } = theme;
+      const neon = theme.road.neon;
+      if (this.opts.kerbs) s.kerbs = new KerbBuilder(stage, track, field, circuit, neon);
+      if (this.opts.barriers)
+        s.barriers = new BarrierBuilder(stage, track, field, circuit, neon, this.opts.catchFences);
+      s.dressing = new CircuitDressingBuilder(stage, track, field, circuit, neon);
+    }
     this.group.add(s.road.group, s.gates.group);
-    for (const b of [s.town, s.junctions, s.walls, s.seawall, s.sea, s.pools])
-      if (b) this.group.add(b.group);
+    for (const b of this.extras(s)) this.group.add(b.group);
     return s;
+  }
+
+  /** Every builder beyond the road and gates that this stage has. */
+  private extras(s: Surfaces): { group: Group; dispose(): void }[] {
+    return [
+      s.town,
+      s.junctions,
+      s.walls,
+      s.seawall,
+      s.sea,
+      s.pools,
+      s.kerbs,
+      s.barriers,
+      s.dressing,
+    ].filter((b) => b !== null);
   }
 
   /** The builders dispose their GPU resources but not their place in the scene; remove them first. */
   private disposeSurfaces(): void {
     const s = this.surfaces;
-    for (const b of [s.road, s.gates, s.town, s.junctions, s.walls, s.seawall, s.sea, s.pools]) {
-      if (!b) continue;
+    for (const b of [s.road, s.gates, ...this.extras(s)]) {
       this.group.remove(b.group);
       b.dispose();
     }

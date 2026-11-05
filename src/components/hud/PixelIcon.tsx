@@ -5,7 +5,8 @@
  * a puddle, a snowflake, grass blades and sand ripples; `coast` (16×16) is a road running
  * away from the viewer, wide at the foot and bending right as it narrows,
  * its centre line dashed, shown for Coast stages instead of the surface
- * glyph.
+ * glyph; `circuit` is a closed track in plan, inner and outer edges, for
+ * circuit stages.
  */
 export type PixelIconName =
   | 'restart'
@@ -26,7 +27,8 @@ export type PixelIconName =
   | 'snow'
   | 'grass'
   | 'sand'
-  | 'coast';
+  | 'coast'
+  | 'circuit';
 
 const GLYPHS: Record<PixelIconName, readonly string[]> = {
   restart: [
@@ -234,6 +236,16 @@ const GLYPHS: Record<PixelIconName, readonly string[]> = {
     '..####..####....',
     '..##########....',
     '..##########....',
+  ],
+  circuit: [
+    '.######.',
+    '#......#',
+    '#.####.#',
+    '#.#..#.#',
+    '#.#..#.#',
+    '#.####.#',
+    '#......#',
+    '.######.',
   ],
 };
 

@@ -320,7 +320,7 @@ export class VehicleSim {
     const brakeF = brakePedal * p.brakeDecel * p.mass;
     const handF = input.handbrake ? p.mass * HANDBRAKE_DECEL : 0;
     const capF = mu * wf;
-    const capR = mu * wr * REAR_GRIP_BIAS;
+    const capR = mu * wr * REAR_GRIP_BIAS * (surf.rearGrip ?? 1);
     const rawFxF = force * p.frontDrive - dir * brakeF * 0.6;
     const rawFxR = force * (1 - p.frontDrive) - dir * (brakeF * 0.4 + handF);
     const alphaR = Math.atan2(vLat - s.yawRate * p.cgToRear, vxAbs);

@@ -6,10 +6,21 @@ import {
   REGION_CYCLE,
   REGIONS,
   STAGES_PER_LOOP,
+  isCircuitStage,
   type RegionId,
   type Weather,
   reliefAmplitude,
 } from './regions';
+import { generateCircuit, type CircuitLayout } from './CircuitGenerator';
+import {
+  CIRCUIT_HALF_WIDTH,
+  CIRCUIT_LAPS,
+  GRID,
+  STANDING_START_SECONDS,
+  circuitGates,
+  circuitName,
+  type CircuitInfo,
+} from './CircuitStage';
 import type { RoadPath, RoadSample } from './RoadPath';
 import type { TownDef } from './Town';
 import {
@@ -34,6 +45,7 @@ const TOWN_PAR_SECONDS = 12;
 
 const SURFACE_PAR: Readonly<Record<Surface, number>> = {
   tarmac: 1.12,
+  track: 1.2,
   gravel: 1,
   mud: 0.85,
   snow: 0.82,
@@ -107,12 +119,14 @@ export interface StageDef extends StageBrief {
   town?: TownDef;
   /** Half width per path sample where it varies from `halfWidth` (narrow town streets); absent when constant. */
   widths?: Float64Array;
+  /** Set on circuit stages: the path is one closed lap and the gates repeat once per lap. */
+  circuit?: CircuitInfo;
 }
 
-/** The region from `REGION_CYCLE`; the difficulty loop steps on its own cadence. */
+/** The region from `REGION_CYCLE`, or a circuit on the stages `isCircuitStage` picks; the difficulty loop steps on its own cadence. */
 export function stageRegion(index: number): { region: RegionId; loop: number } {
   return {
-    region: REGION_CYCLE[index % REGION_CYCLE.length]!,
+    region: isCircuitStage(index) ? 'circuit' : REGION_CYCLE[index % REGION_CYCLE.length]!,
     loop: Math.floor(index / STAGES_PER_LOOP),
   };
 }
@@ -170,24 +184,46 @@ function drawBrief(
   region: RegionId,
   loop: number,
   town: boolean,
+  layout: CircuitLayout | null,
 ): StageBrief {
   const def = REGIONS[region];
   const surface = pickWeighted(rand, def.surfaces);
   const weather = pickWeighted(rand, def.weathers);
-  const name =
-    NAME_HEADS[Math.floor(rand() * NAME_HEADS.length)]! +
-    NAME_TAILS[Math.floor(rand() * NAME_TAILS.length)]!;
-  const length = Math.round(def.baseLength * (1 + 0.25 * loop) * (0.85 + rand() * 0.3));
-  const parTime =
-    Math.round(length / (def.parSpeed * SURFACE_PAR[surface])) + (town ? TOWN_PAR_SECONDS : 0);
+  const head = rand();
+  const tail = rand();
+  const name = layout
+    ? circuitName(head, tail)
+    : NAME_HEADS[Math.floor(head * NAME_HEADS.length)]! +
+      NAME_TAILS[Math.floor(tail * NAME_TAILS.length)]!;
+  const jitter = rand();
+  // A circuit's length is the race: every lap of the layout drawn after the brief.
+  const length = layout
+    ? Math.round(CIRCUIT_LAPS * layout.path.length)
+    : Math.round(def.baseLength * (1 + 0.25 * loop) * (0.85 + jitter * 0.3));
+  const parTime = layout
+    ? Math.round(length / (def.parSpeed * SURFACE_PAR[surface])) + STANDING_START_SECONDS
+    : Math.round(length / (def.parSpeed * SURFACE_PAR[surface])) + (town ? TOWN_PAR_SECONDS : 0);
   return { seed, index, region, loop, name, surface, weather, length, parTime };
 }
 
-/** Name, surface, length and par of a stage without building its road (for lists). */
+/** A circuit stage's layout, drawn from the stream after the brief's five draws. */
+function circuitLayout(index: number, seed: number): CircuitLayout | null {
+  return isCircuitStage(index) ? generateCircuit(resume(seed)) : null;
+}
+
+/** Name, surface, length and par of a stage without building its road (for lists); a circuit's layout is drawn to know its lap. */
 export function stageBrief(gameSeed: number, index: number): StageBrief {
   const { region, loop } = stageRegion(index);
   const seed = hashSeed(gameSeed, region, index);
-  return drawBrief(mulberry32(seed), seed, index, region, loop, stageHasTown(index));
+  return drawBrief(
+    mulberry32(seed),
+    seed,
+    index,
+    region,
+    loop,
+    stageHasTown(index),
+    circuitLayout(index, seed),
+  );
 }
 
 /** The stage's RNG stream positioned after the brief's five draws, where the walk starts. */
@@ -197,13 +233,40 @@ function resume(seed: number): () => number {
   return rand;
 }
 
+/** A circuit race: one closed lap as the path, gates unrolled over every lap, the car on pole behind the line. */
+function circuitStage(brief: StageBrief, layout: CircuitLayout): StageDef {
+  const { path, startDistance } = layout;
+  const sample: RoadSample = { x: 0, z: 0, heading: 0 };
+  path.sample(startDistance - GRID.first - GRID.carBack, sample);
+  // Pole is the first slot, on the left of the centre line.
+  sample.x += Math.cos(sample.heading) * GRID.stagger;
+  sample.z -= Math.sin(sample.heading) * GRID.stagger;
+  return {
+    ...brief,
+    halfWidth: CIRCUIT_HALF_WIDTH,
+    startDistance,
+    path,
+    gates: circuitGates(path, startDistance, CIRCUIT_LAPS, CIRCUIT_HALF_WIDTH),
+    spawn: { x: sample.x, z: sample.z, yaw: sample.heading },
+    circuit: {
+      laps: CIRCUIT_LAPS,
+      lapLength: path.length,
+      style: layout.style,
+      mainStraight: layout.mainStraight,
+      relief: layout.relief,
+    },
+  };
+}
+
 /** Deterministic stage from (game seed, global stage index). */
 export function generateStage(gameSeed: number, index: number): StageDef {
   const { region, loop } = stageRegion(index);
   const def = REGIONS[region];
   const seed = hashSeed(gameSeed, region, index);
   const withTown = stageHasTown(index);
-  const brief = drawBrief(mulberry32(seed), seed, index, region, loop, withTown);
+  const layout = circuitLayout(index, seed);
+  const brief = drawBrief(mulberry32(seed), seed, index, region, loop, withTown, layout);
+  if (layout) return circuitStage(brief, layout);
   const { surface, length } = brief;
   const twist = def.twistiness * (1 + 0.15 * Math.min(loop, 4));
   // The corniche is a lane wider: dark tarmac between pale verges reads narrower than a gravel road whose shoulders blend into it.

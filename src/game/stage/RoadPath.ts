@@ -26,7 +26,12 @@ function cellKey(cx: number, cz: number): number {
   return (cx + 0x8000) * 0x10000 + (cz + 0x8000);
 }
 
-/** Arc-length-parameterised road centreline with a spatial grid for nearest queries. */
+/**
+ * Arc-length-parameterised road centreline with a spatial grid for nearest
+ * queries. A `closed` path is a loop (a circuit lap): its last sample sits on
+ * its first, `sample` wraps distances round the lap, and the headings at the
+ * seam look across it, so anything that walks 0..length draws one lap whole.
+ */
 export class RoadPath {
   readonly count: number;
   readonly length: number;
@@ -37,16 +42,59 @@ export class RoadPath {
     readonly xs: Float64Array,
     readonly zs: Float64Array,
     readonly spacing: number,
+    readonly closed = false,
   ) {
     this.count = xs.length;
     this.length = (this.count - 1) * spacing;
     this.headings = new Float64Array(this.count);
+    const last = this.count - 1;
     for (let i = 0; i < this.count; i++) {
-      const a = Math.max(0, i - 1);
-      const b = Math.min(this.count - 1, i + 1);
+      // On a loop sample `last` is sample 0, so the neighbours wrap past it.
+      const a = closed ? (i === 0 ? last - 1 : i - 1) : Math.max(0, i - 1);
+      const b = closed ? (i === last ? 1 : i + 1) : Math.min(last, i + 1);
       this.headings[i] = Math.atan2(xs[b]! - xs[a]!, zs[b]! - zs[a]!);
     }
     this.buildGrid();
+  }
+
+  /** `distance` wrapped into [0, length) on a closed path; unchanged on an open one. */
+  wrap(distance: number): number {
+    if (!this.closed) return distance;
+    const d = distance % this.length;
+    return d < 0 ? d + this.length : d;
+  }
+
+  /**
+   * Resample a closed loop (interleaved x,z, not repeating the first point) to
+   * even arc-length spacing: the spacing is stretched a hair so a whole number
+   * of steps goes round, and the last sample lands exactly on the first.
+   */
+  static fromClosedPolyline(points: readonly number[], spacing: number): RoadPath {
+    const n = points.length / 2;
+    const cum = new Float64Array(n + 1);
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n;
+      cum[i + 1] =
+        cum[i]! +
+        Math.hypot(points[j * 2]! - points[i * 2]!, points[j * 2 + 1]! - points[i * 2 + 1]!);
+    }
+    const total = cum[n]!;
+    const steps = Math.max(3, Math.round(total / spacing));
+    const step = total / steps;
+    const xs = new Float64Array(steps + 1);
+    const zs = new Float64Array(steps + 1);
+    let seg = 0;
+    for (let k = 0; k < steps; k++) {
+      const d = k * step;
+      while (cum[seg + 1]! < d) seg++;
+      const j = (seg + 1) % n;
+      const t = (d - cum[seg]!) / Math.max(1e-9, cum[seg + 1]! - cum[seg]!);
+      xs[k] = points[seg * 2]! + (points[j * 2]! - points[seg * 2]!) * t;
+      zs[k] = points[seg * 2 + 1]! + (points[j * 2 + 1]! - points[seg * 2 + 1]!) * t;
+    }
+    xs[steps] = xs[0]!;
+    zs[steps] = zs[0]!;
+    return new RoadPath(xs, zs, step, true);
   }
 
   /** Resample a dense polyline (interleaved x,z) to even arc-length spacing. */
@@ -75,7 +123,7 @@ export class RoadPath {
   }
 
   sample(distance: number, out: RoadSample): RoadSample {
-    const f = Math.min(Math.max(distance / this.spacing, 0), this.count - 1.000001);
+    const f = Math.min(Math.max(this.wrap(distance) / this.spacing, 0), this.count - 1.000001);
     const i = Math.floor(f);
     const t = f - i;
     out.x = this.xs[i]! + (this.xs[i + 1]! - this.xs[i]!) * t;

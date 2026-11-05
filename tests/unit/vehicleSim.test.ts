@@ -263,3 +263,33 @@ describe('VehicleSim', () => {
     expect(sim.state.gear).toBe(2);
   });
 });
+
+describe('race asphalt', () => {
+  const drift = (surface: 'tarmac' | 'track', car: 'hatchback' | 'focus' | 'lemans') => {
+    const g = flatTerrain(surface);
+    const sim = makeSim(CAR_SPECS[car], g, 25);
+    let peak = 0;
+    let lat = 0;
+    // Brake hard into a full-lock corner at 90 km/h: on road tarmac the tail swings out.
+    run(sim, g, 2, input({ brake: 0.6, steer: 1 }), (s) => {
+      peak = Math.max(
+        peak,
+        Math.atan2(Math.abs(s.state.lateralSpeed), Math.max(1, Math.abs(s.state.speed))),
+      );
+    });
+    const sweep = makeSim(CAR_SPECS[car], g, 25);
+    run(sweep, g, 3, input({ throttle: 0.7, steer: 1 }), (s) => {
+      lat = Math.max(lat, Math.abs(s.state.latAccel));
+    });
+    return { peak, lat };
+  };
+
+  it('corners harder and keeps the tail in line where road tarmac slides', () => {
+    for (const car of ['hatchback', 'focus', 'lemans'] as const) {
+      const road = drift('tarmac', car);
+      const track = drift('track', car);
+      expect(track.lat).toBeGreaterThan(road.lat * 1.15);
+      expect(track.peak).toBeLessThan(road.peak * 0.4);
+    }
+  });
+});

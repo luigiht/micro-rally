@@ -11,6 +11,7 @@ export const PRIZE_PER_KM = 800;
 
 export const SURFACE_DIFFICULTY: Readonly<Record<Surface, number>> = {
   tarmac: 1,
+  track: 1,
   gravel: 1.15,
   grass: 1.1,
   mud: 1.3,
@@ -29,6 +30,13 @@ export function paceFactor(time: number, par: number): number {
   return Math.max(0.3, 1 - (r - 1) * 0.7);
 }
 
+/**
+ * A circuit race pays this share of its distance's worth: three laps run to
+ * five or six kilometres of wide, grippy tarmac, so it pays like about two
+ * rally stages rather than three.
+ */
+export const CIRCUIT_PRIZE_FACTOR = 0.6;
+
 export interface PrizeInput {
   lengthM: number;
   surface: Surface;
@@ -39,6 +47,8 @@ export interface PrizeInput {
   sponsorBonus?: number;
   /** True when the Lucky Charm roll paid out (5×). */
   lucky?: boolean;
+  /** A circuit race (see `CIRCUIT_PRIZE_FACTOR`). */
+  circuit?: boolean;
 }
 
 export function stagePrize(p: PrizeInput): number {
@@ -47,6 +57,7 @@ export function stagePrize(p: PrizeInput): number {
     (p.lengthM / 1000) *
     SURFACE_DIFFICULTY[p.surface] *
     paceFactor(p.time, p.parTime) *
-    (1 + 0.25 * p.loop);
+    (1 + 0.25 * p.loop) *
+    (p.circuit ? CIRCUIT_PRIZE_FACTOR : 1);
   return Math.round(base * (1 + (p.sponsorBonus ?? 0)) * (p.lucky ? 5 : 1));
 }

@@ -15,6 +15,7 @@ const PAGE_SIZE = 4;
 
 const SURFACE_ICON: Readonly<Record<Surface, PixelIconName>> = {
   tarmac: 'tarmac',
+  track: 'tarmac',
   gravel: 'gravel',
   mud: 'mud',
   snow: 'snow',
@@ -23,8 +24,9 @@ const SURFACE_ICON: Readonly<Record<Surface, PixelIconName>> = {
   dune: 'sand',
 };
 
-/** Coast stages show a winding road rather than the tarmac glyph every one of them would share. */
+/** Coast stages show a winding road and circuits a closed track, rather than the tarmac glyph they would all share. */
 function stageIcon(b: StageBrief): PixelIconName {
+  if (b.region === 'circuit') return 'circuit';
   return b.region === 'coast' ? 'coast' : SURFACE_ICON[b.surface];
 }
 

@@ -123,7 +123,7 @@ export class RoadBuilder {
     if (VERGE_WIDTH <= TRENCH_OUT) throw new Error('verge strip must cover the trench ramp');
     const roadMat = new MeshStandardMaterial({
       vertexColors: true,
-      roughness: stage.surface === 'tarmac' ? 0.75 : 1,
+      roughness: stage.surface === 'tarmac' || stage.surface === 'track' ? 0.75 : 1,
       polygonOffset: true,
       polygonOffsetFactor: -2,
       polygonOffsetUnits: -2,
@@ -139,8 +139,8 @@ export class RoadBuilder {
       mesh.receiveShadow = true;
       this.group.add(mesh);
     }
-    // A sand piste is marked by nothing but its own colour: no posts, as no lines.
-    if (stage.surface !== 'sand') this.buildMarkers(stage, field);
+    // A sand piste is marked by nothing but its own colour, and a circuit by its kerbs and barriers.
+    if (stage.surface !== 'sand' && !stage.circuit) this.buildMarkers(stage, field);
   }
 
   dispose(): void {

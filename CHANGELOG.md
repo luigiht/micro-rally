@@ -5,6 +5,27 @@ tags yet: `main` is deployed continuously, so entries are grouped by the day
 they landed. The numbered entries in [docs/DECISIONS.md](docs/DECISIONS.md)
 hold the reasoning behind each change; the numbers in brackets point there.
 
+## 2026-11-05
+
+### Added
+
+- **Circuit races.** Every tenth stage (10, 20, 30, …) is now a closed race
+  circuit in parkland: three laps from a standing start on total time, with
+  a lap counter, the best lap on the HUD and every lap in the result panel.
+  Layouts are generated from the stage seed in the manner of the
+  Nürburgring (twisty and hilly), Le Mans (a huge straight with chicanes)
+  or Monza (fast straights, tight chicanes, a long sweeper). Red-and-white
+  kerbs on the corners, gravel traps, Armco and catch fencing, a chequered
+  start line with a grid and gantry, and a grandstand. [117]
+- **Race asphalt** on every circuit: a quarter more grip than road tarmac
+  and a planted rear, so cars corner harder and no longer swing the tail
+  out when braking into a bend. [118]
+
+### Changed
+
+- Saves move to version 3. Best times set on stages that are circuits now
+  are dropped, since they were for a different road. [117]
+
 ## 2026-11-04
 
 ### Added

@@ -3,6 +3,7 @@ import type { Surface } from '@/game/vehicle/surfaces';
 /** Daytime carriageway colour per surface. */
 export const ROAD_COLORS: Readonly<Record<Surface, string>> = {
   tarmac: '#55565e',
+  track: '#4f5058',
   gravel: '#a98e68',
   mud: '#6b4d33',
   /** Snow stages are asphalt under drifting snow: this is the dusting, blended over tarmac. */

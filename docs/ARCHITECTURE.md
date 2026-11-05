@@ -72,6 +72,22 @@ flowchart LR
   colliders, the mesher paints the mask rock and the shore sand, and the
   renderer draws the walls (`render/road/SeaWallBuilder.ts` over
   `StoneWallGeometry.ts`) and the sea (`render/terrain/SeaPlane.ts`).
+- Circuits (`game/stage/CircuitGenerator.ts`, `CircuitStage.ts`,
+  `CircuitTrackside.ts`): every tenth stage is a closed race
+  circuit. The generator draws a lap as a closed `RoadPath` (`closed`: the
+  last sample sits on the first, `sample` wraps), and one lap of geometry is
+  all the rest of the pipeline sees: terrain (`RoadProfile.ts` smooths the
+  road profile cyclically), road mesh, scenery and nearest-point queries work
+  unchanged. Only timing knows about laps: the gates are unrolled over every
+  lap with distances that keep counting, and `StageRun` unwraps the lap
+  position against the last gate passed. The trackside (kerbs, gravel
+  traps, barrier lines, catch-fence flags, the grandstand's footprint) is
+  derived from the lap's curvature, memoised per stage; `TerrainField`
+  reads it for the flat runoff, kerb bumps and surfaces, `SceneryScatter`
+  for clearance, `StageWorld` for the barrier colliders, and the renderer
+  draws it (`render/road/KerbBuilder.ts`, `BarrierBuilder.ts`,
+  `CircuitDressingBuilder.ts` over `TrackMesh.ts`), each behind its own
+  `StageRenderOptions` flag.
 - Desert (`game/stage/Oases.ts`): `TerrainField.duneHeight` is the dune sea;
   `planOases` picks level hollows off the road from the stage seed,
   `scatterScenery` sinks them as pads and rings them with palms, and the

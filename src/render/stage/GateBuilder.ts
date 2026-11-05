@@ -42,6 +42,16 @@ export class GateBuilder {
     this.group.name = 'gates';
     const sample = { x: 0, z: 0, heading: 0 };
     stage.path.sample(stage.startDistance, sample);
+    if (stage.circuit) {
+      // One lap's worth: a single chequered gantry over the start/finish line, and the sector
+      // boards of the first lap (every later lap's gates stand in the same places).
+      this.addArch('finish', sample.x, sample.z, sample.heading, stage.halfWidth + 2.2, field);
+      const lapEnd = stage.startDistance + stage.circuit.lapLength;
+      for (const g of stage.gates)
+        if (g.kind === 'checkpoint' && g.distance < lapEnd)
+          this.addControlBoards(g.x, g.z, g.heading, g.halfWidth - 3 + 1.2, field);
+      return;
+    }
     this.addArch('start', sample.x, sample.z, sample.heading, stage.halfWidth + 2.2, field);
     for (const g of stage.gates) {
       if (g.kind === 'finish')

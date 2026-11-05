@@ -145,6 +145,46 @@ A Desert stage is a piste of packed sand through a dune sea, with oases.
   open road.
 - **Scenery.** Dry scrub and sandstone boulders, sparse; no pines, no farms.
 
+## Circuits
+
+Every tenth stage (index 9, 19, 29, …; never two in a row) is a closed race
+circuit in parkland (`circuit` region, not in the twelve-stage cycle: the
+cycle's region at those indices simply gives way). A layout is drawn by
+`CircuitGenerator` from the stage seed in one of three styles, mixing the
+traits of three famous tracks without copying any of them:
+
+- **Ring** (after the Nürburgring): 12–15 corners, medium radii, inward
+  dents, a chicane now and then, and 1.6× the region's hill relief, so the
+  lap climbs and dips.
+- **Sarthe** (after Le Mans): a long, thin loop whose main straight carries
+  two chicanes, fast open kinks, and a slow hairpin at the straight's end.
+- **Park** (after Monza): six to eight corners on a stretched loop, chicanes
+  on the two longest straights, one long sweeper onto the main straight,
+  almost flat.
+
+The lap is a star-shaped polygon round a centre (which cannot cross itself),
+every vertex rounded into an arc of a radius set by its sharpness and the
+style, chicanes dropped onto long straights as smooth S-offsets of 6–9 m
+over about 55 m, and resampled as a closed path starting at the beginning of
+its longest straight. It must be 1.5–2.8 km long (1.7–2.4 km targeted), have
+no corner under 12 m radius and keep stretches more than 200 m apart round
+the lap at least 90 m apart in space (room for runoff and barriers, and for
+each stretch's flattened corridor to blend back to the hills before the
+next); a few attempts, then a rounded-rectangle fallback, guarantee one.
+
+The track is 12 m wide race asphalt (the `track` surface, see Surfaces) with white edge lines. The trackside comes from the
+lap's curvature: kerbs where the radius is under 150 m (the inside of the
+whole corner and the outside from the apex over the exit), raised 3 cm and
+striped red and white every sample; gravel traps on the outside of corners
+of 40–150 m radius; Armco 6 m beyond the edge on straights and up to 16 m on
+a corner's outside, held inside 0.7 × the radius on the inside; catch
+fencing behind it on the outsides and along the main straight; a chequered
+line, eight staggered grid slots and a gantry at the start; a blue
+grandstand behind the barrier on the outside of the lap facing the line.
+Trees and bushes stand only beyond the outermost barrier and off the
+grandstand. Names are an Italian autodromo, a French circuit or a German
+ring with an invented place name.
+
 ## Hidden mode: Nightcity
 
 Press `N` while driving (it is not in the controls table) and the stage is
@@ -230,15 +270,16 @@ the cameras.
 
 ## Surfaces
 
-| Surface | Where                                                   | Feel                                      |
-| ------- | ------------------------------------------------------- | ----------------------------------------- |
-| tarmac  | some Forest and Alpine stages, every Coast stage, towns | most grip, highest par speed              |
-| gravel  | most Forest stages                                      | the reference surface                     |
-| mud     | some Forest stages                                      | slow and slippery                         |
-| snow    | most Alpine stages, and off road there                  | least grip, dusted asphalt look           |
-| sand    | every Desert stage                                      | packed piste, a little looser than gravel |
-| dune    | off the road in the Desert                              | soft sand, the car wallows                |
-| grass   | off the road everywhere else                            | heavy drag                                |
+| Surface | Where                                                   | Feel                                                                                         |
+| ------- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| track   | every circuit                                           | race asphalt: a quarter more grip than tarmac and a planted rear, so the car slides far less |
+| tarmac  | some Forest and Alpine stages, every Coast stage, towns | most grip, highest par speed                                                                 |
+| gravel  | most Forest stages                                      | the reference surface                                                                        |
+| mud     | some Forest stages                                      | slow and slippery                                                                            |
+| snow    | most Alpine stages, and off road there                  | least grip, dusted asphalt look                                                              |
+| sand    | every Desert stage                                      | packed piste, a little looser than gravel                                                    |
+| dune    | off the road in the Desert                              | soft sand, the car wallows                                                                   |
+| grass   | off the road everywhere else                            | heavy drag                                                                                   |
 
 Tyre marks are drawn per surface into a single fading ring-buffer mesh.
 

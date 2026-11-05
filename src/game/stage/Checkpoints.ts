@@ -1,4 +1,5 @@
-export type GateKind = 'checkpoint' | 'finish';
+/** A `lap` gate is a circuit's start/finish line crossed before the last lap: passed like a checkpoint. */
+export type GateKind = 'checkpoint' | 'lap' | 'finish';
 
 export interface Gate {
   kind: GateKind;

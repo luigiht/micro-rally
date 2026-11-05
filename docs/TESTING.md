@@ -33,7 +33,14 @@ cover the pure-TS core and anything else that can run without a browser:
   `coast` (the region cycle, hairpins and grade, water and beach, the fall
   and climb either side of the road, the retainers and their colliders, the
   rock mask and shore colours), `desert` (the cycle, the two sand surfaces,
-  dunes, oases and their palms, the pools), `town`, `townJunctions`, `townKerbs`, `roadMarkers`, `roadFollower`,
+  dunes, oases and their palms, the pools), `circuit` (closed paths, the
+  generator's invariants across 80 seeds and its fallback, the three styles,
+  circuit stages and their unrolled gates, pole position, three laps with
+  progress unwrapping across the seam, lap times after a part-way spawn, the
+  prize factor), `circuitTrackside` (kerbs only on corners, barriers clear
+  of the track and never folding, gravel on corner outsides, colliders, the
+  seamless road profile, kerb bumps and surfaces, scenery outside the fences
+  and off the grandstand), `town`, `townJunctions`, `townKerbs`, `roadMarkers`, `roadFollower`,
   `stageHistory`. `fixtures/openRoad.json` pins six open-road stages
   byte-for-byte so town work can never move a road that has no town (keys
   are `gameSeed/index`; the four index-0 and index-3 entries date from

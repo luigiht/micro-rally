@@ -43,7 +43,12 @@ export function GamePanel() {
         [m.game.stageName, stage.name],
         [m.game.region, m.regions[stage.region]],
         [m.game.surface, m.surfaces[stage.surface]],
-        [m.game.length, fill(m.game.km, { km: (stage.length / 1000).toFixed(1) })],
+        [
+          m.game.length,
+          stage.laps > 0
+            ? fill(m.game.laps, { laps: stage.laps, km: (stage.lapLength / 1000).toFixed(1) })
+            : fill(m.game.km, { km: (stage.length / 1000).toFixed(1) }),
+        ],
         [m.game.par, formatTime(stage.parTime)],
         [m.game.best, best !== undefined ? formatTime(best) : m.game.none],
       ]

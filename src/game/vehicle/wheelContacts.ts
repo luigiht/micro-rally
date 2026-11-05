@@ -60,7 +60,7 @@ export function axleMarkIntensities(
 ): AxleMarks {
   const grip = SURFACES[s.surface].grip * spec.tyreGrip;
   const peakF = grip / spec.corneringFront;
-  const peakR = (grip * REAR_GRIP_BIAS) / spec.corneringRear;
+  const peakR = (grip * REAR_GRIP_BIAS * (SURFACES[s.surface].rearGrip ?? 1)) / spec.corneringRear;
   const gate = s.grounded ? smoothstep(SPEED_START, SPEED_FULL, Math.abs(s.speed)) : 0;
   const front =
     gate *

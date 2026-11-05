@@ -8,8 +8,8 @@ import {
   scatterScenery,
 } from '@/game/stage/SceneryScatter';
 import { MARKER_CLEARANCE, MARKER_SPACING, markerDistances } from '@/game/stage/RoadMarkers';
-import { REGION_CYCLE, REGIONS, stagePalette } from '@/game/stage/regions';
-import { generateStage, stageBrief, stageRegion } from '@/game/stage/StageGenerator';
+import { REGION_CYCLE, REGIONS, isCircuitStage, stagePalette } from '@/game/stage/regions';
+import { generateStage, stageBrief, stageHasTown, stageRegion } from '@/game/stage/StageGenerator';
 import { StageRun, TREE_PENALTY_SECONDS } from '@/game/stage/StageRun';
 import { ROAD_BED_DROP, ROAD_LIFT, TRENCH_OUT, TerrainField } from '@/game/stage/TerrainField';
 import { ObstacleGrid, resolveObstacleCollisions } from '@/game/vehicle/Collisions';
@@ -98,13 +98,23 @@ describe('StageGenerator', () => {
   it('follows the region cycle, never three alike, every region three times a cycle', () => {
     const n = REGION_CYCLE.length;
     const regions = Array.from({ length: 3 * n }, (_, i) => stageRegion(i).region);
-    expect(regions.slice(0, n)).toEqual([...REGION_CYCLE]);
-    expect(regions.slice(n, 2 * n)).toEqual([...REGION_CYCLE]);
+    // The cycle's region everywhere but the circuit stages, which are every tenth (index 9, 19, …).
+    regions.forEach((r, i) => expect(r).toBe(isCircuitStage(i) ? 'circuit' : REGION_CYCLE[i % n]));
+    expect(regions.flatMap((r, i) => (r === 'circuit' ? [i] : []))).toEqual([9, 19, 29]);
     for (let i = 2; i < regions.length; i++) {
       expect(regions[i - 2] === regions[i - 1] && regions[i - 1] === regions[i]).toBe(false);
     }
     for (const id of ['forest', 'alpine', 'coast', 'desert'])
-      expect(regions.slice(0, n).filter((r) => r === id)).toHaveLength(3);
+      expect(REGION_CYCLE.filter((r) => r === id)).toHaveLength(3);
+    // One circuit in every ten stages, never two in a row, never with a town, and never on a
+    // stage the fixtures and region tests pin.
+    for (let start = 0; start + 10 <= 100; start += 10)
+      expect(
+        Array.from({ length: 10 }, (_, k) => isCircuitStage(start + k)).filter(Boolean),
+      ).toHaveLength(1);
+    for (let i = 1; i < 100; i++) expect(isCircuitStage(i) && isCircuitStage(i - 1)).toBe(false);
+    for (let i = 0; i < 100; i++) if (isCircuitStage(i)) expect(stageHasTown(i)).toBe(false);
+    for (const i of [0, 1, 2, 3, 4, 5, 6, 11, 12, 15]) expect(isCircuitStage(i)).toBe(false);
     for (let seed = 1; seed <= 6; seed++) {
       const alpine = generateStage(seed, 3);
       expect(['snow', 'tarmac']).toContain(alpine.surface);

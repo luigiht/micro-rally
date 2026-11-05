@@ -45,6 +45,7 @@ const MIN_INTENSITY = 0.03;
 /** What a sliding tyre leaves on each surface: rubber on tarmac, churned ground elsewhere. */
 const INK: Readonly<Record<Surface, { color: string; opacity: number }>> = {
   tarmac: { color: '#17171b', opacity: 0.5 },
+  track: { color: '#17171b', opacity: 0.5 },
   gravel: { color: '#8b6a4a', opacity: 0.5 },
   grass: { color: '#46602a', opacity: 0.6 },
   mud: { color: '#2f2012', opacity: 0.65 },

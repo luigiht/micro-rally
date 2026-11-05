@@ -69,6 +69,19 @@ export interface WallTheme {
   cap: string;
 }
 
+/** A circuit's trackside: kerb stripes, Armco and catch fencing, gravel, the painted start line and grid, the grandstand. */
+export interface CircuitTheme {
+  kerb: readonly [ThemeColor, ThemeColor];
+  rail: string;
+  railPost: string;
+  fence: string;
+  gravel: string;
+  /** Chequered start/finish line, and the white grid slots behind it. */
+  chequer: readonly [ThemeColor, ThemeColor];
+  grid: ThemeColor;
+  stand: { seats: string; frame: string; roof: ThemeColor };
+}
+
 /** `palette`: the worker's baked per-face colours; `flat`: one colour, the bake ignored. */
 export type TerrainTheme = { mode: 'palette' } | { mode: 'flat'; color: string };
 
@@ -93,6 +106,7 @@ export interface WorldTheme {
   scenery: { kit: SceneryKitId };
   /** Tyre-mark ink on every surface; null keeps the per-surface table. */
   skidInk: SkidInk | null;
+  circuit: CircuitTheme;
 }
 
 /** The hues Nightcity is lit in; kits and the car pick from these by hash. */
@@ -126,6 +140,18 @@ const DAY_GATES: GateTheme = {
 };
 
 const DAY_WALLS: WallTheme = { body: '#c9c0b0', cap: '#e3dccf' };
+
+/** Red-and-white kerbs, galvanised Armco on grey posts, dark mesh fencing, pale gravel, a blue-and-white grandstand. */
+const DAY_CIRCUIT: CircuitTheme = {
+  kerb: ['#d9343a', '#f4f1ea'],
+  rail: '#b9bec4',
+  railPost: '#8c9196',
+  fence: '#4c5258',
+  gravel: '#cdbf9c',
+  chequer: ['#f4f1ea', '#2b2a33'],
+  grid: '#f4f1ea',
+  stand: { seats: '#2f6db5', frame: '#8c9196', roof: '#e8e4da' },
+};
 /** Concrete blocks for the coast's walls; the sea itself is the region's, with a default for worlds without a coast. */
 const DAY_SEAWALL: WallTheme = { body: '#aeaba3', cap: '#d6d3cb' };
 const DAY_SEA = '#3b8fb5';
@@ -163,6 +189,7 @@ export function dayTheme(region: RegionDef): WorldTheme {
       sea: region.coast?.sea ?? DAY_SEA,
       scenery: { kit: 'rally' },
       skidInk: null,
+      circuit: DAY_CIRCUIT,
     };
     DAY.set(region.id, theme);
   }
@@ -182,6 +209,7 @@ export function flatTheme(sky: string, fog: string, shoulder = '#8fbf6a'): World
     sea: DAY_SEA,
     scenery: { kit: 'rally' },
     skidInk: null,
+    circuit: DAY_CIRCUIT,
   };
 }
 
@@ -235,4 +263,17 @@ export const NIGHTCITY_THEME: WorldTheme = {
   sea: '#0a1424',
   scenery: { kit: 'nightcity' },
   skidInk: { color: { hex: NEON.cyan, glow: 2 }, opacity: 0.85 },
+  circuit: {
+    kerb: [
+      { hex: NEON.magenta, glow: 1.8 },
+      { hex: NEON.cyan, glow: 1.8 },
+    ],
+    rail: '#3a3f52',
+    railPost: '#15171f',
+    fence: '#232736',
+    gravel: '#262a38',
+    chequer: [{ hex: NEON.cyan, glow: 2 }, '#05060a'],
+    grid: { hex: NEON.cyan, glow: 2 },
+    stand: { seats: '#1e2130', frame: '#15171f', roof: { hex: NEON.violet, glow: 1.5 } },
+  },
 };

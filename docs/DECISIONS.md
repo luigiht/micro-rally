@@ -2303,3 +2303,106 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      bulkhead (a new station at z −0.32), and the toe-board reaches 5 cm
      further back over the last rise. The taller door cards stay: they
      also stop the deck showing through the side window.
+
+117. **2026-11-05 — Circuit races: procedural closed tracks with kerbs and
+     guardrails.** By request, a new stage type inspired by the
+     Nürburgring, Le Mans and Monza; with the user it was settled to put
+     circuits in the normal rotation, race fixed laps on total time, and
+     generate layouts rather than copy three. The pipeline assumed a
+     one-way road throughout (the heading clamp, clamped sampling, a single
+     finish, one pass through the gates, a non-cyclic road profile), so the
+     approach keeps one lap of geometry and unrolls only the race:
+     `RoadPath` gains `closed` (the last sample is the first, `sample` and
+     `wrap` go round the lap, seam headings look across it) and
+     `fromClosedPolyline`; terrain, road mesh, scenery and nearest-point
+     queries then work on one lap unchanged, and the gates repeat per lap
+     (three sector checkpoints and a `lap` gate on the line, the last
+     crossing a `finish`) with distances that keep counting, so the tracker,
+     the progress bar and the splits behave as on a long open stage.
+     `StageRun` unwraps a lap position against the last gate passed, counts
+     laps from the lap and finish gates, records the driving time at each
+     gate so a replay knows which lap it is on, and offsets lap timing by
+     the gates a `?spawn=` start skips. The generator (`CircuitGenerator`):
+     a style (Ring, Sarthe, Park) and a target lap from the seed, a
+     star-shaped polygon (monotonic angles round a centre, so it cannot
+     cross itself) with jitter, inward dents and a stretch, each vertex
+     filleted into an arc whose radius follows its sharpness and the style
+     (set pieces: the Sarthe's slow hairpin after its long straight, the
+     Park's long sweeper onto the main straight), chicanes as smooth
+     S-offsets on long straights (kept to the main straight's far half, off
+     the grid), resampled closed from the start of the longest straight;
+     validated on length, a 12 m minimum radius and 90 m between stretches
+     more than 200 m apart round the lap (60 m let two stretches' flattened
+     corridors overlap and step the ground between them), with retries and
+     a rounded-rectangle fallback; 300 seeds needed no fallback, at about
+     1.3 ms a layout. Stages: `isCircuitStage` (index ≥ 7, index % 6 = 1)
+     gives the `circuit` region in `stageRegion` without touching
+     `REGION_CYCLE`, clear of every index the tests and the open-road
+     fixture pin and of the town stages; the brief keeps its five draws in
+     order (fixture untouched) and draws the layout after them, so the
+     stage list knows a circuit's length (three laps) and par (race length
+     at 20 m/s × the tarmac factor, plus 4 s for the standing start). The
+     trackside (`CircuitTrackside`, memoised per stage, pure) comes from
+     the lap's curvature: kerbs under 150 m radius, gravel traps on the
+     outside of 40–150 m corners, barrier offsets per side (wider runoff on
+     outsides, held inside 0.7 × the radius on insides so the line never
+     folds), catch-fence flags, the grandstand's footprint; `TerrainField`
+     multiplies the relief by the style's, flattens out past the outermost
+     barrier, smooths the road profile cyclically (`RoadProfile.ts`), lifts
+     wheels 3 cm over kerbs and reports tarmac, gravel or grass;
+     `SceneryScatter` keeps props past the barriers and off the stand;
+     `StageWorld` adds 4 m barrier boxes as colliders (hits use the
+     existing penalty). Rendering: `KerbBuilder` (chamfered kerb bands
+     striped per sample, gravel bands), `BarrierBuilder` (a two-part W-beam
+     on posts, catch fence wires and posts, no transparency),
+     `CircuitDressingBuilder` (chequered line, grid slots, stepped
+     grandstand seated on the ground), all over a small `TrackMesh` soup,
+     each behind a `StageRenderOptions` flag (`kerbs`, `barriers`,
+     `catchFences`), coloured by a new `CircuitTheme` (Nightcity has its
+     own); `GateBuilder` draws one chequered gantry and the first lap's
+     boards; verge posts are skipped. The HUD shows "Lap n/3" and the best
+     lap, the result panel lists the laps, the Game panel reads "3 laps ·
+     1.9 km", the stage list gets a circuit glyph; a circuit pays 0.6 of its
+     distance's worth (`CIRCUIT_PRIZE_FACTOR`). Saves go to version 3, which
+     drops records set at circuit indices (they were for a different road).
+     Verified with two new unit suites, a live drive across the line
+     (Lap 1/3 → 2/3, the bar carrying on across the seam) and screenshots of
+     the grid, a hairpin's kerbs and gravel, the fences and the stand.
+
+118. **2026-11-05 — Race asphalt: more grip and a planted rear on
+     circuits.** By request, circuits now slide less. They get their own
+     surface, `track` (appended to `SURFACE_LIST` so the surface indices
+     stored in replays keep their meaning), with grip 1.25 against
+     tarmac's 1.0 and a new optional `SurfaceProps.rearGrip` of 1.5 that
+     multiplies the rear axle's grip cap on top of the built-in understeer
+     bias (the skid-mark thresholds read it too). Grip alone was measured
+     first and was not enough: with the vehicle harness, braking at 0.6
+     into a full-lock corner from 90 km/h still swung every car's tail out
+     to a 75° peak drift angle on both surfaces, because that rotation
+     comes from braking load moving forward and the rear brakes spending
+     the rear tyres' grip, not from the friction limit. A sweep of the
+     rear factor showed a threshold: 1.2 barely helped, 1.35 calmed the
+     Focus and the Le Mans coupé but not the starter hatch, 1.5 held all
+     three (peaks of 21°, 7° and 7°, from 77°, 75° and 75°). It costs no
+     turning: at that setting hairpin radii at 12 m/s shrink by 3–17 % and
+     peak sweeper grip rises 10–26 % (1.19 → 1.50 g on the hatch). Kerbs
+     stay plain tarmac, so riding one is a touch looser than the track.
+     Par on the new surface uses a pace factor of 1.2 (tarmac's is 1.12),
+     the prize difficulty stays at tarmac's 1, the road shade is a hair
+     darker than tarmac's, and the surface reads "Race asphalt" in the
+     Game panel. A sim test pins it: on race asphalt every car corners
+     over 15 % harder and peaks under 40 % of its road-tarmac drift angle
+     braking into the corner.
+
+119. **2026-11-05 — Circuits every tenth stage.** By request the circuits
+     are rarer and always alone in the rotation: `isCircuitStage` is now
+     `index % 10 === 9` (stage 10, 20, 30, …; `CIRCUIT_EVERY`) instead of
+     every sixth from the eighth, so there are nine rally stages between
+     one circuit and the next. Every tenth stage is still clear of every
+     index the tests and the open-road fixture pin; it does land on some
+     town stages (index 29, 59, …), which simply become circuits, since a
+     circuit's region builds no town. The v2 → v3 save migration drops
+     records at the new circuit indices. Decision 117's rule and its
+     index-7 examples are superseded; the tests moved to seed 6, index 9
+     and assert one circuit per ten stages, never two in a row, never with
+     a town.

@@ -40,6 +40,20 @@ here as of 2 November 2026.
    HUD. Esc, "Exit replay" or the end of the recording returns to the
    result panel.
 
+## A circuit race
+
+Every tenth stage (10, 20, 30, …) is a closed race circuit, never two in a row,
+instead of a rally road. The car starts on pole, on the grid behind a
+chequered start/finish line under a gantry, and races three laps on total
+time. Each lap has three sector boards; the HUD shows "Lap n/3" in place of
+the checkpoint count, and the fastest completed lap once there is one. The
+result panel lists every lap time and the best lap under the total. Red and
+white kerbs line the corners (tarmac, with a low bump), gravel traps sit on
+the outside of the fast ones, grass elsewhere, and Armco runs both sides
+with catch fencing where the runoff is widest and along the main straight;
+hitting a barrier is a hit like any other (2 s and $25). `R` respawns past
+the last sector board or lap line passed.
+
 ## Par and prize money
 
 - **Par time** is the stage length divided by the region's par speed (15 m/s
@@ -72,12 +86,13 @@ here as of 2 November 2026.
 
 ## Regions
 
-| Region | Surfaces (weight)                 | Off road | Terrain                                        | Base length | Par speed |
-| ------ | --------------------------------- | -------- | ---------------------------------------------- | ----------- | --------- |
-| Forest | gravel 3, tarmac 1, mud 1         | grass    | amplitude 22, soft                             | 1800 m      | 15 m/s    |
-| Alpine | snow 3 (dusted asphalt), tarmac 1 | snow     | amplitude 34, sharper bends                    | 1500 m      | 14 m/s    |
-| Coast  | tarmac, 11 m wide                 | grass    | cliff road 5–35 m over the sea, hairpin stacks | 1600 m      | 15 m/s    |
-| Desert | sand                              | dune     | dunes of 11 m relief, oases                    | 1900 m      | 16 m/s    |
+| Region  | Surfaces (weight)                 | Off road            | Terrain                                        | Base length | Par speed |
+| ------- | --------------------------------- | ------------------- | ---------------------------------------------- | ----------- | --------- |
+| Forest  | gravel 3, tarmac 1, mud 1         | grass               | amplitude 22, soft                             | 1800 m      | 15 m/s    |
+| Alpine  | snow 3 (dusted asphalt), tarmac 1 | snow                | amplitude 34, sharper bends                    | 1500 m      | 14 m/s    |
+| Coast   | tarmac, 11 m wide                 | grass               | cliff road 5–35 m over the sea, hairpin stacks | 1600 m      | 15 m/s    |
+| Desert  | sand                              | dune                | dunes of 11 m relief, oases                    | 1900 m      | 16 m/s    |
+| Circuit | race asphalt, 12 m wide, kerbs    | grass, gravel traps | gentle hills; three laps of a 1.7–2.4 km lap   | 3 laps      | 20 m/s    |
 
 On a Coast stage the road follows the shore a few metres back from a
 terraced cliff, the sea below to seaward, a scrub hillside above, and once or

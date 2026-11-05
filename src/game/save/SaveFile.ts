@@ -1,5 +1,6 @@
 import { sanitizeUpgrades, type UpgradeLevels } from '../economy/upgrades';
 import { isCatalogCar, type CatalogCarId } from '../economy/cars';
+import { isCircuitStage } from '../stage/regions';
 import { isValidGameId } from './GameId';
 
 export interface StageRecord {
@@ -7,7 +8,7 @@ export interface StageRecord {
   splits: number[];
 }
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 export const DRIVER_NAME_MAX = 24;
 
 /** Everything needed to resume a game. Nothing personal beyond the driver name. */
@@ -56,7 +57,20 @@ function migrateV1(raw: Record<string, unknown>): Record<string, unknown> {
   return { ...raw, version: 2, carId: 'hatchback', ownedCars: ['hatchback'], upgrades: {} };
 }
 
-function parseV2(raw: Record<string, unknown>): SaveFile | null {
+/**
+ * v2 saves predate the circuits: every tenth stage was an
+ * open road then, and a best time set there says nothing about the race
+ * that stands in its place now, so those records are dropped.
+ */
+function migrateV2(raw: Record<string, unknown>): Record<string, unknown> {
+  const records = isRecord(raw.records) ? raw.records : {};
+  const kept = Object.fromEntries(
+    Object.entries(records).filter(([key]) => !isCircuitStage(Number(key))),
+  );
+  return { ...raw, version: 3, records: kept };
+}
+
+function parseCurrent(raw: Record<string, unknown>): SaveFile | null {
   if (typeof raw.gameId !== 'string' || !isValidGameId(raw.gameId)) return null;
   if (typeof raw.driverName !== 'string') return null;
   if (!finite(raw.gameSeed) || !finite(raw.money) || !finite(raw.stageIndex)) return null;
@@ -96,7 +110,8 @@ export function parseSaveFile(data: unknown): SaveFile | null {
   if (!isRecord(data)) return null;
   let raw = data;
   if (raw.version === 1) raw = migrateV1(raw);
-  if (raw.version === SAVE_VERSION) return parseV2(raw);
+  if (raw.version === 2) raw = migrateV2(raw);
+  if (raw.version === SAVE_VERSION) return parseCurrent(raw);
   return null;
 }
 

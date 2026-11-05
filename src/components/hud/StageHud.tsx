@@ -31,6 +31,8 @@ function Countdown() {
 function ResultPanel({ result }: { result: StageResult }) {
   const m = useMessages();
   const locale = useSettingsStore((s) => s.locale);
+  const laps = useStageHudStore((s) => s.lapTimes);
+  const bestLap = useStageHudStore((s) => s.bestLap);
   const rows: [string, string][] = [
     [m.stage.time, formatTime(result.time)],
     [m.stage.par, formatTime(result.parTime)],
@@ -38,6 +40,15 @@ function ResultPanel({ result }: { result: StageResult }) {
   ];
   if (result.previousBest !== null)
     rows.splice(2, 0, [m.stage.best, formatTime(result.previousBest)]);
+  // A circuit race lists each lap under the total, then the fastest.
+  if (laps.length > 0) {
+    const lapRows: [string, string][] = laps.map((t, i) => [
+      fill(m.stage.lapTime, { n: i + 1 }),
+      formatTime(t),
+    ]);
+    if (bestLap !== null) lapRows.push([m.stage.bestLap, formatTime(bestLap)]);
+    rows.splice(1, 0, ...lapRows);
+  }
   if (result.repairCost > 0)
     rows.push([m.stage.repairs, `−${formatMoney(result.repairCost, locale)}`]);
   return (
@@ -48,7 +59,7 @@ function ResultPanel({ result }: { result: StageResult }) {
         className="pixel-box w-96 max-w-full p-6"
       >
         <h2 id="result-title" className="font-pixel text-lg leading-snug">
-          {m.stage.resultTitle}
+          {laps.length > 0 ? m.stage.raceTitle : m.stage.resultTitle}
         </h2>
         {result.newRecord && (
           <p className="mt-2 font-pixel text-[10px] leading-snug text-rally">{m.stage.newRecord}</p>
@@ -151,6 +162,9 @@ export function StageHud() {
   const gateCount = useStageHudStore((s) => s.gateCount);
   const penalties = useStageHudStore((s) => s.penalties);
   const result = useStageHudStore((s) => s.result);
+  const lap = useStageHudStore((s) => s.lap);
+  const laps = useStageHudStore((s) => s.stage?.laps ?? 0);
+  const bestLap = useStageHudStore((s) => s.bestLap);
   const replay = useUiStore((s) => s.replay);
   const hidden = useUiStore((s) => s.hudHidden);
   const nightcity = useUiStore((s) => s.nightcity);
@@ -174,9 +188,22 @@ export function StageHud() {
         >
           {formatTime(time)}
         </p>
-        <p className="pixel-tag mt-4 px-2 py-1 text-[10px]">
-          {fill(m.stage.checkpoint, { n: gatesPassed, total: gateCount })}
-        </p>
+        {laps > 0 ? (
+          <>
+            <p className="pixel-tag mt-4 px-2 py-1 text-[10px]" data-testid="lap-counter">
+              {fill(m.stage.lap, { n: lap, total: laps })}
+            </p>
+            {bestLap !== null && (
+              <p className="pixel-tag mt-3 px-2 py-1 text-[10px]">
+                {m.stage.bestLap} {formatTime(bestLap)}
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="pixel-tag mt-4 px-2 py-1 text-[10px]">
+            {fill(m.stage.checkpoint, { n: gatesPassed, total: gateCount })}
+          </p>
+        )}
         {penalties > 0 && (
           <p className="pixel-tag mt-3 bg-rally px-2 py-1 text-[10px] text-paper">
             {fill(m.stage.penalties, { s: penalties })}

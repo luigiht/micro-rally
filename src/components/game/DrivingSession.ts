@@ -121,6 +121,8 @@ export class DrivingSession {
             surface: world.stage.surface,
             length: world.stage.length,
             parTime: world.stage.parTime,
+            laps: world.stage.circuit?.laps ?? 0,
+            lapLength: world.stage.circuit?.lapLength ?? 0,
           }
         : null,
     });
@@ -271,6 +273,7 @@ export class DrivingSession {
       time: run.totalTime,
       gatesPassed: this.gateFractions.length,
       progress: run.progressAt(this.pose.x, this.pose.z),
+      lap: run.lap,
     });
   }
 
@@ -291,6 +294,7 @@ export class DrivingSession {
       parTime: stage.parTime,
       time: run.totalTime,
       loop: stage.loop,
+      circuit: stage.circuit !== undefined,
     });
     const result = useGameStore.getState().completeStage({
       stageIndex: stage.index,
@@ -300,7 +304,14 @@ export class DrivingSession {
       repairCost: run.repairCost,
       parTime: stage.parTime,
     });
-    useStageHudStore.setState({ phase: 'finished', time: run.totalTime, result });
+    useStageHudStore.setState({
+      phase: 'finished',
+      time: run.totalTime,
+      result,
+      lap: run.lap,
+      lapTimes: run.laps,
+      bestLap: run.bestLap,
+    });
   }
 
   private readonly handleAction = (action: KeyAction): void => {
@@ -344,12 +355,14 @@ export class DrivingSession {
     });
     const run = this.run;
     if (run && this.replayTime !== null) {
-      // The clock, checkpoints and progress bar follow the recording as it plays.
-      const progress = run.progressAt(this.pose.x, this.pose.z);
+      // The clock, checkpoints, lap and progress bar follow the recording as it plays: the gates
+      // passed by this point of the run, so a circuit's lap unwraps as it did live.
+      const gatesPassed = run.gatesPassedAt(this.replayTime);
       useStageHudStore.setState({
         time: this.replayTime,
-        progress,
-        gatesPassed: this.gateFractions.filter((f) => f <= progress + 1e-6).length,
+        progress: run.progressAt(this.pose.x, this.pose.z, gatesPassed),
+        gatesPassed,
+        lap: run.lapAt(this.replayTime),
       });
     } else if (run && run.phase !== 'finished') {
       useStageHudStore.setState({
@@ -360,6 +373,9 @@ export class DrivingSession {
         progress: run.progressAt(s.x, s.z),
         penalties: run.penalties,
         hits: run.hits,
+        lap: run.lap,
+        lapTimes: run.laps,
+        bestLap: run.bestLap,
       });
     }
     this.hudElapsed = 0;

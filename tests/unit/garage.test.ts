@@ -136,7 +136,7 @@ describe('garage in the store', () => {
       updatedAt: 5,
     };
     const save = parseSaveFile(v1)!;
-    expect(save.version).toBe(2);
+    expect(save.version).toBe(SAVE_VERSION);
     expect(save.carId).toBe('hatchback');
     expect(save.ownedCars).toEqual(['hatchback']);
     expect(save.upgrades).toEqual({});
@@ -145,6 +145,30 @@ describe('garage in the store', () => {
       parseSaveFile({ ...v1, version: 2, carId: 'coupe', ownedCars: ['hatchback'], upgrades: {} })!
         .carId,
     ).toBe('hatchback');
+  });
+
+  it('drops v2 records set on stages that are circuits now, keeping the rest', () => {
+    const rec = { best: 90, splits: [30, 60, 90] };
+    const v2 = {
+      version: 2,
+      gameId: 'ABCD2345',
+      driverName: 'Ada',
+      gameSeed: 1,
+      money: 10,
+      stageIndex: 9,
+      records: { 0: rec, 6: rec, 8: rec, 9: rec, 19: rec },
+      carId: 'hatchback',
+      ownedCars: ['hatchback'],
+      upgrades: {},
+      updatedAt: 5,
+    };
+    const save = parseSaveFile(v2)!;
+    expect(save.version).toBe(SAVE_VERSION);
+    expect(
+      Object.keys(save.records)
+        .map(Number)
+        .sort((a, b) => a - b),
+    ).toEqual([0, 6, 8]);
   });
 
   it('shares one grip setup across the dealership', () => {

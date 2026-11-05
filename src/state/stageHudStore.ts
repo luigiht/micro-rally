@@ -11,6 +11,10 @@ export interface StageInfo {
   surface: Surface;
   length: number;
   parTime: number;
+  /** Laps in the race on a circuit; 0 on an open stage. */
+  laps: number;
+  /** One lap of a circuit, metres; 0 on an open stage. */
+  lapLength: number;
 }
 
 export interface StageHudState {
@@ -25,6 +29,10 @@ export interface StageHudState {
   gateFractions: number[];
   penalties: number;
   hits: number;
+  /** The lap being driven on a circuit (1-based), the completed laps' times and the fastest. */
+  lap: number;
+  lapTimes: number[];
+  bestLap: number | null;
   result: StageResult | null;
 }
 
@@ -39,6 +47,9 @@ export const INITIAL_STAGE_HUD: StageHudState = {
   gateFractions: [],
   penalties: 0,
   hits: 0,
+  lap: 1,
+  lapTimes: [],
+  bestLap: null,
   result: null,
 };
 

@@ -1,3 +1,4 @@
+import { circuitTrackside, grandstandSpot, outermostBarrier } from './CircuitTrackside';
 import { hashSeed, mulberry32 } from '../rng';
 import type { Obstacle } from '../vehicle/Collisions';
 import { inOasis, oasisPads, oasisProps, planOases } from './Oases';
@@ -140,6 +141,10 @@ export function scatterScenery(field: TerrainField): Prop[] {
   const props: Prop[] = [];
   const canopies = new CanopyGrid();
   const coast = field.coast;
+  // On a circuit nothing stands inside the fences: props start past the outermost barrier.
+  const trackside = circuitTrackside(stage);
+  const clearance = trackside ? outermostBarrier(trackside) - stage.halfWidth + 4 : MIN_CLEARANCE;
+  const stand = trackside ? grandstandSpot(stage, trackside) : null;
   const kinds: readonly [PropKind, number][] = [
     ['tree', density.trees],
     ['broadleaf', density.broadleaf],
@@ -159,7 +164,7 @@ export function scatterScenery(field: TerrainField): Prop[] {
         const side = rand() < 0.5 ? -1 : 1;
         const offset = Math.min(
           MAX_OFFSET,
-          stage.halfWidth + MIN_CLEARANCE + -Math.log(1 - rand()) * MEAN_OFFSET,
+          stage.halfWidth + clearance + -Math.log(1 - rand()) * MEAN_OFFSET,
         );
         const x = sample.x + Math.cos(sample.heading) * offset * side;
         const z = sample.z - Math.sin(sample.heading) * offset * side;
@@ -167,7 +172,8 @@ export function scatterScenery(field: TerrainField): Prop[] {
         const rotation = rand() * Math.PI * 2;
         const variant = rand() < 0.5 ? 0 : 1;
         // Keep every part of the road (including other bends) clear, and the town plateau.
-        if (path.nearest(x, z, stage.halfWidth + MIN_CLEARANCE, hit)) continue;
+        if (path.nearest(x, z, stage.halfWidth + clearance, hit)) continue;
+        if (stand && Math.hypot(x - stand.x, z - stand.z) < stand.radius) continue;
         if (stage.town && townBlocks(stage.town, x, z)) continue;
         if (coast) {
           // Rocks anywhere above the water; scrub from the dry sand inland on anything but a cliff face;

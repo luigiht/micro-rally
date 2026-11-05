@@ -1,6 +1,6 @@
 import type { Surface } from '../vehicle/surfaces';
 
-export type RegionId = 'forest' | 'coast' | 'desert' | 'alpine' | 'night';
+export type RegionId = 'forest' | 'coast' | 'desert' | 'alpine' | 'night' | 'circuit';
 export type Weather = 'clear' | 'overcast' | 'rain' | 'night';
 
 export interface RegionPalette {
@@ -221,6 +221,43 @@ const DESERT: RegionDef = {
   oases: { every: 260, radius: 11, palms: 8 },
 };
 
+/**
+ * A closed race circuit in parkland (see `CircuitGenerator`): race asphalt
+ * (`track`, grippier than road tarmac) only,
+ * mown grass and gravel traps off it, mixed trees well back behind the
+ * fences, gentle hills the Ring-style laps climb. Not in `REGION_CYCLE`:
+ * `stageRegion` puts a circuit on every tenth stage.
+ */
+const CIRCUIT: RegionDef = {
+  id: 'circuit',
+  surfaces: [['track', 1]],
+  offroad: 'grass',
+  weathers: [
+    ['clear', 2],
+    ['overcast', 1],
+  ],
+  palette: {
+    sky: '#d3e6ee',
+    fog: '#d6e6ec',
+    grassLow: '#6fa851',
+    grassHigh: '#8dbb5f',
+    rock: '#8d8a7e',
+    shoulder: '#7fae5a',
+    foliage: '#3f7a4a',
+    foliageAlt: '#2f6440',
+    canopy: '#5f9a45',
+    canopyAlt: '#7fa64f',
+    trunk: '#6b4d33',
+    boulder: '#9a9688',
+  },
+  terrain: { amplitude: 14, frequency: 1 / 300 },
+  twistiness: 0,
+  baseLength: 2000,
+  scenery: { trees: 36, broadleaf: 30, bushes: 8, rocks: 0, houses: 0 },
+  parSpeed: 20,
+  towns: false,
+};
+
 export const REGIONS: Readonly<Record<RegionId, RegionDef>> = {
   forest: FOREST,
   alpine: ALPINE,
@@ -228,7 +265,18 @@ export const REGIONS: Readonly<Record<RegionId, RegionDef>> = {
   desert: DESERT,
   // A Forest clone until it gets a look of its own; not in the cycle.
   night: { ...FOREST, id: 'night' },
+  circuit: CIRCUIT,
 };
+
+/**
+ * Stages that are race circuits instead of their cycle region's road: every
+ * tenth (stage 10, 20, 30…, index 9, 19, 29…), so a circuit always stands
+ * alone in the rotation with nine rally stages between it and the next.
+ */
+export const CIRCUIT_EVERY = 10;
+export function isCircuitStage(index: number): boolean {
+  return index % CIRCUIT_EVERY === CIRCUIT_EVERY - 1;
+}
 
 /**
  * The progression: a fixed twelve-stage cycle of ones and twos (Forest ×2,

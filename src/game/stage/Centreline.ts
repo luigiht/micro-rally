@@ -34,7 +34,7 @@ function catmullRom(p0: number, p1: number, p2: number, p3: number, t: number): 
  * chord lengths, so the curve neither kinks nor loops where short arc chords
  * meet long straight steps. With even spacing it is the uniform spline.
  */
-function centripetal(
+export function centripetal(
   xs: readonly [number, number, number, number],
   zs: readonly [number, number, number, number],
   s: number,

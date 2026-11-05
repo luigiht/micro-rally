@@ -2,11 +2,19 @@ import { createNoise2D, type NoiseFunction2D } from 'simplex-noise';
 import { hashSeed, mulberry32 } from '../rng';
 import type { Surface } from '../vehicle/surfaces';
 import type { TerrainQuery } from '../vehicle/Terrain';
+import {
+  circuitSurface,
+  circuitTrackside,
+  kerbLift,
+  outermostBarrier,
+  type CircuitTrackside,
+} from './CircuitTrackside';
 import { Coastline } from './Coastline';
 import { CoastShape } from './CoastShape';
 import type { Oasis } from './Oases';
 import { REGIONS, reliefAmplitude } from './regions';
 import { createRoadHit } from './RoadPath';
+import { smoothRoadProfile } from './RoadProfile';
 import { halfWidthAt } from './RoadWidth';
 import type { StageDef } from './StageGenerator';
 import {
@@ -44,8 +52,6 @@ export const ROAD_LIFT = 0.08;
 export const ROAD_BED_DROP = 0.25;
 const TRENCH_IN = 0.6;
 export const TRENCH_OUT = 0.4;
-const SMOOTH_WINDOW = 15;
-const MAX_GRADE = 0.12;
 /**
  * Inside a town the hills keep a share of their relief, so streets climb and
  * dip and buildings step down the slope: enough that the tamed hills swing
@@ -175,11 +181,15 @@ export class TerrainField implements TerrainQuery {
   };
   /** Whether the last `deckAt` found a street in reach (its hit is then in `street`). */
   private nearStreet = false;
+  /** Level ground either side of the deck before the blend: wide on a circuit, out past its barriers. */
+  private readonly flatMargin: number;
+  /** A circuit's kerbs, gravel traps and barriers; null on an open stage. */
+  private readonly trackside: CircuitTrackside | null;
 
   constructor(readonly stage: StageDef) {
     const region = REGIONS[stage.region];
     this.noise = createNoise2D(mulberry32(hashSeed(stage.seed, 'terrain')));
-    this.amplitude = reliefAmplitude(region, stage.loop);
+    this.amplitude = reliefAmplitude(region, stage.loop) * (stage.circuit?.relief ?? 1);
     this.frequency = region.terrain.frequency;
     this.dunes = region.terrain.dunes === true;
     this.coast = region.coast
@@ -189,7 +199,11 @@ export class TerrainField implements TerrainQuery {
         )
       : null;
     this.offroad = region.offroad;
-    this.corridor = stage.halfWidth + FLAT_MARGIN + BLEND_WIDTH;
+    this.trackside = circuitTrackside(stage);
+    this.flatMargin = this.trackside
+      ? outermostBarrier(this.trackside) - stage.halfWidth + 4
+      : FLAT_MARGIN;
+    this.corridor = stage.halfWidth + this.flatMargin + BLEND_WIDTH;
     this.town = stage.town ?? null;
     this.townY = this.town ? this.plateauHeight(this.town) : 0;
     this.townRelief = Math.min(TOWN_RELIEF_MAX, TOWN_RELIEF_METRES / this.amplitude);
@@ -406,7 +420,10 @@ export class TerrainField implements TerrainQuery {
 
   roadHeightAt(along: number): number {
     const s = this.stage.path.spacing;
-    const f = Math.min(Math.max(along / s, 0), this.roadHeights.length - 1.000001);
+    const f = Math.min(
+      Math.max(this.stage.path.wrap(along) / s, 0),
+      this.roadHeights.length - 1.000001,
+    );
     const i = Math.floor(f);
     return this.roadHeights[i]! + (this.roadHeights[i + 1]! - this.roadHeights[i]!) * (f - i);
   }
@@ -428,7 +445,11 @@ export class TerrainField implements TerrainQuery {
     }
     const deck = st.deck + ROAD_LIFT;
     const hw = st.hw;
-    const t = smoothstep(hw + FLAT_MARGIN, hw + FLAT_MARGIN + this.blendWidth(st), st.distance);
+    const t = smoothstep(
+      hw + this.flatMargin,
+      hw + this.flatMargin + this.blendWidth(st),
+      st.distance,
+    );
     let trench =
       (ROAD_LIFT + ROAD_BED_DROP) * (1 - smoothstep(hw - TRENCH_IN, hw + TRENCH_OUT, st.distance));
     for (const js of this.junctions) {
@@ -453,8 +474,8 @@ export class TerrainField implements TerrainQuery {
     if (!this.nearStreet) return this.applyPads(x, z, base);
     const deck = st.deck + ROAD_LIFT;
     const t = smoothstep(
-      st.hw + FLAT_MARGIN,
-      st.hw + FLAT_MARGIN + this.blendWidth(st),
+      st.hw + this.flatMargin,
+      st.hw + this.flatMargin + this.blendWidth(st),
       st.distance,
     );
     return this.applyPads(x, z, deck + (base - deck) * t);
@@ -467,6 +488,7 @@ export class TerrainField implements TerrainQuery {
    */
   heightAt(x: number, z: number): number {
     const h = this.deckAt(x, z);
+    if (this.trackside) return h + this.kerbLift();
     const town = this.town;
     if (!town || !this.nearStreet) return h;
     const st = this.street;
@@ -484,8 +506,26 @@ export class TerrainField implements TerrainQuery {
     return h + KERB_LIFT * fade * onto;
   }
 
+  /** A circuit kerb under the last `deckAt` point: a low ramped bump a wheel feels. */
+  private kerbLift(): number {
+    if (!this.nearStreet) return 0;
+    const st = this.street;
+    return kerbLift(
+      this.trackside!,
+      this.stage.path,
+      st.along,
+      this.hit.lateral,
+      st.distance - st.hw,
+    );
+  }
+
   /** Town streets are paved whatever the stage surface; the route through the town counts as one of them. */
   surfaceAt(x: number, z: number): Surface {
+    if (this.trackside) {
+      const { path, halfWidth, surface } = this.stage;
+      if (!path.nearest(x, z, this.corridor, this.hit)) return this.offroad;
+      return circuitSurface(this.trackside, path, halfWidth, this.hit, surface, this.offroad);
+    }
     const town = this.town;
     if (
       this.stage.path.nearest(x, z, this.stage.halfWidth, this.hit) &&
@@ -504,32 +544,12 @@ export class TerrainField implements TerrainQuery {
     return this.offroad;
   }
 
+  /** The road profile: the ground under each sample, smoothed and grade-limited (cyclically on a closed lap). */
   private buildRoadHeights(): Float64Array {
-    const { xs, zs, count, spacing } = this.stage.path;
+    const { xs, zs, count, spacing, closed } = this.stage.path;
     const raw = new Float64Array(count);
-    for (let i = 0; i < count; i++) raw[i] = this.groundHeight(xs[i]!, zs[i]!);
-    // Two box-filter passes ≈ gaussian smoothing along the road.
-    let a = raw;
-    for (let pass = 0; pass < 2; pass++) {
-      const b = new Float64Array(count);
-      for (let i = 0; i < count; i++) {
-        let sum = 0;
-        let n = 0;
-        for (let k = i - SMOOTH_WINDOW; k <= i + SMOOTH_WINDOW; k++) {
-          if (k >= 0 && k < count) {
-            sum += a[k]!;
-            n++;
-          }
-        }
-        b[i] = sum / n;
-      }
-      a = b;
-    }
-    const step = MAX_GRADE * spacing;
-    for (let i = 1; i < count; i++)
-      a[i] = Math.min(a[i - 1]! + step, Math.max(a[i - 1]! - step, a[i]!));
-    for (let i = count - 2; i >= 0; i--)
-      a[i] = Math.min(a[i + 1]! + step, Math.max(a[i + 1]! - step, a[i]!));
-    return a;
+    for (let i = 0; i < (closed ? count - 1 : count); i++)
+      raw[i] = this.groundHeight(xs[i]!, zs[i]!);
+    return smoothRoadProfile(raw, spacing, closed);
   }
 }
