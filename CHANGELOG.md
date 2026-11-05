@@ -9,6 +9,17 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Added
 
+- **Mulsanne LM Prototype**, a third "Special" between the truck and the
+  buggy at $29,000: a 917K-shaped 1970 Le Mans coupé measured from a
+  reference model. 800 kg on a 2.3 m wheelbase, a big flat engine on the
+  rear axle, stiff springs and almost no drag. Powder blue over an orange
+  sill band and centre stripe, a low cockpit bubble on a wide flat body,
+  tail fins and flaps over an open engine bay, white roundels, dark
+  tinted glass and wheel arches that follow the tyres; the body is lofted
+  from cross-sections of the reference with a rounded shoulder. The nose
+  follows the reference's crowned fenders with lamp covers lying on them.
+  Its cabin is a tight bubble with a blue cage and orange harnesses.
+  [112–115]
 - **Install the app** on phones and tablets: a strip under the start card
   offers to add Micro Rally to the home screen. Android opens the install
   sheet with one tap; iOS gets the Share → Add to Home Screen steps. "Not
@@ -17,6 +28,11 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Changed
 
+- **Albion RS Hatch** rebuilt from a low-poly reference of its road car:
+  tall triangular tail lamps filling the C-pillars beside the hatch glass,
+  a long roof with real tumblehome over two door windows, a fast
+  windscreen and a rounded nose with swept triangular headlamps. The works
+  livery, lamp pod, wing and fog lamps carry over. [110, 111]
 - The installed app now rotates freely between portrait and landscape
   instead of being locked to landscape. [108]
 - On Android the game fills the whole screen: the installed app launches

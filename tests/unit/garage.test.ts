@@ -83,14 +83,19 @@ describe('cars', () => {
       's1',
       'focus',
       'dakar',
+      'lemans',
       'buggy',
     ]);
     for (let i = 1; i < CAR_CATALOG.length; i++) {
       expect(CAR_CATALOG[i]!.price).toBeGreaterThan(CAR_CATALOG[i - 1]!.price);
     }
-    // The two rally-raid machines close the list and are the only special listings.
-    expect(CAR_CATALOG.slice(-2).map((c) => c.id)).toEqual(['dakar', 'buggy']);
-    expect(CAR_CATALOG.filter((c) => c.special).map((c) => c.id)).toEqual(['dakar', 'buggy']);
+    // The three one-offs close the list and are the only special listings.
+    expect(CAR_CATALOG.slice(-3).map((c) => c.id)).toEqual(['dakar', 'lemans', 'buggy']);
+    expect(CAR_CATALOG.filter((c) => c.special).map((c) => c.id)).toEqual([
+      'dakar',
+      'lemans',
+      'buggy',
+    ]);
   });
 });
 

@@ -8,6 +8,7 @@ export type CarId =
   | 's1'
   | 'focus'
   | 'dakar'
+  | 'lemans'
   | 'buggy'
   | 'pickup'
   | 'monster';
@@ -293,6 +294,46 @@ export const CAR_SPECS: Readonly<Record<CarId, CarSpec>> = {
     cabinDrop: 1.25,
     cabinForward: 2.1,
     bodyScale: 2.0,
+  },
+  /**
+   * 1970 Le Mans coupé: 2.3 m wheelbase, 1.6 m track, 0.31 m tyres, 800 kg,
+   * a big naturally aspirated flat engine on the rear axle through five
+   * gears, stiff springs, very little drag and the lowest centre of gravity
+   * in the shop. The driver sits far forward and low (eye 0.88 m up, 0.3 m
+   * ahead of the axle midpoint). Grip is the shared dealership setup.
+   */
+  lemans: {
+    ...BASE,
+    id: 'lemans',
+    mass: 800,
+    cgToFront: 1.11,
+    cgToRear: 1.19,
+    cgHeight: 0.38,
+    trackWidth: 1.6,
+    yawInertiaScale: 1.35,
+    wheelRadius: 0.31,
+    maxSteer: 0.5,
+    steerFalloffSpeed: 26,
+    peakTorque: 560,
+    idleRpm: 1200,
+    redlineRpm: 8400,
+    torqueCurve: [
+      [0, 0.5],
+      [0.3, 0.7],
+      [0.65, 1.0],
+      [0.85, 0.97],
+      [1.0, 0.85],
+    ],
+    gearRatios: [2.9, 1.95, 1.45, 1.15, 0.95],
+    finalDrive: 3.9,
+    frontDrive: 0,
+    brakeDecel: 11.5,
+    dragCoeff: 0.45,
+    rollingResistance: 10,
+    suspensionStiffness: 520,
+    suspensionDamping: 26,
+    cabinDrop: -0.26,
+    cabinForward: 0.45,
   },
   /**
    * Two-wheel-drive rally-raid buggy: 3.0 m wheelbase, 1.8 m track, 0.47 m

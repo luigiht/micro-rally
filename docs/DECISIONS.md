@@ -1952,3 +1952,326 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      show the status bar and iPhone Safari has no element fullscreen, so the
      guard on the method skips it. The mobile e2e test asserts
      `document.fullscreenElement` is set after Drive on the Pixel profile.
+
+110. **2026-11-04 — Albion RS Hatch tail after the Mk2 Focus.** By request
+     the rear was reworked to read as the road car it is drawn from. The
+     Mk2 Focus's tail lamps are tall vertical units at the body corners
+     that run from the bumper line up the C-pillar alongside the hatch
+     glass, tapering as they climb, with a clear reverse-light band set
+     low in each; the old lens sat only on the outer 45 % of the pillar
+     band plus a 15 cm block at the panel's top corners, so from behind it
+     was two small red squares. Now the pillar lens covers the inner 65 %
+     of the band (the part beside the glass) for the glass's full height
+     and the whole band over the last 20 cm, which needs a new station at
+     z −1.8 so the decal can change width; on the tail panel the lens drops
+     from the glass corner to the bumper line (y 0.58–0.99), narrower above
+     0.8, and a small `head`-coloured glowing patch at y 0.66–0.72 is the
+     reverse light (later cap decals win, so it paints over the red). The
+     tail stations gain a shoulder (`xBelt` 0.95 at the end, the flare
+     width at −1.8) so the lamps wrap a real corner, and a dark lower
+     bumper sits under the blue one. Checked from the chase camera at two
+     distances.
+
+111. **2026-11-04 — Albion RS Hatch relofted from a low-poly Focus
+     reference.** By request the whole hull was rebuilt from the
+     `ford_focus_low_poly` model (Sketchfab, CC BY-ND; it lives in the
+     git-ignored `context/` folder, nothing from it ships, and it is a
+     first-generation "New Edge" Focus rather than the Mk2 that decision 110
+     drew from, which this supersedes). The reference was measured rather
+     than imported: a scratch page rendered it with three.js in flat class
+     colours from four orthographic cameras and read the silhouettes back
+     per centimetre (side: roof, floor and glass heights along the length;
+     rear and front: half-width per height, lamp and glass spans; top:
+     plan half-width), which is more reliable than binning a sparse
+     low-poly mesh. Lengths were mapped at the real wheelbase onto the
+     spec's axles (2.64 m; tail at z −2.0, nose at 2.09) and heights
+     squashed by 12 % so the roof (1.475 in the hull frame) sits with the
+     other hatches at 1.43–1.46; widths are 1:1 (0.92 flank, 0.84 belt
+     shoulder, 0.60 roof: the car's strong tumblehome). What the stations
+     now carry: a rounded tail in plan with a short white hatch lip; the
+     hatch glass leaning ~50° from the lip to the roof with the whole
+     C-pillar band painted as the tall triangular tail lamp beside it (one
+     `sideDecal`, u 0–1, replacing the Mk2 lamps and the tail-panel lenses,
+     which are gone since the reference's tail face is plain); a thick
+     C-pillar, two door windows about a B-pillar, a fast 0.76 m windscreen
+     to a low cowl, a sloping bonnet and a nose that rounds off over its
+     last 30 cm with the triangular headlamps painted as glowing deck
+     decals wrapping from the nose onto the wing tops, plus grille slot,
+     white band and dark air dam as nose cap decals. No box flares (the
+     reference has none; the blue arch lips stay). The rally dressing is
+     unchanged in kind and re-seated on the new surfaces: the works livery
+     through the same stripe band and roof colour, the four-lamp pod on the
+     nose slope, the black wing on the hatch glass, mirrors at the door
+     front, number plate, splitter, tow strap, lime fog lamps and diffuser.
+     The interior spec moves its cowl, screen top, roof and rear wall to
+     the new stations. Checked in chase, cinematic side and three-quarter,
+     isometric and interior views.
+
+112. **2026-11-04 — Mulsanne LM Prototype, a 1970 Le Mans coupé.** By
+     request, a car between the truck and the buggy modelled on a 917K from
+     the `porsche-917K` references (a Sketchfab model, CC BY, in the
+     git-ignored `context/` folder, plus five photos; nothing from them
+     ships, the geometry is lofted from measurements). The model was read
+     the same way as the Focus (decision 111): three.js renders in flat
+     class colours from four orthographic cameras, silhouettes read back
+     per centimetre; the plan scan had to be re-run with the length axis
+     vertical after a first pass measured the frame. Lengths and widths are
+     1:1 (4.2 × 2.1 m, 2.3 m wheelbase, 0.31 m tyres); heights are real too
+     since the car is only 0.92 m tall, so its body group stands at the
+     ground plane instead of the −0.1 the other bodies use. One loft cannot
+     carry a narrow bubble on a wide deck (its top is flat across), so the
+     body is two hulls: the shell (thin nose lip, fender tops, a cowl that
+     dips to 0.58 m under the cockpit, a long 0.82 m tail deck ending in a
+     Kamm lip, the floor sweeping up from 0.1 to 0.72 m behind the rear
+     axle so the engine bay shows under the overhang) and the canopy (floor
+     2 cm under the shell's top so it grows out of it; windscreen from the
+     0.54 m screen base over 0.7 m to a 1.02 m roof, side glass over the doors, a painted
+     fastback fairing down to the deck). The cowl dip is also what makes
+     the interior work: the shell's top is solid, so the cabin floor sits on
+     it (`floorY` 0.88 in the cabin frame) and the cabin frame rises so the
+     eye is 0.86 m up and the dash top 0.74 m, both above the 0.58 m deck; a
+     first pass with a 0.7 m deck under the cockpit showed the deck's
+     outside filling the driver's view with the dash buried beneath it.
+     The flank bulges to its widest at the 0.5 m belt; the stripe band
+     `[0.4, 0]` split blue over orange paints the orange sill stripe along
+     the bottom 20 cm, the nose face and nose top are orange cap and deck
+     decals, and the orange centre stripe is a deck decal over both lofts.
+     Tail fins are `Prism` wedges on the deck edges with trimmed flaps
+     between, lamps in housings under the lip, a dark bay wall with the
+     gearbox lump, two frame diagonals a side and twin exhausts; headlamp
+     covers are glowing deck decals on the fender fronts with the radiator
+     slot between; louvres behind each wheel; the fan on the deck; mirrors
+     on the fender tops; white roundels on the doors (with a seven-segment
+     "2" of thin boxes), nose and rear deck; an orange chin splitter. Spec:
+     800 kg, cg 0.38 m, 1.6 m track, 560 N·m on the rear axle through five
+     gears, drag 0.45, springs 520/26, shared grip; `cabinDrop` −0.28,
+     `cabinForward` 0.45. Price 29 000, tagged `special`, so three one-offs
+     now close the list (the garage test's last-two check became last
+     three). Period dash, sequential lever, blue cage and lining, orange
+     harnesses. Checked in chase, cinematic, isometric, showroom and
+     interior views.
+
+113. **2026-11-04 — Le Mans coupé: finer arches, a tinted screen, a shallow
+     dash.** Three requests against the 917K references. The loft cut every
+     arch with the same nine-station table, which left the big open arches
+     of a wide, low body visibly eight-faceted; `WheelWells` gains
+     `segments`, and when it is set the well stations are cosine-spaced
+     (`−cos(kπ/n)`), which keeps the facets even along the arc the way the
+     old table did by hand; the coupé asks for sixteen, every other car
+     keeps the default. The photographs show a pale, almost clear
+     windscreen over dark blue door windows, and the hull had one glass
+     colour; `HullColors.screen` now paints the glazed top faces (screen and
+     rear window) separately from the side glass, defaulting to `glass`, so
+     nothing else changes. In the cabin the dials were inside the dash
+     slab: with the binnacle pushed 0.34 m forward to clear the small
+     wheel, the dash's 0.3 m depth put its face 20 cm behind the dial
+     faces, which were buried in it beside the steering column; the dash is
+     now 0.145 m deep so the dials stand 4 cm proud of its face as on the
+     other cars, and the hub rises to 1.0 (cabin frame) so the rim no longer
+     dips under the deck the cockpit floor sits on. Two hull tests cover the
+     new fields.
+     A follow-up pass by request, against three pieces of reference art of
+     the car (front, top and side): the door roundel is a single "2" on a
+     smaller disc mid-door toward the rear wheel, in a group at the flank's
+     width, centred on the upper flank plane and tipped 0.2 rad inward with it so it neither stands
+     proud at the top nor sinks at the bottom (the first one, at the door
+     front, rose above the low body); the screen is a dark blue tint like
+     the door windows (`#1f3b52`), since the pale first try read as no glass
+     at all; and the binnacle moves back from 0.34 to 0.25 m forward with
+     the wheel rake eased to 0.3, because with the dash face at
+     cowl − depth the dial faces were still 4 cm inside the slab (the
+     hood-to-face test allows a hood anywhere ahead of the face, so it had
+     not caught it); they now stand 5 cm ahead of it.
+     Then, against two photographs and a side illustration: the arch
+     openings read as slots because the skirt's bottom edge (0.1 m) was far
+     below the axle (0.31 m), so each semicircle ended in a 0.2 m vertical
+     drop; the skirt now ends at 0.2 m (the stripe band `[0.3, 0]` keeps the
+     orange on its bottom 15 cm) and the wells are centred on that edge
+     with a 0.43 m radius, so the opening is one semicircle from sill to
+     sill with 10 cm round the tyre, in sixteen facets. The roundel moves to
+     the middle of the door (z −0.05) as in the photographs. The headlamps
+     are no longer cream rectangles: each cover is three dark-glass deck
+     patches stepping narrower toward the nose, a teardrop in plan, with two
+     round cream lamps in dark bezels lying on the nose slope inside it,
+     the upper one outboard and the lower inboard.
+
+114. **2026-11-04 — Le Mans coupé relofted from cross-sections, with a
+     shoulder crease.** By request the whole body was rebuilt closer to the
+     reference model (the linked Sketchfab 917K cannot be downloaded here;
+     the GLB already in `context/porsche-917K` is the same car) with more
+     faces. Silhouettes were not enough: the loft's accuracy depends on
+     per-station widths at several heights, so a scratch script now slices
+     the reference's shell triangles (vertices, edge points and centroids)
+     into 10 cm length bins and 5 cm height bands and prints the outer
+     half-width of each, plus the same for the glass. The sections show a
+     flank that stands near vertical from a 0.1 m skirt to 0.6–0.75 m and
+     then rolls over a rounded shoulder into the deck, which one plane
+     between belt and roof edge cannot carry; `HullStation` gains an
+     optional `shoulder`/`xShoulder` crease between them (once any station
+     names one, every station gets the point, interpolated or at the
+     midpoint of belt and roof; not for hulls with `sideDecals`, whose
+     across-the-band fractions assume one band), and a test checks the
+     named crease is a hull vertex. The shell now has 27 stations read
+     straight off the sections (thin nose lip; fender tops at 0.74 m over
+     the front wheels with the bonnet dipping between them; the belt at
+     0.35 m where the doors are widest, 1.0–1.03 m across; the deck
+     climbing from 0.65 m at the doors to 0.9 m over the rear fenders; the
+     lower body narrowing and lifting behind the rear axle over the open
+     bay) and the canopy nine, as a dome (base 0.52 wide, shoulder 0.45 at
+     0.82 m, top 0.27 at 1 m) whose windscreen spans five stations: since
+     the loft glazes a top face only where the roof meets the belt, the
+     canopy's roof colour is the dark screen tint and deck decals paint the
+     real roof blue (with the orange stripe) from the screen top rearward.
+     Arches are semicircles centred on the skirt's edge (0.2 m, radius
+     0.45 m, sixteen facets) so no vertical drop remains; the door roundel
+     sits mid-door at 0.42 m on the near-vertical lower flank; the round
+     lamps lie on the shoulder plane of the nose, tilted in two axes. The door tops run 7 cm under the measured 0.65 m: at full height the deck's outside rose into the driver's view again (decision 112), and with the eye a hand under the 1 m canopy roof the lining dropped into it, so the cockpit deck is 0.58 m and the cabin frame sits with the eye 0.84 m up, the floor on the deck, the dash top 0.72 m and 16 cm of headroom under the 1 m roof. Checked in chase, cinematic, isometric, showroom and interior
+     views.
+     A further pass against a front photograph: the nose is nine stations
+     spaced 5–10 cm apart whose shoulder runs a few centimetres under the
+     top, so lip, bonnet and fender fronts read as one curve instead of
+     facets; each headlamp pair sits in a single dark cover with two flush
+     round lamps and no bezels; the side roundels are plain discs (the
+     seven-segment digit is gone); and the rear-deck roundel moves forward
+     to z −0.65 beside the cockpit, where it no longer sits over the
+     gearbox lump seen from the chase camera, the fuel caps moving back to
+     z −1.2 to make room.
+     And the orange band now reaches the skirt everywhere: it was a stripe
+     band 0.2 m under a belt that climbs over the rear fenders, so blue
+     showed between the sill and the stripe behind the doors; the band's
+     bottom offset now overshoots the sill (it is clamped there) and the
+     rear stations hold the belt at door height, with no band at all on
+     the tail stations where the lower body is the open bay.
+     Front end against the museum photograph: the nose is now ten
+     stations whose plan widths follow an ellipse (0.3 m across at the tip,
+     0.52 a centimetre back, 0.88 at 15 cm) over a bullnose lip; the orange
+     chin covers the nose top and climbs the fender fronts outboard in two
+     steps toward the lamps; a wide dark radiator mouth sits low on the chin
+     with a brake-duct slot either side; a white number plate lies on the
+     bonnet between the lamps over the stripe (the nose roundel is gone);
+     each lamp cover is three stepped dark patches, an oval in plan, with
+     two cream lamps in chrome torus rings, the upper inboard and the lower
+     outboard, lying on the slope in two axes; a small orange-white-orange
+     roundel sits on each fender top; the slab splitter under the nose is
+     removed, the lip itself being the chin.
+     Two more requests: the headlamps are now just the dark covers, five
+     stepped trim patches forming a tall oval on each fender front like the
+     reference's recesses, with no lamps or rings; and the driver's view
+     showed the deck and its orange stripe inside the cabin, because the
+     cabin walls (half-width 0.62) stood outside the canopy's 0.52 m base,
+     whose back-face-culled sides let the deck show through, and the cabin
+     floor lay in the deck's plane. The canopy base is now the measured
+     0.62 m door-sill width with the walls at 0.6 inside it, and the
+     cockpit deck sits 2 cm under the floor (0.56 m).
+     The bonnet still showed past the dash's end: the dash stood at the
+     fender-top station (0.74 m, above the 0.72 m dash top), so the cowl
+     moves back to the 0.6 m deck (`cowlZ` 0.5) and the fender tops ease to
+     0.68 m.
+     And the deck is held at 0.56 m all the way from the seats to the dash
+     bulkhead (it had risen to 0.62 m just ahead of the seats, poking
+     through the 0.58 m cabin floor as a blue patch in the footwell).
+     Then by request the number plate went (it read as a grey block on
+     the shaded bonnet) and the lamp covers became true ovals: a decal can
+     only step along the loft's faces, so each cover is now a thin
+     elliptical disc (a 28-sided cylinder scaled 0.15 × 0.24 m) lying on
+     the fender front, tilted with the slope in two axes.
+     Last, by request, the dark radiator mouth and duct slots are gone so
+     the chin is solid orange, and the white bonnet roundel is back on the
+     nose slope.
+     The two deck roundels are then seated properly: the bonnet disc is
+     smaller (0.2 m), tilted to the slope at its centre and sunk a
+     centimetre so its ends lie flush on the convex top instead of standing
+     off it, and the rear-deck disc is tilted 0.25 rad to the deck's climb
+     toward the tail, which had been cropping its rear half. (Sinking the
+     bonnet disc let the stripe decal show through it, so it sits flush at
+     its centre instead, at 0.18 m so the convex top barely leaves its ends.)
+     The small orange-and-white roundels on the fender tops are removed by
+     request.
+     The arches then went back to the axle: centred on the skirt's edge
+     with a 0.45 m radius they left 14 cm of air beside each tyre and read
+     as long straight runs, so they are now centred on the axle at
+     0.35 m (4 cm round the tyre) in twenty facets, and the skirt's edge
+     rises from 0.12 to 0.18 m so the drop from each arch end to the sill
+     is 13 cm rather than 19; the loft cannot wrap the body under the axle
+     beside the tyre, which is what a 917's skirt really does.
+     By request the arches now follow the saloon's recipe rather than a
+     free-standing fender: the loft's well (tyre + 7 cm, twenty facets)
+     under a rounded half-torus `ArchLip` in the body colour, whose 5 cm
+     tube sits on the cut edge and reads as a curved fender rather than a
+     faceted hole. The front stations also gained real fender humps: there
+     the shoulder crease stands above the roof edge (0.7 m at x 0.9 against
+     a 0.56–0.64 m bonnet between), which is the car's own shape and keeps
+     the 0.66 m arch top under the fender instead of breaking through the
+     low cowl the cabin needs.
+     The fender humps were a mistake: with the shoulder above the roof
+     edge the well's inner wall rose through the bonnet beside each mirror
+     and the well showed from above. They are gone; the front stations
+     carry the fender tops at 0.7 m again, clear of the 0.69 m arch, and
+     the cockpit's sightline problem is solved the other way, with a dark
+     toe-board (a box 0.5–0.63 m high across the footwell under the screen
+     base) that hides the wells and the rising bonnet from the driver's
+     seat while the shell and canopy hide it from outside. The nose
+     stations' belts rise to 0.29–0.42 m so the orange band covers the
+     whole lower nose up to the lamp line again, as asked.
+     Two more: the nose-side stations' belts rise to the shoulder
+     (0.49–0.58 m at z 1.48–1.68) so the blue triangle between the orange
+     chin line and the front fender is orange; and the deck ahead of the
+     cockpit climbs from 0.6 to 0.66 m over the toe-board (itself narrowed
+     to 1.08 m and shortened to end under the screen) because the board
+     had shown as a dark block beside each mirror from above.
+     The toe-board's corners still rose outside the canopy's narrowing
+     base as black triangles at the screen's foot, so it is 0.88 m wide
+     (inside the canopy's shoulder line) and the deck beside the screen
+     comes up to 0.62–0.64 m; and the orange on the nose top reaches back
+     to z 1.85, with its outboard steps to 1.6, so no blue is left under
+     the lamp line.
+     The toe-board kept showing one way or another (too wide and it rose
+     outside the canopy's narrowing base; narrow enough to fit and the
+     deck showed beside it in the footwell), so the cabin floor now sits
+     6 cm over the deck instead of on it: the cabin frame rises 4 cm (eye
+     0.88 m), the canopy roof 3 cm (1.03 m) to keep 15 cm of headroom, the
+     deck beside the screen runs at 0.6–0.62 m under a 0.62 m floor, and
+     only a short board at the foot of the screen (z 0.8–0.94, 0.88 m wide,
+     inside the canopy's shoulder line) hides the last rise to the cowl.
+     Blue wedges remained on the lip between the orange band and the
+     orange top: the loft's side bands above the belt. On the lip stations
+     (z ≥ 1.95) belt, shoulder and roof edge now coincide at the top
+     corner, so the flank is a single orange band to the edge and the top
+     decal takes over from there.
+     With the lip raised, the orange clipped the forward-outboard edge of
+     each lamp disc; the discs sit 2.5 cm higher, 2 cm further inboard,
+     a little shorter and tipped 0.3 rad with the fender roll.
+     Raised clear of the orange, the thin discs then stood off the fender,
+     since a flat face cannot lie on a doubly curved surface without
+     floating at one edge or clipping at another. Each cover is now a 5 cm
+     deep pod sunk into the fender: its face sits a hair above the crest
+     and its dark wall fills the gap where the surface falls away, so it
+     reads as a recessed lamp flush with the body.
+     Both of those were then reverted by request (the lip geometry and
+     the pods), and the blue wedges are handled as paint instead:
+     `HullStation.sidePaint` colours a station's side bands (belt to roof
+     edge, where not glass) toward the next station, and the lip stations
+     name orange, so the chin is one colour with the shape untouched. A
+     hull test covers the field.
+
+115. **2026-11-05 — Le Mans coupé nose rebuilt from the reference, with
+     surface-following patches.** By request the nose was recreated from
+     the 917K GLB in `context/porsche_917-3d` (the same file as the
+     earlier folder). A scratch script sampled the shell's triangles on a
+     5 cm grid ahead of the front wheels and printed top height, bottom
+     height and lamp-cover height per cell. The sections show each fender
+     carrying a crown at x ≈ 0.68 m about 10 cm above the bonnet centre,
+     fading into a flat lip at the tip, with the lamp covers lying on the
+     crowns' forward slope. The thirteen nose stations now carry that
+     crown as their shoulder crease (above the roof edge, which bounds a
+     lower centre plateau), and the lip stations plus the crowns ahead of
+     the lamps are painted orange through `sidePaint`. Flat discs could
+     never sit on the doubly curved crown, so `render/car/HullSurface.ts`
+     (pure TS, tested) reads the loft's upper surface height at any (x, z)
+     and builds an ellipse patch whose every vertex is lifted onto it; the
+     lamp covers and the bonnet roundel are such patches, drawn with a
+     polygon offset so they never fight the hull. Two loft fixes came out
+     of this: `buildCarHull` now sorts its stations, because the coupé
+     lists them nose to tail and interpolated stations (wells, decal
+     edges) had been sampling the wrong segment, and a test pins that both
+     orders give the same mesh.

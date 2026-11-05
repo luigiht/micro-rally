@@ -263,11 +263,11 @@ export const INTERIORS: Readonly<Record<CarId, InteriorSpec>> = {
   /** Mid-2000s WRC hatch: blue cage, black seats with lime harness, digital dash. */
   focus: base({
     halfWidth: 0.82,
-    roofY: 1.35,
-    cowlZ: 1.05,
-    cowlY: 0.82,
-    screenTopZ: 0.55,
-    rearZ: -1.55,
+    roofY: 1.37,
+    cowlZ: 1.12,
+    cowlY: 0.88,
+    screenTopZ: 0.39,
+    rearZ: -1.57,
     dash: 'digital',
     lever: 'sequential',
     palette: {
@@ -319,6 +319,47 @@ export const INTERIORS: Readonly<Record<CarId, InteriorSpec>> = {
       harness: '#f0741f',
       wheel: BLACK,
       accent: '#f0741f',
+    },
+  }),
+  /**
+   * Le Mans coupé: a tight low bubble (eye 0.88 m off the ground, the roof a
+   * hand above the helmet) with a wide screen base close ahead, a shallow
+   * dash with the binnacle set forward so the small wheel clears it, a
+   * sequential lever, the co-driver's side an empty seat under the second
+   * window. Blue cage and lining, orange harnesses and accents.
+   */
+  lemans: base({
+    // Inside the canopy's 0.62 m base, so the door cards hide the deck outside the bubble.
+    halfWidth: 0.6,
+    roofY: 1.29,
+    // The floor sits 6 cm over the shell's deck under the bubble, so the deck can rise toward the cowl beneath it.
+    floorY: 0.88,
+    dashTopY: 1.02,
+    // The dash stands over the 0.6 m cockpit deck; a hand further forward the fender tops would rise past it.
+    cowlZ: 0.5,
+    cowlY: 0.86,
+    // Binnacle 0.25 m forward of its usual spot and the dash shallow, so the dial faces stand 5 cm ahead
+    // of the dash face (cowl − depth) instead of inside the slab, while the small, flat wheel still clears the hood.
+    clusterForward: 0.25,
+    dashDepth: 0.145,
+    wheelY: 1.0,
+    // The roof's front edge is a hand ahead of the eye, as in the car: the helmet sits under the screen top.
+    screenTopZ: -0.13,
+    rearZ: -0.75,
+    wheelRadius: 0.16,
+    wheelRake: 0.3,
+    dash: 'period',
+    lever: 'sequential',
+    palette: {
+      dash: BLACK,
+      lining: '#2c4a66',
+      door: '#2c4a66',
+      cage: '#3b78b5',
+      seat: '#1f1e24',
+      seatAccent: '#ef7a2c',
+      harness: '#ef7a2c',
+      wheel: BLACK,
+      accent: '#ef7a2c',
     },
   }),
   /**

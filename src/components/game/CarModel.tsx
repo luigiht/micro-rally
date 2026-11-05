@@ -11,6 +11,7 @@ import { DakarTruckBody } from './bodies/DakarTruckBody';
 import { FocusHatchBody } from './bodies/FocusHatchBody';
 import { GroupBBody } from './bodies/GroupBBody';
 import { HatchbackBody } from './bodies/HatchbackBody';
+import { LeMansBody } from './bodies/LeMansBody';
 import { NightcityBody } from './bodies/NightcityBody';
 import { S1CoupeBody } from './bodies/S1CoupeBody';
 import { SaloonBody } from './bodies/SaloonBody';
@@ -41,6 +42,7 @@ const RIM: Partial<Record<CarId, string>> = {
   s1: '#f4f1ea',
   focus: '#f4f1ea',
   dakar: '#f0741f',
+  lemans: '#4a4a52',
   buggy: '#b7b4ac',
 };
 
@@ -109,6 +111,8 @@ function BodyFor({
       return <FocusHatchBody spec={spec} cabinRef={cabinRef} />;
     case 'dakar':
       return <DakarTruckBody spec={spec} cabinRef={cabinRef} />;
+    case 'lemans':
+      return <LeMansBody spec={spec} cabinRef={cabinRef} />;
     case 'buggy':
       return <BuggyBody spec={spec} cabinRef={cabinRef} />;
     default:

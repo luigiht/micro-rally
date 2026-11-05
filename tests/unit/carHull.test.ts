@@ -337,4 +337,80 @@ describe('hull decals', () => {
     expect(tailCentre.length).toBeGreaterThan(0);
     expect(faces.filter((f) => f.c[2]! > 1.99).every((f) => f.color !== magenta)).toBe(true);
   });
+
+  it('cuts finer arches when a well asks for more segments', () => {
+    const car = CAR_SPECS.hatchback;
+    const zsOf = (segments?: number) => {
+      const hull = buildCarHull({ ...spec, wells: { ...wellsFor(car), segments } });
+      const zs = new Set<number>();
+      for (let i = 2; i < hull.positions.length; i += 3)
+        zs.add(Math.round(hull.positions[i]! * 1e3));
+      return zs.size;
+    };
+    expect(zsOf(16)).toBeGreaterThan(zsOf());
+  });
+
+  it('tints the windscreen apart from the side glass when asked', () => {
+    // A tint no other band uses: pure yellow.
+    const tinted = buildCarHull({ ...spec, colors: { ...spec.colors, screen: '#ffff00' } });
+    const plain = buildCarHull(spec);
+    const yellows = (h: typeof plain) => {
+      let n = 0;
+      for (let i = 0; i < h.colors.length; i += 3)
+        if (h.colors[i]! > 0.99 && h.colors[i + 1]! > 0.99 && h.colors[i + 2]! < 0.01) n++;
+      return n;
+    };
+    expect(yellows(tinted)).toBeGreaterThan(0);
+    expect(yellows(plain)).toBe(0);
+  });
+
+  it('adds a shoulder crease to every station once one names it', () => {
+    const plain = buildCarHull(spec);
+    const creased = buildCarHull({
+      ...spec,
+      stations: spec.stations.map((s, i) =>
+        i === 2 ? { ...s, shoulder: (s.belt + s.roof) / 2 + 0.02, xShoulder: s.xBody + 0.05 } : s,
+      ),
+    });
+    expect(creased.positions.length).toBeGreaterThan(plain.positions.length);
+    // The named crease is a vertex of the hull.
+    const s = spec.stations[2]!;
+    let hit = false;
+    for (let i = 0; i < creased.positions.length; i += 3) {
+      if (
+        Math.abs(creased.positions[i]! - (s.xBody + 0.05)) < 1e-6 &&
+        Math.abs(creased.positions[i + 1]! - ((s.belt + s.roof) / 2 + 0.02)) < 1e-6 &&
+        Math.abs(creased.positions[i + 2]! - s.z) < 1e-6
+      )
+        hit = true;
+    }
+    expect(hit).toBe(true);
+  });
+
+  it("paints a station's pillar band in its own colour when asked", () => {
+    const painted = buildCarHull({
+      ...spec,
+      stations: spec.stations.map((s, i) => (i === 0 ? { ...s, sidePaint: '#ffff00' } : s)),
+    });
+    let yellows = 0;
+    for (let i = 0; i < painted.colors.length; i += 3)
+      if (
+        painted.colors[i]! > 0.99 &&
+        painted.colors[i + 1]! > 0.99 &&
+        painted.colors[i + 2]! < 0.01
+      )
+        yellows++;
+    expect(yellows).toBeGreaterThan(0);
+  });
+
+  it('builds the same hull whichever way the stations are listed', () => {
+    const forward = buildCarHull({ ...spec, wells: wellsFor(CAR_SPECS.hatchback) });
+    const reversed = buildCarHull({
+      ...spec,
+      wells: wellsFor(CAR_SPECS.hatchback),
+      stations: [...spec.stations].reverse(),
+    });
+    expect(Array.from(reversed.positions)).toEqual(Array.from(forward.positions));
+    expect(Array.from(reversed.colors)).toEqual(Array.from(forward.colors));
+  });
 });

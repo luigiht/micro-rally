@@ -38,6 +38,17 @@ export interface HullStation {
    * above), so bodies read as sculpted rather than slab-sided.
    */
   xBelt?: number;
+  /**
+   * An extra crease between the belt and the roof edge, at height `shoulder`
+   * and half-width `xShoulder`, so a rounded shoulder is two planes instead
+   * of one. Once any station names one, every station gets the point
+   * (interpolated, or the midpoint of belt and roof where unset). Not for
+   * hulls with `sideDecals`, whose across-the-band fractions assume one band.
+   */
+  shoulder?: number;
+  xShoulder?: number;
+  /** Paint for the side bands (belt to roof edge) from this station to the next where they are not glass; omitted = body. */
+  sidePaint?: string;
   /** The glass faces from this station to the next (side glass, or the screen where the roof meets the belt). */
   glass?: boolean;
 }
@@ -46,6 +57,8 @@ export interface HullColors {
   body: string;
   trim: string;
   glass: string;
+  /** Windscreen and rear window (the glazed top faces); omitted = `glass`, which the side windows always use. */
+  screen?: string;
   /** Band(s) just under the belt line, listed top to bottom; omitted = body colour. */
   stripe?: string | readonly string[];
   /** Roof panel over the cabin; omitted = body colour. */
@@ -60,6 +73,8 @@ export interface WheelWells {
   axleY: number;
   /** Half-width of the inner well wall, inboard of the tyre. */
   xInner: number;
+  /** Facets across each arch; omitted = 8, spaced closer toward the ends. */
+  segments?: number;
 }
 
 export interface HullSpec {
@@ -116,6 +131,12 @@ const CABIN_MIN_HEIGHT = 0.05;
 /** Where extra stations go across each wheel well, as fractions of its radius. */
 const WELL_STEPS = [-1, -0.8, -0.55, -0.28, 0, 0.28, 0.55, 0.8, 1];
 
+/** The well stations for an arch of `segments` facets: the default table, or cosine-spaced so the facets stay even along the arc. */
+function wellSteps(segments: number | undefined): readonly number[] {
+  if (segments === undefined) return WELL_STEPS;
+  return Array.from({ length: segments + 1 }, (_, k) => -Math.cos((Math.PI * k) / segments));
+}
+
 /** sRGB hex → linear RGB, which is what a vertex colour attribute holds. */
 function hexToRgb(hex: string): V3 {
   const n = parseInt(hex.slice(1), 16);
@@ -134,6 +155,14 @@ function segmentAt(stations: readonly HullStation[], z: number): number {
   return i;
 }
 
+/** The shoulder crease of a station: as given, or the midpoint of its belt and roof points. */
+function shoulderOf(s: HullStation): { x: number; y: number } {
+  return {
+    x: s.xShoulder ?? ((s.xBelt ?? s.xBody) + s.xRoof) / 2,
+    y: s.shoulder ?? (s.belt + s.roof) / 2,
+  };
+}
+
 /** Linear blend of the two user stations around `z`. */
 function interpolate(stations: readonly HullStation[], z: number): HullStation {
   const i = segmentAt(stations, z);
@@ -150,6 +179,9 @@ function interpolate(stations: readonly HullStation[], z: number): HullStation {
     xBody: lerp(a.xBody, b.xBody, t),
     xRoof: lerp(a.xRoof, b.xRoof, t),
     xBelt: lerp(a.xBelt ?? a.xBody, b.xBelt ?? b.xBody, t),
+    shoulder: lerp(shoulderOf(a).y, shoulderOf(b).y, t),
+    xShoulder: lerp(shoulderOf(a).x, shoulderOf(b).x, t),
+    sidePaint: a.sidePaint,
   };
 }
 
@@ -175,7 +207,7 @@ function expandStations(spec: HullSpec): Station[] {
     if (z > first + 1e-3 && z < last - 1e-3) zs.add(Math.round(z * 1e4) / 1e4);
   };
   for (const wz of spec.wells?.zs ?? []) {
-    for (const f of WELL_STEPS) add(wz + f * spec.wells!.radius);
+    for (const f of wellSteps(spec.wells!.segments)) add(wz + f * spec.wells!.radius);
   }
   for (const d of [...(spec.deck ?? []), ...(spec.sideDecals ?? [])]) {
     add(d.z0);
@@ -197,6 +229,7 @@ function profile(
   xInner: number,
   stripes: number,
   band: readonly [number, number],
+  shoulders: boolean,
 ): { pts: V2[]; kinds: Band[] } {
   const inner = Math.min(xInner, s.xSill);
   const sillTop = Math.max(s.sill, s.low);
@@ -223,8 +256,15 @@ function profile(
     // Stripe colours are listed top to bottom; sub-band 0 is the lowest.
     kinds.push({ stripe: stripes - 1 - k });
   }
-  pts.push([xBelt, Math.max(s.belt, stripeHi)], [s.xRoof, s.roof], [0, s.roof]);
-  kinds.push('body', 'side', 'top');
+  pts.push([xBelt, Math.max(s.belt, stripeHi)]);
+  kinds.push('body');
+  if (shoulders) {
+    const sh = shoulderOf(s);
+    pts.push([sh.x, Math.max(sh.y, s.belt)]);
+    kinds.push('side');
+  }
+  pts.push([s.xRoof, s.roof], [0, s.roof]);
+  kinds.push('side', 'top');
   return { pts, kinds };
 }
 
@@ -247,11 +287,13 @@ function bandColor(
   if (kind === 'body') return c.body;
   if (kind === 'side') return side === 'glass' ? c.glass : c.body;
   if (kind === 'top')
-    return top === 'glass' ? c.glass : top === 'roof' ? (c.roof ?? c.body) : c.body;
+    return top === 'glass' ? (c.screen ?? c.glass) : top === 'roof' ? (c.roof ?? c.body) : c.body;
   return stripes[kind.stripe] ?? c.body;
 }
 
-export function buildCarHull(spec: HullSpec): HullMesh {
+export function buildCarHull(input: HullSpec): HullMesh {
+  // Stations may be listed in either direction; everything below walks them tail to nose.
+  const spec: HullSpec = { ...input, stations: [...input.stations].sort((a, b) => a.z - b.z) };
   const pos: number[] = [];
   const col: number[] = [];
   // Glowing faces are kept apart and appended last, so the mesh can draw them unlit as one group.
@@ -301,7 +343,8 @@ export function buildCarHull(spec: HullSpec): HullMesh {
   const deck = spec.deck ?? [];
   const sideDecals = spec.sideDecals ?? [];
   const capDecals = spec.capDecals ?? [];
-  const profiles = st.map((s) => profile(s, xInner, Math.max(1, stripes.length), band));
+  const shoulders = spec.stations.some((u) => u.shoulder !== undefined);
+  const profiles = st.map((s) => profile(s, xInner, Math.max(1, stripes.length), band, shoulders));
   const bands = profiles[0]!.kinds.length;
   const users = spec.stations;
   const isCabin = (u: HullStation) => u.roof > u.belt + CABIN_MIN_HEIGHT;
@@ -326,7 +369,10 @@ export function buildCarHull(spec: HullSpec): HullMesh {
     const zMid = (z0 + z1) / 2;
     for (let k = 0; k < bands; k++) {
       const kind = profiles[i]!.kinds[k]!;
-      const base = bandColor(spec.colors, stripes, kind, side, top);
+      const base =
+        kind === 'side' && side === 'paint' && a.sidePaint
+          ? a.sidePaint
+          : bandColor(spec.colors, stripes, kind, side, top);
       const color = rgb(base);
       const n0 = edgeNormal(p0, k);
       const n1 = edgeNormal(p1, k);

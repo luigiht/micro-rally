@@ -35,5 +35,7 @@ export default defineConfig([
     'test-results/**',
     'ios/**',
     'android/**',
+    // The local Remotion walkthrough project (git-ignored) has its own tooling.
+    'my-video/**',
   ]),
 ]);

@@ -183,18 +183,19 @@ bumpers. Liveries are colour-blocked originals. Each car also has its own
 interior (`components/game/interior/interiorSpecs.ts`): cabin envelope,
 dashboard kit and palette.
 
-| id          | Name                | Shape (measured from reference)       | Mass    | Body file            |
-| ----------- | ------------------- | ------------------------------------- | ------- | -------------------- |
-| `hatchback` | Rally Hatch         | Chunky 1990s hatch, orange over cream | 1000 kg | `HatchbackBody.tsx`  |
-| `coupe`     | Tricolore Coupé     | Stratos-shaped Group 4 wedge          | 980 kg  | `CoupeBody.tsx`      |
-| `t16`       | Sochaux T16         | 205 T16-style Group B hatch           | 940 kg  | `T16HatchBody.tsx`   |
-| `saloon`    | Boreal Saloon       | Impreza S6 WRC-shaped saloon          | 1230 kg | `SaloonBody.tsx`     |
-| `wrc`       | Riviera WRC         | Mid-2000s WRC hatch                   | 1230 kg | `WrcHatchBody.tsx`   |
-| `groupb`    | Tempesta Group B    | Group B monster with box flares       | 960 kg  | `GroupBBody.tsx`     |
-| `s1`        | Edelweiss S1        | Sport Quattro S1 E2-shaped coupé      | 1090 kg | `S1CoupeBody.tsx`    |
-| `focus`     | Albion RS Hatch     | Castrol-Focus-style three-door WRC    | 1230 kg | `FocusHatchBody.tsx` |
-| `dakar`     | Sirocco Dakar Truck | Rally-raid truck, twice a car's size  | 2600 kg | `DakarTruckBody.tsx` |
-| `buggy`     | Toro Dakar Buggy    | SMG-style two-wheel-drive raid buggy  | 1450 kg | `BuggyBody.tsx`      |
+| id          | Name                  | Shape (measured from reference)         | Mass    | Body file            |
+| ----------- | --------------------- | --------------------------------------- | ------- | -------------------- |
+| `hatchback` | Rally Hatch           | Chunky 1990s hatch, orange over cream   | 1000 kg | `HatchbackBody.tsx`  |
+| `coupe`     | Tricolore Coupé       | Stratos-shaped Group 4 wedge            | 980 kg  | `CoupeBody.tsx`      |
+| `t16`       | Sochaux T16           | 205 T16-style Group B hatch             | 940 kg  | `T16HatchBody.tsx`   |
+| `saloon`    | Boreal Saloon         | Impreza S6 WRC-shaped saloon            | 1230 kg | `SaloonBody.tsx`     |
+| `wrc`       | Riviera WRC           | Mid-2000s WRC hatch                     | 1230 kg | `WrcHatchBody.tsx`   |
+| `groupb`    | Tempesta Group B      | Group B monster with box flares         | 960 kg  | `GroupBBody.tsx`     |
+| `s1`        | Edelweiss S1          | Sport Quattro S1 E2-shaped coupé        | 1090 kg | `S1CoupeBody.tsx`    |
+| `focus`     | Albion RS Hatch       | First-gen Focus hatch in works WRC trim | 1230 kg | `FocusHatchBody.tsx` |
+| `dakar`     | Sirocco Dakar Truck   | Rally-raid truck, twice a car's size    | 2600 kg | `DakarTruckBody.tsx` |
+| `lemans`    | Mulsanne LM Prototype | 917K-shaped 1970 Le Mans coupé          | 800 kg  | `LeMansBody.tsx`     |
+| `buggy`     | Toro Dakar Buggy      | SMG-style two-wheel-drive raid buggy    | 1450 kg | `BuggyBody.tsx`      |
 
 The buggy's mudguards are not part of its hull: `render/car/FenderShell.ts`
 lofts a thick half-ring shell around each axle from an outline of
@@ -204,6 +205,18 @@ narrow tub the way a raid buggy's do, and `fenderPoint` seats sponsor discs
 on the dome. The tub cuts wells at the rear axle only; the nose sits inboard
 of the front tyres with wishbones and coil-overs in the gap. Behind the cabin a tall engine deck closes in a dark bay wall, and two full-size spares stand in it upright like the road wheels, tread to the rear, side by side on a carrier tube with the plate in the slot between them, up under a rear wing on wedge uprights (tail lamps on its trailing edge, white work lights low on the back of each rear fender); a centre fin runs from the rear window down to the wing, and the mud flaps hang from the carrier tube so they move with the body, not the wheels. The exhausts run under the floor from the engine bay out past that tube, and the underside carries a belly pan, the differential with its driveshafts, trailing arms and a cross tube, so the open rear reads as a frame. The whole body stands 0.1 m higher over its wheels than its heights say, the stance of long-travel springs at full droop. The livery is a yellow sun with a red charging bull on each door (a side-view icon silhouette extruded 2 cm from SVG path data by `render/car/SvgSilhouette.ts`, credited in CREDITS.md), white letter blocks across the bonnet and painted lamp pods on
 the nose.
+
+The Le Mans coupé is two lofts: a wide flat shell (thin nose lip, fender
+tops, a cowl that dips to 0.58 m, a long tail deck ending in a Kamm lip, the
+underside sweeping up behind the rear axle over an open engine bay with the
+gearbox, frame tubes and twin exhausts) and a narrow cockpit bubble standing
+on it with a long windscreen, two door windows and a fastback fairing. Tail
+fins are prisms on the deck edges with trimmed flaps between them; the
+headlamp covers are dark oval discs lying on the fender fronts, over a solid orange
+chin, with a white roundel on the bonnet. Powder blue
+with an orange sill band (the stripe band split blue over orange), an orange
+nose by cap and deck decals, an orange centre stripe over both lofts, white
+a plain roundel on each door.
 
 Two further specs, `pickup` and `monster`, exist in `CarSpec.ts` for tuning
 tests but are not on sale.

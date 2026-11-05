@@ -149,6 +149,9 @@ export const es: Messages = {
     dakar: {
       name: 'Sirocco Dakar Truck',
     },
+    lemans: {
+      name: 'Mulsanne LM Prototype',
+    },
     buggy: {
       name: 'Toro Dakar Buggy',
     },

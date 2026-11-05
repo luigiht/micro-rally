@@ -166,18 +166,19 @@ Ten cars in showroom order, each a distinct procedural body (see
 is free. Showroom bars for power, grip and agility are derived from the
 physics so they cannot drift from the truth.
 
-| Car                 | Price   | Note                             |
-| ------------------- | ------- | -------------------------------- |
-| Rally Hatch         | free    | The starter                      |
-| Tricolore Coupé     | $4,500  | Group 4 wedge, light and twitchy |
-| Sochaux T16         | $6,500  | Group B hatch                    |
-| Boreal Saloon       | $8,000  | Four-door WRC saloon             |
-| Riviera WRC         | $11,000 | WRC hatch                        |
-| Tempesta Group B    | $14,000 | Group B monster                  |
-| Edelweiss S1        | $18,000 | Short-wheelbase Group B coupé    |
-| Albion RS Hatch     | $21,000 | Three-door WRC hatch             |
-| Sirocco Dakar Truck | $26,000 | "Special": a rally-raid truck    |
-| Toro Dakar Buggy    | $32,000 | "Special": a rally-raid buggy    |
+| Car                   | Price   | Note                             |
+| --------------------- | ------- | -------------------------------- |
+| Rally Hatch           | free    | The starter                      |
+| Tricolore Coupé       | $4,500  | Group 4 wedge, light and twitchy |
+| Sochaux T16           | $6,500  | Group B hatch                    |
+| Boreal Saloon         | $8,000  | Four-door WRC saloon             |
+| Riviera WRC           | $11,000 | WRC hatch                        |
+| Tempesta Group B      | $14,000 | Group B monster                  |
+| Edelweiss S1          | $18,000 | Short-wheelbase Group B coupé    |
+| Albion RS Hatch       | $21,000 | Three-door WRC hatch             |
+| Sirocco Dakar Truck   | $26,000 | "Special": a rally-raid truck    |
+| Mulsanne LM Prototype | $29,000 | "Special": a 1970 Le Mans coupé  |
+| Toro Dakar Buggy      | $32,000 | "Special": a rally-raid buggy    |
 
 ## Settings
 
