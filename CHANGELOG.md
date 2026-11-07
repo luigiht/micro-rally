@@ -5,6 +5,17 @@ tags yet: `main` is deployed continuously, so entries are grouped by the day
 they landed. The numbered entries in [docs/DECISIONS.md](docs/DECISIONS.md)
 hold the reasoning behind each change; the numbers in brackets point there.
 
+## 2026-11-07
+
+### Fixed
+
+- **City stages load faster.** Selecting or advancing to a city no longer
+  freezes the page for seconds: the city layout and the terrain under it
+  look up nearby buildings, walls and terraces through a spatial grid
+  instead of scanning them all, the street meshes build over the first
+  frames of the countdown instead of all at once, and retrying a stage
+  reuses the generated world. [159]
+
 ## 2026-11-06
 
 ### Added

@@ -18,7 +18,20 @@ export interface StageWorld {
   trams?: TramTraffic;
 }
 
+/**
+ * The last world built, so retrying a stage (or re-mounting its scene)
+ * reuses it rather than generating again: a city takes a good fraction of a
+ * second to lay out. Worlds are never mutated after construction.
+ */
+let last: StageWorld | null = null;
+
 export function createStageWorld(gameSeed: number, index: number): StageWorld {
+  if (last && last.gameSeed === gameSeed && last.stage.index === index) return last;
+  last = buildStageWorld(gameSeed, index);
+  return last;
+}
+
+function buildStageWorld(gameSeed: number, index: number): StageWorld {
   const stage = generateStage(gameSeed, index);
   const field = new TerrainField(stage);
   const props = scatterScenery(field);

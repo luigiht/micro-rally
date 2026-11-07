@@ -1,4 +1,6 @@
-import { buildingCorners, type Wall } from './Town';
+import { buildingIndex } from './BuildingIndex';
+import { SpatialHash } from './SpatialHash';
+import type { Wall } from './Town';
 import type { Site } from './TownTerraces';
 
 /**
@@ -28,33 +30,33 @@ export function closeWallGaps(site: Site): void {
   const ends: End[] = [];
   for (const w of site.walls)
     ends.push({ x: w.x0, z: w.z0, wall: w }, { x: w.x1, z: w.z1, wall: w });
-  const corners = site.buildings.map((b) => ({ b, c: buildingCorners(b) }));
-  const nearBuilding = (x: number, z: number) =>
-    corners.some(({ b }) => {
-      const dx = x - b.x;
-      const dz = z - b.z;
-      const cy = Math.cos(b.yaw);
-      const sy = Math.sin(b.yaw);
-      const u = dx * cy - dz * sy;
-      const v = dx * sy + dz * cy;
-      return Math.abs(u) <= b.hx + BUILDING_TOUCH && Math.abs(v) <= b.hz + BUILDING_TOUCH;
-    });
+  const buildings = buildingIndex(site.buildings);
+  // Ends gridded by position: each end only looks a short way round itself.
+  const grid = new SpatialHash<End>(MAX_GAP);
+  for (const e of ends) grid.insert(e, e.x, e.z);
   const touches = (e: End) =>
-    ends.some((o) => o.wall !== e.wall && Math.hypot(o.x - e.x, o.z - e.z) < TOUCH);
-  const loose = ends.filter((e) => !touches(e) && !nearBuilding(e.x, e.z));
+    grid.near(
+      e.x,
+      e.z,
+      TOUCH,
+      (o) => o.wall !== e.wall && Math.hypot(o.x - e.x, o.z - e.z) < TOUCH,
+    );
+  const loose = ends.filter((e) => !touches(e) && !buildings.covers(e.x, e.z, BUILDING_TOUCH));
+  const looseGrid = new SpatialHash<End>(MAX_GAP);
+  for (const e of loose) looseGrid.insert(e, e.x, e.z);
   const used = new Set<End>();
   for (const e of loose) {
     if (used.has(e)) continue;
-    let best: End | null = null;
-    let bestD = MAX_GAP;
-    for (const o of loose) {
-      if (o === e || used.has(o) || o.wall === e.wall) continue;
+    const pick: { end: End | null; d: number } = { end: null, d: MAX_GAP };
+    looseGrid.near(e.x, e.z, MAX_GAP, (o) => {
+      if (o === e || used.has(o) || o.wall === e.wall) return;
       const d = Math.hypot(o.x - e.x, o.z - e.z);
-      if (d < bestD) {
-        best = o;
-        bestD = d;
+      if (d < pick.d) {
+        pick.end = o;
+        pick.d = d;
       }
-    }
+    });
+    const best = pick.end;
     if (!best) continue;
     // The joining piece must not cross a carriageway: its ends and middle stay off the pavements.
     const mx = (e.x + best.x) / 2;

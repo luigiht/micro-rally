@@ -3062,3 +3062,38 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      request. The cabin belt rises from 0.78 to 0.86 so the side glass is
      shorter from the bottom and its lower edge meets the top of the door
      plate, and the two white name bars on the rear window are gone.
+
+159. **2026-11-07 — City stages load in a fraction of the time: spatial
+     hashes in the layout and the terrain, and the street builders spread
+     over the countdown.** By request (a city took seconds to appear and
+     froze the page). Profiling a city (seed 12345, index 12) put ~0.6 s in
+     `generateStage` and ~0.95 s in the `StageRenderer` constructor, both
+     on the main thread, and nearly all of it in linear scans: every house
+     stood was checked against every house so far (`TownTerraces.place`,
+     corners recomputed each time), every garden-wall end against every
+     other end (`TownWallGaps`), every furniture candidate against every
+     door and street, and every terrain height query walked all ~3 000
+     terrace pads (`TerrainField.applyPads`) and all side streets
+     (`stubHit`). A small `SpatialHash` (`game/stage/SpatialHash.ts`) now
+     files items by cell: `BuildingIndex` keeps the buildings with cached
+     corners and is shared by placement, open-ground checks and the wall
+     closer; the pads are filed in every cell their reach touches so a
+     query reads only its own cell's few, in list order so the sequential
+     blend is unchanged; the side streets are filed along their length and
+     searched in rings outward until no unvisited street can beat the
+     best, so the result is still the exact nearest. Generation fell to
+     ~0.16 s and the renderer to ~0.44 s in Node, with every stage still
+     bit-identical (the checks are pure predicates, so the order they run
+     in cannot change the outcome). The remaining renderer cost is spread
+     over a dozen street builders, so a new city builds its road, gates,
+     terrain and scenery at once and queues the town builders (streets and
+     junction plates first, then walls and rings, then markings, trams and
+     bays) to run a few per frame from `update`, ~6 ms a frame and at
+     least one, during the three-second countdown; a theme change still
+     rebuilds everything in one frame. `createStageWorld` also keeps the
+     last world, so a retry (the scene is keyed on the attempt) no longer
+     regenerates it. In headless Chromium on the M-series GPU the longest
+     main-thread block on loading a city went from ~0.8–0.9 s (after the
+     hashes; roughly double that before) to ~0.45–0.5 s, against ~0.14 s
+     for a forest stage; the rest arrives as 50–150 ms tasks in the first
+     second of the countdown.

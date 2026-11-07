@@ -5,6 +5,7 @@ import { REGIONS } from '@/game/stage/regions';
 import { createRoadHit } from '@/game/stage/RoadPath';
 import type { Prop } from '@/game/stage/SceneryScatter';
 import type { StageWorld } from '@/game/stage/StageWorld';
+import type { TownDef } from '@/game/stage/Town';
 import { BarrierBuilder } from '../road/BarrierBuilder';
 import { CircuitDressingBuilder } from '../road/CircuitDressingBuilder';
 import { KerbBuilder } from '../road/KerbBuilder';
@@ -82,6 +83,13 @@ export const DEFAULT_STAGE_RENDER: StageRenderOptions = {
 
 /** Props further than this from the road count as "far" for the kits that care. */
 const NEAR_MAX = 60;
+/**
+ * A city's street builders (junction plates, walls, trams, markings…) take
+ * most of a second together, so a new stage builds them over its first
+ * frames, during the countdown, spending about this long per frame (at least
+ * one builder a frame) rather than freezing on the whole set at once.
+ */
+const DEFERRED_BUDGET_MS = 6;
 
 /** Everything a theme change rebuilds: surfaces are re-meshed in the new colours, props re-instanced in the new kits. */
 interface Surfaces {
@@ -121,6 +129,8 @@ export class StageRenderer {
   private readonly nearCache = new WeakMap<Prop, RoadNear>();
   private readonly hit = createRoadHit();
   private readonly sample = { x: 0, z: 0, heading: 0 };
+  /** Builders still to run for the current surfaces, drained a few per frame by `update`. */
+  private pending: (() => void)[] = [];
 
   constructor(
     private readonly world: StageWorld,
@@ -140,13 +150,14 @@ export class StageRenderer {
     );
     this.group.add(this.terrain.group);
     this.scenery = this.buildScenery(theme);
-    this.surfaces = this.buildSurfaces(theme);
+    this.surfaces = this.buildSurfaces(theme, world.stage.town?.city === true);
   }
 
   /** Per frame: stream the world round (x, z) and pose its moving parts at `clock` seconds (the run's clock). */
   update(x: number, z: number, clock = 0): void {
     this.lastX = x;
     this.lastZ = z;
+    this.runPending();
     this.terrain.update(x, z);
     this.scenery.update(x, z);
     this.surfaces.sea?.update(x, z);
@@ -159,7 +170,7 @@ export class StageRenderer {
     this.theme = theme;
     this.terrain.setMaterial(theme.terrain);
     this.disposeSurfaces();
-    this.surfaces = this.buildSurfaces(theme);
+    this.surfaces = this.buildSurfaces(theme, false);
     this.group.remove(this.scenery.group);
     this.scenery.dispose();
     this.scenery = this.buildScenery(theme);
@@ -170,6 +181,7 @@ export class StageRenderer {
   }
 
   dispose(): void {
+    this.pending = [];
     this.group.removeFromParent();
     this.terrain.dispose();
     this.scenery.dispose();
@@ -209,22 +221,21 @@ export class StageRenderer {
     return scenery;
   }
 
-  private buildSurfaces(theme: WorldTheme): Surfaces {
+  /**
+   * The road, gates and every builder the stage calls for. With `deferred`
+   * (a new city) the street builders run over the next frames instead of now;
+   * a theme change rebuilds everything at once, since a half-themed world
+   * would read as a bug.
+   */
+  private buildSurfaces(theme: WorldTheme, deferred: boolean): Surfaces {
     const { stage, field } = this.world;
     const town = stage.town;
     const s: Surfaces = {
       road: new RoadBuilder(stage, field, theme.road),
       gates: new GateBuilder(stage, field, theme.gates),
-      town: town ? new TownStreetBuilder(town, field, stage.halfWidth, theme.road) : null,
-      junctions: town ? new TownJunctionBuilder(stage, field, theme.road) : null,
-      walls: town
-        ? new TownWallBuilder(
-            town,
-            field,
-            theme.walls,
-            town.city && this.opts.hedges ? theme.hedges : undefined,
-          )
-        : null,
+      town: null,
+      junctions: null,
+      walls: null,
       seawall: field.coast ? new SeaWallBuilder(field.coast, field, theme.seawall) : null,
       sea: field.coast ? new SeaPlane(field.coast.seaLevel, theme.sea) : null,
       pools: field.oases.length > 0 ? new OasisBuilder(field.oases, theme.sea) : null,
@@ -239,32 +250,6 @@ export class StageRenderer {
       parking: null,
       fleet: null,
     };
-    if (town?.medians?.length && this.opts.medians) {
-      const grass =
-        theme.terrain.mode === 'flat'
-          ? theme.terrain.color
-          : REGIONS[stage.region].palette.grassLow;
-      s.medians = new MedianBuilder(town.medians, field, theme.road, grass);
-    }
-    if (town?.roundabouts?.length) {
-      const grass =
-        theme.terrain.mode === 'flat'
-          ? theme.terrain.color
-          : REGIONS[stage.region].palette.grassLow;
-      s.roundabouts = new RoundaboutBuilder(town, stage, field, theme.road, grass);
-    }
-    if (town?.trams?.length && this.opts.tramTracks)
-      s.trams = new TramTrackBuilder(town.trams, field, theme.road);
-    if (town?.trams?.length && this.opts.tramService)
-      s.fleet = new TramFleet(town.trams, field, stage.seed, this.opts.shadows);
-    const urban = REGIONS[stage.region].urban;
-    const parking =
-      town?.city && urban && this.opts.parkingBays ? parkingStretches(town, stage, urban) : [];
-    if (town?.city && this.opts.laneMarkings)
-      s.lanes = new LaneMarkings(stage, field, theme.road, parking);
-    if (town?.city && this.opts.crossings)
-      s.crossings = new CrossingBuilder(town, stage, field, theme.road);
-    if (parking.length > 0) s.parking = new ParkingBayBuilder(parking, field, theme.road);
     const track = circuitTrackside(stage);
     if (track) {
       const { circuit } = theme;
@@ -276,7 +261,73 @@ export class StageRenderer {
     }
     this.group.add(s.road.group, s.gates.group);
     for (const b of this.extras(s)) this.group.add(b.group);
+    const steps = town ? this.townSteps(s, town, theme) : [];
+    if (deferred) this.pending = steps;
+    else for (const step of steps) step();
     return s;
+  }
+
+  /** Run queued builders until the frame's budget is spent, at least one a frame. */
+  private runPending(): void {
+    if (this.pending.length === 0) return;
+    const start = performance.now();
+    do this.pending.shift()!();
+    while (this.pending.length > 0 && performance.now() - start < DEFERRED_BUDGET_MS);
+  }
+
+  /**
+   * The town's builders as steps that fill their slot in `s` and add the
+   * result to the scene, ordered so what stands round the start line comes
+   * first: streets and junction plates, then walls and the rings, then the
+   * markings, trams and bays.
+   */
+  private townSteps(s: Surfaces, town: TownDef, theme: WorldTheme): (() => void)[] {
+    const { stage, field } = this.world;
+    const grass =
+      theme.terrain.mode === 'flat' ? theme.terrain.color : REGIONS[stage.region].palette.grassLow;
+    const urban = REGIONS[stage.region].urban;
+    const parking =
+      town.city && urban && this.opts.parkingBays ? parkingStretches(town, stage, urban) : [];
+    const add = <K extends keyof Surfaces>(key: K, make: () => Surfaces[K]) => {
+      return () => {
+        const b = make();
+        s[key] = b;
+        if (b) this.group.add(b.group);
+      };
+    };
+    const steps: (() => void)[] = [
+      add('town', () => new TownStreetBuilder(town, field, stage.halfWidth, theme.road)),
+      add('junctions', () => new TownJunctionBuilder(stage, field, theme.road)),
+      add(
+        'walls',
+        () =>
+          new TownWallBuilder(
+            town,
+            field,
+            theme.walls,
+            town.city && this.opts.hedges ? theme.hedges : undefined,
+          ),
+      ),
+    ];
+    if (town.roundabouts?.length)
+      steps.push(
+        add('roundabouts', () => new RoundaboutBuilder(town, stage, field, theme.road, grass)),
+      );
+    if (town.medians?.length && this.opts.medians)
+      steps.push(add('medians', () => new MedianBuilder(town.medians!, field, theme.road, grass)));
+    if (town.city && this.opts.crossings)
+      steps.push(add('crossings', () => new CrossingBuilder(town, stage, field, theme.road)));
+    if (town.city && this.opts.laneMarkings)
+      steps.push(add('lanes', () => new LaneMarkings(stage, field, theme.road, parking)));
+    if (parking.length > 0)
+      steps.push(add('parking', () => new ParkingBayBuilder(parking, field, theme.road)));
+    if (town.trams?.length && this.opts.tramTracks)
+      steps.push(add('trams', () => new TramTrackBuilder(town.trams!, field, theme.road)));
+    if (town.trams?.length && this.opts.tramService)
+      steps.push(
+        add('fleet', () => new TramFleet(town.trams!, field, stage.seed, this.opts.shadows)),
+      );
+    return steps;
   }
 
   /** Every builder beyond the road and gates that this stage has. */

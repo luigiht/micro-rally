@@ -12,6 +12,7 @@ import {
   type Footprint,
 } from './Town';
 import { BUILDING_SIZE, pickStyle, VILLAGE_VARIANTS } from './BuildingCatalog';
+import { buildingIndex } from './BuildingIndex';
 
 export { BUILDING_SIZE } from './BuildingCatalog';
 
@@ -57,16 +58,7 @@ export interface Site {
 /** True when a circle of radius `r` at (x, z) is clear of every carriageway's pavement and every building. */
 export function openGround(site: Site, x: number, z: number, r: number): boolean {
   if (!site.clear(x, z, -r)) return false;
-  for (const b of site.buildings) {
-    const dx = x - b.x;
-    const dz = z - b.z;
-    const cy = Math.cos(b.yaw);
-    const sy = Math.sin(b.yaw);
-    const u = dx * cy - dz * sy;
-    const v = dx * sy + dz * cy;
-    if (Math.abs(u) <= b.hx + r && Math.abs(v) <= b.hz + r) return false;
-  }
-  return true;
+  return !buildingIndex(site.buildings).covers(x, z, r);
 }
 
 export const forward = (h: number): Pt => ({ x: Math.sin(h), z: Math.cos(h) });
@@ -286,10 +278,17 @@ export function straightFacade(
   return polylineFacade([at(o, heading, 0, off), at(o, heading, length, off)], side);
 }
 
-/** True when the two footprints are at least `gap` apart along some edge axis (so never overlapping). */
-export function apart(a: Footprint, b: Footprint, gap: number): boolean {
-  const ca = buildingCorners(a);
-  const cb = buildingCorners(b);
+/**
+ * True when the two footprints are at least `gap` apart along some edge axis
+ * (so never overlapping). Pass the corners when they are already known.
+ */
+export function apart(
+  a: Footprint,
+  b: Footprint,
+  gap: number,
+  ca: readonly (readonly [number, number])[] = buildingCorners(a),
+  cb: readonly (readonly [number, number])[] = buildingCorners(b),
+): boolean {
   for (const r of [a, b]) {
     for (const [ax, az] of [
       [Math.cos(r.yaw), -Math.sin(r.yaw)],
@@ -317,8 +316,16 @@ export function apart(a: Footprint, b: Footprint, gap: number): boolean {
 
 /** Stand a building if its footprint stays behind every pavement and a party gap from every other building. */
 export function place(site: Site, b: Building): boolean {
-  for (const [x, z] of buildingCorners(b)) if (!site.clear(x, z, 0.05)) return false;
-  for (const k of site.buildings) if (!apart(k, b, PARTY_GAP)) return false;
+  const corners = buildingCorners(b);
+  for (const [x, z] of corners) if (!site.clear(x, z, 0.05)) return false;
+  const reach = Math.hypot(b.hx, b.hz) + PARTY_GAP;
+  const blocked = buildingIndex(site.buildings).near(
+    b.x,
+    b.z,
+    reach,
+    (k) => !apart(k.b, b, PARTY_GAP, k.corners, corners),
+  );
+  if (blocked) return false;
   site.buildings.push(b);
   return true;
 }

@@ -5,6 +5,7 @@ import type { RoadSample } from './RoadPath';
 import { halfWidthAt, type RoadWidthSource } from './RoadWidth';
 import { handoffRadius, onRoundabout } from './Roundabout';
 import type { Prop } from './SceneryScatter';
+import { SpatialHash } from './SpatialHash';
 import {
   KERB_LIFT,
   LAMP_OFFSET,
@@ -38,6 +39,12 @@ const JUNCTION_CLEAR = 4;
 const RING_CLEAR = 2;
 /** Nothing but a lamp or a bollard stands within this of a building's door. */
 const DOOR_CLEAR = 2.0;
+interface Pt {
+  x: number;
+  z: number;
+}
+/** Street grid cell for the mouth checks. */
+const STREET_CELL = 32;
 /** Where each kind stands across the pavement, from the carriageway edge. */
 const ACROSS: Record<FurnitureKind, number> = {
   lamp: LAMP_OFFSET,
@@ -96,14 +103,29 @@ export function streetFurniture(
   const out: Prop[] = [];
   const rand = mulberry32(hashSeed(seed, 'furniture'));
   const rings = town.roundabouts ?? [];
-  const doors = town.buildings.map(doorAt);
+  // Doors and streets gridded, so each candidate checks the few round it rather than the city's thousands.
+  const doors = new SpatialHash<Pt>(DOOR_CLEAR);
+  for (const b of town.buildings) {
+    const d = doorAt(b);
+    doors.insert(d, d.x, d.z);
+  }
   const nearDoor = (x: number, z: number) =>
-    doors.some((d) => Math.hypot(d.x - x, d.z - z) < DOOR_CLEAR);
+    doors.near(x, z, DOOR_CLEAR, (d) => Math.hypot(d.x - x, d.z - z) < DOOR_CLEAR);
+  const streets = new SpatialHash<Street>(STREET_CELL);
+  for (const o of town.streets) {
+    const reach = o.halfWidth + PAVEMENT_WIDTH + 1;
+    const n = Math.max(1, Math.ceil(Math.hypot(o.x1 - o.x0, o.z1 - o.z0) / (STREET_CELL / 2)));
+    for (let i = 0; i <= n; i++)
+      streets.insert(o, o.x0 + ((o.x1 - o.x0) * i) / n, o.z0 + ((o.z1 - o.z0) * i) / n, reach);
+  }
   const inMouth = (st: Street, x: number, z: number) =>
     town.junctions.some(
       (j) => Math.hypot(j.x - x, j.z - z) < junctionReach(j) + st.halfWidth + JUNCTION_CLEAR,
     ) ||
-    town.streets.some(
+    streets.near(
+      x,
+      z,
+      0,
       (o) =>
         o !== st &&
         !(o.route && st.route) &&

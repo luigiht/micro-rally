@@ -16,6 +16,7 @@ import { REGIONS, reliefAmplitude } from './regions';
 import { createRoadHit } from './RoadPath';
 import { smoothRoadProfile } from './RoadProfile';
 import { halfWidthAt } from './RoadWidth';
+import { SpatialHash } from './SpatialHash';
 import type { StageDef } from './StageGenerator';
 import { UrbanField } from './UrbanField';
 import {
@@ -96,6 +97,8 @@ interface StubDeck {
   open: boolean;
   /** An open street ending in a T on the route: within this fraction of its length from its end the deck is the route's. */
   farZone: number;
+  /** The last `stubHit` query that weighed this street (it is filed in every cell it crosses). */
+  visit: number;
 }
 
 /** A side street's deck at a point: the route's deck through the junction zone, then its own ramp (see `stubHit`). */
@@ -148,6 +151,10 @@ export interface TerrainPad {
   blend?: number;
 }
 const PAD_BLEND = 3;
+/** Pad grid cell: a terrace pad with its blend spans a cell or two. */
+const PAD_CELL = 16;
+/** Side-street grid cell. */
+const STUB_CELL = 32;
 
 export interface TerrainSample {
   height: number;
@@ -190,12 +197,20 @@ export class TerrainField implements TerrainQuery {
   private readonly offroad: Surface;
   readonly corridor: number;
   private pads: TerrainPad[] = [];
+  /** The pads filed in every cell their reach touches, so a height query reads its own cell's few. */
+  private padGrid = new SpatialHash<TerrainPad>(PAD_CELL);
   private readonly town: TownDef | null;
   /** Reference height of the town: the mean of the hills over its footprint, which its relief is tamed around. */
   readonly townY: number;
   /** Share of the hills' relief kept inside the town. */
   readonly townRelief: number;
   private readonly stubs: StubDeck[];
+  /** The side streets filed in every cell they cross, searched outward in rings for the nearest. */
+  private readonly stubGrid = new SpatialHash<StubDeck>(STUB_CELL);
+  private readonly stubExtent = { x0: 0, x1: 0, z0: 0, z1: 0 };
+  private stubQuery = 0;
+  /** The widest side street: a street in an unvisited ring can beat the best found only within this. */
+  private stubMaxHw = 0;
   /** Each junction's tarmac, trenched like a carriageway so the junction surface sits clear of the terrain. */
   private readonly junctions: JunctionSurface[];
   private readonly surfaceScratch: CoastSurface = { rock: 0, scree: 0, dry: 0 };
@@ -258,6 +273,7 @@ export class TerrainField implements TerrainQuery {
       this.urban = new UrbanField(this.town, (x, z) => this.groundHeight(x, z));
     this.roadHeights = this.buildRoadHeights();
     this.stubs = this.town ? this.buildStubs(this.town) : [];
+    this.fileStubs();
     this.junctions = this.town
       ? this.town.junctions.map((j) => junctionKerbs(j, this.stage, this.stage.halfWidth).surface)
       : [];
@@ -270,6 +286,29 @@ export class TerrainField implements TerrainQuery {
    */
   setPads(pads: readonly TerrainPad[]): void {
     this.pads = [...pads];
+    this.padGrid = new SpatialHash<TerrainPad>(PAD_CELL);
+    for (const p of this.pads) this.padGrid.insert(p, p.x, p.z, p.radius + (p.blend ?? PAD_BLEND));
+  }
+
+  /** File each side street in every cell its carriageway crosses, and note how far the grid runs. */
+  private fileStubs(): void {
+    const e = this.stubExtent;
+    e.x0 = e.z0 = Infinity;
+    e.x1 = e.z1 = -Infinity;
+    for (const s of this.stubs) {
+      this.stubMaxHw = Math.max(this.stubMaxHw, s.hw);
+      const n = Math.max(1, Math.ceil(s.len / (STUB_CELL / 2)));
+      for (let i = 0; i <= n; i++) {
+        const x = s.x0 + (s.dx * i) / n;
+        const z = s.z0 + (s.dz * i) / n;
+        e.x0 = Math.min(e.x0, x);
+        e.x1 = Math.max(e.x1, x);
+        e.z0 = Math.min(e.z0, z);
+        e.z1 = Math.max(e.z1, z);
+        // Filed with the half width as reach so a point beside the street finds it in its own cell.
+        this.stubGrid.insert(s, x, z, s.hw);
+      }
+    }
   }
 
   /** The hills alone (the coast, on a Coast stage): before the town plateau, the road bed and any pads. */
@@ -357,6 +396,7 @@ export class TerrainField implements TerrainQuery {
         y1: yZone + rise,
         open: s.open === true,
         farZone: 0,
+        visit: 0,
       });
     }
     // An open street ends on another road and takes that road's deck there, whatever the climb:
@@ -424,21 +464,43 @@ export class TerrainField implements TerrainQuery {
   private stubHit(x: number, z: number, routeDeck: number | null, out: StreetHit): boolean {
     let best = Infinity;
     let found = false;
-    for (const s of this.stubs) {
-      const len2 = s.len * s.len;
-      let t = len2 > 0 ? ((x - s.x0) * s.dx + (z - s.z0) * s.dz) / len2 : 0;
-      t = t < 0 ? 0 : t > 1 ? 1 : t;
-      const distance = Math.hypot(x - (s.x0 + s.dx * t), z - (s.z0 + s.dz * t));
-      if (distance - s.hw >= best) continue;
-      best = distance - s.hw;
-      found = true;
-      // Through the junction zone the street is the route's own deck, so plates and the ribbon
-      // meet without a step; beyond it the street carries on from the deck across the zone's end
-      // and ramps to its end level: the route past the zone (which may bend away, or loop back
-      // within reach near the street's end) has no say. Continuous at the zone's end.
-      out.deck = stubDeckAt(s, x, z, routeDeck);
-      out.distance = distance;
-      out.hw = s.hw;
+    const stamp = ++this.stubQuery;
+    const weigh = (list: readonly StubDeck[]) => {
+      for (let i = 0; i < list.length; i++) {
+        const s = list[i]!;
+        if (s.visit === stamp) continue;
+        s.visit = stamp;
+        const len2 = s.len * s.len;
+        let t = len2 > 0 ? ((x - s.x0) * s.dx + (z - s.z0) * s.dz) / len2 : 0;
+        t = t < 0 ? 0 : t > 1 ? 1 : t;
+        const distance = Math.hypot(x - (s.x0 + s.dx * t), z - (s.z0 + s.dz * t));
+        if (distance - s.hw >= best) continue;
+        best = distance - s.hw;
+        found = true;
+        // Through the junction zone the street is the route's own deck, so plates and the ribbon
+        // meet without a step; beyond it the street carries on from the deck across the zone's end
+        // and ramps to its end level: the route past the zone (which may bend away, or loop back
+        // within reach near the street's end) has no say. Continuous at the zone's end.
+        out.deck = stubDeckAt(s, x, z, routeDeck);
+        out.distance = distance;
+        out.hw = s.hw;
+      }
+    };
+    // Rings of cells outward from the query's own cell, until every unvisited street is too far
+    // to beat the best, or the rings have passed the last street.
+    const g = this.stubGrid;
+    const cx = g.index(x);
+    const cz = g.index(z);
+    const e = this.stubExtent;
+    const last = Math.max(
+      Math.abs(cx - g.index(e.x0)),
+      Math.abs(cx - g.index(e.x1)),
+      Math.abs(cz - g.index(e.z0)),
+      Math.abs(cz - g.index(e.z1)),
+    );
+    for (let r = 0; r <= last; r++) {
+      g.ring(cx, cz, r, weigh);
+      if (found && best <= r * STUB_CELL - this.stubMaxHw) break;
     }
     return found;
   }
@@ -497,7 +559,10 @@ export class TerrainField implements TerrainQuery {
 
   /** Flatten the finished height onto any pad covering (x, z); applied last so the road blend cannot tilt a pad. */
   private applyPads(x: number, z: number, h: number): number {
-    for (const p of this.pads) {
+    const pads = this.padGrid.at(this.padGrid.index(x), this.padGrid.index(z));
+    if (!pads) return h;
+    for (let i = 0; i < pads.length; i++) {
+      const p = pads[i]!;
       const dx = x - p.x;
       const dz = z - p.z;
       const blend = p.blend ?? PAD_BLEND;

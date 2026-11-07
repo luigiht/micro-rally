@@ -152,7 +152,14 @@ flowchart LR
   `TownDef`: `Crossings.ts`, `ParkingBays.ts`, `StreetFurniture.ts`;
   `UrbanStreets.ts` fits the side streets to the roads they meet,
   `TownWallGaps.ts` closes the garden walls, `BuildingCatalog.ts` holds the
-  footprints, doors and style mixes.
+  footprints, doors and style mixes. Anything that asks "what stands near
+  here" goes through `SpatialHash.ts` (a cell grid; `BuildingIndex.ts`
+  keeps the buildings with their corners cached) rather than a scan: house
+  placement, the wall closer, furniture clearance, and `TerrainField`'s
+  terrace pads and side-street decks, so a city of thousands of buildings
+  lays out in well under a second. `StageRenderer` builds a new city's
+  town meshes a few per frame from `update` during the countdown, roads,
+  gates, terrain and scenery first.
 - **Themes (Nightcity).** `render/theme/WorldTheme.ts` is the look as data:
   sky, fog, lights, terrain mode, road, gate and wall colours, scenery kit
   set and tyre-mark ink. `dayTheme(region)` is today's look; `NIGHTCITY_THEME`
