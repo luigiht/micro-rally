@@ -14,6 +14,7 @@ import type { StageDef } from '@/game/stage/StageGenerator';
 import { markerDistances } from '@/game/stage/RoadMarkers';
 import { ROAD_LIFT, TRENCH_OUT, type TerrainField } from '@/game/stage/TerrainField';
 import { halfWidthAt } from '@/game/stage/RoadWidth';
+import { roundaboutOpenings } from '@/game/stage/Roundabout';
 import { KERB_LIFT, townFade } from '@/game/stage/Town';
 import { routeOpenings, type Openings } from '@/game/stage/TownKerbs';
 import { patchNeon } from '../theme/NeonMaterial';
@@ -37,7 +38,7 @@ const SNOW_COVER = 0.45;
  * the coarse terrain mesh only takes over beyond them, where it is the same
  * colour and any seam is invisible.
  */
-const VERGE_WIDTH = 2;
+const VERGE_WIDTH = 3;
 const SAMPLES_PER_PIECE = 100;
 /** The edge line stands this far above the carriageway it is painted on. */
 export const LINE_ABOVE_DECK = 0.02;
@@ -120,6 +121,14 @@ export class RoadBuilder {
     const openings: Openings = stage.town
       ? routeOpenings(stage.town, stage)
       : { left: [], right: [] };
+    // Inside a roundabout's hand-off radius the ring's surface paints the pavements, kerbs and lines.
+    if (stage.town?.roundabouts) {
+      const ring = roundaboutOpenings(stage.town.roundabouts, stage);
+      openings.left.push(...ring.left);
+      openings.right.push(...ring.right);
+      openings.left.sort((p, q) => p.from - q.from);
+      openings.right.sort((p, q) => p.from - q.from);
+    }
     if (VERGE_WIDTH <= TRENCH_OUT) throw new Error('verge strip must cover the trench ramp');
     const roadMat = new MeshStandardMaterial({
       vertexColors: true,

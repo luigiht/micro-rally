@@ -21,7 +21,7 @@ import {
   circuitName,
   type CircuitInfo,
 } from './CircuitStage';
-import type { RoadPath, RoadSample } from './RoadPath';
+import { createRoadHit, type RoadPath, type RoadSample } from './RoadPath';
 import type { TownDef } from './Town';
 import {
   buildCentreline,
@@ -32,9 +32,10 @@ import {
 } from './Centreline';
 import { buildCoastRoad } from './CoastRoad';
 import { CoastShape } from './CoastShape';
-import { buildWidths } from './RoadWidth';
+import { buildWidths, halfWidthAt } from './RoadWidth';
 import { layoutTown } from './TownGenerator';
 import { hasTown, planTown } from './TownPlan';
+import { planUrban } from './UrbanPlan';
 
 export { ROAD_SPACING } from './Centreline';
 /** Checkpoint boards keep this far clear of a town's route interval. */
@@ -136,21 +137,65 @@ export function stageHasTown(index: number): boolean {
   return hasTown(index) && REGIONS[stageRegion(index).region].towns;
 }
 
-/** Keep checkpoint boards out of the town and in order; the finish stays where the brief put it. */
+/**
+ * A checkpoint board stands at least this far along the road from a city
+ * junction or a roundabout's ring, so it never stands in a mouth or on the
+ * ring.
+ */
+const JUNCTION_GATE_CLEARANCE = 25;
+
+/** Path distances of a city's junctions, where its checkpoints keep off. */
+function junctionDistances(path: RoadPath, town: TownDef): number[] {
+  const hit = createRoadHit();
+  const out: number[] = [];
+  for (const j of town.junctions) if (path.nearest(j.x, j.z, 60, hit)) out.push(hit.along);
+  return out;
+}
+
+/** `distance` moved past the nearest junction zone or ring it falls in, forward if it is past the middle, back otherwise. */
+function nudgeOffJunctions(distance: number, junctions: readonly number[], town: TownDef): number {
+  for (let pass = 0; pass < 3; pass++) {
+    let moved = false;
+    for (const j of junctions) {
+      if (Math.abs(distance - j) >= JUNCTION_GATE_CLEARANCE) continue;
+      distance = distance >= j ? j + JUNCTION_GATE_CLEARANCE : j - JUNCTION_GATE_CLEARANCE;
+      moved = true;
+    }
+    for (const r of town.roundabouts ?? []) {
+      const lo = r.from - JUNCTION_GATE_CLEARANCE;
+      const hi = r.to + JUNCTION_GATE_CLEARANCE;
+      if (distance <= lo || distance >= hi) continue;
+      distance = distance >= (lo + hi) / 2 ? hi : lo;
+      moved = true;
+    }
+    if (!moved) break;
+  }
+  return distance;
+}
+
+/**
+ * Keep checkpoint boards out of the town and in order; the finish stays
+ * where the brief put it. A city is the whole stage, so there its boards
+ * stand between junctions instead, each as wide as the street there.
+ */
 function placeGates(
   path: RoadPath,
   length: number,
   halfWidth: number,
   town: TownDef | undefined,
+  widths: Float64Array | undefined,
 ): Gate[] {
   const sample: RoadSample = { x: 0, z: 0, heading: 0 };
   const checkpoints = Math.min(6, Math.max(2, Math.round(length / 450)));
   const finish = START_DISTANCE + length;
   const distances: number[] = [];
+  const whole = town !== undefined && town.from <= START_DISTANCE + TOWN_GATE_CLEARANCE;
+  const junctions = town && whole ? junctionDistances(path, town) : [];
   for (let k = 1; k <= checkpoints; k++) {
     let distance = START_DISTANCE + (length * k) / (checkpoints + 1);
     if (
       town &&
+      !whole &&
       distance > town.from - TOWN_GATE_CLEARANCE &&
       distance < town.to + TOWN_GATE_CLEARANCE
     )
@@ -158,11 +203,19 @@ function placeGates(
         distance < (town.from + town.to) / 2
           ? town.from - TOWN_GATE_CLEARANCE
           : town.to + TOWN_GATE_CLEARANCE;
+    if (town && whole) distance = nudgeOffJunctions(distance, junctions, town);
     const prev = distances[distances.length - 1];
     if (prev !== undefined && distance < prev + MIN_GATE_GAP) distance = prev + MIN_GATE_GAP;
+    // The spacing may have put it back on a junction: move it on past that junction, forward only,
+    // so it keeps its gap.
+    if (town && whole)
+      for (const j of junctions)
+        if (Math.abs(distance - j) < JUNCTION_GATE_CLEARANCE)
+          distance = j + JUNCTION_GATE_CLEARANCE;
     if (distance <= finish - MIN_GATE_GAP) distances.push(distance);
   }
   distances.push(finish);
+  const source = { halfWidth, path, ...(widths ? { widths } : {}) };
   return distances.map((distance, i) => {
     path.sample(distance, sample);
     return {
@@ -171,7 +224,7 @@ function placeGates(
       x: sample.x,
       z: sample.z,
       heading: sample.heading,
-      halfWidth: halfWidth + 3,
+      halfWidth: halfWidthAt(source, distance) + 3,
     };
   });
 }
@@ -269,13 +322,26 @@ export function generateStage(gameSeed: number, index: number): StageDef {
   if (layout) return circuitStage(brief, layout);
   const { surface, length } = brief;
   const twist = def.twistiness * (1 + 0.15 * Math.min(loop, 4));
-  // The corniche is a lane wider: dark tarmac between pale verges reads narrower than a gravel road whose shoulders blend into it.
-  const halfWidth = def.coast ? 5.5 : surface === 'tarmac' ? 4.5 : 4;
+  // The corniche is a lane wider: dark tarmac between pale verges reads narrower than a gravel
+  // road whose shoulders blend into it. A city's base width is its widest boulevard; every
+  // narrower street is a narrowing of it (see `buildWidths`).
+  const halfWidth = def.urban
+    ? def.urban.lanes.four
+    : def.coast
+      ? 5.5
+      : surface === 'tarmac'
+        ? 4.5
+        : 4;
   const total = START_DISTANCE + length + RUNOUT;
   // The town draws from its own seed so the brief and the walk keep their streams. The walk is
   // rebuilt with the plan mirrored if the town fouls the open road around it, and without a town
-  // if that fails too, so the stage's own invariants always hold.
-  const plan = withTown ? planTown(seed, START_DISTANCE, length, halfWidth) : null;
+  // if that fails too, so the stage's own invariants always hold. A city's plan covers the whole
+  // road and is validated as a whole, so it is laid as drawn.
+  const plan = withTown
+    ? planTown(seed, START_DISTANCE, length, halfWidth)
+    : def.urban
+      ? planUrban(seed, total, loop, def.urban)
+      : null;
   // A coast road is drawn on the coast's ground (shore-following, with hairpin stacks) rather than walked.
   let built: Centreline = def.coast
     ? {
@@ -298,12 +364,13 @@ export function generateStage(gameSeed: number, index: number): StageDef {
     const t = layoutTown(c.trace, c.path, seed, halfWidth);
     return !selfApproachOk(c.path, t.from - 420, t.to + 420);
   };
-  if (plan && fouls(built)) built = buildCentreline(resume(seed), total, twist, plan, true);
-  if (plan && fouls(built)) built = buildCentreline(resume(seed), total, twist, null);
+  if (withTown && plan && fouls(built))
+    built = buildCentreline(resume(seed), total, twist, plan, true);
+  if (withTown && plan && fouls(built)) built = buildCentreline(resume(seed), total, twist, null);
   const { path, trace } = built;
-  const town = trace ? layoutTown(trace, path, seed, halfWidth) : undefined;
-  const widths = town ? buildWidths(path, town, halfWidth) : undefined;
-  const gates = placeGates(path, length, halfWidth, town);
+  const town = trace ? layoutTown(trace, path, seed, halfWidth, def.urban) : undefined;
+  const widths = town ? (town.widths ?? buildWidths(path, town, halfWidth)) : undefined;
+  const gates = placeGates(path, length, halfWidth, town, widths);
 
   const sample: RoadSample = { x: 0, z: 0, heading: 0 };
   path.sample(START_DISTANCE - 4, sample);

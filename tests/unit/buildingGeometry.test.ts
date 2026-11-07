@@ -5,7 +5,16 @@ import { BUILDING_SIZE } from '@/game/stage/TownTerraces';
 import { buildingRoofGeometry, buildingWallsGeometry } from '@/render/scenery/BuildingGeometry';
 import { hipRoofGeometry } from '@/render/scenery/CivicGeometry';
 
-const STYLES: readonly BuildingStyle[] = ['townhouse', 'shop', 'tower', 'hall'];
+const STYLES: readonly BuildingStyle[] = [
+  'townhouse',
+  'shop',
+  'tower',
+  'hall',
+  'block',
+  'office',
+  'tenement',
+  'arcade',
+];
 /** Roofs, canopies, awnings and steps may reach this far beyond the footprint. */
 const OVERHANG = 0.5;
 const FOUNDATION_BOTTOM = -1.6;

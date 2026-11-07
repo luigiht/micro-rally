@@ -8,6 +8,12 @@ import {
   type Street,
   type TownDef,
 } from '@/game/stage/Town';
+import {
+  HANDOFF_OVERLAP,
+  handoffRadius,
+  ringOuterRadius,
+  type Roundabout,
+} from '@/game/stage/Roundabout';
 import { stubCut } from '@/game/stage/TownJunctions';
 import { LINE_ABOVE_DECK } from '../road/RoadBuilder';
 import { patchNeon } from '../theme/NeonMaterial';
@@ -18,8 +24,36 @@ const STRIP_STEP = 4;
 const LINE_INSET = 0.35;
 const LINE_WIDTH = 0.22;
 
-/** Where a side street's own plates start: its junction's cut along its arm, or the reach when no arm matches. */
+/** The roundabout a side street leaves, if it is one of a ring's exits. */
+function ringOf(town: TownDef, st: Street): Roundabout | undefined {
+  return (town.roundabouts ?? []).find(
+    (r) => Math.abs(Math.hypot(st.x0 - r.x, st.z0 - r.z) - ringOuterRadius(r)) < 0.05,
+  );
+}
+
+/**
+ * Where a side street's own pavements, kerbs and lines start: at its plate
+ * cut, or for a ring's exit at the ring's hand-off radius, inside which the
+ * ring's own surface paints them.
+ */
+function kerbCutOf(town: TownDef, st: Street, cut: number): number {
+  const r = ringOf(town, st);
+  return r ? handoffRadius(r) - ringOuterRadius(r) - HANDOFF_OVERLAP : cut;
+}
+
+/**
+ * Where a side street's own plates start: its junction's cut along its arm,
+ * the ring's outer edge for a roundabout's exit, or the reach when no arm
+ * matches.
+ */
 function cutOf(town: TownDef, st: Street, heading: number, routeHalfWidth: number): number {
+  const ring = ringOf(town, st);
+  // A ring exit's plate starts inside the ring: its square end would otherwise stand proud of the
+  // ring's round edge at its corners, which the circle curves back from, and leave two slivers bare.
+  if (ring) {
+    const outer = ringOuterRadius(ring);
+    return -(outer - Math.sqrt(Math.max(0, outer * outer - st.halfWidth * st.halfWidth))) - 0.3;
+  }
   for (const j of town.junctions) {
     if (Math.hypot(j.x - st.x0, j.z - st.z0) > 1e-3) continue;
     for (const a of j.arms) {
@@ -28,6 +62,83 @@ function cutOf(town: TownDef, st: Street, heading: number, routeHalfWidth: numbe
     }
   }
   return routeHalfWidth + JUNCTION_REACH;
+}
+
+/**
+ * Where a side street's plates end: its length, or, where it runs into a
+ * junction at its far end (a city street ending in a T on the route), that
+ * junction's cut along the arm pointing back up the street.
+ */
+function endOf(
+  town: TownDef,
+  st: Street,
+  heading: number,
+  len: number,
+  routeHalfWidth: number,
+): number {
+  for (const j of town.junctions) {
+    if (Math.hypot(j.x - st.x1, j.z - st.z1) > 1e-3) continue;
+    for (const a of j.arms) {
+      const d = Math.atan2(
+        Math.sin(a.heading - heading - Math.PI),
+        Math.cos(a.heading - heading - Math.PI),
+      );
+      if (a.role === 'blocked' && Math.abs(d) < 0.01) return len - stubCut(j, a, routeHalfWidth);
+    }
+  }
+  return len;
+}
+
+/** A mouth in a side street's pavement: another street arrives on `side`, its axis crossing at `at` along, `halfWidth` wide. */
+interface Mouth {
+  at: number;
+  halfWidth: number;
+  side: 1 | -1;
+}
+
+/**
+ * The open streets that run into `st`'s side: each ends on `st`'s
+ * carriageway edge, and `st`'s pavement, kerb and line open for it over the
+ * arriving street's width.
+ */
+function mouthsOf(town: TownDef, st: Street, heading: number, len: number): Mouth[] {
+  const out: Mouth[] = [];
+  const fx = Math.sin(heading);
+  const fz = Math.cos(heading);
+  const lx = Math.cos(heading);
+  const lz = -Math.sin(heading);
+  for (const o of town.streets) {
+    if (o === st || o.route || !o.open) continue;
+    const dx = o.x1 - st.x0;
+    const dz = o.z1 - st.z0;
+    const at = dx * fx + dz * fz;
+    const across = dx * lx + dz * lz;
+    if (at < 0 || at > len) continue;
+    if (Math.abs(Math.abs(across) - st.halfWidth) > 0.5) continue;
+    out.push({ at, halfWidth: o.halfWidth, side: across >= 0 ? 1 : -1 });
+  }
+  return out;
+}
+
+/** Pieces of [a0, a1] left once the mouths on `side` are taken out. */
+function openPieces(
+  a0: number,
+  a1: number,
+  mouths: readonly Mouth[],
+  side: 1 | -1,
+): [number, number][] {
+  const cuts = mouths
+    .filter((m) => m.side === side)
+    .map((m): [number, number] => [m.at - m.halfWidth, m.at + m.halfWidth])
+    .sort((p, q) => p[0] - q[0]);
+  const out: [number, number][] = [];
+  let start = a0;
+  for (const [c0, c1] of cuts) {
+    if (c0 > start) out.push([start, Math.min(c0, a1)]);
+    start = Math.max(start, c1);
+  }
+  if (start < a1) out.push([start, a1]);
+  return out.filter(([p, q]) => q - p > 1e-6);
 }
 
 /**
@@ -65,24 +176,40 @@ export class TownStreetBuilder {
       const len = Math.hypot(dx, dz);
       const hw = st.halfWidth;
       const cut = cutOf(town, st, h, halfWidth);
+      const end = endOf(town, st, h, len, halfWidth);
+      // A roundabout's ring chords are shorter than any cut: the ring is drawn by its own builder.
+      if (end <= cut) continue;
+      const kerbCut = Math.min(end, kerbCutOf(town, st, cut));
       const strip = (a0: number, a1: number, l0: number, l1: number, lift: number, c: Color) =>
         this.strip(st.x0, st.z0, h, a0, a1, l0, l1, lift, c);
-      strip(cut, len, -hw, hw, 0, tarmac);
+      strip(cut, end, -hw, hw, 0, tarmac);
+      const mouths = mouthsOf(town, st, h, len);
+      // An open street's own pavements stop at the pavement of the side street it meets; one ending
+      // in a T on the route stops at the junction's cut like any arm.
+      const sideEnd = st.open && end === len ? end - PAVEMENT_WIDTH : end;
       for (const side of [1, -1] as const) {
         const lo = Math.min(side * hw, side * (hw + PAVEMENT_WIDTH));
-        strip(cut, len, lo, lo + PAVEMENT_WIDTH, KERB_LIFT, pavement);
         const inner = Math.min(side * (hw - LINE_INSET), side * (hw - LINE_INSET - LINE_WIDTH));
-        strip(cut, len, inner, inner + LINE_WIDTH, LINE_ABOVE_DECK, line);
-        this.face(st.x0, st.z0, h, cut, len, side * hw, side, kerb);
+        for (const [p0, p1] of openPieces(kerbCut, sideEnd, mouths, side)) {
+          strip(p0, p1, lo, lo + PAVEMENT_WIDTH, KERB_LIFT, pavement);
+          strip(p0, p1, inner, inner + LINE_WIDTH, LINE_ABOVE_DECK, line);
+          this.face(st.x0, st.z0, h, p0, p1, side * hw, side, kerb);
+        }
+        // Tarmac across the pavement band at each mouth, flush with both carriageways.
+        for (const m of mouths)
+          if (m.side === side)
+            strip(m.at - m.halfWidth, m.at + m.halfWidth, lo, lo + PAVEMENT_WIDTH, 0.002, tarmac);
       }
-      strip(
-        len,
-        len + PAVEMENT_WIDTH,
-        -hw - PAVEMENT_WIDTH,
-        hw + PAVEMENT_WIDTH,
-        KERB_LIFT,
-        pavement,
-      );
+      // An open street runs on to another road's pavement; a closed one has a pavement across its end.
+      if (!st.open)
+        strip(
+          len,
+          len + PAVEMENT_WIDTH,
+          -hw - PAVEMENT_WIDTH,
+          hw + PAVEMENT_WIDTH,
+          KERB_LIFT,
+          pavement,
+        );
     }
     const raw = new BufferGeometry();
     raw.setAttribute('position', new BufferAttribute(Float32Array.from(this.pos), 3));

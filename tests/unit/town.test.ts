@@ -212,7 +212,7 @@ describe('town generator', () => {
     }
     for (const seed of [3, 7]) {
       expect(generateStage(seed, 5).town).toBeDefined();
-      expect(generateStage(seed, 6).town).toBeUndefined();
+      expect(generateStage(seed, 7).town).toBeUndefined();
     }
     // The brief knows too, and charges the town against par.
     for (let seed = 1; seed <= 30; seed++)

@@ -70,17 +70,19 @@ the last sector board or lap line passed.
 
 ## Progression
 
-- Stages run through a twelve-stage cycle of regions: Forest ×2, Alpine ×2,
-  Coast, Forest, Desert, Coast, Alpine, Coast, Desert ×2, then round again,
-  so the same scenery never shows more than twice in a row and each region
-  gets three stages in twelve. Every six stages the roads lengthen by 25 % and the bends tighten a
-  little, so there is always a next stage.
+- Stages run through a fifteen-stage cycle of regions: Forest ×2, Alpine ×2,
+  Coast, Forest, Urban, Desert, Alpine, Desert, Urban, Coast, Urban, Coast,
+  Desert, then round again, so the same scenery never shows more than twice
+  in a row and each region gets three stages in fifteen. Every six stages
+  the roads lengthen by 25 % and the bends tighten a little, so there is
+  always a next stage.
 - Every third stage, that is stages 3, 6, 9 and so on, carries a town: the
   route leaves the open road, threads a village of right-angle corners,
   narrow streets and blocked side streets, and rejoins the stage. The cycle
   puts most of those stages on Forest and Alpine; the Coast road and the
   Desert build no villages, so a town index that falls there (stage 12,
-  for one) stays open road.
+  for one) stays open road, and an Urban stage is a city from start to
+  finish anyway.
 - Any stage up to the first unfinished one can be driven again from the
   Game panel's stage list.
 
@@ -92,6 +94,7 @@ the last sector board or lap line passed.
 | Alpine  | snow 3 (dusted asphalt), tarmac 1 | snow                | amplitude 34, sharper bends                    | 1500 m      | 14 m/s    |
 | Coast   | tarmac, 11 m wide                 | grass               | cliff road 5–35 m over the sea, hairpin stacks | 1600 m      | 15 m/s    |
 | Desert  | sand                              | dune                | dunes of 11 m relief, oases                    | 1900 m      | 16 m/s    |
+| Urban   | tarmac, 6–14 m wide               | grass               | a city keeping 16 m of relief, roundabouts     | 1700 m      | 13 m/s    |
 | Circuit | race asphalt, 12 m wide, kerbs    | grass, gravel traps | gentle hills; three laps of a 1.7–2.4 km lap   | 3 laps      | 20 m/s    |
 
 On a Coast stage the road follows the shore a few metres back from a
@@ -101,7 +104,11 @@ down. Each coast is its own: the sea lies on the left of travel on about half
 of them, the bays run from short coves to long lazy sweeps, and later loops
 add sharper headlands. A rough dry-stone wall runs along whichever edge the ground falls away
 (the car bounces off it); where the cliff is low the bank is sand the car can
-drive down and back up. Night exists as a name only (a Forest clone) and is not yet in the loop. Each stage
+drive down and back up. An Urban stage is a city from start to finish: blocks
+of two to four lanes turning mostly right angles (with the odd skewed corner,
+gentle kink and sweeping avenue), a roundabout or more to circle, tram tracks
+to cross (the car feels the rails), apartment blocks and offices on streets
+that climb and dip. Night exists as a name only (a Forest clone) and is not yet in the loop. Each stage
 also rolls a weather (clear or overcast) into its brief; rendering does not
 react to it yet.
 

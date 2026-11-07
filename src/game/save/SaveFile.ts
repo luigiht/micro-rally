@@ -1,6 +1,6 @@
 import { sanitizeUpgrades, type UpgradeLevels } from '../economy/upgrades';
 import { isCatalogCar, type CatalogCarId } from '../economy/cars';
-import { isCircuitStage, REGION_CYCLE } from '../stage/regions';
+import { isCircuitStage, REGION_CYCLE, type RegionId } from '../stage/regions';
 import { isValidGameId } from './GameId';
 
 export interface StageRecord {
@@ -8,7 +8,7 @@ export interface StageRecord {
   splits: number[];
 }
 
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 export const DRIVER_NAME_MAX = 24;
 
 /** Everything needed to resume a game. Nothing personal beyond the driver name. */
@@ -70,9 +70,33 @@ function migrateV2(raw: Record<string, unknown>): Record<string, unknown> {
   return { ...raw, version: 3, records: kept };
 }
 
-/** A Coast stage of the cycle (never a circuit). */
+/** The twelve-stage region cycle of v2–v4 saves, which v5's fifteen-stage cycle with the cities replaced. */
+const CYCLE_V4: readonly RegionId[] = [
+  'forest',
+  'forest',
+  'alpine',
+  'alpine',
+  'coast',
+  'forest',
+  'desert',
+  'coast',
+  'alpine',
+  'coast',
+  'desert',
+  'desert',
+];
+
+/** A Coast stage of the v4 cycle (never a circuit). */
 function isCoastStage(index: number): boolean {
-  return !isCircuitStage(index) && REGION_CYCLE[index % REGION_CYCLE.length] === 'coast';
+  return !isCircuitStage(index) && CYCLE_V4[index % CYCLE_V4.length] === 'coast';
+}
+
+/** A stage whose region differs between the v4 cycle and the current one (never a circuit, which sits outside both). */
+function regionChanged(index: number): boolean {
+  return (
+    !isCircuitStage(index) &&
+    CYCLE_V4[index % CYCLE_V4.length] !== REGION_CYCLE[index % REGION_CYCLE.length]
+  );
 }
 
 /**
@@ -86,6 +110,20 @@ function migrateV3(raw: Record<string, unknown>): Record<string, unknown> {
     Object.entries(records).filter(([key]) => !isCoastStage(Number(key))),
   );
   return { ...raw, version: 4, records: kept };
+}
+
+/**
+ * v4 saves predate the cities: the region cycle grew from twelve stages to
+ * fifteen, so from stage 7 on many indices are another region's road now
+ * (the first city stands where the first Desert was). Records at every index
+ * whose region changed are dropped; the rest keep their meaning.
+ */
+function migrateV4(raw: Record<string, unknown>): Record<string, unknown> {
+  const records = isRecord(raw.records) ? raw.records : {};
+  const kept = Object.fromEntries(
+    Object.entries(records).filter(([key]) => !regionChanged(Number(key))),
+  );
+  return { ...raw, version: 5, records: kept };
 }
 
 function parseCurrent(raw: Record<string, unknown>): SaveFile | null {
@@ -130,6 +168,7 @@ export function parseSaveFile(data: unknown): SaveFile | null {
   if (raw.version === 1) raw = migrateV1(raw);
   if (raw.version === 2) raw = migrateV2(raw);
   if (raw.version === 3) raw = migrateV3(raw);
+  if (raw.version === 4) raw = migrateV4(raw);
   if (raw.version === SAVE_VERSION) return parseCurrent(raw);
   return null;
 }

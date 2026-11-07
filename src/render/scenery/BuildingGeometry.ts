@@ -10,6 +10,17 @@ import {
   towerWallParts,
 } from './CivicGeometry';
 import { box, gableGeometry, merge, paint, window } from './HouseGeometry';
+import { ARCADE, arcadeRoofParts, arcadeWallParts } from './ArcadeGeometry';
+import { TENEMENT, tenementRoofParts, tenementWallParts } from './TenementGeometry';
+import {
+  BLOCK,
+  blockRoofParts,
+  blockWallParts,
+  OFFICE,
+  OFFICE_LEDGE,
+  officeRoofParts,
+  officeWallParts,
+} from './UrbanGeometry';
 
 /**
  * Town building kits, one walls and one roof geometry per `BuildingStyle`,
@@ -19,7 +30,9 @@ import { box, gableGeometry, merge, paint, window } from './HouseGeometry';
  * runs along the street front, the door faces -z. Towns sit on hilly ground
  * and each building is placed at its highest ground corner, so every walls
  * kit carries a slab-coloured foundation down to `FOUNDATION_BOTTOM`.
- * Townhouse and shop live here; tower and hall are in CivicGeometry.
+ * Townhouse and shop live here; tower and hall are in CivicGeometry, the
+ * city's block and office in UrbanGeometry, its tenement and arcade in
+ * their own files.
  */
 const FLOOR = HOUSE_SLAB_TOP;
 const FOUNDATION_BOTTOM = -1.6;
@@ -44,6 +57,10 @@ const FOOTPRINT: Readonly<Record<BuildingStyle, { w: number; d: number }>> = {
   shop: { w: 10, d: 8 },
   tower: { w: 6, d: 6 },
   hall: { w: 12, d: 9 },
+  block: { w: BLOCK.w, d: BLOCK.d },
+  office: { w: OFFICE.w, d: OFFICE.d },
+  tenement: { w: TENEMENT.w, d: TENEMENT.d },
+  arcade: { w: ARCADE.w, d: ARCADE.d },
 };
 
 /** Foundation under the whole footprint plus a 0.3 m lip, from the plinth top down to FOUNDATION_BOTTOM. */
@@ -225,6 +242,10 @@ export const BUILDING_OUTLINE: Readonly<
   shop: { w: SHOP.w, d: SHOP.d, top: FLOOR + SHOP.wall, z: 0 },
   tower: { w: TOWER.w, d: TOWER.d, top: FLOOR + TOWER.wall, z: 0 },
   hall: { w: HALL.w, d: HALL.d, top: FLOOR + HALL.wall, z: HALL.z },
+  block: { w: BLOCK.w, d: BLOCK.d, top: FLOOR + BLOCK.storey * BLOCK.storeys, z: 0 },
+  office: { w: OFFICE.w, d: OFFICE.d, top: OFFICE_LEDGE, z: 0 },
+  tenement: { w: TENEMENT.w, d: TENEMENT.d, top: FLOOR + TENEMENT.storey * TENEMENT.storeys, z: 0 },
+  arcade: { w: ARCADE.w, d: ARCADE.d, top: FLOOR + ARCADE.storey * ARCADE.storeys, z: 0 },
 };
 
 /* ------------------------------------------------------------------- API */
@@ -235,6 +256,10 @@ export function buildingWallsGeometry(style: BuildingStyle): BufferGeometry {
     shop: shopWallParts,
     tower: towerWallParts,
     hall: hallWallParts,
+    block: blockWallParts,
+    office: officeWallParts,
+    tenement: tenementWallParts,
+    arcade: arcadeWallParts,
   }[style]();
   return merge([foundation(style), ...parts]);
 }
@@ -245,6 +270,10 @@ export function buildingRoofGeometry(style: BuildingStyle): BufferGeometry {
     shop: shopRoofParts,
     tower: towerRoofParts,
     hall: hallRoofParts,
+    block: blockRoofParts,
+    office: officeRoofParts,
+    tenement: tenementRoofParts,
+    arcade: arcadeRoofParts,
   }[style]();
   return merge(parts);
 }

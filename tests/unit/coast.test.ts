@@ -60,13 +60,13 @@ function fieldFor(seed: number): TerrainField {
 }
 
 describe('region cycle', () => {
-  it('never shows a region three stages running, shares the cycle evenly and keeps towns to forest and alpine', () => {
+  it('never shows a region three stages running, shares the cycle evenly and keeps villages to forest and alpine', () => {
     const n = REGION_CYCLE.length;
     for (let i = 0; i < n; i++) {
       const [a, b, c] = [i, i + 1, i + 2].map((k) => REGION_CYCLE[k % n]);
       expect(a === b && b === c).toBe(false);
     }
-    for (const id of ['forest', 'alpine', 'coast', 'desert'])
+    for (const id of ['forest', 'alpine', 'coast', 'desert', 'urban'])
       expect(REGION_CYCLE.filter((r) => r === id)).toHaveLength(3);
     expect(stageRegion(0).region).toBe('forest');
     expect(stageRegion(3).region).toBe('alpine');

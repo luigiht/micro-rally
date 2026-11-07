@@ -5,10 +5,78 @@ tags yet: `main` is deployed continuously, so entries are grouped by the day
 they landed. The numbered entries in [docs/DECISIONS.md](docs/DECISIONS.md)
 hold the reasoning behind each change; the numbers in brackets point there.
 
+## 2026-11-06
+
+### Added
+
+- **Trams.** A low-poly modern tram runs each city tram line now and then,
+  crossing the route at 29 km/h on a timetable from the stage seed, its
+  single-arm pantograph on an overhead contact wire that follows every
+  line; it is solid, so mind the crossings. [151, 152, 153]
+- **City detail.** Urban stages get a detail pass in the game's low-poly
+  style: four city building kits in four façade renders (brick tenements
+  with fire escapes and arched ground floors, arcaded mansion blocks with
+  roof gardens, apartment blocks with cornices, balconies and water towers,
+  offices with stone piers and a set-back crown), zebra crossings and stop
+  lines at every junction arm, parking bays along the three-lane streets
+  with parked cars in them (the Riviera and Tempesta hulls in plain paint,
+  solid, and pitched to the slope), street trees in kerbed pits every 15 m
+  on both sides of every street with lamps, benches, bins, hydrants and
+  bollards between them, traffic lights and manhole covers, and hedges in place of the garden
+  walls. [141–145]
+
+- **Boreal Saloon reshaped.** The rally saloon's body follows its
+  reference more closely: a longer, lower bonnet, a taller rounded
+  greenhouse set further back, a proper boot deck under a taller wing,
+  squared flares over both axles, wrap-round lamps, side skirts, a boot
+  lip and red mud flaps, with the proportions measured off the reference
+  and a fuller livery; the flaps hang from the sills, the nose and tail
+  stand taller under a level bonnet, and four pod lamps ride the bonnet's
+  front edge. The fog lamps stay put. [154–158]
+
+### Fixed
+
+- No grass shows along a city's buildings on a slope or through a seam in a
+  junction's tarmac, and the roundabout island's grass is a true circle.
+  [146]
+- A city's side streets run 150 m and join the roads they meet instead of
+  ending in a wall a few metres in: one that reaches the route ends in a
+  T junction with a proper mouth, one that reaches another side street
+  runs through a mouth in its pavement; the garden walls round the junction
+  greens are closed and the greens hold more trees and bushes. [147, 149]
+- No asphalt-coloured ground over a city's sidewalks at junction corners,
+  the roundabout island's kerb is a true circle, and parked cars sit on
+  their wheels on slopes. [149]
+
 ## 2026-11-05
 
 ### Added
 
+- **Urban stages.** A new region: a big city from the start line to the
+  finish. Streets of one to four lanes with dashed lane markings turn
+  mostly right-angle corners, with skewed blocks, gentle kinks and sweeping
+  avenues between; every corner is a junction with coned-off side streets
+  and there is a crossroads every block; the route circles a roundabout (two
+  or three on later loops) with a kerbed, planted island and blocked exits;
+  tram tracks cross the route at crossroads and run down boulevards, and the
+  car feels the rails; apartment blocks and glass offices line streets that
+  climb and dip twice as much as a village's. Cities sit at stages 7, 11
+  and 13 of every fifteen. [124, 125] Every street keeps its lane count from
+  end to end (widths change across the junction arcs), boulevards carry a
+  kerbed green median with narrow sidewalks, side streets run 80 m into the
+  city, and roundabouts are joined to their roads in one piece of asphalt
+  with the kerbs broken where the roads cross them. [126] Pavements are a
+  metre wider everywhere (3 m), count as concrete under the tyres (tarmac
+  grip, black marks instead of green), and the ground between a city's
+  streets is lawn rather than pale concrete. [127] A street's lane count
+  changes only after a junction corner, never across a kink or a sweeping
+  avenue, and the change sits in the middle of the junction so the new
+  street starts at its full width; bushes line the boulevard medians, whose
+  ends are rounded; roundabouts join every road with continuous tarmac, sidewalks and edge
+  lines; lamp posts keep out of junction mouths, tram beds sit clear of the
+  tarmac they cross, city junctions sit on level plateaus and the ground
+  stays level past every town pavement; tram beds ride clear of the tarmac
+  and the catenary poles are gone. [128, 129, 130, 131, 135, 139]
 - **Circuit races.** Every tenth stage (10, 20, 30, …) is now a closed race
   circuit in parkland: three laps from a standing start on total time, with
   a lap counter, the best lap on the HUD and every lap in the result panel.
@@ -23,6 +91,11 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Changed
 
+- **Fifteen-stage cycle.** The region rotation is now Forest ×2, Alpine ×2,
+  Coast, Forest, Urban, Desert, Alpine, Desert, Urban, Coast, Urban, Coast,
+  Desert. Stages 1–6 are what they were; from stage 7 on many stages are
+  another region's road, so best times at every index whose region changed
+  are dropped when a save is loaded (saves move to version 5). [125]
 - On phones the game no longer goes fullscreen: the installed app and the
   browser tab keep the native status and navigation bars, as before
   2026-11-04. [123]

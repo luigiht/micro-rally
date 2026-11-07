@@ -1,13 +1,14 @@
 import { hashSeed, mulberry32 } from '../rng';
 
-/** Corner arcs: 12 m, or 10 m on the sharpest (over 95°) corners. */
-export function cornerRadius(turn: number): number {
+/** Corner arcs: 12 m, or 10 m on the sharpest (over 95°) corners; a leg may set its own (`radius`, wide city streets). */
+export function cornerRadius(turn: number, radius?: number): number {
+  if (radius !== undefined && radius > 0) return radius;
   return Math.abs(turn) > (19 * Math.PI) / 36 ? 10 : 12;
 }
 
 /** How far before and after the polygon corner the arc starts and ends. */
-export function tangentLength(turn: number): number {
-  return cornerRadius(turn) * Math.tan(Math.abs(turn) / 2);
+export function tangentLength(turn: number, radius?: number): number {
+  return cornerRadius(turn, radius) * Math.tan(Math.abs(turn) / 2);
 }
 
 /**
@@ -45,10 +46,13 @@ export interface TownLeg {
   kind: 'straight' | 'curve';
   /** Straight length, or arc length for a curve. */
   length: number;
+  /** A curve's radius; on a straight, the radius of the corner that ends it (0 for the default, see `cornerRadius`). */
   radius: number;
   sweep: number;
   turn: number;
   halfWidth: number;
+  /** A city roundabout: set on the curve leg that circles its island (see `UrbanPlan`). */
+  roundabout?: { islandRadius: number };
 }
 
 export interface TownPlan {
@@ -134,11 +138,11 @@ function drawLegs(
   return legs;
 }
 
-/** Points every 2 m along the route in the town frame (entry at the origin, heading +z), with straight run-in and run-out. */
-function samplePoints(legs: readonly TownLeg[]): Pt[] {
+/** Points every 2 m along the route in the town frame (entry at the origin, heading +z), with straight run-in and run-out of `runIn`. */
+export function samplePoints(legs: readonly TownLeg[], runIn = RUN_IN): Pt[] {
   const pts: Pt[] = [];
   let x = 0;
-  let z = -RUN_IN;
+  let z = -runIn;
   let h = 0;
   const walk = (dist: number, heading: number) => {
     for (let d = 0; d < dist; d += 2) {
@@ -158,7 +162,7 @@ function samplePoints(legs: readonly TownLeg[]): Pt[] {
       h += dA;
     }
   };
-  walk(RUN_IN, 0);
+  walk(runIn, 0);
   let carry = 0;
   for (const leg of legs) {
     if (leg.kind === 'curve') {
@@ -166,14 +170,51 @@ function samplePoints(legs: readonly TownLeg[]): Pt[] {
       carry = 0;
       continue;
     }
-    const out = leg.turn !== 0 ? tangentLength(leg.turn) : 0;
+    const out = leg.turn !== 0 ? tangentLength(leg.turn, leg.radius) : 0;
     walk(leg.length - carry - out, h);
-    if (leg.turn !== 0) arc(cornerRadius(leg.turn), leg.turn);
+    if (leg.turn !== 0) arc(cornerRadius(leg.turn, leg.radius), leg.turn);
     carry = out;
   }
-  walk(RUN_IN, h);
+  walk(runIn, h);
   pts.push({ x, z });
   return pts;
+}
+
+/**
+ * The self-approach rule on sampled points: no two points `gapAlong` metres
+ * or more apart along the route come within `minSep` of each other. Points
+ * are hashed into cells of `minSep` so a whole city is checked in linear
+ * time.
+ */
+export function selfSeparated(
+  pts: readonly Pt[],
+  gapAlong = APPROACH_ALONG,
+  minSep = MIN_SEPARATION,
+): boolean {
+  const cell = minSep;
+  const gap = Math.ceil(gapAlong / 2);
+  const cells = new Map<number, number[]>();
+  const key = (cx: number, cz: number) => (cx + 0x8000) * 0x10000 + (cz + 0x8000);
+  for (let i = 0; i < pts.length; i++) {
+    const p = pts[i]!;
+    const cx = Math.floor(p.x / cell);
+    const cz = Math.floor(p.z / cell);
+    for (let dx = -1; dx <= 1; dx++)
+      for (let dz = -1; dz <= 1; dz++) {
+        const list = cells.get(key(cx + dx, cz + dz));
+        if (!list) continue;
+        for (const j of list) {
+          if (i - j < gap) continue;
+          const q = pts[j]!;
+          if (Math.hypot(p.x - q.x, p.z - q.z) < minSep) return false;
+        }
+      }
+    const k = key(cx, cz);
+    const list = cells.get(k);
+    if (list) list.push(i);
+    else cells.set(k, [i]);
+  }
+  return true;
 }
 
 /**
@@ -191,7 +232,7 @@ function validLegs(legs: readonly TownLeg[]): boolean {
       carry = 0;
       continue;
     }
-    const out = t > 0 ? tangentLength(leg.turn) : 0;
+    const out = t > 0 ? tangentLength(leg.turn, leg.radius) : 0;
     if (leg.length - carry - out < 8) return false;
     if (t > 0 && legs[i + 1]?.kind !== 'straight') return false;
     carry = out;
@@ -199,14 +240,7 @@ function validLegs(legs: readonly TownLeg[]): boolean {
   const net = legs.reduce((a, l) => a + l.turn + l.sweep, 0);
   if (Math.abs(net) > MAX_NET_TURN) return false;
   const pts = samplePoints(legs);
-  const gap = Math.ceil(APPROACH_ALONG / 2);
-  for (let i = 0; i < pts.length; i += 2) {
-    for (let j = i + gap; j < pts.length; j += 2) {
-      const a = pts[i]!;
-      const b = pts[j]!;
-      if (Math.hypot(a.x - b.x, a.z - b.z) < MIN_SEPARATION) return false;
-    }
-  }
+  if (!selfSeparated(pts)) return false;
   const exit = pts[pts.length - 1]!;
   return exit.z > RUN_IN + 80;
 }

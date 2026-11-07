@@ -1,6 +1,7 @@
 import type { Surface } from '../vehicle/surfaces';
+import type { BuildingStyle } from './Town';
 
-export type RegionId = 'forest' | 'coast' | 'desert' | 'alpine' | 'night' | 'circuit';
+export type RegionId = 'forest' | 'coast' | 'desert' | 'alpine' | 'night' | 'circuit' | 'urban';
 export type Weather = 'clear' | 'overcast' | 'rain' | 'night';
 
 export interface RegionPalette {
@@ -52,6 +53,23 @@ export interface CoastDef {
   scrub: string;
 }
 
+/**
+ * A region whose stages run through a big city (see `UrbanPlan`,
+ * `UrbanGenerator`): the whole stage is one town. Half widths of the street
+ * classes the plan draws from, the roundabout islands, how much hill relief
+ * the city keeps, and the mix of buildings along its streets.
+ */
+export interface UrbanDef {
+  /** Half widths: a narrow one-way lane, two lanes, three, a four-lane boulevard. */
+  lanes: { narrow: number; two: number; three: number; four: number };
+  /** Roundabout island radii, smallest and largest. */
+  island: { min: number; max: number };
+  /** Metres of hill relief kept inside the city (a village keeps 8). */
+  relief: number;
+  /** Building style weights along the city's facades. */
+  styles: readonly (readonly [BuildingStyle, number])[];
+}
+
 export interface RegionDef {
   id: RegionId;
   surfaces: readonly (readonly [Surface, number])[];
@@ -64,6 +82,8 @@ export interface RegionDef {
   coast?: CoastDef;
   /** Set when the region's stages have oases. */
   oases?: OasisDef;
+  /** Set when the region's stages are a city from start to finish. */
+  urban?: UrbanDef;
   /** Whether the town stages (every third, see `stageHasTown`) build a village here: the cliff road and the dunes have none. */
   towns: boolean;
   /** Hills by default; `dunes` makes them a dune sea (see `TerrainField.duneHeight`). */
@@ -278,6 +298,58 @@ const CIRCUIT: RegionDef = {
   towns: false,
 };
 
+/**
+ * A big city from start to finish (see `UrbanPlan`, `UrbanGenerator`,
+ * `UrbanField`): tarmac streets of two to four lanes on a grid of mostly
+ * right-angle corners with the odd skewed block and sweeping avenue,
+ * roundabouts, tram tracks across and along the route, apartment blocks and
+ * offices terraced up hills the city keeps twice as much of as a village.
+ * `towns` is false because the city is its own town; the wild scatter is
+ * the parks' trees.
+ */
+const URBAN: RegionDef = {
+  id: 'urban',
+  surfaces: [['tarmac', 1]],
+  offroad: 'grass',
+  weathers: [
+    ['clear', 2],
+    ['overcast', 1],
+  ],
+  palette: {
+    sky: '#d6e4ec',
+    fog: '#d9e2e8',
+    grassLow: '#7aa35a',
+    grassHigh: '#97b86a',
+    rock: '#8e8c88',
+    shoulder: '#93ae63',
+    foliage: '#3f7a4a',
+    foliageAlt: '#32663f',
+    canopy: '#6f9a45',
+    canopyAlt: '#86a94f',
+    trunk: '#6b4d33',
+    boulder: '#9a9688',
+  },
+  terrain: { amplitude: 18, frequency: 1 / 260 },
+  twistiness: 0,
+  baseLength: 1700,
+  scenery: { trees: 8, broadleaf: 16, bushes: 10, rocks: 0, houses: 0 },
+  parSpeed: 13,
+  towns: false,
+  urban: {
+    lanes: { narrow: 3.2, two: 4.5, three: 5.5, four: 7 },
+    island: { min: 8, max: 11 },
+    relief: 16,
+    styles: [
+      ['block', 4],
+      ['tenement', 4],
+      ['office', 2],
+      ['arcade', 2],
+      ['shop', 2],
+      ['townhouse', 1],
+    ],
+  },
+};
+
 export const REGIONS: Readonly<Record<RegionId, RegionDef>> = {
   forest: FOREST,
   alpine: ALPINE,
@@ -286,6 +358,7 @@ export const REGIONS: Readonly<Record<RegionId, RegionDef>> = {
   // A Forest clone until it gets a look of its own; not in the cycle.
   night: { ...FOREST, id: 'night' },
   circuit: CIRCUIT,
+  urban: URBAN,
 };
 
 /**
@@ -299,14 +372,15 @@ export function isCircuitStage(index: number): boolean {
 }
 
 /**
- * The progression: a fixed twelve-stage cycle of ones and twos (Forest ×2,
- * Alpine ×2, Coast, Forest, Desert, Coast, Alpine, Coast, Desert ×2), laid so
- * that no region shows three stages running, each gets three of every
- * twelve, and the town stages (every third, see `stageHasTown`) build their
- * village on Forest and Alpine only: the cliff road and the dunes have none,
- * so the twelfth stage, a desert, stays open road. Stage 1 is Forest and
- * stage 4 Alpine, as they always were; stage 5 is the first Coast and stage 7
- * the first Desert.
+ * The progression: a fixed fifteen-stage cycle (Forest ×2, Alpine ×2, Coast,
+ * Forest, Urban, Desert, Alpine, Desert, Urban, Coast, Urban, Coast, Desert),
+ * laid so that no region shows three stages running, each gets three of
+ * every fifteen, the town stages (every third, see `stageHasTown`) build
+ * their village on Forest and Alpine (cycle indices 2, 5 and 8; the cliff
+ * road, the dunes and the city have none), and no city sits where the
+ * circuits land (every tenth stage falls on cycle indices 4, 9 and 14).
+ * Stage 1 is Forest, stage 4 Alpine and stage 5 the first Coast, as they
+ * always were; stage 7 is the first city and stage 8 the first Desert.
  */
 export const REGION_CYCLE: readonly RegionId[] = [
   'forest',
@@ -315,11 +389,14 @@ export const REGION_CYCLE: readonly RegionId[] = [
   'alpine',
   'coast',
   'forest',
+  'urban',
   'desert',
-  'coast',
   'alpine',
-  'coast',
   'desert',
+  'urban',
+  'coast',
+  'urban',
+  'coast',
   'desert',
 ];
 /** Stages per difficulty loop: every sixth stage the roads grow 25 % longer and bend tighter. */

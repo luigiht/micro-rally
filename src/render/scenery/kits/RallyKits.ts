@@ -6,14 +6,31 @@ import {
   CylinderGeometry,
   DodecahedronGeometry,
   IcosahedronGeometry,
+  type Material,
   MeshStandardMaterial,
 } from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { RegionPalette } from '@/game/stage/regions';
+import type { Prop, PropKind } from '@/game/stage/SceneryScatter';
+import type { BuildingStyle } from '@/game/stage/Town';
 import { buildingRoofGeometry, buildingWallsGeometry } from '../BuildingGeometry';
 import { houseRoofGeometry, houseWallsGeometry } from '../HouseGeometry';
 import { buildingPlantersGeometry } from '../PlanterGeometry';
 import type { KindKit } from '../SceneryChunkManager';
+import {
+  benchGeometry,
+  binGeometry,
+  bollardGeometry,
+  hydrantGeometry,
+  manholeGeometry,
+  trafficLightGeometry,
+  treePitGeometry,
+} from '../CityFurnitureGeometry';
+import {
+  PARKED_CAR_MODELS,
+  parkedCarBodyGeometry,
+  parkedCarLightsGeometry,
+} from '../CityVehicleGeometry';
 import { arrowBoardGeometry, coneGeometry, lampPostGeometry } from '../StreetFurnitureGeometry';
 
 function foliageGeometry(): BufferGeometry {
@@ -66,6 +83,92 @@ function palmCrownGeometry(): BufferGeometry {
   return merged;
 }
 
+/**
+ * The city's parked cars: one body kit per hull shape, taken by the even or
+ * odd variants, tinted from `colours` (each colour twice, so a variant's
+ * colour is the same whichever hull it gets), and the cars' own lights.
+ */
+export function parkedCarKits(
+  colours: readonly Color[],
+  material: () => Material,
+  lights: () => Material,
+  shadows: boolean,
+  lightsHook: Pick<KindKit, 'colorAt'> = {},
+): KindKit[] {
+  const tint = colours.flatMap((c) => [c, c]);
+  return PARKED_CAR_MODELS.flatMap((model, i): KindKit[] => {
+    const accept = (p: Prop) => p.variant % PARKED_CAR_MODELS.length === i;
+    return [
+      {
+        sources: ['parkedCar'],
+        geometry: parkedCarBodyGeometry(model),
+        material: material(),
+        tint,
+        castShadow: shadows,
+        vertexColors: true,
+        accept,
+      },
+      {
+        sources: ['parkedCar'],
+        geometry: parkedCarLightsGeometry(model),
+        material: lights(),
+        tint: null,
+        castShadow: false,
+        vertexColors: true,
+        accept,
+        ...lightsHook,
+      },
+    ];
+  });
+}
+
+/** The city's pavement furniture, each kind its own painted kit; only the tall pieces cast shadows. */
+export const FURNITURE_KINDS = [
+  'trafficLight',
+  'bench',
+  'bin',
+  'hydrant',
+  'bollard',
+  'treePit',
+  'manhole',
+] as const satisfies readonly PropKind[];
+
+export function furnitureGeometry(kind: (typeof FURNITURE_KINDS)[number]): BufferGeometry {
+  return {
+    trafficLight: trafficLightGeometry,
+    bench: benchGeometry,
+    bin: binGeometry,
+    hydrant: hydrantGeometry,
+    bollard: bollardGeometry,
+    treePit: treePitGeometry,
+    manhole: manholeGeometry,
+  }[kind]();
+}
+
+function cityFurnitureKits(shadows: boolean): KindKit[] {
+  return FURNITURE_KINDS.map((kind) => ({
+    sources: [kind],
+    geometry: furnitureGeometry(kind),
+    material: mat('#ffffff', true),
+    tint: null,
+    castShadow: shadows && kind === 'trafficLight',
+    vertexColors: true,
+  }));
+}
+
+/** Every building style, and the ones that take the city renders. */
+export const BUILDING_STYLES = [
+  'townhouse',
+  'shop',
+  'tower',
+  'hall',
+  'block',
+  'office',
+  'tenement',
+  'arcade',
+] as const satisfies readonly BuildingStyle[];
+const CITY_STYLES: readonly BuildingStyle[] = ['block', 'tenement', 'arcade'];
+
 function mat(color: string, vertexColors = false): MeshStandardMaterial {
   return new MeshStandardMaterial({ color, flatShading: true, roughness: 0.9, vertexColors });
 }
@@ -91,6 +194,16 @@ export function rallyKits(palette: RegionPalette, shadows: boolean, snow: boolea
   const townRoofs = snow
     ? ([new Color('#eef2f5'), new Color('#e4e9ee')] as const)
     : ([new Color('#a8503a'), new Color('#4e5668')] as const);
+  // City façades in four renders (brick, sandstone, white render, ochre) over four muted roofs; the
+  // office's tint only reaches its spandrels and crown, so it runs pale to slate.
+  const cityWalls = ['#9c5b47', '#d8b88a', '#ece6d6', '#c9923f'].map((c) => new Color(c));
+  const cityRoofs = ['#6d6a66', '#8a7f72', '#5e6673', '#7a6358'].map((c) => new Color(c));
+  const officeWalls = ['#dfe3e8', '#5f6b7a', '#c9bfae', '#8a95a3'].map((c) => new Color(c));
+  const cars = ['#d9343a', '#2f5fa8', '#e9e4d8', '#3b3d44', '#e0a52a'].map((c) => new Color(c));
+  const wallsFor = (style: BuildingStyle) =>
+    style === 'office' ? officeWalls : CITY_STYLES.includes(style) ? cityWalls : townWalls;
+  const roofsFor = (style: BuildingStyle) =>
+    style === 'office' || CITY_STYLES.includes(style) ? cityRoofs : townRoofs;
   return [
     {
       sources: ['tree'],
@@ -168,14 +281,14 @@ export function rallyKits(palette: RegionPalette, shadows: boolean, snow: boolea
     },
     // Town buildings: walls and roofs tinted per variant like the houses, in four footprints,
     // and untinted flower boxes under the windows of the houses and shops.
-    ...(['townhouse', 'shop', 'tower', 'hall'] as const).flatMap((style): KindKit[] => {
+    ...BUILDING_STYLES.flatMap((style): KindKit[] => {
       const planters = buildingPlantersGeometry(style);
       return [
         {
           sources: [style],
           geometry: buildingWallsGeometry(style),
           material: mat('#ffffff', true),
-          tint: townWalls,
+          tint: wallsFor(style),
           castShadow: shadows,
           vertexColors: true,
         },
@@ -183,7 +296,7 @@ export function rallyKits(palette: RegionPalette, shadows: boolean, snow: boolea
           sources: [style],
           geometry: buildingRoofGeometry(style),
           material: mat('#ffffff', true),
-          tint: townRoofs,
+          tint: roofsFor(style),
           castShadow: shadows,
           vertexColors: true,
         },
@@ -196,12 +309,19 @@ export function rallyKits(palette: RegionPalette, shadows: boolean, snow: boolea
                 tint: null,
                 castShadow: false,
                 vertexColors: true,
-                accept: (p) => p.variant === 1,
+                accept: (p) => p.variant % 2 === 1,
               } satisfies KindKit,
             ]
           : []),
       ];
     }),
+    // Parked cars: the drivable hulls in plain paint, and their own lights.
+    ...parkedCarKits(
+      cars,
+      () => mat('#ffffff', true),
+      () => mat('#ffffff', true),
+      shadows,
+    ),
     // Town street furniture keeps its own painted colours.
     ...(
       [
@@ -218,5 +338,6 @@ export function rallyKits(palette: RegionPalette, shadows: boolean, snow: boolea
       castShadow: shadows,
       vertexColors: true,
     })),
+    ...cityFurnitureKits(shadows),
   ];
 }

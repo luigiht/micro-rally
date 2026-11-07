@@ -32,7 +32,7 @@ export interface CarModelHandle {
 const MAX_WHEEL_LIFT = 0.35;
 
 /** Bodies that hang their own mud flaps (the buggy's hang from its spare carrier, inside the leaning body). */
-const OWN_FLAPS: ReadonlySet<CarId> = new Set<CarId>(['buggy']);
+const OWN_FLAPS: ReadonlySet<CarId> = new Set<CarId>(['buggy', 'saloon']);
 
 /** Wheel rim colour per car; cream by default. */
 const RIM: Partial<Record<CarId, string>> = {

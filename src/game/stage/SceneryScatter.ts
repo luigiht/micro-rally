@@ -2,11 +2,16 @@ import { circuitTrackside, grandstandSpot, outermostBarrier } from './CircuitTra
 import { hashSeed, mulberry32 } from '../rng';
 import type { Obstacle } from '../vehicle/Collisions';
 import { inOasis, oasisPads, oasisProps, planOases } from './Oases';
+import { parkedCars, parkingStretches } from './ParkingBays';
+import { streetFurniture } from './StreetFurniture';
 import { REGIONS } from './regions';
 import { createRoadHit, type RoadSample } from './RoadPath';
-import type { TerrainField } from './TerrainField';
+import { ISLAND_PAD_BLEND } from './Roundabout';
+import { ROAD_LIFT, type TerrainField } from './TerrainField';
 import {
   buildingBaseHeight,
+  KERB_LIFT,
+  PAVEMENT_WIDTH,
   plateauDistance,
   TERRACE_BLEND,
   TERRACE_FRONT,
@@ -26,10 +31,22 @@ export type PropKind =
   | 'shop'
   | 'tower'
   | 'hall'
+  | 'block'
+  | 'office'
+  | 'tenement'
+  | 'arcade'
   | 'cone'
   | 'arrowLeft'
   | 'arrowRight'
-  | 'lamp';
+  | 'lamp'
+  | 'parkedCar'
+  | 'trafficLight'
+  | 'bench'
+  | 'bin'
+  | 'hydrant'
+  | 'bollard'
+  | 'treePit'
+  | 'manhole';
 
 export interface Prop {
   kind: PropKind;
@@ -39,6 +56,8 @@ export interface Prop {
   scale: number;
   rotation: number;
   variant: number;
+  /** Tilt about the prop's own x axis after the heading, for things that lie along a slope (parked cars). */
+  pitch?: number;
 }
 
 const STEP = 4;
@@ -65,6 +84,9 @@ const HOUSE_PAD_RADIUS = 4.6;
 const HOUSE_CLEAR_RADIUS = 5;
 /** House footprint as three circles along its long (local x) axis, in metres at scale 1. */
 export const HOUSE_COLLIDER = { radius: 2.4, spread: 1.8 } as const;
+
+/** A roundabout island's terrain pad lies this far under its kerb-high meshes. */
+const ISLAND_PAD_BELOW = 0.03;
 
 /** Farmhouses stay this far outside a town's footprint; wild scenery only keeps off its streets, buildings and walls. */
 const TOWN_HOUSE_CLEARANCE = 40;
@@ -122,11 +144,51 @@ const COLLIDER_RADIUS: Readonly<Record<PropKind, number>> = {
   shop: 0,
   tower: 0,
   hall: 0,
+  block: 0,
+  office: 0,
+  tenement: 0,
+  arcade: 0,
   cone: 0,
   arrowLeft: 0,
   arrowRight: 0,
   lamp: 0.15,
+  parkedCar: 0,
+  trafficLight: 0.15,
+  bench: 0.35,
+  bin: 0.2,
+  hydrant: 0.15,
+  bollard: 0.12,
+  treePit: 0,
+  manhole: 0,
 };
+/** A parked car collides as two circles along its length (local z, nose at +z). */
+export const CAR_COLLIDER = { radius: 0.95, spread: 1.1 } as const;
+
+/** The cars parked in a city's bays, each on the deck of its street, as props. */
+function cityCars(stage: TerrainField['stage'], field: TerrainField): Prop[] {
+  const town = stage.town;
+  const def = REGIONS[stage.region].urban;
+  if (!town?.city || !def) return [];
+  return parkedCars(parkingStretches(town, stage, def), stage.seed).map((c) => {
+    // The car lies along the street's slope: pitched by the deck's rise from its tail to its nose.
+    const nx = Math.sin(c.yaw);
+    const nz = Math.cos(c.yaw);
+    const half = CAR_COLLIDER.spread;
+    const nose = field.deckAt(c.x + nx * half, c.z + nz * half);
+    const tail = field.deckAt(c.x - nx * half, c.z - nz * half);
+    return {
+      kind: 'parkedCar',
+      x: c.x,
+      y: (nose + tail) / 2,
+      z: c.z,
+      scale: 1,
+      rotation: c.yaw,
+      variant: c.variant,
+      // A positive pitch about x drops +z, so a climbing nose takes a negative pitch.
+      pitch: -Math.atan2(nose - tail, 2 * half),
+    };
+  });
+}
 
 /** Deterministic roadside scenery along the stage. */
 export function scatterScenery(field: TerrainField): Prop[] {
@@ -217,6 +279,16 @@ export function scatterScenery(field: TerrainField): Prop[] {
     yaw: b.yaw,
     blend: TERRACE_BLEND,
   }));
+  // A roundabout's island stands a kerb above the ring's deck, level: the pad covers the grass core
+  // inside the island's pavement band, a little under the island's own grass disc and pavement
+  // meshes, so the terrain's coarse facets never show through their round edges.
+  const islands = (stage.town?.roundabouts ?? []).map((r) => ({
+    x: r.x,
+    z: r.z,
+    y: field.roadHeightAt(r.from) + ROAD_LIFT + KERB_LIFT - ISLAND_PAD_BELOW,
+    radius: r.islandRadius - PAVEMENT_WIDTH - 0.4,
+    blend: ISLAND_PAD_BLEND,
+  }));
   field.setPads([
     ...houses.map((h) => ({
       x: h.x,
@@ -225,6 +297,7 @@ export function scatterScenery(field: TerrainField): Prop[] {
       radius: HOUSE_PAD_RADIUS * h.scale,
     })),
     ...terraces,
+    ...islands,
     ...oasisPads(oases),
   ]);
   // Nothing grows through a house or in a pool: drop trees, bushes and rocks inside their footprints.
@@ -237,6 +310,8 @@ export function scatterScenery(field: TerrainField): Prop[] {
   if (stage.town)
     kept.push(
       ...townProps(stage.town, field, density.broadleaf > density.trees ? 'broadleaf' : 'tree'),
+      ...cityCars(stage, field),
+      ...(stage.town.city ? streetFurniture(stage.town, stage, field, stage.seed) : []),
     );
   return kept;
 }
@@ -323,6 +398,15 @@ export function propObstacles(props: readonly Prop[]): Obstacle[] {
       for (const k of [-1, 0, 1]) {
         const o = HOUSE_COLLIDER.spread * p.scale * k;
         out.push({ x: p.x + ax * o, z: p.z + az * o, r });
+      }
+      continue;
+    }
+    if (p.kind === 'parkedCar') {
+      const ax = Math.sin(p.rotation);
+      const az = Math.cos(p.rotation);
+      for (const k of [-1, 1]) {
+        const o = CAR_COLLIDER.spread * k;
+        out.push({ x: p.x + ax * o, z: p.z + az * o, r: CAR_COLLIDER.radius });
       }
       continue;
     }

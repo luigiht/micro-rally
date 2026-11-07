@@ -5,7 +5,13 @@ import { type ReplayMarks, ReplayTrack } from '@/game/replay/ReplayTrack';
 import { StageRun } from '@/game/stage/StageRun';
 import type { StageDef } from '@/game/stage/StageGenerator';
 import type { CarSpec } from '@/game/vehicle/CarSpec';
-import { resolveObstacleCollisions, type ObstacleGrid } from '@/game/vehicle/Collisions';
+import {
+  resolveBoxCollisions,
+  resolveObstacleCollisions,
+  type BoxObstacle,
+  type ObstacleGrid,
+} from '@/game/vehicle/Collisions';
+import { tramBoxes, type TramTraffic } from '@/game/stage/TramService';
 import { createControlInput, mergeControlInput } from '@/game/vehicle/ControlInput';
 import { createVehiclePose, interpolatePose } from '@/game/vehicle/interpolatePose';
 import type { TerrainQuery } from '@/game/vehicle/Terrain';
@@ -30,6 +36,8 @@ export interface DriveWorld {
   terrain: TerrainQuery;
   spawn: SpawnPose;
   obstacles?: ObstacleGrid;
+  /** A city's trams: moving hitboxes posed from the run's clock. */
+  trams?: TramTraffic;
   stage?: StageDef;
   /** Development spawn: metres along the stage the car starts at, so the checkpoints behind it count as passed. */
   startAlong?: number;
@@ -68,6 +76,12 @@ export class DrivingSession {
   private canvas: HTMLElement | null = null;
   /** Seconds of simulated time; stands still while a panel pauses the game. */
   time = 0;
+  private readonly tramHits: BoxObstacle[] = [];
+
+  /** The clock the world's moving parts (the trams) follow: the replay's while one plays, else the run's. */
+  get clock(): number {
+    return this.replayClock ?? this.time;
+  }
 
   private readonly stepFn = (dt: number) => {
     const run = this.run;
@@ -83,10 +97,18 @@ export class DrivingSession {
     const px = s.x;
     const pz = s.z;
     this.sim.step(dt, input, this.world.terrain, DEFAULT_ENV);
-    if (this.world.obstacles) {
-      const impact = resolveObstacleCollisions(s, this.world.obstacles);
-      if (impact > 0) run?.onImpact(impact);
+    let impact = 0;
+    if (this.world.obstacles) impact = resolveObstacleCollisions(s, this.world.obstacles);
+    if (this.world.trams) {
+      const boxes = tramBoxes(
+        this.world.trams.lines,
+        this.world.trams.runs,
+        this.time,
+        this.tramHits,
+      );
+      impact = Math.max(impact, resolveBoxCollisions(s, boxes));
     }
+    if (impact > 0) run?.onImpact(impact);
     run?.onMove(px, pz, s.x, s.z);
     this.recordStep(run, dt);
   };

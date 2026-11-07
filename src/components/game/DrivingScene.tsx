@@ -34,7 +34,8 @@ const DEV_SPAWN: number | 'town' | null = (() => {
 function StageDrive({ gameSeed, stageIndex }: { gameSeed: number; stageIndex: number }) {
   const world = useMemo(() => createStageWorld(gameSeed, stageIndex), [gameSeed, stageIndex]);
   const drive = useMemo<DriveWorld>(() => {
-    const at = DEV_SPAWN === 'town' ? (world.stage.town?.from ?? 120) - 120 : DEV_SPAWN;
+    const at =
+      DEV_SPAWN === 'town' ? Math.max(0, (world.stage.town?.from ?? 120) - 120) : DEV_SPAWN;
     let spawn = world.stage.spawn;
     if (at !== null && at > 0) {
       const s = { x: 0, z: 0, heading: 0 };
@@ -45,6 +46,7 @@ function StageDrive({ gameSeed, stageIndex }: { gameSeed: number; stageIndex: nu
       terrain: world.field,
       spawn,
       obstacles: world.obstacles,
+      ...(world.trams ? { trams: world.trams } : {}),
       stage: world.stage,
       ...(at !== null && at > 0 ? { startAlong: at } : {}),
     };
@@ -73,8 +75,8 @@ function StageDrive({ gameSeed, stageIndex }: { gameSeed: number; stageIndex: nu
     renderer.current?.setTheme(theme);
   }, [theme]);
 
-  const onPose = useCallback((pose: Readonly<VehiclePose>) => {
-    renderer.current?.update(pose.x, pose.z);
+  const onPose = useCallback((pose: Readonly<VehiclePose>, clock: number) => {
+    renderer.current?.update(pose.x, pose.z, clock);
   }, []);
 
   return (

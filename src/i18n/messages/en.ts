@@ -206,6 +206,7 @@ export const en = {
     desert: 'Desert',
     alpine: 'Alpine',
     night: 'Night',
+    urban: 'Urban',
     circuit: 'Circuit',
   },
   controls: [

@@ -25,10 +25,22 @@ const KINDS: PropKind[] = [
   'shop',
   'tower',
   'hall',
+  'block',
+  'office',
+  'tenement',
+  'arcade',
   'cone',
   'arrowLeft',
   'arrowRight',
   'lamp',
+  'parkedCar',
+  'trafficLight',
+  'bench',
+  'bin',
+  'hydrant',
+  'bollard',
+  'treePit',
+  'manhole',
 ];
 
 const prop = (kind: PropKind, x = 0, z = 0, variant = 0): Prop => ({

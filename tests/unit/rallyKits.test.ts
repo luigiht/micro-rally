@@ -18,10 +18,22 @@ const KINDS: PropKind[] = [
   'shop',
   'tower',
   'hall',
+  'block',
+  'office',
+  'tenement',
+  'arcade',
   'cone',
   'arrowLeft',
   'arrowRight',
   'lamp',
+  'parkedCar',
+  'trafficLight',
+  'bench',
+  'bin',
+  'hydrant',
+  'bollard',
+  'treePit',
+  'manhole',
 ];
 
 const prop = (kind: PropKind, variant = 0): Prop => ({
@@ -44,12 +56,15 @@ describe('rallyKits', () => {
     }
     // Houses and town buildings are two kits (walls, roof); flower boxes only on variant 1.
     expect(kits.filter((k) => k.sources.includes('house'))).toHaveLength(2);
-    const planters = kits.filter((k) => k.accept);
+    const planters = kits.filter((k) => k.accept && k.sources.includes('shop'));
     expect(planters.length).toBeGreaterThan(0);
     for (const k of planters) {
       expect(k.accept!(prop('shop', 1))).toBe(true);
       expect(k.accept!(prop('shop', 0))).toBe(false);
     }
+    // City façades come in four renders; the village's in two.
+    expect(kits.find((k) => k.sources.includes('tenement'))!.tint).toHaveLength(4);
+    expect(kits.find((k) => k.sources.includes('townhouse'))!.tint).toHaveLength(2);
     const trunk = kits.find((k) => k.sources.length === 2)!;
     const dummy = new Object3D();
     dummy.scale.setScalar(1);
@@ -71,7 +86,7 @@ describe('rallyKits', () => {
     const forest = rallyKits(REGIONS.forest.palette, true, false);
     const alpine = rallyKits(REGIONS.alpine.palette, true, true);
     const roof = (kits: typeof forest) => kits.filter((k) => k.sources.includes('house'))[1]!;
-    expect(roof(forest).tint![0].getHexString()).not.toBe(roof(alpine).tint![0].getHexString());
+    expect(roof(forest).tint![0]!.getHexString()).not.toBe(roof(alpine).tint![0]!.getHexString());
     for (const k of [...forest, ...alpine]) {
       k.geometry.dispose();
       k.material.dispose();

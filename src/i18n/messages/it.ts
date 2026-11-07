@@ -216,6 +216,7 @@ export const it: Messages = {
     desert: 'Deserto',
     alpine: 'Alpi',
     night: 'Notte',
+    urban: 'Urbano',
     circuit: 'Circuito',
   },
   controls: [

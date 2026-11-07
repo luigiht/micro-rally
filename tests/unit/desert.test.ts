@@ -9,7 +9,7 @@ import { SURFACES } from '@/game/vehicle/surfaces';
 import { OasisBuilder } from '@/render/terrain/OasisBuilder';
 
 /** The first Desert stage of the cycle. */
-const DESERT_INDEX = 6;
+const DESERT_INDEX = 7;
 const SEEDS = [1, 2, 3, 4, 5, 6];
 
 const fields = new Map<number, TerrainField>();
@@ -25,20 +25,20 @@ function fieldFor(seed: number): TerrainField {
 
 describe('Desert stages', () => {
   it('never carry a town, even on a town index', () => {
-    // Index 11 is a desert stage on a town index: no village, and the brief charges no town time.
-    expect(stageRegion(11).region).toBe('desert');
-    expect(stageHasTown(11)).toBe(false);
+    // Index 14 is a desert stage on a town index: no village, and the brief charges no town time.
+    expect(stageRegion(14).region).toBe('desert');
+    expect(stageHasTown(14)).toBe(false);
     for (let i = 0; i < 48; i++)
       if (stageRegion(i).region === 'desert') expect(stageHasTown(i)).toBe(false);
     for (const seed of [1, 2, 3]) {
-      const stage = generateStage(seed, 11);
+      const stage = generateStage(seed, 14);
       expect(stage.town).toBeUndefined();
-      expect(stageBrief(seed, 11).parTime).toBe(stage.parTime);
+      expect(stageBrief(seed, 14).parTime).toBe(stage.parTime);
     }
   });
 
   it('sit in the cycle on a packed-sand piste through soft sand', () => {
-    expect(REGION_CYCLE).toHaveLength(12);
+    expect(REGION_CYCLE).toHaveLength(15);
     expect(stageRegion(DESERT_INDEX).region).toBe('desert');
     expect(SURFACES.sand.grip).toBeLessThan(SURFACES.gravel.grip);
     expect(SURFACES.sand.grip).toBeGreaterThan(SURFACES.dune.grip);

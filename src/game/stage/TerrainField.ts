@@ -17,6 +17,7 @@ import { createRoadHit } from './RoadPath';
 import { smoothRoadProfile } from './RoadProfile';
 import { halfWidthAt } from './RoadWidth';
 import type { StageDef } from './StageGenerator';
+import { UrbanField } from './UrbanField';
 import {
   JUNCTION_REACH,
   KERB_LIFT,
@@ -30,6 +31,14 @@ import {
 import { junctionKerbs, type JunctionSurface } from './TownKerbs';
 
 const FLAT_MARGIN = 3;
+/**
+ * In a town the ground stays level a whole terrain cell (2 m) beyond the
+ * pavement, so the mesh's slope toward the hills starts past the pavement's
+ * edge instead of poking up through its last half metre as a jagged line.
+ */
+const TOWN_FLAT_MARGIN = PAVEMENT_WIDTH + 2;
+/** A city's ground is paving-coloured this far behind its pavements, where the terraces' pads ramp up. */
+const PAVED_MARGIN = 1.6;
 const BLEND_WIDTH = 16;
 /** On a Coast stage the verges give way to the ground over this much instead, so the cliff edge and the cut show. */
 const COAST_BLEND = 9;
@@ -83,6 +92,25 @@ interface StubDeck {
   /** The middle of `profile`: the deck on the axis at the zone's end. */
   yZone: number;
   y1: number;
+  /** An open city street: its far end takes the deck of the road it meets. */
+  open: boolean;
+  /** An open street ending in a T on the route: within this fraction of its length from its end the deck is the route's. */
+  farZone: number;
+}
+
+/** A side street's deck at a point: the route's deck through the junction zone, then its own ramp (see `stubHit`). */
+function stubDeckAt(s: StubDeck, x: number, z: number, routeDeck: number | null): number {
+  const len2 = s.len * s.len;
+  let t = len2 > 0 ? ((x - s.x0) * s.dx + (z - s.z0) * s.dz) / len2 : 0;
+  t = t < 0 ? 0 : t > 1 ? 1 : t;
+  const zone = (s.hw + JUNCTION_REACH) / s.len;
+  if (t <= zone && routeDeck !== null) return routeDeck;
+  if (s.farZone > 0 && t >= 1 - s.farZone && routeDeck !== null) return routeDeck;
+  const lat = ((x - s.x0) * s.dz - (z - s.z0) * s.dx) / s.len;
+  const start = profileAt(s, lat);
+  const span = Math.max(1e-6, 1 - s.farZone - zone);
+  const ramp = Math.min(1, Math.max(0, (t - zone) / span));
+  return start + (s.y1 - start) * ramp;
 }
 
 /** `s.profile` interpolated at `lat` metres to the street's left, held at the edges. */
@@ -127,6 +155,8 @@ export interface TerrainSample {
   roadBlend: number;
   /** Unsigned distance to the road centreline (Infinity when far). */
   roadDistance: number;
+  /** In a city: 2 under a carriageway or a junction's paving, 1 under a pavement and the strip behind it, else 0. */
+  paved?: number;
   /** How rocky the ground is here, 0..1: the coast's cliff band and outcrops; 0 elsewhere. */
   rock?: number;
   /** Coast only, 0..1: gravel and scree, and sun-dried grass. */
@@ -189,6 +219,8 @@ export class TerrainField implements TerrainQuery {
   private readonly flatMargin: number;
   /** A circuit's kerbs, gravel traps and barriers; null on an open stage. */
   private readonly trackside: CircuitTrackside | null;
+  /** A city's roundabout levelling and tram rails; null elsewhere. */
+  private urban: UrbanField | null = null;
 
   constructor(readonly stage: StageDef) {
     const region = REGIONS[stage.region];
@@ -213,10 +245,17 @@ export class TerrainField implements TerrainQuery {
     this.flatMargin = this.trackside
       ? outermostBarrier(this.trackside) - stage.halfWidth + 4
       : FLAT_MARGIN;
-    this.corridor = stage.halfWidth + this.flatMargin + BLEND_WIDTH;
+    this.corridor =
+      stage.halfWidth + Math.max(this.flatMargin, stage.town ? TOWN_FLAT_MARGIN : 0) + BLEND_WIDTH;
     this.town = stage.town ?? null;
     this.townY = this.town ? this.plateauHeight(this.town) : 0;
-    this.townRelief = Math.min(TOWN_RELIEF_MAX, TOWN_RELIEF_METRES / this.amplitude);
+    // A city says how much of the hills it keeps; a village keeps a fixed share.
+    this.townRelief =
+      this.town?.relief !== undefined
+        ? Math.min(0.9, this.town.relief / this.amplitude)
+        : Math.min(TOWN_RELIEF_MAX, TOWN_RELIEF_METRES / this.amplitude);
+    if (this.town?.relief !== undefined)
+      this.urban = new UrbanField(this.town, (x, z) => this.groundHeight(x, z));
     this.roadHeights = this.buildRoadHeights();
     this.stubs = this.town ? this.buildStubs(this.town) : [];
     this.junctions = this.town
@@ -273,7 +312,8 @@ export class TerrainField implements TerrainQuery {
     const d = plateauDistance(this.town, x, z);
     if (d >= PLATEAU_BLEND) return base;
     const tamed = this.townY + (base - this.townY) * this.townRelief;
-    return tamed + (base - tamed) * smoothstep(0, PLATEAU_BLEND, d);
+    const h = tamed + (base - tamed) * smoothstep(0, PLATEAU_BLEND, d);
+    return this.urban ? this.urban.tame(x, z, h) : h;
   }
 
   /** Side streets start at the route's height and follow the ground outward, no steeper than the road. */
@@ -315,8 +355,63 @@ export class TerrainField implements TerrainQuery {
         profile,
         yZone,
         y1: yZone + rise,
+        open: s.open === true,
+        farZone: 0,
       });
     }
+    // An open street ends on another road and takes that road's deck there, whatever the climb:
+    // the route's where the route is in reach, else the side street it runs into; two that meet
+    // head on share the mean of their own levels.
+    const ends = out.map((s) => ({ x: s.x0 + s.dx, z: s.z0 + s.dz }));
+    const joined = out.map((s, i) => {
+      if (!s.open) return s.y1;
+      const e = ends[i]!;
+      if (this.stage.path.nearest(e.x, e.z, this.corridor, this.hit)) {
+        if (this.hit.distance < 1) {
+          // On the route's axis: a T junction. The route's deck holds through the junction zone
+          // at this end as at the other, and the ramp between the zones ends at the route's deck
+          // where the far zone begins.
+          const hw = halfWidthAt(this.stage, this.hit.along);
+          const zoneLen = Math.min(s.len / 2, hw + JUNCTION_REACH);
+          s.farZone = zoneLen / s.len;
+          const zx = e.x - (s.dx / s.len) * zoneLen;
+          const zz = e.z - (s.dz / s.len) * zoneLen;
+          return this.stage.path.nearest(zx, zz, this.corridor, this.hit)
+            ? this.roadHeightAt(this.hit.along)
+            : this.roadHeightAt(this.hit.along);
+        }
+        return this.roadHeightAt(this.hit.along);
+      }
+      let best: StubDeck | null = null;
+      let bestD = Infinity;
+      out.forEach((o, k) => {
+        if (o === s) return;
+        const len2 = o.len * o.len;
+        let t = len2 > 0 ? ((e.x - o.x0) * o.dx + (e.z - o.z0) * o.dz) / len2 : 0;
+        t = t < 0 ? 0 : t > 1 ? 1 : t;
+        const d = Math.hypot(e.x - (o.x0 + o.dx * t), e.z - (o.z0 + o.dz * t));
+        const facing = o.open && Math.hypot(ends[k]!.x - e.x, ends[k]!.z - e.z) < 1.5;
+        if (facing) {
+          best = null;
+          bestD = -1;
+          return;
+        }
+        if (bestD >= 0 && d < bestD && d < o.hw + PAVEMENT_WIDTH + 1) {
+          best = o;
+          bestD = d;
+        }
+      });
+      if (bestD < 0) {
+        const other = out.find(
+          (o, k) => o !== s && Math.hypot(ends[k]!.x - e.x, ends[k]!.z - e.z) < 1.5,
+        );
+        return other ? (s.y1 + other.y1) / 2 : s.y1;
+      }
+      return best ? stubDeckAt(best, e.x, e.z, null) : s.y1;
+    });
+    out.forEach((s, i) => {
+      s.y1 = joined[i]!;
+    });
     return out;
   }
 
@@ -337,20 +432,11 @@ export class TerrainField implements TerrainQuery {
       if (distance - s.hw >= best) continue;
       best = distance - s.hw;
       found = true;
-      const zone = (s.hw + JUNCTION_REACH) / s.len;
-      if (t <= zone && routeDeck !== null) {
-        // Through the junction zone the street is the route's own deck, so plates and the
-        // ribbon meet without a step.
-        out.deck = routeDeck;
-      } else {
-        // Beyond it the street carries on from the deck across the zone's end and ramps to
-        // its end level: the route past the zone (which may bend away, or loop back within
-        // reach near the street's end) has no say. Continuous at the zone's end.
-        const lat = ((x - s.x0) * s.dz - (z - s.z0) * s.dx) / s.len;
-        const start = profileAt(s, lat);
-        const ramp = zone >= 1 ? 0 : Math.max(0, (t - zone) / (1 - zone));
-        out.deck = start + (s.y1 - start) * ramp;
-      }
+      // Through the junction zone the street is the route's own deck, so plates and the ribbon
+      // meet without a step; beyond it the street carries on from the deck across the zone's end
+      // and ramps to its end level: the route past the zone (which may bend away, or loop back
+      // within reach near the street's end) has no say. Continuous at the zone's end.
+      out.deck = stubDeckAt(s, x, z, routeDeck);
       out.distance = distance;
       out.hw = s.hw;
     }
@@ -385,6 +471,11 @@ export class TerrainField implements TerrainQuery {
         out.stub = true;
         found = true;
       }
+    }
+    // Inside a roundabout's hand-off disc every deck is the ring's level.
+    if (found && this.urban) {
+      const level = this.urban.ringLevel(x, z);
+      if (level !== null) out.deck = level;
     }
     return found;
   }
@@ -443,6 +534,12 @@ export class TerrainField implements TerrainQuery {
     return this.coast && !st.stub ? COAST_BLEND : BLEND_WIDTH;
   }
 
+  /** Level ground beyond the carriageway before the blend: wider where the town's pavements run. */
+  private flatMarginFor(st: StreetHit): number {
+    if (this.town && (st.stub || townFade(this.town, st.along) > 0)) return TOWN_FLAT_MARGIN;
+    return this.flatMargin;
+  }
+
   sample(x: number, z: number, out: TerrainSample): TerrainSample {
     const base = this.groundHeight(x, z);
     const st = this.street;
@@ -456,6 +553,7 @@ export class TerrainField implements TerrainQuery {
       out.scree = 0;
       out.dry = 0;
     }
+    out.paved = 0;
     if (!this.nearestStreet(x, z, st)) {
       out.height = this.applyPads(x, z, base);
       out.roadBlend = 0;
@@ -464,11 +562,17 @@ export class TerrainField implements TerrainQuery {
     }
     const deck = st.deck + ROAD_LIFT;
     const hw = st.hw;
-    const t = smoothstep(
-      hw + this.flatMargin,
-      hw + this.flatMargin + this.blendWidth(st),
-      st.distance,
-    );
+    const flat = this.flatMarginFor(st);
+    if (this.town?.city) {
+      // The ground under a city street reads as its surface: tarmac under the carriageway and the
+      // junctions' paving, paving under the pavements and the strip up to the facades, so neither
+      // a seam between plates nor a terrace's ramp ever shows green.
+      let beyond = st.distance - hw;
+      for (const js of this.junctions)
+        if (Math.hypot(x - js.x, z - js.z) <= js.zone) beyond = Math.min(beyond, js.distance(x, z));
+      out.paved = beyond < 0.3 ? 2 : beyond < PAVEMENT_WIDTH + PAVED_MARGIN ? 1 : 0;
+    }
+    const t = smoothstep(hw + flat, hw + flat + this.blendWidth(st), st.distance);
     let trench =
       (ROAD_LIFT + ROAD_BED_DROP) * (1 - smoothstep(hw - TRENCH_IN, hw + TRENCH_OUT, st.distance));
     for (const js of this.junctions) {
@@ -479,7 +583,10 @@ export class TerrainField implements TerrainQuery {
         (ROAD_LIFT + ROAD_BED_DROP) * (1 - smoothstep(-TRENCH_IN, TRENCH_OUT, f)),
       );
     }
-    out.height = this.applyPads(x, z, deck + (base - deck) * t - trench);
+    const raw = deck + (base - deck) * t - trench;
+    // Under a city's pavements the terraces' pads do not reach: a pad vertex there would tilt the
+    // coarse terrain face up through the pavement as a green wedge along the building.
+    out.height = out.paved ? raw : this.applyPads(x, z, raw);
     out.roadBlend = 1 - t;
     out.roadDistance = st.distance;
     return out;
@@ -492,11 +599,8 @@ export class TerrainField implements TerrainQuery {
     this.nearStreet = this.nearestStreet(x, z, st);
     if (!this.nearStreet) return this.applyPads(x, z, base);
     const deck = st.deck + ROAD_LIFT;
-    const t = smoothstep(
-      st.hw + this.flatMargin,
-      st.hw + this.flatMargin + this.blendWidth(st),
-      st.distance,
-    );
+    const flat = this.flatMarginFor(st);
+    const t = smoothstep(st.hw + flat, st.hw + flat + this.blendWidth(st), st.distance);
     return this.applyPads(x, z, deck + (base - deck) * t);
   }
 
@@ -513,16 +617,17 @@ export class TerrainField implements TerrainQuery {
     const st = this.street;
     const fade = st.stub ? 1 : townFade(town, st.along);
     if (fade <= 0) return h;
+    const rails = this.urban ? this.urban.lift(x, z) : 0;
     let out = st.distance - st.hw;
     for (const js of this.junctions) {
       if (Math.hypot(x - js.x, z - js.z) > js.zone) continue;
       out = Math.min(out, js.distance(x, z));
     }
-    if (out <= 0 || out >= PAVEMENT_WIDTH + 0.4) return h;
+    if (out <= 0 || out >= PAVEMENT_WIDTH + 0.4) return h + rails;
     const onto =
       smoothstep(0, KERB_RAMP, out) *
       (1 - smoothstep(PAVEMENT_WIDTH - 0.3, PAVEMENT_WIDTH + 0.4, out));
-    return h + KERB_LIFT * fade * onto;
+    return h + KERB_LIFT * fade * onto + rails;
   }
 
   /** A circuit kerb under the last `deckAt` point: a low ramped bump a wheel feels. */
@@ -538,7 +643,12 @@ export class TerrainField implements TerrainQuery {
     );
   }
 
-  /** Town streets are paved whatever the stage surface; the route through the town counts as one of them. */
+  /**
+   * Town streets are paved whatever the stage surface; the route through the
+   * town counts as one of them, and so do the pavements (concrete, a kerb up:
+   * tarmac grip, black tyre marks) along every street and round every
+   * junction's surface.
+   */
   surfaceAt(x: number, z: number): Surface {
     if (this.trackside) {
       const { path, halfWidth, surface } = this.stage;
@@ -560,7 +670,22 @@ export class TerrainField implements TerrainQuery {
       this.stubScratch.distance <= this.stubScratch.hw
     )
       return 'tarmac';
+    if (town && this.onPavement(x, z)) return 'tarmac';
     return this.offroad;
+  }
+
+  /** True on a town pavement: the kerb-high band outside a street's carriageway or a junction's surface, where the town has faded in. */
+  private onPavement(x: number, z: number): boolean {
+    const st = this.street;
+    if (!this.nearestStreet(x, z, st)) return false;
+    const fade = st.stub ? 1 : townFade(this.town!, st.along);
+    if (fade < 0.5) return false;
+    let out = st.distance - st.hw;
+    for (const js of this.junctions) {
+      if (Math.hypot(x - js.x, z - js.z) > js.zone) continue;
+      out = Math.min(out, js.distance(x, z));
+    }
+    return out < PAVEMENT_WIDTH + 0.2;
   }
 
   /** The road profile: the ground under each sample, smoothed and grade-limited (cyclically on a closed lap). */
@@ -569,6 +694,7 @@ export class TerrainField implements TerrainQuery {
     const raw = new Float64Array(count);
     for (let i = 0; i < (closed ? count - 1 : count); i++)
       raw[i] = this.groundHeight(xs[i]!, zs[i]!);
-    return smoothRoadProfile(raw, spacing, closed);
+    const smooth = smoothRoadProfile(raw, spacing, closed);
+    return this.urban ? this.urban.levelProfile(smooth, spacing, this.stage.path) : smooth;
   }
 }

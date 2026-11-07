@@ -35,7 +35,15 @@ export const ARROW_AHEAD_OF_CONES = 1.6;
 /** Cones stop this short of the kerb. */
 const CONE_MARGIN = 0.5;
 /** Corner greenery: how far into a wedge from its facade corner a tree or bush may stand, and the room each needs. */
-const TREE_SPOTS = [5, 4, 3, 6.5] as const;
+const TREE_SPOTS: readonly (readonly [number, number])[] = [
+  [5, 0],
+  [4, 0],
+  [3, 0],
+  [6.5, 0],
+  [8, 3.5],
+  [8, -3.5],
+  [11, 0],
+];
 const BUSH_SPOTS: readonly (readonly [number, number])[] = [
   [1.6, 1.4],
   [1.6, -1.4],
@@ -44,7 +52,14 @@ const BUSH_SPOTS: readonly (readonly [number, number])[] = [
   [2.4, 0],
   [4.5, 3.6],
   [4.5, -3.6],
+  [6, 5],
+  [6, -5],
+  [9, 1.8],
+  [9, -1.8],
 ];
+/** At most this many trees and bushes per corner. */
+const MAX_TREES = 2;
+const MAX_BUSHES = 5;
 const TREE_ROOM = 1;
 const BUSH_ROOM = 0.8;
 /** Crowns keep this much off the garden walls, and plantings this much apart beyond their room. */
@@ -54,6 +69,8 @@ const PLANT_GAP = 0.8;
 export const ROW_SETBACK = 16;
 /** A side street shortened to clear another junction's keeps at least this much carriageway. */
 export const MIN_STUB_LENGTH = 20;
+/** An open street's terraces end this far before the road it meets: that road's pavement and a strip. */
+const OPEN_END_SETBACK = PAVEMENT_WIDTH + 1;
 /** A corner's street forced below that keeps at least its junction's cut plus this much. */
 export const FORCED_STUB_MARGIN = 2;
 /** Pavements of side streets from different junctions keep this much apart. */
@@ -65,18 +82,24 @@ export interface StubSite {
   j: Pt;
   heading: number;
   hw: number;
-  /** Carriageway length from the junction: `STUB_LENGTH` unless cut down to clear another junction's street. */
+  /** Carriageway length from the junction: `full` unless cut down to clear another junction's street. */
   length: number;
+  /** The length the street was asked for (`STUB_LENGTH` in a village, longer in a city). */
+  full: number;
   endStyle?: BuildingStyle;
   /** A direction board for the route's turn stands before this street's cones. */
   arrowTurn?: 1 | -1;
   /** Half width of the building closing the end, once it stands. */
   endHx?: number;
+  /** The street runs on to meet another road (a city): nothing closes its far end. */
+  open?: true;
+  /** An open street's terraces stop this far short of its end (the road it meets and a strip); `OPEN_END_SETBACK` when unset. */
+  endClear?: number;
 }
 
-/** How far down a side street its cones stand: part-way, or short of a shortened street's end. */
+/** How far down a side street its cones stand: part-way, beyond the junction's own surface on a wide street, or short of a shortened street's end. */
 export function coneDistance(s: StubSite): number {
-  return Math.min(CONE_DISTANCE, s.length - 4);
+  return Math.min(Math.max(CONE_DISTANCE, s.hw + JUNCTION_REACH + 1), s.length - 4);
 }
 
 /** A plan to fit a side street: its length, and the other streets to cut down for it. */
@@ -105,16 +128,21 @@ export function streetGround(st: Street): Footprint {
 
 /**
  * The longest `a` can be before its ground comes within `STUB_GAP` of `b`'s
- * (`b` at its current length); `STUB_LENGTH` when they never meet. Streets
- * from the same junction share its mouth and never clash.
+ * (`b` at its current length); its full length when they never meet. Streets
+ * from the same junction share its mouth and never clash, and streets whose
+ * grounds cannot reach each other are not stepped through.
  */
 export function clearLength(a: StubSite, b: StubSite): number {
-  if (Math.hypot(a.j.x - b.j.x, a.j.z - b.j.z) < 1e-6) return STUB_LENGTH;
+  const apartBy = Math.hypot(a.j.x - b.j.x, a.j.z - b.j.z);
+  if (apartBy < 1e-6) return a.full;
+  const reachA = a.full + PAVEMENT_WIDTH + a.hw + PAVEMENT_WIDTH;
+  const reachB = b.length + PAVEMENT_WIDTH + b.hw + PAVEMENT_WIDTH;
+  if (apartBy > reachA + reachB + STUB_GAP) return a.full;
   const other = corridor(b, b.length);
   // The length grows in steps until the two boxes come within the gap; the last clear step stands.
-  for (let l = CLEAR_STEP; l <= STUB_LENGTH; l += CLEAR_STEP)
+  for (let l = CLEAR_STEP; l <= a.full; l += CLEAR_STEP)
     if (!apart(corridor(a, l), other, STUB_GAP)) return l - CLEAR_STEP;
-  return STUB_LENGTH;
+  return a.full;
 }
 
 /**
@@ -124,7 +152,7 @@ export function clearLength(a: StubSite, b: StubSite): number {
  * even that is not enough.
  */
 function splitLengths(s: StubSite, o: StubSite): [number, number] | null {
-  for (let l = STUB_LENGTH; l >= MIN_STUB_LENGTH; l -= CLEAR_STEP) {
+  for (let l = o.full; l >= MIN_STUB_LENGTH; l -= CLEAR_STEP) {
     const la = clearLength(s, { ...o, length: l });
     if (la >= l) return [la, l];
   }
@@ -183,14 +211,22 @@ export interface RouteFacades {
   right: Facade;
 }
 
-/** A blocked side street from junction `j` at full length, to be fitted among the others before it is laid. */
-export function stubSite(j: Pt, heading: number, hw: number, endStyle?: BuildingStyle): StubSite {
-  return { j, heading, hw, length: STUB_LENGTH, ...(endStyle ? { endStyle } : {}) };
+/** A blocked side street from junction `j` at full length (`STUB_LENGTH` unless a city asks for longer), to be fitted among the others before it is laid. */
+export function stubSite(
+  j: Pt,
+  heading: number,
+  hw: number,
+  endStyle?: BuildingStyle,
+  full = STUB_LENGTH,
+): StubSite {
+  return { j, heading, hw, length: full, full, ...(endStyle ? { endStyle } : {}) };
 }
 
 /** Lay a fitted side street: the carriageway, the cones across it and any direction board before them. */
 export function layStub(site: Site, s: StubSite): void {
-  site.streets.push(street(s.j, at(s.j, s.heading, s.length, 0), s.hw, false));
+  const st = street(s.j, at(s.j, s.heading, s.length, 0), s.hw, false);
+  if (s.open) st.open = true;
+  site.streets.push(st);
   const cones = coneDistance(s);
   const b = at(s.j, s.heading, cones, 0);
   site.cones.push({ x: b.x, z: b.z, yaw: s.heading, halfLength: s.hw - CONE_MARGIN });
@@ -202,6 +238,7 @@ export function layStub(site: Site, s: StubSite): void {
 
 /** The building that closes a side street, facing back up it; a wall across the end where it cannot stand. */
 export function stubEnd(site: Site, s: StubSite): void {
+  if (s.open) return;
   const style = s.endStyle ?? (site.rand() < 0.5 ? 'townhouse' : 'shop');
   const { hx, hz } = BUILDING_SIZE[style];
   const front = s.length + FRONT_SETBACK;
@@ -217,10 +254,12 @@ export function stubEnd(site: Site, s: StubSite): void {
 
 /** Terraces down both sides of a side street, and walls closing the corners at its end. */
 export function stubRows(site: Site, s: StubSite): void {
-  const front = s.length + FRONT_SETBACK;
+  // An open street's rows stop short of the road it meets, leaving that road's pavement free.
+  const front = s.open ? s.length - (s.endClear ?? OPEN_END_SETBACK) : s.length + FRONT_SETBACK;
   const end = front - 0.6;
   for (const side of [1, -1] as const) {
     row(site, straightFacade(s.j, s.heading, s.hw, side, end), ROW_SETBACK, end);
+    if (s.open) continue;
     const f = (s.hw + FRONT_SETBACK) * side;
     const k = at(s.j, s.heading, front, f);
     pushWall(site, at(s.j, s.heading, end, f), k);
@@ -283,12 +322,13 @@ function plantCorner(site: Site, { k, a, b }: Corner): void {
       variant: site.rand() < 0.5 ? 0 : 1,
     });
   };
-  for (const into of TREE_SPOTS) {
-    const x = k.x + bx * into;
-    const z = k.z + bz * into;
+  let trees = 0;
+  for (const [into, aside] of TREE_SPOTS) {
+    const x = k.x + bx * into + bz * aside;
+    const z = k.z + bz * into - bx * aside;
     if (!fits(x, z, TREE_ROOM)) continue;
     plant('tree', x, z, 0.7 + site.rand() * 0.3);
-    break;
+    if (++trees >= MAX_TREES) break;
   }
   let bushes = 0;
   for (const [into, aside] of BUSH_SPOTS) {
@@ -296,7 +336,7 @@ function plantCorner(site: Site, { k, a, b }: Corner): void {
     const z = k.z + bz * into - bx * aside;
     if (!fits(x, z, BUSH_ROOM)) continue;
     plant('bush', x, z, 0.6 + site.rand() * 0.4);
-    if (++bushes >= 3) break;
+    if (++bushes >= MAX_BUSHES) break;
   }
 }
 

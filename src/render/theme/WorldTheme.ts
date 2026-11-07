@@ -50,6 +50,9 @@ export interface RoadTheme {
   kerb: ThemeColor;
   post: string;
   cap: ThemeColor;
+  /** A city's tram tracks: the sett paving between the rails, and the rail heads. */
+  tramBed: string;
+  rail: ThemeColor;
   /** Patch the surface material so HDR vertex colours are drawn as emission. */
   neon: boolean;
 }
@@ -99,6 +102,8 @@ export interface WorldTheme {
   road: RoadTheme;
   gates: GateTheme;
   walls: WallTheme;
+  /** A city's garden hedges in place of its walls: the leaf body and the lighter clipped top. */
+  hedges: WallTheme;
   /** The coast's block walls: concrete, between `body` and `cap` block by block. */
   seawall: WallTheme;
   /** The sea plane on Coast stages. */
@@ -146,6 +151,7 @@ const DAY_GATES: GateTheme = {
 };
 
 const DAY_WALLS: WallTheme = { body: '#c9c0b0', cap: '#e3dccf' };
+const DAY_HEDGES: WallTheme = { body: '#4f7a3a', cap: '#6b9a48' };
 
 /** Red-and-white kerbs, galvanised Armco on grey posts, dark mesh fencing, pale gravel, a blue-and-white grandstand. */
 const DAY_CIRCUIT: CircuitTheme = {
@@ -162,6 +168,10 @@ const DAY_CIRCUIT: CircuitTheme = {
 const DAY_SEAWALL: WallTheme = { body: '#aeaba3', cap: '#d6d3cb' };
 const DAY_SEA = '#3b8fb5';
 
+/** Grey sett paving between tram rails, and the rails' worn steel. */
+const TRAM_BED_COLOR = '#8e8b84';
+const RAIL_COLOR = '#5c5e63';
+
 /** The daytime road: region shoulder for the verges, white lines, concrete pavements. */
 export function dayRoad(shoulder: string): RoadTheme {
   return {
@@ -174,6 +184,8 @@ export function dayRoad(shoulder: string): RoadTheme {
     kerb: KERB_COLOR,
     post: POST_COLOR,
     cap: CAP_COLOR,
+    tramBed: TRAM_BED_COLOR,
+    rail: RAIL_COLOR,
     neon: false,
   };
 }
@@ -196,6 +208,7 @@ export function dayTheme(region: RegionDef): WorldTheme {
       road: dayRoad(region.palette.shoulder),
       gates: DAY_GATES,
       walls: DAY_WALLS,
+      hedges: DAY_HEDGES,
       seawall: DAY_SEAWALL,
       sea: region.coast?.sea ?? DAY_SEA,
       scenery: { kit: 'rally' },
@@ -216,6 +229,7 @@ export function flatTheme(sky: string, fog: string, shoulder = '#8fbf6a'): World
     road: dayRoad(shoulder),
     gates: DAY_GATES,
     walls: DAY_WALLS,
+    hedges: DAY_HEDGES,
     seawall: DAY_SEAWALL,
     sea: DAY_SEA,
     scenery: { kit: 'rally' },
@@ -253,6 +267,8 @@ export const NIGHTCITY_THEME: WorldTheme = {
     kerb: { hex: NEON.magenta, glow: 1.8 },
     post: '#15171f',
     cap: { hex: NEON.amber, glow: 2.5 },
+    tramBed: '#262a36',
+    rail: { hex: NEON.cyan, glow: 1.4 },
     neon: true,
   },
   gates: {
@@ -270,6 +286,7 @@ export const NIGHTCITY_THEME: WorldTheme = {
     ink: '#05060a',
   },
   walls: { body: '#1e2130', cap: '#2e3345' },
+  hedges: { body: '#17251a', cap: '#1f3324' },
   seawall: { body: '#171a26', cap: '#2a2f41' },
   sea: '#0a1424',
   scenery: { kit: 'nightcity' },

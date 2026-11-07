@@ -1,5 +1,9 @@
 import type { BoxObstacle } from '../vehicle/Collisions';
+import type { Median } from './Median';
+import { roundaboutBlocks, type Roundabout } from './Roundabout';
 import type { Prop } from './SceneryScatter';
+import { junctionReach } from './TownJunctions';
+import type { TramLine } from './Tram';
 
 /**
  * A town section on a stage: a level plateau carrying a street grid the route
@@ -34,6 +38,18 @@ export interface TownDef {
   walls: Wall[];
   /** Trees and bushes planted in the walled corners of the junctions. */
   plantings: Planting[];
+  /** A city (see `UrbanGenerator`): metres of hill relief kept inside the footprint instead of `TOWN_RELIEF_METRES`. */
+  relief?: number;
+  /** A city's roundabouts: the route circles each island on a 'curve' leg. */
+  roundabouts?: Roundabout[];
+  /** A city's tram tracks, across the route at crossroads and down the middle of its boulevards. */
+  trams?: TramLine[];
+  /** A city's kerbed green dividers down the middle of its boulevards. */
+  medians?: Median[];
+  /** A city's per-sample half widths (each street one width, changing across the corner arcs), for `StageDef.widths`. */
+  widths?: Float64Array;
+  /** Set for a city: the street detail (crossings, bays, furniture, hedges) is the city's. */
+  city?: true;
 }
 
 /** One arm of a junction: a street leaving the junction centre on `heading`. */
@@ -48,6 +64,8 @@ export interface Junction {
   x: number;
   z: number;
   arms: Arm[];
+  /** The route's corner arc radius here when the leg set its own (see `cornerRadius`). */
+  radius?: number;
 }
 
 /** Garden wall segment along a facade line. */
@@ -59,9 +77,9 @@ export interface Wall {
 }
 
 /** Facades (and garden walls) stand right behind the pavement: this far beyond the carriageway edge. */
-export const FRONT_SETBACK = 2;
+export const FRONT_SETBACK = 3;
 /** Pavement width, matching the ribbon's verge strips. */
-export const PAVEMENT_WIDTH = 2;
+export const PAVEMENT_WIDTH = 3;
 /** Kerb return radius where two arms of a junction meet. */
 export const FILLET = 3;
 /** Garden walls: half thickness for colliders and render. */
@@ -76,9 +94,13 @@ export interface Street {
   halfWidth: number;
   /** True for the streets the route drives; false for the blocked side streets. */
   route: boolean;
+  /** A city side street that runs on to meet another road: no building or pavement closes its far end. */
+  open?: true;
 }
 
-export type BuildingStyle = 'townhouse' | 'shop' | 'tower' | 'hall';
+/** The four village styles, and the city's apartment `block`, glass `office`, brick `tenement` and arcaded `arcade`. */
+export type BuildingStyle =
+  'townhouse' | 'shop' | 'tower' | 'hall' | 'block' | 'office' | 'tenement' | 'arcade';
 
 /** Footprint-aligned building: `yaw` faces the door (local -z) at the street, half extents in its own frame. */
 export interface Building {
@@ -173,6 +195,7 @@ export function townObstacles(town: TownDef): BoxObstacle[] {
  * of the town, yards behind the terraces and open corners, stays green.
  */
 export function townBlocks(town: TownDef, x: number, z: number): boolean {
+  if (town.roundabouts && roundaboutBlocks(town.roundabouts, x, z)) return true;
   for (const s of town.streets)
     if (streetDistance(s, x, z) < s.halfWidth + PAVEMENT_WIDTH + 3) return true;
   for (const b of town.buildings)
@@ -214,9 +237,10 @@ export function townFade(town: TownDef, along: number): number {
  * side-street decks follow the route's deck within it.
  */
 export const JUNCTION_REACH = 8;
-/** Lamp posts along the route's pavements, every `LAMP_SPACING` metres, alternating sides. */
-const LAMP_SPACING = 30;
-const LAMP_OFFSET = 1.0;
+/** Lamp posts along the route's pavements, every `LAMP_SPACING` metres, alternating sides, none within a junction's reach plus `LAMP_JUNCTION_CLEAR`. */
+export const LAMP_SPACING = 30;
+const LAMP_JUNCTION_CLEAR = 4;
+export const LAMP_OFFSET = 1.0;
 
 /** Whatever answers the driving-surface height, usually the stage's `TerrainField`. */
 export interface GroundQuery {
@@ -324,9 +348,10 @@ export function townProps(
       rotation: p.rotation,
       variant: p.variant,
     });
+  // A city's lamps come with its street furniture (`StreetFurniture`); a village lays its own.
   let side = 1;
   for (const s of town.streets) {
-    if (!s.route) continue;
+    if (!s.route || town.city) continue;
     const dx = s.x1 - s.x0;
     const dz = s.z1 - s.z0;
     const len = Math.hypot(dx, dz);
@@ -337,6 +362,18 @@ export function townProps(
       const off = (s.halfWidth + LAMP_OFFSET) * side;
       const x = s.x0 + (dx / len) * d + lx * off;
       const z = s.z0 + (dz / len) * d + lz * off;
+      // Not in a junction's mouth (a crossroads part-way along the street paves the pavement's line
+      // there), nor on or beside another street.
+      if (
+        town.junctions.some(
+          (j) =>
+            Math.hypot(j.x - x, j.z - z) < junctionReach(j) + s.halfWidth + LAMP_JUNCTION_CLEAR,
+        ) ||
+        town.streets.some(
+          (o) => o !== s && !o.route && streetDistance(o, x, z) < o.halfWidth + PAVEMENT_WIDTH + 1,
+        )
+      )
+        continue;
       // The arm (local -x) reaches back over the street from whichever pavement the post stands on.
       out.push({
         kind: 'lamp',

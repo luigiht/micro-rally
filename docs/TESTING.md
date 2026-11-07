@@ -41,16 +41,31 @@ cover the pure-TS core and anything else that can run without a browser:
   of the track and never folding, gravel on corner outsides, colliders, the
   seamless road profile, kerb bumps and surfaces, scenery outside the fences
   and off the grandstand), `town`, `townJunctions`, `townKerbs`, `roadMarkers`, `roadFollower`,
-  `stageHistory`. `fixtures/openRoad.json` pins six open-road stages
-  byte-for-byte so town work can never move a road that has no town (keys
-  are `gameSeed/index`; the four index-0 and index-3 entries date from
-  before towns, the two later-loop ones were re-recorded on 2026-11-03 when
-  the region cycle changed).
+  `stageHistory`, `urban` (the fifteen-stage cycle and the v5 save
+  migration, the whole-stage town and its lane widths, right angles and
+  self-separation, the roundabout's level ring, island, chords and exits,
+  tram ridges, grade and relief, gates between junctions, colliders off
+  the carriageway, later loops and the planner over 40 seeds, the city's
+  four building kits and renders, open-ended side streets meeting their
+  roads without a step), `crossings` (every zebra and stop line on plain
+  carriageway clear of pavements, medians, trams and rings; parking
+  stretches on three-lane straights off the junctions with two lanes
+  between and cars in the bays), `streetFurniture` (every piece on a
+  pavement off the doors and buildings, manholes on the carriageway, every
+  kind present), `tramService` (the timetable's headway, direction and
+  fades, the tram body's size and lights).
+  `fixtures/openRoad.json` pins six open-road stages byte-for-byte so town
+  work can never move a road that has no town (keys are `gameSeed/index`;
+  the four index-0 and index-3 entries date from before towns, the two
+  later-loop ones (`5/16`, `13/18`) were re-recorded on 2026-11-05 when the
+  cycle grew to fifteen stages).
 - **Economy and saves**: `prize`, `garage`, `save`, `saveManager`,
   `gameStore.server`.
 - **Rendering geometry built in pure TS**: `carHull` (lofted hulls, wells,
   decals, glow groups), `fenderShell` (the buggy's free-standing mudguards: mirrored, clear of the tyre, wound outward), `svgSilhouette` (the SVG path reader and the extruded bull), `houseGeometry`, `buildingGeometry`,
-  `streetFurnitureGeometry`, `interiorSpecs`, `nightcityHull` (the one
+  `streetFurnitureGeometry`, `cityFurnitureGeometry` (the city's furniture
+  and parked car: box parts, outward faces, sizes, white only on the car
+  body), `interiorSpecs`, `nightcityHull` (the one
   Nightcity body fits every catalogue car and clears the first-person eye).
 - **Themes and kits**: `worldTheme` (the day theme equals the old constants;
   Nightcity carries HDR neon), `neonMaterial` (the shader patch and three's
@@ -109,7 +124,9 @@ pattern used throughout the project:
 
 Useful stages: game seed 6, stage index 2 is a forest stage with a town
 (spawn about 690 m for the town entry, 1983 m for a finish in three
-seconds); game seed 3, stage index 5 is an alpine town. Launch Chromium with
+seconds); game seed 3, stage index 5 is an alpine town; game seed 1, stage
+index 6 is the first city (a roundabout at 1239–1254 m, spawn 1170; tram
+crossings at 461 and 861 m). Launch Chromium with
 `--use-angle=swiftshader --enable-unsafe-swiftshader` where there is no GPU.
 
 ## What to check before finishing

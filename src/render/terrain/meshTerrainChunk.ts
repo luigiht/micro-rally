@@ -1,5 +1,6 @@
 import type { CoastDef, RegionPalette } from '@/game/stage/regions';
 import type { TerrainField, TerrainSample } from '@/game/stage/TerrainField';
+import { PAVEMENT_COLOR, ROAD_COLORS } from '../road/roadColors';
 import { coastFaceColor, type CoastFace, type CoastTones } from './coastFaceColor';
 
 export type Rgb = readonly [number, number, number];
@@ -17,6 +18,9 @@ export interface TerrainColors {
   rockFrom?: number;
   /** Coast stages: strata, scree and scrub tones, coloured by `coastFaceColor` in place of the plain rock blend. */
   coast?: CoastTones;
+  /** Cities: the ground under carriageways and under pavements (see `TerrainSample.paved`). */
+  tarmac: Rgb;
+  pavement: Rgb;
 }
 
 /** Hills go rocky past about 44° of tilt; the coast's limestone past about 37°, so its scrub hillside stays green. */
@@ -51,6 +55,8 @@ export function terrainColors(p: RegionPalette, coast?: CoastDef): TerrainColors
     grassHigh: hexToLinear(p.grassHigh),
     rock: hexToLinear(p.rock),
     shoulder: hexToLinear(p.shoulder),
+    tarmac: hexToLinear(ROAD_COLORS.tarmac),
+    pavement: hexToLinear(PAVEMENT_COLOR),
   };
   if (coast) {
     out.sand = hexToLinear(coast.sand);
@@ -96,6 +102,7 @@ export function meshTerrainChunk(
   const rock = new Float32Array(n * n);
   const scree = new Float32Array(n * n);
   const dry = new Float32Array(n * n);
+  const paved = new Float32Array(n * n);
   const s: TerrainSample = { height: 0, roadBlend: 0, roadDistance: 0 };
   for (let j = 0; j < n; j++) {
     for (let i = 0; i < n; i++) {
@@ -105,6 +112,7 @@ export function meshTerrainChunk(
       rock[j * n + i] = s.rock ?? 0;
       scree[j * n + i] = s.scree ?? 0;
       dry[j * n + i] = s.dry ?? 0;
+      paved[j * n + i] = s.paved ?? 0;
     }
   }
 
@@ -206,6 +214,16 @@ export function meshTerrainChunk(
     r += (colors.shoulder[0] - r) * shoulder;
     g += (colors.shoulder[1] - g) * shoulder;
     b += (colors.shoulder[2] - b) * shoulder;
+    // A city's ground under its streets: tarmac where the face's middle lies under a carriageway or
+    // junction paving (so a seam between plates shows tarmac, not grass), paving under a pavement.
+    // The middle, not the corners: a face at a junction's corner can have every corner on a
+    // carriageway while it spans the pavement and the green between them.
+    if (paved[ia]! + paved[ib]! + paved[ic]! > 0) {
+      field.sample((ax + bx + qx) / 3, (az + bz + qz) / 3, s);
+      const p = s.paved ?? 0;
+      if (p >= 2) [r, g, b] = colors.tarmac;
+      else if (p >= 1) [r, g, b] = colors.pavement;
+    }
 
     const verts = [ax, ay, az, bx, by, bz, qx, cy, qz];
     for (let k = 0; k < 3; k++) {

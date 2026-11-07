@@ -11,19 +11,10 @@ import {
   type Wall,
   type Footprint,
 } from './Town';
+import { BUILDING_SIZE, pickStyle, VILLAGE_VARIANTS } from './BuildingCatalog';
 
-/** Footprint half extents per style: `hx` across the front, `hz` deep. */
-export const BUILDING_SIZE: Readonly<Record<BuildingStyle, { hx: number; hz: number }>> = {
-  townhouse: { hx: 4, hz: 3.5 },
-  shop: { hx: 5, hz: 4 },
-  tower: { hx: 3, hz: 3 },
-  hall: { hx: 6, hz: 4.5 },
-};
-const STYLE_WEIGHTS: readonly (readonly [BuildingStyle, number])[] = [
-  ['townhouse', 5],
-  ['shop', 3],
-  ['tower', 2],
-];
+export { BUILDING_SIZE } from './BuildingCatalog';
+
 /** Terraced houses stand a party wall apart; terrace pads blend over less, so neighbours never tilt each other. */
 export const PARTY_GAP = 0.4;
 /** On a bend a house front is a chord of the facade; its middle may stand over the pavement by at most this. */
@@ -55,6 +46,12 @@ export interface Site {
   arrows: Arrow[];
   junctions: Junction[];
   plantings: Planting[];
+  /** Building style weights for the terraces; the village mix when unset. */
+  styles?: readonly (readonly [BuildingStyle, number])[];
+  /** How far the blocked side streets run from their junctions; `STUB_LENGTH` when unset. */
+  stubLength?: number;
+  /** How many render variants (tints) the terraces draw from; 2 when unset. */
+  variants?: number;
 }
 
 /** True when a circle of radius `r` at (x, z) is clear of every carriageway's pavement and every building. */
@@ -326,19 +323,6 @@ export function place(site: Site, b: Building): boolean {
   return true;
 }
 
-function pickStyle(rand: () => number, room: number): BuildingStyle | null {
-  const fits = STYLE_WEIGHTS.filter(([style]) => 2 * BUILDING_SIZE[style].hx <= room);
-  if (fits.length === 0) return null;
-  let total = 0;
-  for (const [, w] of fits) total += w;
-  let r = rand() * total;
-  for (const [style, w] of fits) {
-    r -= w;
-    if (r <= 0) return style;
-  }
-  return fits[fits.length - 1]![0];
-}
-
 /**
  * Garden wall along the facade from `s0` to `s1`, following its bends and
  * trimmed wherever another street crosses it (a side street from a
@@ -382,11 +366,11 @@ export function row(site: Site, facade: Facade, from: number, to: number): void 
   let lastEdge = from;
   let cursor = from;
   while (to - cursor >= smallest) {
-    const style = pickStyle(site.rand, to - cursor);
+    const style = pickStyle(site.rand, site.styles, to - cursor);
     if (!style) break;
     const { hx, hz } = BUILDING_SIZE[style];
     const h = facade.house(cursor, hx, hz);
-    const variant = site.rand() < 0.5 ? 0 : 1;
+    const variant = Math.floor(site.rand() * (site.variants ?? VILLAGE_VARIANTS));
     if (
       h &&
       h.end <= to + 1e-6 &&

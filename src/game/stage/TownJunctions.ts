@@ -111,7 +111,7 @@ export function junctionTurn(j: Junction): number {
  * further out (acute wedges push it a long way down the arm).
  */
 export function apronEnd(j: Junction, w: Wedge, route: Arm, stub: Arm, through: Arm): number {
-  const tangent = tangentLength(junctionTurn(j));
+  const tangent = tangentLength(junctionTurn(j), j.radius);
   const c = offsetCorner(
     j,
     w.a,
@@ -131,9 +131,9 @@ export function apronEnd(j: Junction, w: Wedge, route: Arm, stub: Arm, through: 
  */
 export function junctionReach(j: Junction): number {
   const turn = junctionTurn(j);
-  const tangent = tangentLength(turn);
+  const tangent = tangentLength(turn, j.radius);
   // Path distance from the arc's midpoint to its tangent point.
-  const halfArc = (cornerRadius(turn) * Math.abs(turn)) / 2;
+  const halfArc = (cornerRadius(turn, j.radius) * Math.abs(turn)) / 2;
   let reach = tangent + FILLET + CUT_MARGIN;
   for (const w of wedges(j)) {
     const aBlocked = w.a.role === 'blocked';

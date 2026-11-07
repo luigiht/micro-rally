@@ -179,3 +179,21 @@ export function resolveObstacleCollisions(s: VehicleState, grid: ObstacleGrid): 
   }
   return impact;
 }
+
+/**
+ * Pushes the car out of the given boxes (moving obstacles, posed for this
+ * step: the trams) and removes inbound velocity, as `resolveObstacleCollisions`
+ * does for the grid. Returns the largest impact speed this step (m/s).
+ */
+export function resolveBoxCollisions(s: VehicleState, boxes: readonly BoxObstacle[]): number {
+  let impact = 0;
+  if (boxes.length === 0) return impact;
+  const fx = Math.sin(s.yaw);
+  const fz = Math.cos(s.yaw);
+  for (let c = -1; c <= 1; c += 2) {
+    const cx = s.x + fx * CIRCLE_OFFSET * c;
+    const cz = s.z + fz * CIRCLE_OFFSET * c;
+    for (const b of boxes) impact = Math.max(impact, hitBox(s, b, cx, cz));
+  }
+  return impact;
+}

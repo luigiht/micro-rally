@@ -26,6 +26,8 @@ import {
   type TowerTier,
 } from '../night/NightTowerGeometry';
 import type { KindKit } from '../SceneryChunkManager';
+import { BUILDING_STYLES, FURNITURE_KINDS, furnitureGeometry, parkedCarKits } from './RallyKits';
+import { trafficLensGlowGeometry } from '../CityFurnitureGeometry';
 import { NEON } from '../../theme/WorldTheme';
 
 /** The nearest point of the stage road to a prop, and how far it is. */
@@ -135,6 +137,7 @@ export function nightcityKits({ shadows, near }: NightcityKitOptions): KindKit[]
   const trees = ['tree', 'broadleaf', 'palm'] as const;
   const townWalls = [new Color('#1a1c26'), new Color('#20232f')] as const;
   const townRoofs = [new Color('#0f1118'), new Color('#141722')] as const;
+  const carTints = ['#2a2d3a', '#1f2a3a', '#33303a', '#1c1f28', '#2d2630'].map((c) => new Color(c));
   const heightJitter = (p: Prop, dummy: Object3D) => {
     dummy.scale.y *= 0.9 + propHash(p, 11) * 0.25;
   };
@@ -163,7 +166,7 @@ export function nightcityKits({ shadows, near }: NightcityKitOptions): KindKit[]
       },
     }),
     ...pair(['house'], blockBodyGeometry(), blockGlowGeometry(), shadows),
-    ...(['townhouse', 'shop', 'tower', 'hall'] as const).flatMap((style): KindKit[] => [
+    ...BUILDING_STYLES.flatMap((style): KindKit[] => [
       {
         sources: [style],
         geometry: buildingWallsGeometry(style),
@@ -191,6 +194,23 @@ export function nightcityKits({ shadows, near }: NightcityKitOptions): KindKit[]
       },
     ]),
     ...pair(['lamp'], nightLampBodyGeometry(), lampHeadGlowGeometry(), shadows),
+    // The city's furniture in its own paint, the traffic lights' lenses glowing.
+    ...FURNITURE_KINDS.filter((k) => k !== 'trafficLight').map((kind): KindKit => ({
+      sources: [kind],
+      geometry: furnitureGeometry(kind),
+      material: body(),
+      tint: null,
+      castShadow: false,
+      vertexColors: true,
+    })),
+    ...pair(
+      ['trafficLight'],
+      furnitureGeometry('trafficLight'),
+      trafficLensGlowGeometry(),
+      shadows,
+    ),
+    // Parked cars in the dark, their lights glowing.
+    ...parkedCarKits(carTints, body, glow, shadows, { colorAt: hueAt }),
     ...(
       [
         ['cone', coneGeometry()],

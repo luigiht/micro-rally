@@ -24,9 +24,10 @@ const SURFACE_ICON: Readonly<Record<Surface, PixelIconName>> = {
   dune: 'sand',
 };
 
-/** Coast stages show a winding road and circuits a closed track, rather than the tarmac glyph they would all share. */
+/** Coast stages show a winding road, circuits a closed track and cities a skyline, rather than the tarmac glyph they would all share. */
 function stageIcon(b: StageBrief): PixelIconName {
   if (b.region === 'circuit') return 'circuit';
+  if (b.region === 'urban') return 'urban';
   return b.region === 'coast' ? 'coast' : SURFACE_ICON[b.surface];
 }
 

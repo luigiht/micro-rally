@@ -219,6 +219,7 @@ export const es: Messages = {
     desert: 'Desierto',
     alpine: 'Alpes',
     night: 'Noche',
+    urban: 'Urbano',
     circuit: 'Circuito',
   },
   controls: [

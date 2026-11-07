@@ -164,11 +164,12 @@ describe('garage in the store', () => {
     };
     const save = parseSaveFile(v2)!;
     expect(save.version).toBe(SAVE_VERSION);
+    // 6 then goes with the v4 migration: the first Desert stage is the first city now.
     expect(
       Object.keys(save.records)
         .map(Number)
         .sort((a, b) => a - b),
-    ).toEqual([0, 6, 8]);
+    ).toEqual([0, 8]);
   });
 
   it('drops v3 records set on Coast stages, whose roads changed, keeping the rest', () => {
@@ -189,11 +190,38 @@ describe('garage in the store', () => {
     };
     const save = parseSaveFile(v3)!;
     expect(save.version).toBe(SAVE_VERSION);
+    // 6 then goes with the v4 migration: the first Desert stage is the first city now.
     expect(
       Object.keys(save.records)
         .map(Number)
         .sort((a, b) => a - b),
-    ).toEqual([0, 3, 6, 9]);
+    ).toEqual([0, 3, 9]);
+  });
+
+  it('drops v4 records at indices whose region changed with the fifteen-stage cycle, keeping the rest', () => {
+    const rec = { best: 90, splits: [30, 60, 90] };
+    const v4 = {
+      version: 4,
+      gameId: 'ABCD2345',
+      driverName: 'Ada',
+      gameSeed: 1,
+      money: 10,
+      stageIndex: 16,
+      // 0–5 keep their regions; 6 (desert → urban), 7 (coast → desert), 12 (forest → urban) and
+      // 15 (alpine → forest) change; 8 stays alpine and 9 is a circuit in both cycles.
+      records: { 0: rec, 3: rec, 5: rec, 6: rec, 7: rec, 8: rec, 9: rec, 12: rec, 15: rec },
+      carId: 'hatchback',
+      ownedCars: ['hatchback'],
+      upgrades: {},
+      updatedAt: 5,
+    };
+    const save = parseSaveFile(v4)!;
+    expect(save.version).toBe(SAVE_VERSION);
+    expect(
+      Object.keys(save.records)
+        .map(Number)
+        .sort((a, b) => a - b),
+    ).toEqual([0, 3, 5, 8, 9]);
   });
 
   it('shares one grip setup across the dealership', () => {

@@ -2492,3 +2492,573 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      `lib/fullscreen.ts` is gone, and the mobile e2e test no longer expects
      `document.fullscreenElement`. `viewport-fit=cover` and the HUD's
      safe-area padding stay, so the layout still clears notches and bars.
+
+124. **2026-11-05 — Urban stages: a city as a whole-stage town.** By request,
+     a new stage type: a procedural big city with streets of more than two
+     lanes, right-angle corners, irregular streets, changes in elevation,
+     roundabouts and tram tracks. The village machinery already had the
+     hard parts (plan legs laid as explicit arcs by the centreline builder,
+     junctions with blocked side streets and exact kerbs, facades, terraces
+     stepping down hills, per-sample widths, pavements the wheels feel), so
+     a city is a `TownDef` that spans the stage rather than a new pipeline:
+     `planUrban` (`UrbanPlan.ts`) draws a `TownPlan` from the first control
+     step to past the run-out (blocks of 60–160 m ending in right angles,
+     60°–120° skews or 15°–35° kinks, avenue arcs, per-block lane widths,
+     roundabouts), so `buildCentreline` lays it with `twist` 0 and the
+     open-road walk never resumes; `layoutTown` takes the region's
+     `UrbanDef` and adds the city's pieces through hooks in
+     `UrbanGenerator.ts`. Choices along the way: a `TownLeg`/`Junction` may
+     carry its own corner `radius` (`cornerRadius(turn, radius)`), since the
+     fixed 10/12 m village arcs fold a 14 m boulevard; kinks under 45° bend
+     the route without a junction, because a 20° wedge sends the kerb
+     fillet maths to infinity; the stage's base half width is the boulevard
+     (7 m) and every narrower street a narrowing, because `buildWidths` only
+     narrows and `surfaceAt` searches the base width; a wide street's cones
+     stand beyond its junction's surface (`coneDistance` ≥ `hw + 9`);
+     crossroads go in every ~75 m on blocks of 110 m and over; checkpoints
+     on a whole-stage town are nudged ≥ 25 m off every junction and ring and
+     sized to the street under them (`halfWidthAt`), since the village rule
+     would have pushed every board out of the town. Roundabouts are three
+     consecutive curve legs (28° right deflection on 20 m, a left circulation
+     of 56° for straight on or 146° for a left turn round an 8–11 m island,
+     28° right off), the circulation tagged so the layout can find the
+     island: the undriven ring is laid as chord streets shorter than
+     `hw + JUNCTION_REACH` (so the terrain decks them at the route's level
+     and `TownStreetBuilder` draws nothing for them), exits are ordinary
+     stubs from the ring's outer edge (their plates start at the ring,
+     `cutOf` → 0), the island is a `TerrainPad` a kerb up with a tight blend,
+     the inner facade skips the arc (`islandGap`) and `site.clear` keeps
+     houses off the ring, and `UrbanField.tame` levels the ground to the
+     centre's height for 30 m beyond the ring (blending over 40 m) inside
+     `groundHeight`, where the road profile is built from, so ring, chords
+     and island share one height (a pad could not do it: pads are applied
+     after the profile). The ribbon hands its island-side verge over where
+     the undriven ring joins (`roundaboutOpenings`, merged into
+     `RoadBuilder`'s openings) and `RoundaboutBuilder` draws the ring's
+     tarmac under the ribbon, the kerbs, lines and the grass disc. Trams
+     (`Tram.ts`) are straight lines from stub end to stub end through a
+     crossroads, or down a boulevard's middle and on into the side street
+     that continues it, drawn by `TramTrackBuilder` and felt through
+     `UrbanField.lift` in `heightAt` only (2 cm, felt 15 cm wide so a 120 Hz
+     step cannot skip a rail; the mesher samples `sample`, so nothing is
+     meshed), grip untouched, as agreed with the user. Lane markings live
+     in their own `LaneMarkings` builder (RoadBuilder's continuous strips
+     cannot dash). Two building styles, `block` and `office`
+     (`UrbanGeometry.ts`), with per-`Site` style weights. Relief: a city
+     keeps 16 m of the hills (`TownDef.relief`, bypassing the village's 40 %
+     cap). Six seeds build in 60–140 ms with 15–25 junctions, 320–390
+     buildings, one roundabout and 2–5 tram lines, at 12–17 m of relief on
+     the 12 % grade limit, verified by the `urban` suite and screenshots of
+     a boulevard, a roundabout, a tram crossing and Nightcity.
+
+125. **2026-11-05 — A fifteen-stage cycle with three cities, saves at v5.**
+     With the user it was settled to grow `REGION_CYCLE` from twelve to
+     fifteen with Urban ×3 rather than a cadence or a swap. The order
+     (Forest ×2, Alpine ×2, Coast, Forest, Urban, Desert, Alpine, Desert,
+     Urban, Coast, Urban, Coast, Desert) keeps stage 1 Forest, stage 4
+     Alpine and stage 5 the first Coast as before, gives every region three
+     of fifteen, never three alike, puts villages on Alpine, Forest, Alpine
+     at cycle indices 2, 5, 8 (three of the five town slots, against two of
+     four before), and keeps the cities off cycle indices 4, 9 and 14, which
+     the circuits (every tenth stage) overwrite on alternate passes; the
+     plan's first order put two of three cities there and would have shown
+     one city in thirty stages. From stage 7 on many indices are another
+     region's road, so `migrateV4` embeds the old twelve-cycle and drops
+     records at every non-circuit index whose region differs (the earlier
+     Coast migration now compares against that constant too). The
+     open-road fixture's two later-loop keys moved to `5/16` and `13/18`
+     (forest and alpine in the new cycle), the Desert tests to index 7 and
+     the town-index desert to 14.
+
+126. **2026-11-06 — City streets of one width, boulevard medians, longer
+     side streets, roundabouts joined cleanly.** By request after playing
+     the first cities: streets changed lane count along their length (the
+     village `buildWidths` holds a junction's narrower width through it and
+     tapers over 24 m beyond, right for a hill town, wrong for a grid), the
+     boulevards had no divider, the 32 m side streets closed by a building
+     read as a wall a few metres off the route, and the roundabout's outer
+     kerb and pavement were drawn across the roads joining it (the band ran
+     round the whole undriven sector while the deflection arcs cross it for
+     ~20 m either side of the route's arc). Now `traceWidths` gives a city
+     its per-sample widths from the traced legs (`TownDef.widths`, used by
+     `StageGenerator` in place of `buildWidths`): each straight its own
+     width, each corner or curve a smoothstep from the previous leg's to the
+     next's, so a lane count changes only through a junction arc or a
+     roundabout's deflections; villages keep `buildWidths`. `cityMedians`
+     lays a `Median` (new `Median.ts`: 1.8 m, kerb high, `medianLift` felt
+     like a pavement through `UrbanField.lift`) along every four-lane
+     straight from 6 m in to 6 m out, broken round each crossroads by its
+     `junctionReach` + 3 m and never in the first 70 m of road (the spawn and
+     the start gantry stand on tarmac); `MedianBuilder` draws grass between
+     two 35 cm sidewalk strips with kerb faces all round, `LaneMarkings`
+     skips the centre line on a median, and `TramTrackBuilder` now sets each
+     section on `heightAt` along the track's axis with a 4 mm bed (no painted
+     line ever runs under a tram). The tram lines that ran down a boulevard's
+     middle are gone: a 2.6 m tram bed cannot share a 1.8 m median, so trams
+     only cross the route now, at up to five crossroads.
+     `StubSite.full` replaces the fixed `STUB_LENGTH` in the side-street
+     fitting (`clearLength`, `splitLengths`), with a distance pre-check so
+     80 m city streets (`CITY_STUB_LENGTH`, via `Site.stubLength`) across
+     ~60 stubs fit in tens of milliseconds; a city now has 550–770
+     buildings. Roundabouts: `roundaboutOpenings` walks the route back and
+     forward from the arc to find exactly where the ribbon's island-side
+     verge lies over the ring, and `routeCuts` walks it to find where the
+     route crosses the outer band, which `RoundaboutBuilder` breaks there as
+     it does round every exit; the ring's tarmac stays one annulus under
+     everything.
+
+127. **2026-11-06 — Wider pavements that are concrete to the tyres; lawn
+     between a city's streets.** By request after a screenshot of a
+     roundabout whose surroundings read as one huge faceted pavement. The
+     cause was the Urban palette's `shoulder` (the colour the terrain mesh
+     paints inside the road corridor's flat margin), set to pale concrete:
+     between a ring, its exits and the route the flat margins merge into one
+     patch and the terrain's 2 m triangles showed as a pale plaza beside the
+     real 2 m pavement band. The shoulder is a lawn green now (`#93ae63`),
+     so the ground between a city's streets is grass and only the built
+     pavements are concrete. Pavements are a metre wider everywhere:
+     `PAVEMENT_WIDTH`, `FRONT_SETBACK` and the ribbon's `VERGE_WIDTH` go from
+     2 to 3 m together (facades stand right behind the pavement, the ribbon's
+     verge strips are the pavements in town, and the strips must still cover
+     the trench ramp), which the village suites absorb unchanged since they
+     read the constants. And `TerrainField.surfaceAt` reports `tarmac` on a
+     pavement (`onPavement`: within `PAVEMENT_WIDTH` outside a street's
+     carriageway or a junction's surface, where the town has faded in),
+     where it reported the region's off-road surface before, so a wheel that
+     mounts the kerb keeps tarmac grip and leaves black rubber rather than
+     green grass marks and heavy drag; the medians' grass strips lie inside
+     the carriageway and were tarmac already. The ring's outer kerb, pavement
+     and line now break only for a crossing road's carriageway plus 30 cm
+     (`CUT_MARGIN`), not its pavement as well: the road's own pavement lies
+     over the band and carries the sidewalk round the corner, where the
+     wider cut left grass wedges and stranded fragments of band.
+
+128. **2026-11-06 — A city street's width changes only after a junction
+     corner.** By request after two screenshots of a boulevard narrowing
+     part-way along what reads as one straight. Decision 126 moved width
+     changes off the streets and onto the arcs between them, but the planner
+     drew a fresh width for every block, so a 15°–35° kink or a 40–90 m
+     avenue curve, which look like a straight road, could join a four-lane
+     street to a two-lane one. `drawCity` now keeps one width until the
+     previous block ended in a junction corner (45° or more, the same rule
+     that gives a corner its side streets), carries it through kinks,
+     avenue curves and roundabouts (whose ring still takes the narrower of
+     the approach and three lanes, on the curved deflections), and puts a
+     right-angle block before the finish boulevard when the road is not at a
+     junction, so the last street is a boulevard off a corner, not a
+     narrowing. The medians follow, running the whole straight.
+
+129. **2026-11-06 — Width changes in the middle of the junction; bushes on
+     the medians.** By request after a screenshot of a street widening over
+     its first 25 m out of a corner: `traceWidths` eased a corner's width
+     change over the whole arc, and the arc's second half reads as the new
+     street. A corner now changes width over the middle 40 % of its arc
+     (`CORNER_CHANGE`), centred on the junction, inside the mouths and kerb
+     returns, so both streets reach the junction at their own widths; a
+     roundabout's deflection curves still ease over their length. The kerb
+     returns traced against the ribbon take a slightly steeper taper for it
+     (about 2.5 m over 9 m on a boulevard-to-lane corner), which the kerb's
+     own curvature hides. `cityMedians` plants a small bush (scale under
+     0.7, so it fits the 1.1 m grass strip) every 7 m along each median,
+     through the village planting list, so the kits, the terrain query and
+     Nightcity's dressing all apply unchanged; bushes have no collider.
+
+130. **2026-11-06 — Rounded median ends.** By request. A median is a
+     capsule now: `medianLift` measures the distance to the segment rather
+     than the lateral offset within it, so the kerb the wheels feel wraps
+     round each end, and `MedianBuilder.cap` draws each end as a half disc
+     of grass inside a sidewalk ring behind a curved kerb face, in eight
+     facets, wound by a normal check like the roundabout's bands.
+
+131. **2026-11-06 — A roundabout's pavements from a distance field.** By
+     request after screenshots of grass slivers where the exits and the
+     route meet the ring's outer pavement. The band had been stitched by
+     hand: an annulus cut into sectors round every road, each road's own
+     pavement strip butting against it, and the concave corner between the
+     two left bare, with a long thin wedge wherever the route leaves
+     tangentially. A first attempt filled each corner with a hand-drawn kerb
+     return and still left slivers. Now `RoundaboutPavement` builds every
+     pavement of a roundabout (the island's band, the outer band and the
+     kerb returns round each road) from one signed distance field to the
+     union of the carriageways in reach (the ring annulus, the blocked exits,
+     the route): marching squares on a 0.5 m grid traces the contour at
+     `PAVEMENT_WIDTH`, and each contour vertex is projected back along the
+     field's gradient onto the carriageway edge; quads between the two are
+     the pavement, with a kerb face along each. The offset of a union rounds
+     every concave corner by the offset, so the kerb sweeps from one road
+     into the next by construction and nothing is cut or stitched; the
+     roads' own pavement strips lie over this band along their lengths (a
+     3 mm step keeps them on top). The edge lines keep their sector cuts.
+     Render only: the wheels still feel pavements through `heightAt`'s own
+     band, which this construction shadows well enough in a corner the car
+     has no business in.
+
+132. **2026-11-06 — Side streets stop short of other roads; lamps off the
+     mouths; tram beds above the lines.** By request after a screenshot of
+     lamp posts standing in a crossroads and a tram bed fighting the tarmac.
+     The lamps were placed every 30 m along a street at its pavement line
+     with no regard for junctions part-way along it (a village had none),
+     and a probe for lamps without a kerb under them found the deeper fault:
+     an 80 m city side street fitted only against the other side streets
+     could run up to, or across, a neighbouring leg of the route (grid
+     blocks are 60–160 m). `clipStubsToRoads` now walks each city side
+     street out from past its own junction and cuts it (end building
+     included, `STUB_END_REACH`) a metre short of the route's pavements and
+     of every ring, never under `MIN_STUB_LENGTH`; a test walks every side
+     street against the route. Lamps skip any spot within a junction's
+     `junctionReach` plus the street's half width plus 4 m, or within a
+     metre of another street's pavement, and a test checks every lamp
+     stands a kerb up. The tram bed sits `LINE_ABOVE_DECK` + 5 mm over the
+     surface it crosses rather than 4 mm, above the painted lines and clear
+     of the junction plates' depth fighting.
+
+133. **2026-11-06 — Roundabouts: one surface for every road's connection.**
+     By request, so that every road meeting a ring joins it with continuous
+     tarmac, sidewalks and white lines. Decision 131's distance-field
+     pavement still left the roads' own strips (the ribbon's verges and
+     lines, the side streets' plates) meeting the ring's piecemeal, the
+     carriageway corners sharp and the ring's lines cut in sectors. Now the
+     roads hand over: inside `handoffRadius` (the outer pavement plus 6 m)
+     the ribbon's openings cover both sides for the stretch the route spends
+     within it (`ringHandoff`, walked along the route), and a ring exit's
+     pavements, kerbs and lines start at its `kerbCutOf` (the hand-off,
+     along the street) while its tarmac plate still starts at the ring. The
+     ring's surface (`RoundaboutSurface`) fills everything inside from one
+     field on a 0.25 m grid: `d`, the distance to the carriageway union;
+     its dilation by the pavement width as a mask; an exact Euclidean
+     distance transform (Felzenszwalb) of that mask back from its edge, whose
+     level at the pavement width is the closing of the union, the kerb line
+     with every mouth rounded by a kerb return. Three bands follow, each a
+     marching-squares contour with an offset: tarmac fillets between the kerb
+     line and the raw union edge (empty except in the corners), the pavement
+     between the dilated edge and the kerb line (with kerb faces along
+     both), and the edge line as the contour `LINE_INSET` inside the kerb
+     line. Every band is clipped at the hand-offs with an interpolated end
+     vertex, so it meets the road's own strips edge to edge. Quads are laid
+     as two independently wound triangles, since a band whose edges cross at
+     a tight corner otherwise leaves a culled hole. The ring's tarmac disc
+     and the island's grass stay as they were; the sector-cut line annuli are
+     gone.
+
+134. **2026-11-06 — Roundabout surface: exact edges, no slivers.** Follow-up
+     to 133 after frames still showed grass triangles at the exits' mouths
+     and a break in the white line at a hand-off. A diagnostic render of the
+     computed geometry (an SVG of the bands over the carriageways) showed
+     three causes. The surface's grid had been sampling the distance back
+     from the dilation's edge against grid nodes, which offset the kerb line
+     by part of a cell and made its contours wobble: it is now measured
+     against the dilation's own traced contour, the kerb line is traced
+     once, resampled to 0.4 m and relaxed, and every band is an exact
+     offset of it; the fillet's inner edge is the exact nearest point on a
+     carriageway edge (ring, street or route), with the raw corner between a
+     street and the ring inserted where the nearest piece changes so the
+     fillet fills the notch to its apex. A ring exit's tarmac plate now
+     starts inside the ring (its square end stood proud of the round edge at
+     its corners, where the circle curves back, leaving two slivers the
+     fillet did not reach). The surface's edge lines lie 4 mm over the
+     roads' own lines, which they overlap at the hand-offs, so the two no
+     longer fight. The surface is confined to the hand-off disc, so a
+     neighbouring junction inside the grid is left alone. And the contour
+     walker now closes a loop it comes back round to: the island's kerb line
+     is one, and without its closing segment every band on it, pavement and
+     line, had a cut a cell wide with the ground showing through.
+
+135. **2026-11-06 — Level ground past the pavements; junction plateaus.** By
+     request after a frame of a hilly city corner: the terrain mesh (2 m
+     cells) climbed straight from the pavement's edge, so its first sloping
+     triangle poked up through the pavement's outer half metre as a jagged
+     line, and the wedge between two side streets rose into a mound that
+     buried the corner's garden walls. `TerrainField` now keeps the ground
+     level `PAVEMENT_WIDTH + 2` beyond a carriageway wherever a town's
+     pavements run (`TOWN_FLAT_MARGIN`, chosen per street hit so the open
+     road keeps its 3 m shoulder), which puts the mesh's first slope a whole
+     cell past the pavement; and `UrbanField.tame` levels the ground round
+     every city junction (14 m, blending over 22 m) to the hills' height at
+     its centre, as it does round a ring, so intersections sit on small
+     plateaus between the climbs, the way a hilly city's do, and the corner
+     wedges stay gentle. The road profile is built from the tamed ground, so
+     the route flattens through each junction too; the grade limit between
+     them is unchanged.
+
+136. **2026-11-06 — Roundabout fillets over the deck.** The last patch of
+     grass in a ring's tarmac: the fillet bands were laid 2 mm under the
+     deck like the ring's disc, but the ground beside a carriageway sits at
+     deck level (only under the carriageway is the bed trenched), so the
+     terrain hid them and showed its shoulder colour in every mouth corner.
+     They now lie 4 mm over the deck, under the painted lines and over the
+     plates they meet.
+
+137. **2026-11-06 — Walled corners round a ring.** The pale patch that
+     stayed at a ring exit's mouth after decision 136 turned out to be the
+     ground itself: the wedge between the ring's pavement and the exit's lay
+     open and level, in the terrain's shoulder colour, with no wall, where a
+     junction's wedges are walled and planted by `junctionWalls`. A ring's
+     exits make no `Junction`, so `ringWalls` now runs garden walls along
+     the ring's facade in 3 m chords (broken at every exit and the route's
+     mouths, and wherever the route's own pavement runs beside the facade on
+     its way in and out) and down each exit's facade lines from the ring to
+     `ROW_SETBACK`, where the terrace rows begin, with a bush in each
+     corner; walls collide like every other. The pavement fan at each mouth
+     corner now also projects exactly onto the dilation's own contour
+     (`SegmentIndex.nearest`) rather than along a grid gradient, so the fan
+     meets the facade corner without a notch.
+
+138. **2026-11-06 — The last roundabout patch: the pinch between the route
+     and the ring.** Painting the terrain's shoulder magenta for one frame
+     proved the remaining pale triangle at a ring was ground, and a scan of
+     the hand-off disc for points inside the field's pavement band that no
+     band covered found it: where the route's deflection leaves (and joins)
+     the ring, the two carriageways run side by side with a gap that opens
+     slowly, the closing makes that gap tarmac while it is under two
+     pavements wide, but the kerb line runs round the outside of both roads
+     there, so no fillet band built off it reached in. `roundaboutSurface`
+     now lays a web of quads between the route's ring-side edge and the
+     ring's edge along each deflection while the gap is under 6 m. Two more
+     things the scan and the frames turned up on the way: for the field each
+     exit street now runs on back inside the ring (a street starting at the
+     ring's edge carried its rounded end cap into the mouth, and the field
+     took that cap for the edge), and the pavement's outer edge snaps to the
+     exact dilation contour only when that lies within a metre of the
+     gradient estimate, since at a narrow gap the nearest contour point is
+     the other road's. Every deck inside a ring's hand-off disc is now the
+     ring's level (`UrbanField.ringLevel`) and the route profile is pinned
+     across the whole disc, so the terrain mesh, the ribbon, the plates and
+     the surface agree in height there. The scan (0.25 m, four seeds) finds
+     no uncovered pavement-band point beyond cell-edge tolerance.
+
+139. **2026-11-06 — Tram beds ride clear; no catenary; the island pad
+     shrinks to the grass.** By request. Tram beds crossing a junction sat
+     4 mm plus the line height over the deck sampled on their axis, and
+     where the mouth plates and the ribbon step by a few millimetres, or a
+     bed's edge crossed a kerb, the tarmac cut through them: the bed now sits
+     2 cm over the painted lines and takes, at each 2 m station, the highest
+     surface under its axis and both edges. The catenary poles (`tramPole`
+     prop kind, its geometry and kits) are removed throughout. And the
+     island pad under a roundabout, which had stood at kerb height out to
+     half a metre short of the island's edge (3 mm above the island's
+     pavement band, so the ground poked through it as a pale sliver and a
+     crease), now covers only the grass core inside the band.
+
+140. **2026-11-06 — A round island: the ring arc keeps the ring's width.**
+     By request after the island's kerb still showed a notch at the route's
+     join. A trace of the route's inner edge against the island radius found
+     the cause in `traceWidths`: a curve leg eases between its neighbours'
+     widths, and the arc round the island is a curve leg whose neighbours
+     are the deflections, which carry the approach's width, so a boulevard
+     feeding a ring put a 7 m carriageway on a 5.5 m ring lane and the
+     route's inner edge bit 1.5 m into the island, which the closing then
+     followed. The ring arc now holds its own width like a straight, and the
+     deflections change width over their 40 % away from the ring
+     (`DEFLECTION_CHANGE`), so right before the join the carriageway is
+     already the ring's. A test walks the route 30 m either side of every
+     arc and checks its inner edge never comes inside the island radius.
+
+141. **2026-11-06 — City detail: four building kits in four renders, with
+     shared façade and rooftop parts.** By request (a low-poly city set as
+     the visual reference; every piece is built here from boxes, nothing is
+     imported). The `block` and `office` kits are reworked and a brick
+     `tenement` and an arcaded `arcade` join them, all assembled from two
+     part libraries, `FacadeGeometry` (casements with lintel and sill,
+     stepped arches, cornices, quoins, awnings, a fire escape) and
+     `RooftopGeometry` (parapets, bulkheads, water towers, AC units, roof
+     gardens, pergolas, masts), so the four read as one city. A `KindKit`'s
+     tint is now an array indexed by `variant % length` (pairs still
+     type-check), and a city's terraces draw variants from four, so the
+     façades come in brick, sandstone, white render and ochre; villages keep
+     two. `BuildingCatalog.ts` takes the footprints, door offsets and style
+     mixes out of `TownTerraces` (which was over the file-size rule).
+
+142. **2026-11-06 — Crossings, bays, furniture and cars are pure functions
+     of the town and the route, not generator output.** `UrbanGenerator`,
+     `TownTerraces`, `TownKerbs` and `RoundaboutSurface` were already over
+     the ~400-line rule, and storing more on `TownDef` would have meant
+     generator churn in the worker too. `Crossings.ts`, `ParkingBays.ts` and
+     `StreetFurniture.ts` work everything out from `(town, stage)` when a
+     builder or a test asks, the `junctionKerbs` pattern. Their reference
+     for "where a junction's paving ends along the route" is the span of the
+     ribbon's openings from `junctionKerbs`, not `junctionReach`, which
+     undercounts a straight crossroads (its kerb returns reach well past
+     `FILLET + 1`); the boulevard medians now break round the same span, as
+     a test of the crossings showed stop lines landing on a median.
+
+143. **2026-11-06 — The marking lift ladder.** Crossings lie at
+     `deck + 0.023`, bay lines at `+0.022`: over the ribbon's lines (+0.02)
+     and the lane dashes (+0.021), under a ring's lines (+0.024) and the
+     tram beds (+0.04). Nothing is laid on a ring. One `MarkingMesh`
+     accumulator lays both builders' rectangles in 2 m pieces on the deck.
+
+144. **2026-11-06 — Furniture by a slot walk with door clearance.** The
+     lamp loop became a slot every 10 m along every route street,
+     alternating sides, every third slot a lamp (the 30 m rhythm kept) and
+     the rest drawn from trees in pits, benches, bins, hydrants and
+     bollards; nothing but a lamp or a bollard within 2 m of a door, nothing
+     in a junction's mouth, beside another street or inside a ring's
+     hand-off. Villages keep their own lamp loop in `townProps`. Render-only
+     toggles (`crossings`, `parkingBays`, `streetFurniture`,
+     `pavementDetail`, `hedges`) leave the colliders standing, as the tram
+     and median flags do; with furniture off its kits are simply not built.
+     Only traffic lights, shelters and cars cast shadows.
+
+145. **2026-11-06 — Parked cars pitch with the street.** By request. A
+     `Prop` may carry a `pitch` about its own x axis after its heading
+     (`YXZ` order in the chunk manager); a parked car's is the deck's rise
+     from its tail to its nose, so it lies along a climbing street instead
+     of floating level over it. Cars collide as two circles along their
+     length (`CAR_COLLIDER`), like a farmhouse's three.
+
+146. **2026-11-06 — No green under a city's streets.** By request (a green
+     wedge along buildings on slopes, a grass triangle in a junction). The
+     wedge was the terrain mesh: a terrace pad lifts the vertex nearest the
+     building and the 3 m face between it and the kerb tilts up through the
+     pavement. Under a city's pavements (`TerrainSample.paved`) the pads are
+     not applied, and terrain faces wholly under a carriageway or a
+     junction's paving are coloured tarmac, under a pavement paving, so a
+     seam between fill polygons shows asphalt. The roundabout island's pad
+     sits 3 cm under the island's own grass and pavement meshes, so the
+     terrain's facets no longer show through their round edges.
+
+147. **2026-11-06 — Side streets run on to the roads they meet.** By
+     request (the grid ended abruptly in coned paths). City side streets run
+     150 m; one that would reach the route or another side street now runs
+     on to that road's pavement and stops there open-ended (`Street.open`:
+     no end building or pavement, its deck taking the other road's level at
+     the end), two that face each other down one line meet in the middle,
+     and only a ring stops a street short with a building (`UrbanStreets.ts`,
+     out of `UrbanGenerator`). The garden walls are closed by
+     `TownWallGaps.ts` (loose ends joined within 6 m where the join stays
+     off the pavements), the ring walls run exactly to each road's facade
+     lines, and the corners take up to two trees and five bushes.
+
+148. **2026-11-06 — Parked cars are the drivable hulls.** By request (more
+     detail, round wheels, the Riviera WRC and Tempesta Group B shapes
+     without their wings). The two bodies' station lists moved from their
+     React components into `render/car/HullShapes.ts`, pure data both the
+     drivable bodies and `CityVehicleGeometry` loft with `buildCarHull`; the
+     parked car paints the body white (the instance tint), keeps glass and
+     trim, and adds the same 12-facet tyres and 8-facet rims the drivable
+     wheels use, mirrors, plates and lights. One body kit per hull takes the
+     even or odd variants (ten variants: two hulls × five colours, each
+     colour listed twice so a variant's colour is the same on either hull).
+     Bus shelters were removed by request, and the benches and bins now
+     face the carriageway (the yaw sign was mirrored).
+
+149. **2026-11-06 — Side streets join the roads they meet for real; the
+     ground is coloured by its middle; the island is clamped; the cars'
+     pitch is signed for a +z nose.** By request, four fixes. (1) A city
+     side street that reaches the route now ends in a T junction on the
+     route's axis (`UrbanStreets.clipStubsToRoads` finds where the street's
+     axis crosses the centreline from the hit's lateral sign and pushes a
+     junction with the route's two arms and the street as its one blocked
+     arm): the junction machinery then gives it a mouth, kerb returns and an
+     opening in the ribbon, the street's plate stops at the junction's cut
+     at both ends (`TownStreetBuilder.endOf`), its deck takes the route's
+     through the far junction zone (`StubDeck.farZone`) and its terraces
+     stop clear of the route's pavement. No T within 60 m of the start or
+     finish. A street that reaches another side street runs to that
+     street's carriageway edge through a square tarmac mouth cut in the
+     other's pavement, kerb and line (`mouthsOf`); its own pavements stop at
+     the other's pavement. Joins never cross the route. Gates nudge forward
+     off a junction once more after the spacing rule. (2) The terrain face
+     colour under a city reads the paving at the face's middle: a 3 m face
+     at a junction corner can have every corner on a carriageway while it
+     spans the pavement and the green, and so painted asphalt over the
+     sidewalk. (3) The roundabout's distance field never goes inside the
+     island: an exit's extension (its round end cap) reached a metre into
+     it and dented the kerb line. (4) A positive rotation about x drops +z,
+     and the parked cars' noses point +z, so their pitch is negated; before,
+     a car on a slope tilted the wrong way and its downhill wheels floated.
+
+150. **2026-11-06 — Tree pits on both sides of every street.** By request.
+     The furniture slot walk (one slot every 10 m, alternating sides, a
+     random kind) gave a street a tree here and there; now every street,
+     route or side street, carries the same rhythm on both pavements: a
+     tree pit every 15 m a side, lamps every 30 m alternating sides on the
+     marks between the trees, and a small piece (bench, bin, hydrant or
+     bollard) opposite each lamp. A tree whose spot is in a mouth or at a
+     door tries shifts of ±2 and ±3.5 m before the row goes without it, so
+     the rows read unbroken. A test counts the pits per side per street.
+
+151. **2026-11-06 — Trams run the lines, as scenery.** By request. A
+     timetable per line from the stage seed (`TramService.ts`: headway
+     55–95 s, a run alternating direction, the tram fading in and out over
+     10 m at the line's ends, where it would otherwise appear from nowhere
+     in front of the end building) and one mesh per line over a shared
+     `TramGeometry` (`TramFleet.ts`), posed from the wall clock in the
+     renderer's per-frame update and pitched by the deck under its bogies.
+     The simulation does not see the trams: a moving obstacle would need
+     per-step collider updates and a tram crossing at 29 km/h would be a
+     wall the driver cannot read; the car passes through, as through the
+     scenery it cannot hit. Toggle `tramService`.
+
+152. **2026-11-06 — An overhead line without poles.** By request: the
+     catenary poles went in 139, but the user wants the wire the tram's
+     pantograph rides. `TramTrackBuilder` lays one contact wire
+     (`TRAM_WIRE_HEIGHT`, 5.15 m over the rail heads, its underside on the
+     pantograph's strips) along every line as two crossed 5 cm ribbons drawn
+     from both sides so it reads from any angle, following the track's
+     height and stopping 2 m short of the ends where the trams fade; a
+     messenger wire with droppers was tried and dropped by request. The
+     pantograph is a single-arm frame after the reference (a flat base
+     plate, a pivot, two close-set tubes and a guide rod up to the knee, two
+     wide-set tubes converging on the head, a bow with two strips and
+     down-turned horns) whose arm angles are solved so the strips meet the
+     wire exactly; a test pins the tram's top to the wire height.
+
+153. **2026-11-06 — The tram has a hitbox.** By request, reversing 151's
+     "scenery only". `tramBoxes` turns the timetable's poses at a clock into
+     oriented boxes (the faint ends left out), and the session resolves the
+     car against them every physics step with `resolveBoxCollisions`, the
+     grid's box routine applied to boxes given outright, since they move.
+     The clock is the run's own simulated time, and the renderer now poses
+     the fleet from that same clock (handed down the pose callback, the
+     replay's clock while one plays) instead of the wall clock, so what the
+     driver sees is what the car hits, and a paused game holds its trams. A
+     tram rolling into a standing car pushes it by penetration resolution
+     step by step, which reads as a shove.
+
+154. **2026-11-06 — The Boreal Saloon reshaped after its reference.** By
+     request (the late-nineties world-rally saloon, from five reference
+     views). The hull's cowl moves back from 0.92 to 0.6 ahead of centre
+     and the bonnet falls to a lower nose (belt 0.68 at the face), the roof
+     rises to 1.22 and runs from 0.05 ahead of centre to 0.75 behind, the
+     rear glass drops onto a 0.6 m boot deck, the flares widen to 0.89 over
+     a shouldered body (the cabin stations take a `shoulder` crease, so the
+     greenhouse rounds in two planes) and the box flares now sit on both the
+     front and the rear stations. The dressing gains wrap-round head and
+     tail lamps with amber indicators, a grille slot, bonnet pins and a
+     rally plate decal, a boot lip, a third brake light, a taller swept wing
+     with a gurney and end plates, side skirts, a door handle, mirror
+     glass, and red mud flaps of its own (`OWN_FLAPS`). The bumper's two
+     round fog lamps stay where they were, as asked.
+
+155. **2026-11-07 — The saloon measured off its reference.** By request
+     (the first pass still read flat and square). The proportions now come
+     from the reference views as fractions of length and height: the door
+     belt at 0.64 of the height (0.78 m, so the glasshouse is a third of the
+     car rather than a quarter), the cowl 0.63 of the length from the tail
+     at 0.71 of the height, the roof flat over the middle 0.22 of the
+     length, the rear screen onto a deck at 0.66 of the height, the nose
+     face at 0.5, floor and sills lowered, and a stronger tumblehome to a
+     1.2 m roof with the shoulder crease. The livery gains the sun strip,
+     sponsor blocks on the bumper corners and rear quarter, name bars on the
+     rear window, a sill stripe and plate stripes. The fog lamps stay.
+
+156. **2026-11-07 — Saloon: flaps hung from the sill, a taller nose and
+     tail, a level bonnet, the livery off the arches.** By request. The mud
+     flaps hang from a bracket at the sill inside the flares (they stood off
+     the body and proud of the arches); the nose rises to 0.77 at the face
+     with the bonnet nearly level from the cowl (0.88), as the reference's
+     is, and the tail to 0.86 with the deck at 0.88; the stars, the last
+     swoosh piece and the rear quarter block move off the rear wheel well.
+
+157. **2026-11-07 — Saloon: the four-lamp pod returns to the bonnet's
+     leading edge; the rally plate, the wing's plate and the floating brake
+     light go.** By request. The pod of four round lamps on a dark bar sits
+     on the bonnet's front edge over the headlamps, the rally plate decal is
+     off the bonnet, the white plate is off the wing, and the third brake
+     light sits on the boot deck under the wing instead of a hair above it.
+
+158. **2026-11-07 — Saloon: the window line up to the door plate.** By
+     request. The cabin belt rises from 0.78 to 0.86 so the side glass is
+     shorter from the bottom and its lower edge meets the top of the door
+     plate, and the two white name bars on the rear window are gone.

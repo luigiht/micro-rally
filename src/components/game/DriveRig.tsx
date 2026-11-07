@@ -34,7 +34,8 @@ interface DriveRigProps {
   /** Sky, fog, lights and tyre-mark ink; the stage builders take the same theme through `StageRenderer`. */
   theme: WorldTheme;
   /** Called every frame with the interpolated car pose (e.g. to stream chunks). */
-  onPose?: (pose: Readonly<VehiclePose>) => void;
+  /** Every frame: the car's pose and the clock the world's moving parts follow. */
+  onPose?: (pose: Readonly<VehiclePose>, clock: number) => void;
   children?: ReactNode;
 }
 
@@ -125,7 +126,7 @@ export function DriveRig({ world, theme, onPose, children }: DriveRigProps) {
         }
       }
     }
-    poseCallback.current?.(pose);
+    poseCallback.current?.(pose, s.clock);
     if (sun.current) followSun(sun.current, pose);
   });
 

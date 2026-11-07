@@ -38,7 +38,8 @@ identical every time it is driven and records are fair.
 ## Towns
 
 Every third stage (stages 3, 6, 9, …, in whichever region falls there,
-except the Coast and the Desert, which build none)
+except the Coast, the Desert and the Urban region, which build none: a city
+is a town from start to finish, see below)
 carries a town between 30 % and 55 % of the way along.
 
 - **Plan.** An entry straight of 60 or 80 m, two to four middle legs
@@ -50,8 +51,9 @@ carries a town between 30 % and 55 % of the way along.
 - **Streets and junctions.** Every corner is a junction with blocked side
   streets (32 m stubs, cut down to clear each other, never below 20 m) closed
   by rows of cones, with direction boards before the cones. Kerb returns are
-  traced exactly against the ribbon, pavements stand 10 cm above the deck
-  behind vertical kerb faces, and white edge lines run 2 cm over the tarmac.
+  traced exactly against the ribbon, 3 m pavements stand 10 cm above the deck
+  behind vertical kerb faces (concrete to the tyres: tarmac grip and black
+  marks), and white edge lines run 2 cm over the tarmac.
 - **Buildings.** Four styles (townhouse, shop, tower, hall) stand a party
   wall apart along every facade line, a pavement beyond the real road edge,
   with garden walls over every gap, flower boxes under the windows, lamp
@@ -70,6 +72,7 @@ carries a town between 30 % and 55 % of the way along.
 | Alpine | pale grey sky, near-white ground, frosted pines                                                             | snow (dusted asphalt), tarmac | overcast, clear |
 | Coast  | pale blue sky, dry scrub and limestone, maritime pines, sand and a teal sea                                 | tarmac                        | clear           |
 | Desert | pale sky, warm haze, pale to golden sand, sandstone, date palms and dry scrub, teal pools                   | sand                          | clear           |
+| Urban  | pale grey-blue sky, concrete pavements, lawn verges and park greens, render and glass                       | tarmac                        | clear, overcast |
 
 Night is a placeholder cloned from Forest and not yet in the progression
 loop.
@@ -167,6 +170,153 @@ A Desert stage is a piste of packed sand through a dune sea, with oases.
   the pools. No villages: a town index that falls on a desert stage stays
   open road.
 - **Scenery.** Dry scrub and sandstone boulders, sparse; no pines, no farms.
+
+## Urban
+
+An Urban stage is a big city from the start line to the finish: the whole
+route is one town (`UrbanPlan.ts` draws it, `TownGenerator.layoutTown` lays
+it with the city hooks in `UrbanGenerator.ts`, `UrbanField.ts` shapes the
+ground), so everything the villages have, junctions, blocked side streets
+with cones and boards, kerbed pavements, terraces and garden walls, is here
+too, at a city's scale.
+
+- **Plan.** Blocks of 60–160 m end in corners: mostly right angles, some
+  skewed to 60°, 75°, 105° or 120°, some gentle kinks of 15°–35° (irregular
+  streets, which bend without a junction). Now and then a block ends in a
+  sweeping avenue arc of 40–90 m radius instead. Corners round `8 m + half
+width`, so a boulevard turns on a 15 m arc and a lane on an 11 m one. The
+  route keeps within 100° of the stage axis and is checked whole against the
+  self-approach rule (up to 40 draws, then a staircase of right angles).
+- **Lanes.** A street's width is drawn afresh only after a junction corner
+  (kinks, avenue curves and roundabouts carry it through): a narrow one-way lane (3.2 m half
+  width, at most once a stage, square corners and short blocks), two lanes
+  (4.5 m), three (5.5 m) or a four-lane boulevard (7 m, always at the start
+  and the finish). The stage's base width is the boulevard's; every street
+  holds its own width from end to end and the change happens in the middle
+  of the junction between two streets (over the middle 40 % of the corner
+  arc, or along a roundabout's deflections), so a street never changes its
+  lane count and each one reaches the junction at its own width. Streets
+  with two or more 3.3 m lanes carry dashed white lane dividers and, when the
+  count is even, a solid centre line, left off through junctions and
+  roundabouts. Every boulevard carries a kerbed green median down its middle
+  (1.8 m: a 35 cm sidewalk strip each side of a grass strip, a kerb high, rounded at both ends, the
+  wheels feel it; small bushes every 7 m along the grass) from 6 m after its start to 6 m before its end, broken
+  round every crossroads and never before the first 70 m of road, where the
+  start gantry stands.
+- **Junctions.** Every corner of 45° or more is a junction with two blocked
+  side streets; blocks of 110 m and over get a crossroads about every 75 m.
+  A city's side streets run 150 m from their junction (a village's run
+  32 m), lined with terraces, so the city reads on past the route instead of
+  ending at a wall a few metres in. One that would run into the route runs
+  on to the route's axis and ends in a T junction there, with a mouth, kerb
+  returns and an opening in the ribbon like any crossroads
+  (`UrbanStreets.ts`; none within 60 m of the start or finish); one that
+  would run into another side street runs to that street's carriageway
+  through a square mouth cut in its pavement, open-ended (no end building,
+  its deck taking the other road's level); two that face each other down
+  one line meet in the middle; only one that would reach a roundabout stops
+  short with a building across its end, never below 20 m. A wide street's cones stand beyond its junction's
+  own surface. The garden walls round the junction greens are closed: any
+  wall end that meets neither another wall nor a building is joined to the
+  nearest such end within 6 m (`TownWallGaps.ts`), the ring walls run
+  exactly up to each road's facade lines, and every walled corner takes up
+  to two trees and five bushes.
+- **Roundabouts.** One a stage, two from the third difficulty loop, three
+  from the fifth: the route deflects right through 28° on a 20 m arc onto a
+  ring round an island of 8–11 m radius, circulates left through 56° (straight
+  on) or 146° (a left turn) and deflects right off it. The ring's carriageway
+  is the ring lane's width (the approach's, at most three lanes); the part
+  the route does not drive is laid as short chord streets, so it is tarmac at
+  deck level, and the hills are levelled to the island's height for 18 m
+  beyond the ring, blending back over 40 m, so the ring lies flat. The
+  island stands a kerb above the ring with a tree and a few bushes; blocked
+  exits leave the ring every quarter turn from the entry where they clear
+  the route's own arms, closed by cones like any side street. The ring's
+  tarmac is one full annulus under the route and the exits, and its outer
+  kerb, pavement and edge line are broken wherever the route's deflections
+  and the exits cross the band (found by walking the route), as the ribbon's
+  Inside a hand-off radius (6 m beyond the ring's outer pavement) the roads
+  paint only their carriageways, and the ring's surface (`RoundaboutSurface.ts`)
+  paints everything else from one distance field of the ring, its exits and
+  the route: the carriageway union is closed by the pavement width, which
+  rounds every road's mouth into a kerb return, and the tarmac fillets, the
+  pavement with its kerb faces and the white edge line are each one contour
+  of that field with an offset, so tarmac, sidewalk and line run from every
+  road onto the ring in one piece and meet the roads' own strips edge to
+  edge at the hand-off. Garden walls run behind the ring's outer pavement
+  in 3 m chords, broken for every road, and down each exit's facades to its
+  terraces, with a bush in every corner, as a junction's wedges have.
+- **Trams.** Up to five lines cross the route square on at crossroads, from
+  the end of one side street through the junction to the end of the other;
+  none within 45 m of a roundabout, none along the route itself. A
+  line is two rails a standard gauge (1.435 m) apart set in a 2.6 m strip of
+  sett paving that rides over whatever it crosses, under a single overhead
+  contact wire 5.15 m over the rails, following them up and down and
+  stopping 2 m short of the line's ends; no poles. The rails
+  stand 2 cm proud and the wheels feel them as a double ridge (felt 15 cm
+  wide so a 120 Hz step cannot miss one); grip is tarmac's throughout.
+  Now and then a tram runs the line (`TramService.ts`, `TramFleet.ts`): a
+  24 m low-floor tram in three sections joined by ribbed bellows, white
+  over a blue lower band, framed windows and double doors, slatted roof
+  pods and a raised single-arm pantograph whose strips ride the contact
+  wire, and cabs with chamfered corners, a raked screen,
+  destination band, wiper, mirrors, bumper and lights, at 29 km/h every 55–95 s per line on a timetable
+  from the stage seed, alternating direction, riding the rails with the
+  street's slope and fading in and out at the line's ends. It is solid:
+  the session poses the same timetable's hitbox (24 × 2.65 m, once the tram
+  has half faded in) from the run's clock every physics step, so the car is
+  stopped by a tram exactly where it sees one, and a tram rolling into a
+  standing car shoves it along.
+- **Buildings.** Four city styles join the village ones, all in the game's
+  flat-shaded box style with cornices, lintels and sills on every casement
+  and stone details in fixed colours, and each in four façade renders
+  (brick, sandstone, white render, ochre; the office pale to slate): an
+  apartment `block` (14 × 11 m, five storeys, balconies across the front, an
+  entrance awning, a roof with a water tower, plant and a planter garden), a
+  glass `office` (12 × 12 m, eight storeys of glass bands between stone
+  piers, a cantilevered canopy, a railed set-back crown, AC plant and a
+  mast), a brick `tenement` (12 × 10 m, five storeys: arched ground-floor
+  bays, quoins, a fire escape down one flank, a water tower and planters on
+  the roof) and an `arcade` (10 × 10 m, three storeys over a stone colonnade
+  of four arches with shop windows in the recess, balconettes, a roof garden
+  under a pergola). The city mixes blocks 4, tenements 4, offices 2, arcades
+  2, shops 2, townhouses 1 along every facade (`BuildingCatalog.ts` holds
+  the footprints and door positions).
+- **Markings and furniture.** Every junction arm carries a zebra crossing
+  just past the junction's paving with a stop line beyond it
+  (`Crossings.ts`), except where a tram runs down the arm. Three-lane
+  streets are parked along: the kerb lane each side is painted as 5.5 m
+  bays between the junctions (`ParkingBays.ts`), two driving lanes with a
+  centre line run between them, and about a third of the bays hold a parked
+  car: the Riviera WRC's or the Tempesta Group B's own lofted hull without
+  its wing or livery (`HullShapes.ts`), in one of five colours on round
+  wheels, pitched to the street's slope, which the car hits like any
+  obstacle. Every street, route and side street alike, carries the same
+  rhythm on both pavements (`StreetFurniture.ts`): a street tree in a
+  kerbed pit every 15 m a side (shifted up to 3.5 m where a door or a mouth
+  is in the way, so the rows stay unbroken), a lamp every 30 m alternating
+  sides between the trees, and a bench, a litter bin, a hydrant or a
+  bollard on the pavement opposite each lamp; nothing but a lamp or
+  bollard stands within 2 m of a door, and nothing in a junction's mouth,
+  beside another street or inside a ring's hand-off; benches and bins face
+  the road. Every junction gets a traffic light on each corner, and manhole covers dot the carriageway every
+  40 m. The garden walls are hedges. The ground under a city's streets is
+  coloured tarmac under the carriageways and paving under the pavements, and
+  the terraces' pads stop short of the pavements, so no grass shows through
+  a seam or along a building on a slope.
+- **Elevation.** The city keeps 16 m of the hills' relief (a village keeps
+  8 m) around its mean height, so streets climb and dip up to the 12 %
+  grade limit and the terraces step with them; side streets climb at up to
+  8 %. Every junction sits on a small plateau (level for 14 m round its
+  centre, blending back over 22 m), as a hilly city's intersections do, and
+  in any town the ground stays level a terrain cell beyond the pavements
+  before it climbs.
+- **Gates.** With the town spanning the stage, checkpoints stand between
+  junctions, at least 25 m along the road from any junction or roundabout
+  ring, each as wide as the street it stands on; the start and finish
+  gantries span the boulevard.
+- **Scenery.** The wild scatter is the parks': a few trees and bushes off
+  the streets, no farms, no rocks. Par speed is 13 m/s on tarmac.
 
 ## Circuits
 
@@ -293,16 +443,16 @@ the cameras.
 
 ## Surfaces
 
-| Surface | Where                                                   | Feel                                                                                         |
-| ------- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| track   | every circuit                                           | race asphalt: a quarter more grip than tarmac and a planted rear, so the car slides far less |
-| tarmac  | some Forest and Alpine stages, every Coast stage, towns | most grip, highest par speed                                                                 |
-| gravel  | most Forest stages                                      | the reference surface                                                                        |
-| mud     | some Forest stages                                      | slow and slippery                                                                            |
-| snow    | most Alpine stages, and off road there                  | least grip, dusted asphalt look                                                              |
-| sand    | every Desert stage                                      | packed piste, a little looser than gravel                                                    |
-| dune    | off the road in the Desert                              | soft sand, the car wallows                                                                   |
-| grass   | off the road everywhere else                            | heavy drag                                                                                   |
+| Surface | Where                                                             | Feel                                                                                         |
+| ------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| track   | every circuit                                                     | race asphalt: a quarter more grip than tarmac and a planted rear, so the car slides far less |
+| tarmac  | some Forest and Alpine stages, every Coast and Urban stage, towns | most grip, highest par speed                                                                 |
+| gravel  | most Forest stages                                                | the reference surface                                                                        |
+| mud     | some Forest stages                                                | slow and slippery                                                                            |
+| snow    | most Alpine stages, and off road there                            | least grip, dusted asphalt look                                                              |
+| sand    | every Desert stage                                                | packed piste, a little looser than gravel                                                    |
+| dune    | off the road in the Desert                                        | soft sand, the car wallows                                                                   |
+| grass   | off the road everywhere else                                      | heavy drag                                                                                   |
 
 Tyre marks are drawn per surface into a single fading ring-buffer mesh.
 

@@ -7,8 +7,8 @@ export interface KindKit {
   sources: readonly PropKind[];
   geometry: BufferGeometry;
   material: Material;
-  /** Per-instance colour pair (variant 0 / 1); null = material colour. */
-  tint: readonly [Color, Color] | null;
+  /** Per-instance colours, one per variant (`variant % length`); null = material colour. */
+  tint: readonly Color[] | null;
   castShadow: boolean;
   /** Geometry carries its own colours (multiplied by the tint). */
   vertexColors?: boolean;
@@ -67,7 +67,8 @@ export class SceneryChunkManager {
       const mesh = new InstancedMesh(kit.geometry, kit.material, items.length);
       items.forEach((p, i) => {
         this.dummy.position.set(p.x, p.y, p.z);
-        this.dummy.rotation.set(0, p.rotation, 0);
+        // Heading first, then any pitch about the prop's own x axis.
+        this.dummy.rotation.set(p.pitch ?? 0, p.rotation, 0, 'YXZ');
         this.dummy.scale.setScalar(p.scale);
         kit.place?.(p, this.dummy);
         this.dummy.updateMatrix();
@@ -76,7 +77,7 @@ export class SceneryChunkManager {
           kit.colorAt(p, this.color);
           mesh.setColorAt(i, this.color);
         } else if (kit.tint) {
-          this.color.copy(kit.tint[p.variant ? 1 : 0]);
+          this.color.copy(kit.tint[p.variant % kit.tint.length]!);
           // Houses keep their palette; foliage varies a little per instance.
           if (!kit.vertexColors)
             this.color.multiplyScalar(0.88 + (p.rotation / (Math.PI * 2)) * 0.24);

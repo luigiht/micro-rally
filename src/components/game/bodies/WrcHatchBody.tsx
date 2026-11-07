@@ -4,6 +4,7 @@ import type { Ref } from 'react';
 import type { Group } from 'three';
 import { CAR_SPECS, type CarSpec } from '@/game/vehicle/CarSpec';
 import { wellsFor, type HullSpec } from '@/render/car/CarHull';
+import { WRC_STATIONS } from '@/render/car/HullShapes';
 import { ArchLip, Box, Lamp } from '../CarParts';
 import { CarHullMesh } from './CarHullMesh';
 
@@ -47,93 +48,7 @@ const HULL: HullSpec = {
     { x0: 0.04, x1: 0.16, z0: 1.08, z1: 1.16, color: K.trim, mirror: true },
     { x0: 0.24, x1: 0.36, z0: 1.08, z1: 1.16, color: K.trim, mirror: true },
   ],
-  stations: [
-    { z: -2.0, floor: 0.4, sill: 0.46, belt: 0.98, roof: 0.98, xSill: 0.8, xBody: 0.9, xRoof: 0.9 },
-    {
-      z: -1.6,
-      floor: 0.34,
-      sill: 0.44,
-      belt: 1.02,
-      roof: 1.02,
-      xSill: 0.86,
-      xBody: 0.94,
-      xRoof: 0.94,
-      glass: true,
-    },
-    {
-      z: -1.25,
-      floor: 0.34,
-      sill: 0.44,
-      belt: 0.97,
-      roof: 1.4,
-      xSill: 0.86,
-      xBody: 0.94,
-      xRoof: 0.64,
-      glass: true,
-    },
-    {
-      z: -0.55,
-      floor: 0.34,
-      sill: 0.44,
-      belt: 0.96,
-      roof: 1.43,
-      xSill: 0.86,
-      xBody: 0.94,
-      xRoof: 0.68,
-    },
-    {
-      z: -0.47,
-      floor: 0.34,
-      sill: 0.44,
-      belt: 0.96,
-      roof: 1.43,
-      xSill: 0.86,
-      xBody: 0.94,
-      xRoof: 0.68,
-      glass: true,
-    },
-    {
-      z: 0.55,
-      floor: 0.34,
-      sill: 0.44,
-      belt: 0.95,
-      roof: 1.37,
-      xSill: 0.86,
-      xBody: 0.94,
-      xRoof: 0.66,
-      glass: true,
-    },
-    {
-      z: 1.05,
-      floor: 0.34,
-      sill: 0.44,
-      belt: 0.9,
-      roof: 0.9,
-      xSill: 0.86,
-      xBody: 0.94,
-      xRoof: 0.94,
-    },
-    {
-      z: 1.6,
-      floor: 0.34,
-      sill: 0.42,
-      belt: 0.8,
-      roof: 0.8,
-      xSill: 0.84,
-      xBody: 0.92,
-      xRoof: 0.92,
-    },
-    {
-      z: 2.15,
-      floor: 0.38,
-      sill: 0.44,
-      belt: 0.66,
-      roof: 0.66,
-      xSill: 0.78,
-      xBody: 0.86,
-      xRoof: 0.86,
-    },
-  ],
+  stations: WRC_STATIONS,
 };
 
 /** Turn-of-the-century World Rally Car hatch. Coordinates in the root frame. `cabinRef` holds the mirrors. */

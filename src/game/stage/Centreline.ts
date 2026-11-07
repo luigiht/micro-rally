@@ -134,12 +134,13 @@ export function buildCentreline(
             radius: leg.radius,
             sweep: leg.sweep * sign,
             length: leg.length,
+            ...(leg.roundabout ? { roundabout: leg.roundabout } : {}),
           });
           carry = 0;
           continue;
         }
         const turn = leg.turn * sign;
-        const out = turn !== 0 ? tangentLength(turn) : 0;
+        const out = turn !== 0 ? tangentLength(turn, leg.radius) : 0;
         const portion = leg.length - carry - out;
         const steps = Math.max(1, Math.round(portion / CONTROL_STEP));
         const points = [{ x, z }];
@@ -169,7 +170,7 @@ export function buildCentreline(
         if (turn !== 0) {
           // The polygon corner lies `out` beyond the straight; the arc cuts it and lands `out` past it on the new heading.
           const corner = { x: x + Math.sin(h) * out, z: z + Math.cos(h) * out };
-          const radius = cornerRadius(turn);
+          const radius = cornerRadius(turn, leg.radius);
           const cpoints = [{ x, z }];
           arc(radius, turn, cpoints);
           // The corner, and the side streets that leave it, take the narrower of the two straights it

@@ -124,6 +124,35 @@ flowchart LR
   flower-box and street-furniture kits (`render/scenery/BuildingGeometry.ts`,
   `CivicGeometry.ts`, `PlanterGeometry.ts`, `StreetFurnitureGeometry.ts`).
 
+- Urban (`game/stage/UrbanPlan.ts`, `UrbanGenerator.ts`, `UrbanField.ts`,
+  `Roundabout.ts`, `Tram.ts`): the city is a town that spans the stage.
+  `planUrban` draws a `TownPlan` whose legs run from the first control step
+  past the run-out (blocks with right-angle, skewed and kinked corners, each
+  with its own corner radius, avenue curves, lane widths per block, and
+  roundabouts as a deflection–circulation–deflection run of curve legs tagged
+  with their island), so `buildCentreline` lays it and the open-road walk
+  never resumes; `layoutTown` takes the region's `UrbanDef` and adds
+  crossroads every block, the roundabouts (ring chords, blocked exits, island
+  greenery, facade gaps), the trams and the building mix, and stamps the
+  relief; `TerrainField` delegates to `UrbanField` for the per-town relief
+  share, the roundabout levelling in `groundHeight` and the tram ridge in
+  `heightAt`; `StageGenerator` uses the boulevard as the base width, lays
+  the gates between junctions and sizes each to its street. Render side:
+  `RoundaboutBuilder` (ring tarmac, island and outer kerbs, lines, grass),
+  `TramTrackBuilder` (sett bed and rails), `TramFleet` (the trams on the
+  lines, posed each frame from `TramService`'s timetable), `LaneMarkings` (dashed dividers
+  and centre lines from the per-sample width, two lanes along a parking
+  stretch), `CrossingBuilder` and `ParkingBayBuilder` over the shared
+  `MarkingMesh`, and the building kits: `UrbanGeometry` (block, office),
+  `TenementGeometry`, `ArcadeGeometry` on the shared `FacadeGeometry` and
+  `RooftopGeometry` part libraries, `CityFurnitureGeometry` and
+  `CityVehicleGeometry` (the parked cars, on the hull stations the drivable
+  bodies share through `render/car/HullShapes.ts`) for the props. The city's street detail is pure data
+  worked out from the town and the route when asked, never stored on
+  `TownDef`: `Crossings.ts`, `ParkingBays.ts`, `StreetFurniture.ts`;
+  `UrbanStreets.ts` fits the side streets to the roads they meet,
+  `TownWallGaps.ts` closes the garden walls, `BuildingCatalog.ts` holds the
+  footprints, doors and style mixes.
 - **Themes (Nightcity).** `render/theme/WorldTheme.ts` is the look as data:
   sky, fog, lights, terrain mode, road, gate and wall colours, scenery kit
   set and tyre-mark ink. `dayTheme(region)` is today's look; `NIGHTCITY_THEME`

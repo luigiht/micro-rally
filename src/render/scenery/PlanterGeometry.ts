@@ -8,7 +8,8 @@ import { box, merge } from './HouseGeometry';
  * hung just below the sill, a mound of leaves and three blooms. One merged,
  * vertex-coloured geometry per style, instanced untinted alongside the walls
  * kit, so it follows every building's transform. The hall keeps its civic
- * front bare.
+ * front bare, the city's blocks, offices and arcades have no sills to hang
+ * one on, and its tenements carry them on the first floor.
  */
 const FLOOR = HOUSE_SLAB_TOP;
 const TROUGH = new Color('#9a5a3c');
@@ -57,6 +58,15 @@ const SILLS: Readonly<Record<BuildingStyle, readonly Sill[]>> = {
     win('x', 1, 3, 0.5, FLOOR + 4.4),
   ],
   hall: [],
+  block: [],
+  office: [],
+  // The tenement's first-floor casements (1.5 m glass centred 1.6 m up the storey; the box hangs 0.4 m under the glass).
+  tenement: [
+    win('z', -1, -5, -3.8, FLOOR + 4.25),
+    win('z', -1, -5, 0, FLOOR + 4.25),
+    win('z', -1, -5, 3.8, FLOOR + 4.25),
+  ],
+  arcade: [],
 };
 
 /** One flower box under a sill. `out` is how far a part stands off the wall. */
