@@ -3185,3 +3185,28 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      further the further out, with a knot hiding their roots; the coconuts
      are a third instanced part in their own brown. The palm's canopy
      spacing grew to 2.6 m for the wider crown.
+
+163. **2026-11-08 — City side streets keep clear of the corners.** By
+     request: at a corner of seed 989380427 stage 31 a 125 m side street
+     from the next corner ran back and opened onto the first corner's
+     straight-on street only a few metres past that junction, so its plate
+     and pavements landed among the corner's kerb wedges and read as a pale
+     diagonal road cutting into the carriageway. `joinStubs` now opens a
+     street onto another only 16 m or more past that street's junction
+     (`JOIN_PAST_JUNCTION`) and never within 8 m of the route's pavement
+     beyond the usual corridor (`JOIN_ROUTE_CLEAR`); `clipStubsToRoads`
+     makes a T on the route only where the street arrives within 22° of
+     square (`T_MAX_SKEW`), since an oblique T's kerb returns stretch into
+     aprons along the road. Streets that fail these stop short with their
+     end building, as the user asked, and the route's terraces continue
+     past them.
+
+164. **2026-11-08 — Lane markings end at the junction's crossing.** By
+     request: the dashes and centre line were blanked within
+     `junctionReach` of a junction's centre, which left them running under
+     the zebra and up to the pavement's flare at wide junctions. They now
+     use the same spans the crossings do (the ribbon's hand-over to the
+     junction's kerbs, `junctionKerbs(...).openings`) plus the crossing
+     and stop line laid beyond them (`CROSSING_EXTENT`) and 1.5 m, so a
+     line always stops at the stop line; junctions without openings keep
+     the reach-based fallback with the same extent added.

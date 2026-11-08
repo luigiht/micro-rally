@@ -34,6 +34,14 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Fixed
 
+- **Lane lines end at the stop line.** A city's lane dashes and centre line
+  now stop before each junction's crossing instead of running under the
+  zebra and into the mouth. [164]
+- **Side streets stay off the corners.** A city side street no longer opens
+  onto another street right beside the main road's junction, nor forms a T
+  on the main road at an oblique angle; such streets stop short with their
+  end building, so pavements and kerbs run continuously round every corner.
+  [163]
 - **Trams clear the cones.** The cone row across a side street that carries a
   tram line leaves the tram bed clear, so a tram no longer drives through two
   cones. [160]

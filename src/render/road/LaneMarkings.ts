@@ -7,6 +7,8 @@ import { halfWidthAt } from '@/game/stage/RoadWidth';
 import type { StageDef } from '@/game/stage/StageGenerator';
 import type { TerrainField } from '@/game/stage/TerrainField';
 import { junctionReach } from '@/game/stage/TownJunctions';
+import { junctionKerbs } from '@/game/stage/TownKerbs';
+import { CROSSING_EXTENT } from '@/game/stage/Crossings';
 import { patchNeon } from '../theme/NeonMaterial';
 import { themeColor } from '../theme/themeColor';
 import type { RoadTheme } from '../theme/WorldTheme';
@@ -20,8 +22,8 @@ const DASH_ON = 2;
 const DASH_PERIOD = 4;
 /** Lane lines stand a hair over the edge lines, so the two never share a plane. */
 const ABOVE_EDGE_LINE = 0.001;
-/** Lines stop this far short of a junction's own reach along the route, and clear of every roundabout ring. */
-const JUNCTION_MARGIN = 2;
+/** Lines stop this far short of a junction's crossing and stop line along the route, and clear of every roundabout ring. */
+const JUNCTION_MARGIN = 1.5;
 
 /** How many lanes a carriageway `2 · hw` wide holds, less a parking bay each side where the street has them. */
 export function laneCount(hw: number, parked: boolean): number {
@@ -53,12 +55,23 @@ export class LaneMarkings {
     const town = stage.town;
     const path = stage.path;
     const sp = path.spacing;
-    // Where the route passes each junction, and how far its surface reaches along the route.
+    // Where each junction's paving spans the route (from where the ribbon first hands its verge
+    // to the junction to where it takes it back), plus the crossing and stop line laid beyond it,
+    // and a margin: the lines end before the pavement flares into the mouth, never under the zebra.
     const hit = createRoadHit();
     const zones: [number, number][] = [];
     for (const j of town?.junctions ?? []) {
+      const k = junctionKerbs(j, stage, stage.halfWidth);
+      const all = [...k.openings.left, ...k.openings.right];
+      if (all.length > 0) {
+        zones.push([
+          Math.min(...all.map((o) => o.from)) - CROSSING_EXTENT - JUNCTION_MARGIN,
+          Math.max(...all.map((o) => o.to)) + CROSSING_EXTENT + JUNCTION_MARGIN,
+        ]);
+        continue;
+      }
       if (!path.nearest(j.x, j.z, 60, hit)) continue;
-      const reach = junctionReach(j) + JUNCTION_MARGIN;
+      const reach = junctionReach(j) + CROSSING_EXTENT + JUNCTION_MARGIN;
       zones.push([hit.along - reach, hit.along + reach]);
     }
     const rings = town?.roundabouts ?? [];

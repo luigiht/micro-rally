@@ -33,6 +33,11 @@ const T_END_MARGIN = 60;
 /** Two streets face each other when their headings are within this of opposite and their axes this close. */
 const HEAD_ON_ANGLE = 0.15;
 const HEAD_ON_OFFSET = 1.5;
+/** A street only ends in a T on the route when it meets it within this of square: an oblique T's kerb returns stretch into aprons along the road. */
+const T_MAX_SKEW = (22 * Math.PI) / 180;
+/** A street only opens onto another side street this far past that street's junction, clear of its kerb returns and wedge walls, and this far from the route's own pavement. */
+const JOIN_PAST_JUNCTION = 16;
+const JOIN_ROUTE_CLEAR = 8;
 
 const wrap = (x: number) => Math.atan2(Math.sin(x), Math.cos(x));
 
@@ -109,6 +114,12 @@ export function clipStubsToRoads(
           break;
         }
         stage.path.sample(hit.along, sample);
+        // Oblique arrivals stop short with their end building instead: see `T_MAX_SKEW`.
+        const skew = Math.abs(Math.abs(wrap(s.heading - sample.heading)) - Math.PI / 2);
+        if (skew > T_MAX_SKEW) {
+          s.length = Math.max(MIN_STUB_LENGTH, Math.min(s.length, t - STUB_END_REACH - 1));
+          break;
+        }
         const hw = halfWidthAt(stage, hit.along);
         const arms: Arm[] = [
           { heading: sample.heading + Math.PI, halfWidth: hw, role: 'in' },
@@ -151,10 +162,13 @@ export function joinStubs(stubs: readonly StubSite[], stage: RoadWidthSource): v
     const uz = Math.cos(a.heading);
     for (let t = a.length; t <= a.full + STUB_END_REACH; t += 0.5) {
       const p = at(a.j, a.heading, t, 0);
-      // Never across the route: a street the clipping left short of it stays short.
+      // Never across the route, nor ending right beside it: a street the clipping left short of
+      // it stays short, and one that would open onto another street within reach of the route's
+      // pavement stays short too, so no plate lands among a junction's kerbs.
       if (
         stage.path.nearest(p.x, p.z, 60, road) &&
-        road.distance < halfWidthAt(stage, road.along) + PAVEMENT_WIDTH + a.hw + PAVEMENT_WIDTH
+        road.distance <
+          halfWidthAt(stage, road.along) + PAVEMENT_WIDTH + a.hw + PAVEMENT_WIDTH + JOIN_ROUTE_CLEAR
       )
         break;
       let hit: StubSite | null = null;
@@ -169,7 +183,12 @@ export function joinStubs(stubs: readonly StubSite[], stage: RoadWidthSource): v
           if (off < HEAD_ON_OFFSET && d < b.hw + PAVEMENT_WIDTH + STUB_END_REACH) headOn = b;
           continue;
         }
-        if (d < b.hw + OPEN_END_GAP && tb > b.hw + PAVEMENT_WIDTH && tb < b.length - 2) hit = b;
+        if (
+          d < b.hw + OPEN_END_GAP &&
+          tb > b.hw + PAVEMENT_WIDTH + JOIN_PAST_JUNCTION &&
+          tb < b.length - 2
+        )
+          hit = b;
       }
       if (headOn) {
         // Meet half way between the two ends, both open, unless the route runs between them.

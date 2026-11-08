@@ -245,7 +245,9 @@ width`, so a boulevard turns on a 15 m arc and a lane on an 11 m one. The
   until the lane drop. A roundabout's deflections ease the width along
   their arcs. Streets with two or more 3.3 m lanes carry dashed white lane
   dividers and, when the count is even, a solid centre line, left off
-  through junctions, lane drops and roundabouts. Every boulevard carries a kerbed green median down its middle
+  through junctions (from the stop line before each crossing to the one
+  after, so no line runs under a zebra or into the pavement's flare), lane
+  drops and roundabouts. Every boulevard carries a kerbed green median down its middle
   (1.8 m: a 35 cm sidewalk strip each side of a grass strip, a kerb high, rounded at both ends, the
   wheels feel it; small bushes every 7 m along the grass) from 6 m after its start to 6 m before its end, broken
   round every crossroads and never before the first 70 m of road, where the
@@ -264,7 +266,12 @@ width`, so a boulevard turns on a 15 m arc and a lane on an 11 m one. The
   one line meet in the middle; only one that would reach a roundabout stops
   short with a building across its end, never below 20 m. A wide street's cones stand beyond its junction's
   own surface, and a row across a side street that carries a tram line leaves the tram bed
-  clear (no cone within 1.6 m of the line), so the tram passes between the cones. The garden walls round the junction greens are closed: any
+  clear (no cone within 1.6 m of the line), so the tram passes between the cones. A side
+  street ends in a T on the route only where it meets it within 22° of square (an oblique T's
+  kerb returns stretch into aprons along the road); it opens onto another side street only
+  16 m or more past that street's junction, clear of its kerb returns and wedge walls, and
+  never within 8 m of the route's pavement; otherwise it stops short with its end building
+  and the route's terraces run on past it. The garden walls round the junction greens are closed: any
   wall end that meets neither another wall nor a building is joined to the
   nearest such end within 6 m (`TownWallGaps.ts`), the ring walls run
   exactly up to each road's facade lines, and every walled corner takes up
