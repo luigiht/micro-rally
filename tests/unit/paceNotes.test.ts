@@ -134,5 +134,6 @@ describe('pace notes', () => {
     }
     for (const g of [1, 2, 3, 4, 5, 6, 'square', 'hairpin', 'acute'])
       expect(seen).toContain(String(g));
-  });
+    // 36 stages, cities among them: about a second here, several on a CI runner.
+  }, 30_000);
 });

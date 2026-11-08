@@ -87,7 +87,8 @@ describe('Urban stages', () => {
       expect(new Set(town.buildings.map((b) => b.variant)).size).toBe(4);
       expect(town.city).toBe(true);
     }
-  });
+    // The first test here builds the three cities the rest share: a few seconds on a CI runner.
+  }, 30_000);
 
   it('leave no cone on a tram bed, so the trams pass through the rows across their side streets', () => {
     for (const seed of SEEDS) {

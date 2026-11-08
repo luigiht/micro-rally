@@ -36,6 +36,8 @@ describe('streetFurniture', () => {
       });
       const counts: Record<string, number> = {};
       const hit = createRoadHit();
+      // Collected and asserted once: an expect per piece and building is millions of calls.
+      const misplaced: string[] = [];
       for (const p of props) {
         counts[p.kind] = (counts[p.kind] ?? 0) + 1;
         if ((PAVEMENT_KINDS as readonly string[]).includes(p.kind)) {
@@ -50,14 +52,17 @@ describe('streetFurniture', () => {
             const s = Math.sin(o.yaw);
             const u = dx * c - dz * s;
             const v = dx * s + dz * c;
-            expect(
-              Math.abs(u) > o.hx + 0.2 || Math.abs(v) > o.hz + 0.2,
-              `${seed} ${p.kind} in a building`,
-            ).toBe(true);
+            if (Math.abs(u) <= o.hx + 0.2 && Math.abs(v) <= o.hz + 0.2)
+              misplaced.push(
+                `${seed} ${p.kind} in a building at ${p.x.toFixed(1)},${p.z.toFixed(1)}`,
+              );
           }
           if (p.kind === 'bench' || p.kind === 'treePit')
             for (const d of doors)
-              expect(Math.hypot(d.x - p.x, d.z - p.z)).toBeGreaterThanOrEqual(2 - 1e-6);
+              if (Math.hypot(d.x - p.x, d.z - p.z) < 2 - 1e-6)
+                misplaced.push(
+                  `${seed} ${p.kind} by a door at ${p.x.toFixed(1)},${p.z.toFixed(1)}`,
+                );
         }
         if (p.kind === 'manhole') {
           expect(field.surfaceAt(p.x, p.z)).toBe('tarmac');
@@ -66,6 +71,7 @@ describe('streetFurniture', () => {
           expect(hit.distance).toBeLessThan(halfWidthAt(stage, hit.along) - 1);
         }
       }
+      expect(misplaced).toEqual([]);
       for (const kind of [...PAVEMENT_KINDS, 'manhole', 'parkedCar'])
         expect(counts[kind] ?? 0, `${seed} ${kind}`).toBeGreaterThan(0);
       // Lamps keep their rhythm: roughly one per 30 m of route, give or take the junctions.

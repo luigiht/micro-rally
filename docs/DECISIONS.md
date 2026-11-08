@@ -3324,3 +3324,12 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      penalties tag moved above the pace note (one order for desktop and
      touch), so on touch the stack reads clock, checkpoints and money,
      penalties, then the call, left-aligned.
+
+172. **2026-11-08 — Unit tests fit the CI runner.** CI on `main` had been
+     failing on and off since 2026-11-07 with timeouts in the city tests, a
+     runner being about five times slower than a laptop. `streetFurniture`
+     ran an `expect` per furniture piece per building collider (about five
+     million calls a seed, 28 s locally): it now collects offenders and
+     asserts once (1.1 s, same checks). The tests that build cities for
+     the rest of their file (`urban`'s first) or read 36 stages
+     (`paceNotes`) get a 30 s budget instead of the 5 s default.
