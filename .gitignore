@@ -33,3 +33,5 @@ my-video/
 
 # Promo video renders: too large for GitHub (>100 MB), kept locally
 assets/*.mp4
+# Second-round video footage, renders and the recorder that made them: kept locally
+assets/v2/

@@ -38,7 +38,9 @@ Read that first, then the documents below as the task needs them.
 - Dev-only URL flags: `/?track=test` opens the flat proving ground;
   `/?spawn=<metres>` starts a stage that far along its road and
   `/?spawn=town` 120 m before its town (handy for screenshotting a town
-  section without driving to it).
+  section without driving to it); `/?autopilot[=<km/h>]` lets the car drive
+  itself and `/?shot=<kind>` holds the cinematic camera on one shot kind
+  (both for recordings, see `my-video/scripts/record.mjs`).
 - No external copyrighted assets. Liveries and models are colour-blocked
   originals; anything CC0 that is added goes in `CREDITS.md`. The `context/`
   folder holds reference material only and is excluded from Prettier.

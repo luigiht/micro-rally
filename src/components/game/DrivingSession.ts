@@ -12,6 +12,7 @@ import {
   type ObstacleGrid,
 } from '@/game/vehicle/Collisions';
 import { tramBoxes, type TramTraffic } from '@/game/stage/TramService';
+import { Autopilot, DEFAULT_AUTOPILOT } from '@/game/vehicle/Autopilot';
 import { createControlInput, mergeControlInput } from '@/game/vehicle/ControlInput';
 import { createVehiclePose, interpolatePose } from '@/game/vehicle/interpolatePose';
 import type { TerrainQuery } from '@/game/vehicle/Terrain';
@@ -43,6 +44,8 @@ export interface DriveWorld {
   stage?: StageDef;
   /** Development spawn: metres along the stage the car starts at, so the checkpoints behind it count as passed. */
   startAlong?: number;
+  /** Development aid: the autopilot drives, at up to this many m/s (recordings and demos). */
+  autopilot?: number;
 }
 
 interface RenderInfo {
@@ -65,6 +68,8 @@ export class DrivingSession {
   private readonly keyboard: KeyboardControls;
   private readonly coast = createControlInput();
   private readonly merged = createControlInput();
+  private readonly pilotInput = createControlInput();
+  private autopilot: Autopilot | null = null;
   private cabinDrop: number;
   private cabinForward: number;
   private bodyScale: number;
@@ -95,7 +100,9 @@ export class DrivingSession {
     const input =
       run?.phase === 'finished'
         ? this.coast
-        : mergeControlInput(this.keyboard.input, TOUCH_INPUT, this.merged);
+        : this.autopilot
+          ? this.autopilot.drive(s, this.env, this.pilotInput)
+          : mergeControlInput(this.keyboard.input, TOUCH_INPUT, this.merged);
     const px = s.x;
     const pz = s.z;
     this.sim.step(dt, input, this.world.terrain, this.env);
@@ -124,6 +131,13 @@ export class DrivingSession {
     camera: PerspectiveCamera,
   ) {
     this.sim = new VehicleSim(spec);
+    if (world.autopilot && world.stage)
+      this.autopilot = new Autopilot(
+        world.stage.path,
+        spec,
+        { ...DEFAULT_AUTOPILOT, maxSpeed: world.autopilot },
+        world.startAlong ?? world.stage.startDistance,
+      );
     this.cabinDrop = spec.cabinDrop;
     this.cabinForward = spec.cabinForward;
     this.bodyScale = spec.bodyScale;

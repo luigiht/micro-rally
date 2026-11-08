@@ -1,5 +1,6 @@
 'use client';
 
+import { forceShotKind, SHOT_KINDS, type ShotKind } from './cameras/CinematicShots';
 import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import type { Group } from 'three';
 import { REGIONS } from '@/game/stage/regions';
@@ -31,6 +32,24 @@ const DEV_SPAWN: number | 'town' | null = (() => {
   return Number.isFinite(d) && d > 0 ? d : null;
 })();
 
+/**
+ * Development aid: `?autopilot` lets the car drive itself down the stage (for
+ * recordings), at up to `?autopilot=<km/h>` (108 by default). Off in production.
+ */
+const DEV_AUTOPILOT: number | null = (() => {
+  if (process.env.NODE_ENV === 'production' || typeof window === 'undefined') return null;
+  const raw = new URLSearchParams(window.location.search).get('autopilot');
+  if (raw === null) return null;
+  const kmh = Number(raw);
+  return (Number.isFinite(kmh) && kmh > 0 ? kmh : 108) / 3.6;
+})();
+
+/** Development aid: `?shot=<kind>` holds the cinematic camera on one shot kind (for recordings). */
+if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined') {
+  const kind = new URLSearchParams(window.location.search).get('shot');
+  if (kind && (SHOT_KINDS as readonly string[]).includes(kind)) forceShotKind(kind as ShotKind);
+}
+
 function StageDrive({ gameSeed, stageIndex }: { gameSeed: number; stageIndex: number }) {
   const world = useMemo(() => createStageWorld(gameSeed, stageIndex), [gameSeed, stageIndex]);
   const drive = useMemo<DriveWorld>(() => {
@@ -49,6 +68,7 @@ function StageDrive({ gameSeed, stageIndex }: { gameSeed: number; stageIndex: nu
       ...(world.trams ? { trams: world.trams } : {}),
       stage: world.stage,
       ...(at !== null && at > 0 ? { startAlong: at } : {}),
+      ...(DEV_AUTOPILOT !== null ? { autopilot: DEV_AUTOPILOT } : {}),
     };
   }, [world]);
   const group = useRef<Group>(null);

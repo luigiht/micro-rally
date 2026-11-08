@@ -214,6 +214,15 @@ function pickKind(d: Director, slow: boolean, banned: ReadonlySet<ShotKind>): Sh
  * for the first shot); the 30° rule is measured against it, and a candidate
  * that would read as a jump cut is dropped for another kind.
  */
+/**
+ * Development aid for recordings: every shot the director calls is this
+ * kind, held for good (see `?shot=` in `DrivingScene`). Null in play.
+ */
+let forcedKind: ShotKind | null = null;
+export function forceShotKind(kind: ShotKind | null): void {
+  forcedKind = kind;
+}
+
 export function nextShot(
   d: Director,
   t: Readonly<VehiclePose>,
@@ -223,6 +232,14 @@ export function nextShot(
   bodyScale: number,
   reducedMotion: boolean,
 ): Shot {
+  if (forcedKind) {
+    const shot = place(forcedKind, d, t, road, terrain, bodyScale, reducedMotion);
+    shot.duration = Infinity;
+    // Recorded in any aspect (a 9:16 story too): keep the car centred rather than leading the road.
+    shot.aimAhead = 0;
+    d.previous = shot.kind;
+    return shot;
+  }
   const slow = Math.abs(t.speed) < SLOW;
   if ((d.previous === null || isNeutral(d.previous)) && d.rand() < 0.5)
     d.side = d.side === 1 ? -1 : 1;

@@ -3458,3 +3458,22 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      junction corner's kerb ramp (skipped now). Tests find stages with
      `tests/unit/stageIndex.ts`; the open-road fixture lost its two entries
      whose regions moved.
+
+180. **2026-11-08 — An autopilot and a held cinematic shot, for recording
+     videos.** By request (a new walkthrough and story with the new stages
+     and cars). The old recordings' scripts were temporary and lost, so the
+     capture is rebuilt in `my-video/scripts/record.mjs` (outside the repo,
+     like the rest of `my-video`): headless Chromium on the dev server, the
+     page's clock and animation frames stepped by exactly 1/30 s and one
+     screenshot per frame piped to Remotion's bundled ffmpeg, so no frame
+     is dropped. The game gains two dev-only flags it needs. `?autopilot`:
+     `game/vehicle/Autopilot` (pure, unit-tested on every region, a city
+     and a circuit lap) steers by pure pursuit toward a point 0.55 s ahead
+     on the centreline and picks its speed from the tightest bend within
+     3 s, allowing the braking distance to each, scaled by the surface's
+     and the region's grip (without the surface it slid off the Alpine's
+     snow); `DrivingSession` feeds its input in place of the keyboard's.
+     `?shot=<kind>`: `forceShotKind` makes the director call that kind for
+     good, aimed at the car rather than ahead of it so a 9:16 frame keeps
+     it centred. Both are read only outside production builds, like
+     `?spawn=`.

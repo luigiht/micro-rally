@@ -121,7 +121,10 @@ pattern used throughout the project:
    `?spawn=<metres>` to start part-way along the stage (checkpoints behind
    the spawn count as passed, so `?spawn=` a few metres before the finish
    lets you finish in seconds), `?spawn=town` for the town, `?track=test`
-   for the proving ground.
+   for the proving ground, `?autopilot` (optionally `=<km/h>`, 108 by
+   default) to let the car drive itself, and `?shot=helicopter` (or
+   `lowChase`, `sideDolly`, `frontReverse`, `trackside`) to hold the
+   cinematic camera on one shot kind, centred on the car.
 3. Fill the driver name and Game ID, press Drive, wait for the canvas
    (`[data-testid="game-canvas"] canvas`) and about 3.6 s of countdown.
 4. Hold `KeyW` for a second or two, press `KeyC` to change camera, `KeyH`

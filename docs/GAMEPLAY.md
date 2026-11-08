@@ -250,5 +250,9 @@ palette (ink on paper, with the rally orange for emphasis only).
   mud pads, a jump ramp) with no stage or timing.
 - `/?spawn=<metres>` starts a stage that far along its road, with the
   checkpoints behind the spawn counted as passed, so a finish can be reached
-  quickly; `/?spawn=town` starts 120 m before the stage's town. Both are
+  quickly; `/?spawn=town` starts 120 m before the stage's town.
+- `/?autopilot[=<km/h>]` lets the car drive the stage itself (pure-pursuit
+  steering, speed read from the bends ahead and the surface's grip), and
+  `/?shot=<kind>` holds the cinematic camera on one shot kind; the video
+  recorder in `my-video/scripts/record.mjs` uses both. All of these are
   ignored in production builds.
