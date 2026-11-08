@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { scatterScenery, type Prop } from '@/game/stage/SceneryScatter';
 import { SPECTATOR_JACKETS, SPECTATOR_POSES } from '@/game/stage/Spectators';
-import { REGIONS } from '@/game/stage/regions';
+import { REGIONS, spectatorOutfit } from '@/game/stage/regions';
 import { createRoadHit } from '@/game/stage/RoadPath';
 import { createStageWorld } from '@/game/stage/StageWorld';
+import { stageIndexOf } from './stageIndex';
 import { rallyKits } from '@/render/scenery/kits/RallyKits';
 import {
   SPECTATOR_POSE_COUNT,
@@ -12,7 +13,7 @@ import {
   spectatorPose,
 } from '@/render/scenery/SpectatorGeometry';
 
-const ARCTIC_INDEX = 3;
+const ARCTIC_INDEX = stageIndexOf('arctic');
 const spectatorsOf = (seed: number) =>
   scatterScenery(createStageWorld(seed, ARCTIC_INDEX).field).filter((p) => p.kind === 'spectator');
 
@@ -117,23 +118,65 @@ describe('Arctic spectators', () => {
     }
   });
 
-  it('build every pose as a fixed-colour body and a white jacket for the tint, about 1.75 m tall', () => {
+  it('build every pose in both outfits: standing about 1.75 m, sitting on the ground about 1 m', () => {
     expect(SPECTATOR_POSE_COUNT).toBe(SPECTATOR_POSES);
-    for (let pose = 0; pose < SPECTATOR_POSE_COUNT; pose++) {
-      const body = spectatorBodyGeometry(pose);
-      const jacket = spectatorJacketGeometry(pose);
-      body.computeBoundingBox();
-      const box = body.boundingBox!;
-      expect(box.min.y).toBeCloseTo(0, 2);
-      // Head (and any raised mitten) between 1.7 m and 2.0 m; feet roughly shoulder-wide.
-      expect(box.max.y).toBeGreaterThan(1.7);
-      expect(box.max.y).toBeLessThan(2.0);
-      expect(box.max.x - box.min.x).toBeLessThan(1.2);
-      expect(jacket.getAttribute('color')).toBeDefined();
-      body.dispose();
-      jacket.dispose();
+    let seated = 0;
+    for (const outfit of ['winter', 'casual'] as const) {
+      for (let pose = 0; pose < SPECTATOR_POSE_COUNT; pose++) {
+        const body = spectatorBodyGeometry(pose, outfit);
+        const top = spectatorJacketGeometry(pose, outfit);
+        body.computeBoundingBox();
+        top.computeBoundingBox();
+        const box = body.boundingBox!;
+        expect(box.min.y).toBeCloseTo(0, 2);
+        expect(box.max.x - box.min.x).toBeLessThan(1.2);
+        if (box.max.y < 1.4) {
+          // Sitting: head about a metre up, the top lowered with it, the knees out toward the road.
+          seated++;
+          expect(box.max.y).toBeGreaterThan(0.9);
+          expect(top.boundingBox!.max.y).toBeLessThan(1.1);
+          expect(box.min.z).toBeLessThan(-0.6);
+        } else {
+          // Head (and any raised hand) between 1.7 m and 2.0 m.
+          expect(box.max.y).toBeGreaterThan(1.7);
+          expect(box.max.y).toBeLessThan(2.0);
+        }
+        expect(top.getAttribute('color')).toBeDefined();
+        body.dispose();
+        top.dispose();
+      }
     }
+    expect(seated).toBe(4);
+    // Casual figures wear no mittens: their hands are skin, not the dark glove.
+    const glove = (g: ReturnType<typeof spectatorBodyGeometry>) => {
+      const c = g.getAttribute('color');
+      let n = 0;
+      for (let i = 0; i < c.count; i++)
+        if (Math.abs(c.getX(i) - c.getY(i)) < 0.01 && c.getX(i) < 0.03) n++;
+      return n;
+    };
+    expect(glove(spectatorBodyGeometry(0, 'casual'))).toBeLessThan(glove(spectatorBodyGeometry(0)));
   });
+
+  it('come to Forest stages only on mud, dressed for a mild day', () => {
+    const picks: [number, number][] = [
+      [1, stageIndexOf('forest', 'mud')],
+      [1, stageIndexOf('forest', 'gravel')],
+      [2, stageIndexOf('forest', 'tarmac')],
+    ];
+    let mud = 0;
+    for (const [seed, index] of picks) {
+      const { field, stage } = createStageWorld(seed, index);
+      const n = scatterScenery(field).filter((p) => p.kind === 'spectator').length;
+      if (stage.surface === 'mud') {
+        mud++;
+        expect(n, `seed ${seed}`).toBeGreaterThan(100);
+      } else expect(n, `seed ${seed} ${stage.surface}`).toBe(0);
+    }
+    expect(mud).toBeGreaterThan(0);
+    expect(spectatorOutfit({ region: 'forest' })).toBe('casual');
+    expect(spectatorOutfit({ region: 'arctic' })).toBe('winter');
+  }, 30_000);
 
   it('draw each spectator with exactly one body kit and one jacket kit', () => {
     const kits = rallyKits(REGIONS.arctic.palette, false, true);

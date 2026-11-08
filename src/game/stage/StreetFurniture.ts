@@ -234,7 +234,7 @@ export function streetFurniture(
       );
     }
   }
-  // Manhole covers down the route, off the axis, clear of junction paving, medians and tram beds.
+  // Manhole covers down the route, off the axis, clear of junction paving, kerb ramps, medians and tram beds.
   const zones: [number, number][] = [];
   for (const j of town.junctions) {
     const kerbs = junctionKerbs(j, stage, stage.halfWidth);
@@ -259,7 +259,10 @@ export function streetFurniture(
     if (onMedian(town.medians ?? [], x, z)) continue;
     if (trams.some((t) => segmentDistance(t.x0, t.z0, t.x1, t.z1, x, z) < MANHOLE_TRAM_CLEAR))
       continue;
-    out.push(prop('manhole', x, ground.deckAt(x, z), z, sample.heading));
+    // A cover lies flat on the carriageway: none where a kerb's ramp (a junction corner) lifts it.
+    const deck = ground.deckAt(x, z);
+    if (ground.heightAt(x, z) - deck > 1e-4) continue;
+    out.push(prop('manhole', x, deck, z, sample.heading));
   }
   return out;
 }

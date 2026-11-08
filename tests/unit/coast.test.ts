@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { REGION_CYCLE, REGIONS } from '@/game/stage/regions';
+import { RALLY_CYCLE, REGIONS } from '@/game/stage/regions';
+import { stageIndexOf } from './stageIndex';
 import { createRoadHit } from '@/game/stage/RoadPath';
 import { scatterScenery } from '@/game/stage/SceneryScatter';
 import { generateStage, stageHasTown, stageRegion } from '@/game/stage/StageGenerator';
@@ -11,8 +12,9 @@ import { SeaPlane } from '@/render/terrain/SeaPlane';
 import { dayTheme, NIGHTCITY_THEME } from '@/render/theme/WorldTheme';
 
 /** The first Coast stage of the cycle, and one on the hardest difficulty loop. */
-const COAST_INDEX = 4;
-const LATE_COAST_INDEX = 47;
+const COAST_INDEX = stageIndexOf('coast');
+/** A Coast stage of a later difficulty loop. */
+const LATE_COAST_INDEX = stageIndexOf('coast', undefined, 0, 42);
 const SEEDS = [1, 2, 3, 4, 5, 6];
 const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
 
@@ -60,17 +62,13 @@ function fieldFor(seed: number): TerrainField {
 }
 
 describe('region cycle', () => {
-  it('never shows a region three stages running, shares the cycle evenly and keeps villages to forest and alpine', () => {
-    const n = REGION_CYCLE.length;
-    for (let i = 0; i < n; i++) {
-      const [a, b, c] = [i, i + 1, i + 2].map((k) => REGION_CYCLE[k % n]);
-      expect(a === b && b === c).toBe(false);
-    }
-    for (const id of ['forest', 'alpine', 'coast', 'desert', 'urban', 'arctic'])
-      expect(REGION_CYCLE.filter((r) => r === id)).toHaveLength(3);
+  it('never shows a region twice running, mixes every rally region, and keeps villages to forest, alpine and arctic', () => {
+    for (let i = 1; i < 200; i++)
+      expect(stageRegion(i).region, `stage ${i + 1}`).not.toBe(stageRegion(i - 1).region);
+    for (const id of ['forest', 'alpine', 'coast', 'desert', 'arctic'])
+      expect(RALLY_CYCLE.some((s) => s.region === id)).toBe(true);
     expect(stageRegion(0).region).toBe('forest');
-    expect(stageRegion(2).region).toBe('alpine');
-    expect(stageRegion(3).region).toBe('arctic');
+    expect(stageRegion(1).region).toBe('alpine');
     expect(stageRegion(COAST_INDEX).region).toBe('coast');
     const townRegions = new Set<string>();
     for (let i = 0; i < 48; i++) {

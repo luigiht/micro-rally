@@ -19,7 +19,7 @@ const K = {
   rim: '#d9d4c7',
 } as const;
 
-/** Boxy hatch: tall flat bonnet, upright greenhouse with pillars, low rear deck behind the cabin, tall tail lip. */
+/** Boxy hatch: tall flat bonnet, upright greenhouse with pillars, a straight engine deck to a rounded tail. */
 const HULL: HullSpec = {
   wells: wellsFor(CAR_SPECS.groupb),
   colors: { body: K.body, trim: K.trim, glass: K.glass, stripe: [K.red, K.blue], roof: K.red },
@@ -51,13 +51,13 @@ export function GroupBBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Ref<Gr
       ))}
       <Box p={[-0.3, 0.911, 1.3]} s={[0.16, 0.012, 0.9]} c={K.red} />
       <Box p={[-0.52, 0.911, 1.3]} s={[0.1, 0.012, 0.9]} c={K.blue} />
-      {/* Roof-mounted rear wing: raked struts, blade, end plates; low deck lip; tail spoiler */}
+      {/* Roof-mounted rear wing: raked struts, blade, end plates; tail spoiler */}
       <Box p={[0.5, 1.4, -1.22]} s={[0.05, 0.1, 0.5]} c={K.trim} r={[0.25, 0, 0]} />
       <Box p={[-0.5, 1.4, -1.22]} s={[0.05, 0.1, 0.5]} c={K.trim} r={[0.25, 0, 0]} />
       <Box p={[0, 1.48, -1.48]} s={[1.5, 0.05, 0.5]} c={K.body} r={[0.08, 0, 0]} shadow />
       <Box p={[0.75, 1.48, -1.48]} s={[0.04, 0.16, 0.5]} c={K.trim} />
       <Box p={[-0.75, 1.48, -1.48]} s={[0.04, 0.16, 0.5]} c={K.trim} />
-      <Box p={[0, 1.0, -1.98]} s={[1.6, 0.05, 0.24]} c={K.body} r={[0.1, 0, 0]} />
+      <Box p={[0, 0.95, -1.97]} s={[1.5, 0.05, 0.22]} c={K.body} r={[0.1, 0, 0]} />
       {([1, -1] as const).map((side) => (
         <group key={side}>
           <Box p={[0.87 * side, 0.86, -0.95]} s={[0.1, 0.2, 0.5]} c={K.trim} />
@@ -75,7 +75,7 @@ export function GroupBBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Ref<Gr
       {[-0.7, 0.7].map((x) => (
         <Lamp key={x} p={[x, 0.56, 2.05]} radius={0.06} c={K.head} glow={0.5} />
       ))}
-      <Box p={[0, 0.42, -2.03]} s={[1.7, 0.16, 0.14]} c={K.trim} />
+      <Box p={[0, 0.42, -2.03]} s={[1.6, 0.16, 0.14]} c={K.trim} />
       <mesh position={[0.4, 0.38, -2.1]} rotation={[Math.PI / 2, 0, 0]}>
         <cylinderGeometry args={[0.07, 0.07, 0.18, 8]} />
         <meshStandardMaterial color={K.rim} metalness={0.5} roughness={0.4} />

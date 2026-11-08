@@ -549,11 +549,18 @@ export function rallyKits(palette: RegionPalette, shadows: boolean, snow: boolea
       vertexColors: true,
     })),
     ...cityFurnitureKits(shadows),
-    ...spectatorKits(() => mat('#ffffff', true), JACKETS, shadows),
+    // Snow regions dress the crowd in padded jackets; elsewhere in T-shirts and long sleeves.
+    ...(snow
+      ? spectatorKits(() => mat('#ffffff', true), JACKETS, shadows)
+      : spectatorKits(() => mat('#ffffff', true), SHIRTS, shadows, null, 'casual')),
   ];
 }
 
 /** Spectators' jackets, by variant: red, blue, yellow, green, orange, black. */
 const JACKETS = ['#d8343a', '#2f6fb0', '#e9b53a', '#3f8a4a', '#e0702a', '#2a2d33'].map(
+  (c) => new Color(c),
+);
+/** Their tops on a mild day, by variant: white, blue, red, yellow, green, purple. */
+const SHIRTS = ['#f2efe8', '#2f6fb0', '#d8343a', '#e9b53a', '#3f8a4a', '#7a4e9c'].map(
   (c) => new Color(c),
 );

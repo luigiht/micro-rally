@@ -9,8 +9,9 @@ import { generateStage } from '@/game/stage/StageGenerator';
 import { TerrainField } from '@/game/stage/TerrainField';
 import { TRAM_BED_HALF } from '@/game/stage/Tram';
 import { laneCount } from '@/render/road/LaneMarkings';
+import { stageIndexOf } from './stageIndex';
 
-const URBAN_INDEX = 6;
+const URBAN_INDEX = stageIndexOf('urban');
 const SEEDS = [1, 2, 3];
 const URBAN = REGIONS.urban.urban!;
 

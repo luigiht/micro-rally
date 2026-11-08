@@ -127,7 +127,7 @@ export function DriveRig({ world, theme, onPose, children }: DriveRigProps) {
       }
     }
     poseCallback.current?.(pose, s.clock);
-    if (sun.current) followSun(sun.current, pose);
+    if (sun.current) followSun(sun.current, pose, state.camera);
   });
 
   const nightcity = theme.id === 'nightcity';

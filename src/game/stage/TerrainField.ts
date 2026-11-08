@@ -1,3 +1,4 @@
+import { TerrainDetail, type TerrainMound } from './TerrainDetail';
 import { createNoise2D, type NoiseFunction2D } from 'simplex-noise';
 import { hashSeed, mulberry32 } from '../rng';
 import type { Surface } from '../vehicle/surfaces';
@@ -169,6 +170,8 @@ export interface TerrainSample {
   /** Coast only, 0..1: gravel and scree, and sun-dried grass. */
   scree?: number;
   dry?: number;
+  /** 0..1 how far into a crowd's berm: painted a lusher grass by the mesher. */
+  earth?: number;
 }
 
 function smoothstep(e0: number, e1: number, x: number): number {
@@ -201,6 +204,8 @@ export class TerrainField implements TerrainQuery {
   private readonly offroad: Surface;
   readonly corridor: number;
   private pads: TerrainPad[] = [];
+  /** Bumps off the road and the berms in front of the crowds. */
+  private readonly detail: TerrainDetail;
   /** The pads filed in every cell their reach touches, so a height query reads its own cell's few. */
   private padGrid = new SpatialHash<TerrainPad>(PAD_CELL);
   private readonly town: TownDef | null;
@@ -276,6 +281,11 @@ export class TerrainField implements TerrainQuery {
         : Math.min(TOWN_RELIEF_MAX, TOWN_RELIEF_METRES / this.amplitude);
     if (this.town?.relief !== undefined)
       this.urban = new UrbanField(this.town, (x, z) => this.groundHeight(x, z));
+    // Coast, dunes, circuits and cities keep their own shaped ground: no bumps there.
+    const plain = !this.coast && !this.dunes && !this.trackside && this.town?.city !== true;
+    this.detail = new TerrainDetail(
+      plain ? createNoise2D(mulberry32(hashSeed(stage.seed, 'terrain-detail'))) : null,
+    );
     this.roadHeights = this.buildRoadHeights();
     this.stubs = this.town ? this.buildStubs(this.town) : [];
     this.fileStubs();
@@ -293,6 +303,21 @@ export class TerrainField implements TerrainQuery {
     this.pads = [...pads];
     this.padGrid = new SpatialHash<TerrainPad>(PAD_CELL);
     for (const p of this.pads) this.padGrid.insert(p, p.x, p.z, p.radius + (p.blend ?? PAD_BLEND));
+  }
+
+  /** Replace the berms (set with the spectators, after construction, like the pads). */
+  setMounds(mounds: readonly TerrainMound[]): void {
+    this.detail.setMounds(mounds);
+  }
+
+  /** Whether (x, z) is on a berm, or within `margin` of one: wild scenery keeps off them. */
+  onMound(x: number, z: number, margin = 0): boolean {
+    return this.detail.onMound(x, z, margin);
+  }
+
+  /** The bumps (`share` of them) and any berm at (x, z). */
+  private detailAt(x: number, z: number, share: number): number {
+    return this.detail.bumps(x, z, share) + this.detail.mound(x, z);
   }
 
   /** File each side street in every cell its carriageway crosses, and note how far the grid runs. */
@@ -624,8 +649,9 @@ export class TerrainField implements TerrainQuery {
       out.dry = 0;
     }
     out.paved = 0;
+    out.earth = this.detail.earth(x, z);
     if (!this.nearestStreet(x, z, st)) {
-      out.height = this.applyPads(x, z, base);
+      out.height = this.applyPads(x, z, base + this.detailAt(x, z, 1));
       out.roadBlend = 0;
       out.roadDistance = Infinity;
       return out;
@@ -653,7 +679,7 @@ export class TerrainField implements TerrainQuery {
         (ROAD_LIFT + ROAD_BED_DROP) * (1 - smoothstep(-TRENCH_IN, TRENCH_OUT, f)),
       );
     }
-    const raw = deck + (base - deck) * t - trench + this.bankLift(st);
+    const raw = deck + (base - deck) * t - trench + this.bankLift(st) + this.detailAt(x, z, t);
     // Under a city's pavements the terraces' pads do not reach: a pad vertex there would tilt the
     // coarse terrain face up through the pavement as a green wedge along the building.
     out.height = out.paved ? raw : this.applyPads(x, z, raw);
@@ -683,11 +709,13 @@ export class TerrainField implements TerrainQuery {
     const base = this.groundHeight(x, z);
     const st = this.street;
     this.nearStreet = this.nearestStreet(x, z, st);
-    if (!this.nearStreet) return this.applyPads(x, z, base);
+    if (!this.nearStreet) return this.applyPads(x, z, base + this.detailAt(x, z, 1));
     const deck = st.deck + ROAD_LIFT;
     const flat = this.flatMarginFor(st);
     const t = smoothstep(st.hw + flat, st.hw + flat + this.blendWidth(st), st.distance);
-    return this.applyPads(x, z, deck + (base - deck) * t) + this.bankLift(st);
+    return (
+      this.applyPads(x, z, deck + (base - deck) * t + this.detailAt(x, z, t)) + this.bankLift(st)
+    );
   }
 
   /**

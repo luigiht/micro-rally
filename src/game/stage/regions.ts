@@ -83,6 +83,8 @@ export interface RegionDef {
   palette: RegionPalette;
   /** Palettes some surfaces swap in for `palette` (Forest mud stages wear autumn); the rest keep it. */
   surfacePalettes?: Partial<Record<Surface, RegionPalette>>;
+  /** Scenery on some surfaces, over the region's own (the mud rally's spectators in the Forest). */
+  surfaceScenery?: Partial<Record<Surface, Partial<SceneryDensity>>>;
   /** Set when the region's stages run along the sea. */
   coast?: CoastDef;
   /** Set when the region's stages have oases. */
@@ -152,6 +154,8 @@ const FOREST: RegionDef = {
   weathers: [['clear', 1]],
   palette: FOREST_PALETTE,
   surfacePalettes: { mud: FOREST_AUTUMN },
+  // The autumn mud rally draws a crowd, in everyday clothes.
+  surfaceScenery: { mud: { spectators: 2.2 } },
   terrain: { amplitude: 22, frequency: 1 / 260 },
   twistiness: 0.9,
   baseLength: 1800,
@@ -436,53 +440,95 @@ export const REGIONS: Readonly<Record<RegionId, RegionDef>> = {
 };
 
 /**
- * Stages that are race circuits instead of their cycle region's road: every
- * tenth (stage 10, 20, 30…, index 9, 19, 29…), so a circuit always stands
- * alone in the rotation with nine rally stages between it and the next.
+ * The progression, in three fixed slots. Every ninth stage is a city (stage
+ * 9, 18, 27…, index 8, 17, 26…): eight others, then a city. Every tenth is a
+ * circuit (stage 10, 20, 30…); where the two would land on the same stage
+ * (stage 90, 180…) the city keeps it and the circuit moves to the next.
+ * The stages between run through `RALLY_CYCLE`, counting only themselves,
+ * so the mix never skips a slot for a city or a circuit.
  */
+export const CITY_EVERY = 9;
 export const CIRCUIT_EVERY = 10;
-export function isCircuitStage(index: number): boolean {
+
+export function isCityStage(index: number): boolean {
+  return index % CITY_EVERY === CITY_EVERY - 1;
+}
+
+/** Where the regular tenth-stage slot falls, before any clash with a city. */
+function circuitSlot(index: number): boolean {
   return index % CIRCUIT_EVERY === CIRCUIT_EVERY - 1;
 }
 
+export function isCircuitStage(index: number): boolean {
+  if (circuitSlot(index)) return !isCityStage(index);
+  return index > 0 && circuitSlot(index - 1) && isCityStage(index - 1);
+}
+
+/** A stage of the rally mix: its region, and the surface it is driven on where that is fixed. */
+export interface RallySlot {
+  region: RegionId;
+  surface?: Surface;
+}
+
 /**
- * The progression: a fixed eighteen-stage cycle (Forest ×2, Alpine, Arctic,
- * Coast, Forest, Urban, Desert, Alpine ×2, Urban, Coast, Urban, Arctic,
- * Desert, Coast, Desert, Arctic), laid so that no region shows three stages
- * running, each gets three of every eighteen, the town stages (every third,
- * see `stageHasTown`) build their village on Forest, Alpine and Arctic
- * (cycle indices 2, 5, 8 and 17; the cliff road, the dunes and the city have
- * none), and no city sits where the circuits land (every tenth stage falls
- * on the odd cycle indices). Stage 1 is Forest and stage 5 the first Coast,
- * as they always were; stage 4 is the first Arctic, stage 7 the first city
- * and stage 8 the first Desert.
+ * The rally stages between the cities and circuits, in turn: Forest on
+ * gravel, Alpine, Forest on tarmac, Coast, Arctic, Forest on mud (the autumn
+ * rally with its crowds behind their berms), Desert. No region runs twice in
+ * a row, round the wrap too, and stage 1 is Forest as it always was. Alpine,
+ * Arctic, Coast and Desert still draw their surface.
  */
-export const REGION_CYCLE: readonly RegionId[] = [
-  'forest',
-  'forest',
-  'alpine',
-  'arctic',
-  'coast',
-  'forest',
-  'urban',
-  'desert',
-  'alpine',
-  'alpine',
-  'urban',
-  'coast',
-  'urban',
-  'arctic',
-  'desert',
-  'coast',
-  'desert',
-  'arctic',
+export const RALLY_CYCLE: readonly RallySlot[] = [
+  { region: 'forest', surface: 'gravel' },
+  { region: 'alpine' },
+  { region: 'forest', surface: 'tarmac' },
+  { region: 'coast' },
+  { region: 'arctic' },
+  { region: 'forest', surface: 'mud' },
+  { region: 'desert' },
 ];
+
+/** How many cities and circuits come before `index`. */
+function specialsBefore(index: number): number {
+  let n = Math.floor(index / CITY_EVERY);
+  for (let k = 0; ; k++) {
+    let at = k * CIRCUIT_EVERY + CIRCUIT_EVERY - 1;
+    if (isCityStage(at)) at++;
+    if (at >= index) break;
+    n++;
+  }
+  return n;
+}
+
+/** The count of rally stages before `index` (its place in the mix); null on a city or a circuit. */
+export function rallyIndex(index: number): number | null {
+  if (isCityStage(index) || isCircuitStage(index)) return null;
+  return index - specialsBefore(index);
+}
+
+/** What stage `index` is: a city, a circuit, or the next slot of the rally mix. */
+export function stageSlot(index: number): RallySlot {
+  const rally = rallyIndex(index);
+  if (rally === null) return { region: isCityStage(index) ? 'urban' : 'circuit' };
+  return RALLY_CYCLE[rally % RALLY_CYCLE.length]!;
+}
+
 /** Stages per difficulty loop: every sixth stage the roads grow 25 % longer and bend tighter. */
 export const STAGES_PER_LOOP = 6;
 
 /** The hills' relief on a stage: the region's amplitude, 15 % more per difficulty loop up to four. */
 export function reliefAmplitude(def: RegionDef, loop: number): number {
   return def.terrain.amplitude * (1 + 0.15 * Math.min(loop, 4));
+}
+
+/** The scenery density a stage wears: its region's, with any override for its surface. */
+export function stageScenery(stage: { region: RegionId; surface: Surface }): SceneryDensity {
+  const def = REGIONS[stage.region];
+  return { ...def.scenery, ...def.surfaceScenery?.[stage.surface] };
+}
+
+/** Whether a stage's spectators dress for the snow (where the region's ground is snow) or for a mild day. */
+export function spectatorOutfit(stage: { region: RegionId }): 'winter' | 'casual' {
+  return REGIONS[stage.region].offroad === 'snow' ? 'winter' : 'casual';
 }
 
 /** The palette a stage is drawn in: its region's, or the one its surface swaps in. Stable per (region, surface). */

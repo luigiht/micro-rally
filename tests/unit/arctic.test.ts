@@ -1,20 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import { REGION_CYCLE, REGIONS } from '@/game/stage/regions';
+import { REGIONS } from '@/game/stage/regions';
 import { stageHasTown, stageRegion } from '@/game/stage/StageGenerator';
 import { createStageWorld } from '@/game/stage/StageWorld';
 import { DEFAULT_ENV } from '@/game/vehicle/VehicleSim';
+import { stageIndexOf } from './stageIndex';
 
-const ARCTIC_INDEX = 3;
+const ARCTIC_INDEX = stageIndexOf('arctic');
 const SEEDS = [1, 2, 3];
 const ARCTIC = REGIONS.arctic;
 
 describe('Arctic stages', () => {
-  it('sit in the cycle three times in eighteen, villages allowed, on snow-dusted asphalt or tarmac', () => {
-    expect(REGION_CYCLE).toHaveLength(18);
-    expect(REGION_CYCLE.filter((r) => r === 'arctic')).toHaveLength(3);
+  it('sit in the rally mix, villages allowed, on snow-dusted asphalt or tarmac', () => {
+    expect(ARCTIC_INDEX).toBe(4);
     expect(stageRegion(ARCTIC_INDEX).region).toBe('arctic');
     expect(ARCTIC.towns).toBe(true);
-    expect(stageHasTown(17)).toBe(true);
+    expect(
+      Array.from({ length: 60 }, (_, i) => i).some(
+        (i) => stageHasTown(i) && stageRegion(i).region === 'arctic',
+      ),
+    ).toBe(true);
     for (const seed of SEEDS) {
       const stage = createStageWorld(seed, ARCTIC_INDEX).stage;
       expect(stage.region).toBe('arctic');

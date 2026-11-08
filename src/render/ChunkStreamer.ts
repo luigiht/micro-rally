@@ -2,6 +2,11 @@ export function chunkKey(cx: number, cz: number): number {
   return (cx + 0x8000) * 0x10000 + (cz + 0x8000);
 }
 
+/** The chunk coordinates a `chunkKey` encodes. */
+export function chunkCoords(key: number): [number, number] {
+  return [Math.floor(key / 0x10000) - 0x8000, (key % 0x10000) - 0x8000];
+}
+
 interface Candidate {
   cx: number;
   cz: number;
@@ -53,8 +58,7 @@ export class ChunkStreamer {
       }
     }
     for (const key of this.loaded) {
-      const kcx = Math.floor(key / 0x10000) - 0x8000;
-      const kcz = (key % 0x10000) - 0x8000;
+      const [kcx, kcz] = chunkCoords(key);
       const ddx = (kcx + 0.5) * this.size - x;
       const ddz = (kcz + 0.5) * this.size - z;
       if (ddx * ddx + ddz * ddz > drop * drop) {

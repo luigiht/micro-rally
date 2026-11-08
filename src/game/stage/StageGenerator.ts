@@ -3,8 +3,8 @@ import type { Surface } from '../vehicle/surfaces';
 import type { SpawnPose } from '../vehicle/VehicleSim';
 import type { Gate } from './Checkpoints';
 import {
-  REGION_CYCLE,
   REGIONS,
+  stageSlot,
   STAGES_PER_LOOP,
   isCircuitStage,
   type RegionId,
@@ -124,12 +124,9 @@ export interface StageDef extends StageBrief {
   circuit?: CircuitInfo;
 }
 
-/** The region from `REGION_CYCLE`, or a circuit on the stages `isCircuitStage` picks; the difficulty loop steps on its own cadence. */
-export function stageRegion(index: number): { region: RegionId; loop: number } {
-  return {
-    region: isCircuitStage(index) ? 'circuit' : REGION_CYCLE[index % REGION_CYCLE.length]!,
-    loop: Math.floor(index / STAGES_PER_LOOP),
-  };
+/** The stage's slot (`stageSlot`: a city, a circuit or the rally mix) and its difficulty loop, which steps on its own cadence. */
+export function stageRegion(index: number): { region: RegionId; loop: number; surface?: Surface } {
+  return { ...stageSlot(index), loop: Math.floor(index / STAGES_PER_LOOP) };
 }
 
 /** A town on every third stage (`hasTown`), except in regions that build none: the coast and the desert. */
@@ -238,9 +235,12 @@ function drawBrief(
   loop: number,
   town: boolean,
   layout: CircuitLayout | null,
+  fixed?: Surface,
 ): StageBrief {
   const def = REGIONS[region];
-  const surface = pickWeighted(rand, def.surfaces);
+  // The draw is made either way, so a fixed surface leaves the rest of the stream as it was.
+  const drawn = pickWeighted(rand, def.surfaces);
+  const surface = fixed ?? drawn;
   const weather = pickWeighted(rand, def.weathers);
   const head = rand();
   const tail = rand();
@@ -266,7 +266,7 @@ function circuitLayout(index: number, seed: number): CircuitLayout | null {
 
 /** Name, surface, length and par of a stage without building its road (for lists); a circuit's layout is drawn to know its lap. */
 export function stageBrief(gameSeed: number, index: number): StageBrief {
-  const { region, loop } = stageRegion(index);
+  const { region, loop, surface } = stageRegion(index);
   const seed = hashSeed(gameSeed, region, index);
   return drawBrief(
     mulberry32(seed),
@@ -276,6 +276,7 @@ export function stageBrief(gameSeed: number, index: number): StageBrief {
     loop,
     stageHasTown(index),
     circuitLayout(index, seed),
+    surface,
   );
 }
 
@@ -313,12 +314,21 @@ function circuitStage(brief: StageBrief, layout: CircuitLayout): StageDef {
 
 /** Deterministic stage from (game seed, global stage index). */
 export function generateStage(gameSeed: number, index: number): StageDef {
-  const { region, loop } = stageRegion(index);
+  const { region, loop, surface: fixedSurface } = stageRegion(index);
   const def = REGIONS[region];
   const seed = hashSeed(gameSeed, region, index);
   const withTown = stageHasTown(index);
   const layout = circuitLayout(index, seed);
-  const brief = drawBrief(mulberry32(seed), seed, index, region, loop, withTown, layout);
+  const brief = drawBrief(
+    mulberry32(seed),
+    seed,
+    index,
+    region,
+    loop,
+    withTown,
+    layout,
+    fixedSurface,
+  );
   if (layout) return circuitStage(brief, layout);
   const { surface, length } = brief;
   const twist = def.twistiness * (1 + 0.15 * Math.min(loop, 4));

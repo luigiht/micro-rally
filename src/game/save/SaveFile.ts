@@ -1,6 +1,6 @@
 import { sanitizeUpgrades, type UpgradeLevels } from '../economy/upgrades';
 import { isCatalogCar, type CatalogCarId } from '../economy/cars';
-import { isCircuitStage, REGION_CYCLE, type RegionId } from '../stage/regions';
+import { stageSlot, type RegionId } from '../stage/regions';
 import { isValidGameId } from './GameId';
 
 export interface StageRecord {
@@ -8,7 +8,7 @@ export interface StageRecord {
   splits: number[];
 }
 
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 export const DRIVER_NAME_MAX = 24;
 
 /** Everything needed to resume a game. Nothing personal beyond the driver name. */
@@ -55,6 +55,11 @@ function parseRecords(v: unknown): Record<number, StageRecord> | null {
 /** v1 saves predate the garage: they drove the hatchback with no upgrades. */
 function migrateV1(raw: Record<string, unknown>): Record<string, unknown> {
   return { ...raw, version: 2, carId: 'hatchback', ownedCars: ['hatchback'], upgrades: {} };
+}
+
+/** Every tenth stage, the circuits' slot before the cities claimed the clashes (v7). */
+function isCircuitStage(index: number): boolean {
+  return index % 10 === 9;
 }
 
 /**
@@ -110,6 +115,28 @@ const CYCLE_V5: readonly RegionId[] = [
   'desert',
 ];
 
+/** The eighteen-stage cycle of v6 saves, which v7's fixed city and circuit slots and rally mix replaced. */
+const CYCLE_V6: readonly RegionId[] = [
+  'forest',
+  'forest',
+  'alpine',
+  'arctic',
+  'coast',
+  'forest',
+  'urban',
+  'desert',
+  'alpine',
+  'alpine',
+  'urban',
+  'coast',
+  'urban',
+  'arctic',
+  'desert',
+  'coast',
+  'desert',
+  'arctic',
+];
+
 /** A stage whose region differs between two cycles (never a circuit, which sits outside both). */
 function regionChanged(index: number, from: readonly RegionId[], to: readonly RegionId[]): boolean {
   return !isCircuitStage(index) && from[index % from.length] !== to[index % to.length];
@@ -151,9 +178,29 @@ function migrateV4(raw: Record<string, unknown>): Record<string, unknown> {
 function migrateV5(raw: Record<string, unknown>): Record<string, unknown> {
   const records = isRecord(raw.records) ? raw.records : {};
   const kept = Object.fromEntries(
-    Object.entries(records).filter(([key]) => !regionChanged(Number(key), CYCLE_V5, REGION_CYCLE)),
+    Object.entries(records).filter(([key]) => !regionChanged(Number(key), CYCLE_V5, CYCLE_V6)),
   );
   return { ...raw, version: 6, records: kept };
+}
+
+/**
+ * v6 saves predate the fixed schedule: a city every ninth stage, a circuit
+ * every tenth (the city keeping any clash) and a seven-stage rally mix
+ * between them with Forest's surface fixed per slot. Records are kept only
+ * where the stage is still the same region; Forest's are dropped too, since
+ * a Forest stage's surface was drawn before and is fixed now.
+ */
+function migrateV6(raw: Record<string, unknown>): Record<string, unknown> {
+  const records = isRecord(raw.records) ? raw.records : {};
+  const kept = Object.fromEntries(
+    Object.entries(records).filter(([key]) => {
+      const index = Number(key);
+      const before = isCircuitStage(index) ? 'circuit' : CYCLE_V6[index % CYCLE_V6.length];
+      const now = stageSlot(index);
+      return now.region === before && now.surface === undefined;
+    }),
+  );
+  return { ...raw, version: 7, records: kept };
 }
 
 function parseCurrent(raw: Record<string, unknown>): SaveFile | null {
@@ -200,6 +247,7 @@ export function parseSaveFile(data: unknown): SaveFile | null {
   if (raw.version === 3) raw = migrateV3(raw);
   if (raw.version === 4) raw = migrateV4(raw);
   if (raw.version === 5) raw = migrateV5(raw);
+  if (raw.version === 6) raw = migrateV6(raw);
   if (raw.version === SAVE_VERSION) return parseCurrent(raw);
   return null;
 }

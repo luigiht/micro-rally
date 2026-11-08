@@ -100,7 +100,7 @@ describe('BuildingIndex', () => {
   });
 
   it('a city stands no two buildings closer than a party gap', () => {
-    const town = generateStage(1, 6).town!;
+    const town = generateStage(1, 8).town!;
     const bs = town.buildings;
     expect(bs.length).toBeGreaterThan(500);
     for (let i = 0; i < bs.length; i++)

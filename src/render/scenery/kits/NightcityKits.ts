@@ -28,6 +28,7 @@ import {
 import type { KindKit } from '../SceneryChunkManager';
 import { BUILDING_STYLES, FURNITURE_KINDS, furnitureGeometry, parkedCarKits } from './RallyKits';
 import { trafficLensGlowGeometry } from '../CityFurnitureGeometry';
+import type { Outfit } from '../SpectatorWardrobe';
 import { spectatorKits } from './SpectatorKits';
 import { NEON } from '../../theme/WorldTheme';
 
@@ -42,6 +43,8 @@ export interface NightcityKitOptions {
   shadows: boolean;
   /** Where the road passes a prop; decides tower height and which way signs face. */
   near: (p: Prop) => RoadNear;
+  /** How the stage's spectators are dressed; winter unless the stage says otherwise. */
+  outfit?: Outfit;
 }
 
 /** How bright the glow kits are baked: HDR, so the neon shader and bloom lift them. */
@@ -134,7 +137,7 @@ function pair(
  * dark under a neon roofline, lit lamp heads, and the cones and boards as
  * they are. Colliders are the daytime ones, so every body stays inside them.
  */
-export function nightcityKits({ shadows, near }: NightcityKitOptions): KindKit[] {
+export function nightcityKits({ shadows, near, outfit }: NightcityKitOptions): KindKit[] {
   const trees = ['tree', 'broadleaf', 'palm', 'spruce'] as const;
   const townWalls = [new Color('#1a1c26'), new Color('#20232f')] as const;
   const townRoofs = [new Color('#0f1118'), new Color('#141722')] as const;
@@ -201,6 +204,7 @@ export function nightcityKits({ shadows, near }: NightcityKitOptions): KindKit[]
       [new Color('#2a2d3a'), new Color('#1f2a3a'), new Color('#33303a')],
       shadows,
       [new Color('#6a6e7a')],
+      outfit,
     ),
     // The city's furniture in its own paint, the traffic lights' lenses glowing.
     ...FURNITURE_KINDS.filter((k) => k !== 'trafficLight').map((kind): KindKit => ({

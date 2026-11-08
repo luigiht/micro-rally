@@ -105,7 +105,7 @@ export function DemoDrive({ paused }: { paused: boolean }) {
     const pose = l.follower.pose;
     car.current?.apply(pose);
     l.renderer.update(pose.x, pose.z);
-    if (sun.current) followSun(sun.current, pose);
+    if (sun.current) followSun(sun.current, pose, camera);
     l.frame.dt = step;
     l.frame.reducedMotion = pausedRef.current;
     if (l.snapped) {

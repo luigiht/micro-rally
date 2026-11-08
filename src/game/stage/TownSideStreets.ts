@@ -167,7 +167,8 @@ function splitLengths(s: StubSite, o: StubSite): [number, number] | null {
  * when a clash cannot be cleared that way; with `force` the new street is
  * kept anyway, cut to what fits beside the other at the minimum but never
  * shorter than its junction's cut, for a corner's streets, which the
- * junction cannot do without.
+ * junction cannot do without; if that still leaves the two touching, the
+ * other gives way below the minimum too, down to its own junction's cut.
  */
 export function planStub(stubs: readonly StubSite[], s: StubSite, force: boolean): StubPlan | null {
   let length = s.length;
@@ -191,11 +192,16 @@ export function planStub(stubs: readonly StubSite[], s: StubSite, force: boolean
       continue;
     }
     if (!force) return null;
-    cuts.push([o, MIN_STUB_LENGTH]);
     length = Math.max(
       s.hw + JUNCTION_REACH + FORCED_STUB_MARGIN,
       Math.min(length, clearLength(s, { ...o, length: MIN_STUB_LENGTH })),
     );
+    // Still touching with the other at the minimum: it gives way further, down to its own junction's cut.
+    const room = clearLength(o, { ...s, length });
+    cuts.push([
+      o,
+      Math.max(o.hw + JUNCTION_REACH + FORCED_STUB_MARGIN, Math.min(MIN_STUB_LENGTH, room)),
+    ]);
   }
   return { length, cuts };
 }

@@ -164,12 +164,9 @@ describe('garage in the store', () => {
     };
     const save = parseSaveFile(v2)!;
     expect(save.version).toBe(SAVE_VERSION);
-    // 6 then goes with the v4 migration: the first Desert stage is the first city now.
-    expect(
-      Object.keys(save.records)
-        .map(Number)
-        .sort((a, b) => a - b),
-    ).toEqual([0, 8]);
+    // 9 and 19 go here (circuits now); 6 with the v4 migration (the first Desert became a city),
+    // and 0 and 8 with v7's fixed schedule (Forest gravel's surface fixed; a city at stage 9).
+    expect(Object.keys(save.records)).toEqual([]);
   });
 
   it('drops v3 records set on Coast stages, whose roads changed, keeping the rest', () => {
@@ -190,13 +187,14 @@ describe('garage in the store', () => {
     };
     const save = parseSaveFile(v3)!;
     expect(save.version).toBe(SAVE_VERSION);
-    // 6 then goes with the v4 migration (the first Desert stage is the first city now) and 3
-    // with the v5 one (the second Alpine is the first Arctic).
+    // 6 then goes with the v4 migration (the first Desert stage is the first city now), 3
+    // with the v5 one (the second Alpine is the first Arctic) and 0 with v7's fixed Forest surface;
+    // the circuit's record outlives them all.
     expect(
       Object.keys(save.records)
         .map(Number)
         .sort((a, b) => a - b),
-    ).toEqual([0, 9]);
+    ).toEqual([9]);
   });
 
   it('drops v4 records at indices whose region changed with the fifteen-stage cycle, keeping the rest', () => {
@@ -222,7 +220,32 @@ describe('garage in the store', () => {
       Object.keys(save.records)
         .map(Number)
         .sort((a, b) => a - b),
-    ).toEqual([0, 5, 8, 9]);
+    ).toEqual([9]);
+  });
+
+  it('drops v6 records where the fixed schedule moved the region or fixed a Forest surface', () => {
+    const rec = { best: 90, splits: [30, 60, 90] };
+    const save = parseSaveFile({
+      version: 6,
+      gameId: 'ABCD2345',
+      driverName: 'Ada',
+      gameSeed: 1,
+      money: 10,
+      stageIndex: 20,
+      // 0 Forest (surface now fixed), 4 Coast → Arctic, 8 Alpine → city, 9 and 19 circuits,
+      // 13 and 27 Arctic and Alpine in both.
+      records: { 0: rec, 4: rec, 8: rec, 9: rec, 13: rec, 19: rec, 27: rec },
+      carId: 'hatchback',
+      ownedCars: ['hatchback'],
+      upgrades: {},
+      updatedAt: 5,
+    })!;
+    expect(save.version).toBe(SAVE_VERSION);
+    expect(
+      Object.keys(save.records)
+        .map(Number)
+        .sort((a, b) => a - b),
+    ).toEqual([9, 13, 19, 27]);
   });
 
   it('shares one grip setup across the dealership', () => {

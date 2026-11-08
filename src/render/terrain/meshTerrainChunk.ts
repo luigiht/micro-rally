@@ -21,6 +21,8 @@ export interface TerrainColors {
   /** Cities: the ground under carriageways and under pavements (see `TerrainSample.paved`). */
   tarmac: Rgb;
   pavement: Rgb;
+  /** The crowds' berms: a lusher shade of the low grass, so a berm reads against the field. */
+  berm: Rgb;
 }
 
 /** Hills go rocky past about 44° of tilt; the coast's limestone past about 37°, so its scrub hillside stays green. */
@@ -49,6 +51,10 @@ export function hexToLinear(hex: string): Rgb {
   ];
 }
 
+function scaleRgb(c: Rgb, k: number): Rgb {
+  return [c[0] * k, c[1] * k, c[2] * k];
+}
+
 export function terrainColors(p: RegionPalette, coast?: CoastDef): TerrainColors {
   const out: TerrainColors = {
     grassLow: hexToLinear(p.grassLow),
@@ -57,6 +63,7 @@ export function terrainColors(p: RegionPalette, coast?: CoastDef): TerrainColors
     shoulder: hexToLinear(p.shoulder),
     tarmac: hexToLinear(ROAD_COLORS.tarmac),
     pavement: hexToLinear(PAVEMENT_COLOR),
+    berm: scaleRgb(hexToLinear(p.grassLow), 0.82),
   };
   if (coast) {
     out.sand = hexToLinear(coast.sand);
@@ -103,6 +110,7 @@ export function meshTerrainChunk(
   const scree = new Float32Array(n * n);
   const dry = new Float32Array(n * n);
   const paved = new Float32Array(n * n);
+  const earth = new Float32Array(n * n);
   const s: TerrainSample = { height: 0, roadBlend: 0, roadDistance: 0 };
   for (let j = 0; j < n; j++) {
     for (let i = 0; i < n; i++) {
@@ -113,6 +121,7 @@ export function meshTerrainChunk(
       scree[j * n + i] = s.scree ?? 0;
       dry[j * n + i] = s.dry ?? 0;
       paved[j * n + i] = s.paved ?? 0;
+      earth[j * n + i] = s.earth ?? 0;
     }
   }
 
@@ -214,6 +223,14 @@ export function meshTerrainChunk(
     r += (colors.shoulder[0] - r) * shoulder;
     g += (colors.shoulder[1] - g) * shoulder;
     b += (colors.shoulder[2] - b) * shoulder;
+    // A crowd's berm is grassed over in a lusher green, easing into the field at its foot.
+    const soil = Math.min(
+      1,
+      Math.max(0, (Math.max(earth[ia]!, earth[ib]!, earth[ic]!) - 0.3) * 2.5),
+    );
+    r += (colors.berm[0] - r) * soil;
+    g += (colors.berm[1] - g) * soil;
+    b += (colors.berm[2] - b) * soil;
     // A city's ground under its streets: tarmac where the face's middle lies under a carriageway or
     // junction paving (so a seam between plates shows tarmac, not grass), paving under a pavement.
     // The middle, not the corners: a face at a junction's corner can have every corner on a

@@ -6,8 +6,9 @@ import { TerrainField } from '@/game/stage/TerrainField';
 import { KERB_LIFT, townObstacles } from '@/game/stage/Town';
 import { scatterScenery } from '@/game/stage/SceneryScatter';
 import { DOOR_OFFSET } from '@/game/stage/BuildingCatalog';
+import { stageIndexOf } from './stageIndex';
 
-const URBAN_INDEX = 6;
+const URBAN_INDEX = stageIndexOf('urban');
 const SEEDS = [1, 2, 3];
 const PAVEMENT_KINDS = [
   'lamp',

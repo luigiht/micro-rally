@@ -101,24 +101,40 @@ export const WRC_STATIONS: readonly HullStation[] = [
   },
 ];
 
-/** Boxy mid-engined hatch (the Tempesta Group B): tall flat bonnet, upright greenhouse with pillars, low rear deck, tall tail lip. */
+/**
+ * Boxy mid-engined hatch (the Tempesta Group B): tall flat bonnet, upright
+ * greenhouse with pillars, and a straight engine deck at the belt line from
+ * the cabin to the tail, so the side stripes run level past the rear wheel.
+ * The last 12 cm round the tail off: the corners pull in and the deck's
+ * edge eases down a few centimetres, rather than ending in a square box.
+ */
 export const GROUPB_STATIONS: readonly HullStation[] = [
   {
     z: -2.0,
     floor: 0.36,
     sill: 0.44,
-    belt: 0.95,
-    roof: 0.95,
-    xSill: 0.74,
-    xBody: 0.84,
-    xRoof: 0.84,
+    belt: 0.9,
+    roof: 0.9,
+    xSill: 0.72,
+    xBody: 0.78,
+    xRoof: 0.78,
   },
   {
-    z: -1.7,
+    z: -1.96,
+    floor: 0.34,
+    sill: 0.43,
+    belt: 0.925,
+    roof: 0.925,
+    xSill: 0.76,
+    xBody: 0.835,
+    xRoof: 0.835,
+  },
+  {
+    z: -1.88,
     floor: 0.32,
     sill: 0.42,
-    belt: 0.76,
-    roof: 0.76,
+    belt: 0.94,
+    roof: 0.94,
     xSill: 0.78,
     xBody: 0.86,
     xRoof: 0.86,

@@ -67,6 +67,12 @@ flowchart LR
   Renderer --> Streets[TownStreetBuilder\nTownJunctionBuilder, TownWallBuilder]
 ```
 
+- Terrain chunks are meshed in `terrain.worker`, which rebuilds the stage
+  from its seed and says `ready`. Until then (its script still loading, the
+  stage still generating), and for good if it errors, `TerrainChunkManager`
+  meshes the nearest chunks on the main thread within 4 ms a frame, so the
+  ground never lags the road and scenery.
+
 - Coast (`game/stage/CoastShape.ts`, `CoastRoad.ts`, `Coastline.ts`): the
   shape is the lie of the land in stage-axis coordinates (water line, beach,
   terraced cliff band, hillside), the road is drawn on it with hairpin
@@ -87,7 +93,8 @@ flowchart LR
   `render/scenery/kits/SpectatorKits.ts` as two kits per pose from
   `SpectatorGeometry.ts`: a fixed-colour body and a white jacket for the tint.
 - Circuits (`game/stage/CircuitGenerator.ts`, `CircuitStage.ts`,
-  `CircuitTrackside.ts`): every tenth stage is a closed race
+  `CircuitTrackside.ts`): every tenth stage (the next one where a city
+  holds the tenth, see `stageSlot` in `regions.ts`) is a closed race
   circuit. The generator draws a lap as a closed `RoadPath` (`closed`: the
   last sample sits on the first, `sample` wraps), and one lap of geometry is
   all the rest of the pipeline sees: terrain (`RoadProfile.ts` smooths the

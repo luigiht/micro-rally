@@ -4,7 +4,7 @@ import type { Obstacle } from '../vehicle/Collisions';
 import { inOasis, oasisPads, oasisProps, planOases } from './Oases';
 import { parkedCars, parkingStretches } from './ParkingBays';
 import { streetFurniture } from './StreetFurniture';
-import { REGIONS } from './regions';
+import { REGIONS, stageScenery } from './regions';
 import { createRoadHit, type RoadSample } from './RoadPath';
 import { ISLAND_PAD_BLEND } from './Roundabout';
 import { nearSpectator, scatterSpectators } from './Spectators';
@@ -200,8 +200,9 @@ function cityCars(stage: TerrainField['stage'], field: TerrainField): Prop[] {
 export function scatterScenery(field: TerrainField): Prop[] {
   // Start from the bare hills so a re-run on the same field is identical.
   field.setPads([]);
+  field.setMounds([]);
   const stage = field.stage;
-  const density = REGIONS[stage.region].scenery;
+  const density = stageScenery(stage);
   const rand = mulberry32(hashSeed(stage.seed, 'scenery'));
   const path = stage.path;
   const hit = createRoadHit();
@@ -269,7 +270,12 @@ export function scatterScenery(field: TerrainField): Prop[] {
     }
   }
   const houses = scatterHouses(field);
-  const spectators = density.spectators ? scatterSpectators(field, density.spectators) : [];
+  // On mud the crowd stands behind earth berms, which the terrain heaps before anything stands on it.
+  const crowd = density.spectators
+    ? scatterSpectators(field, density.spectators, stage.surface === 'mud')
+    : { people: [], mounds: [] };
+  const spectators = crowd.people;
+  field.setMounds(crowd.mounds);
   // Oases sink their hollows into the dunes alongside the house pads; their palms come once the pads are set.
   const oases = planOases(field);
   field.oases = oases;
@@ -315,7 +321,8 @@ export function scatterScenery(field: TerrainField): Prop[] {
       houses.every((h) => Math.hypot(h.x - p.x, h.z - p.z) >= HOUSE_CLEAR_RADIUS * h.scale) &&
       !inOasis(oases, p.x, p.z) &&
       // Nothing grows where a group of spectators stands, so the group reads from the road.
-      !crowded(p.x, p.z),
+      !crowded(p.x, p.z) &&
+      !field.onMound(p.x, p.z, 0.5),
   );
   kept.push(...houses, ...oasisProps(oases, field), ...spectators);
   if (stage.town)

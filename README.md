@@ -16,8 +16,8 @@ another device.
   scenery. Regions cycle Forest, Alpine, Arctic (a Finnish winter road
   between snow banks and tall spruces), Coast (a cliff road over the sea),
   Urban (a city of boulevards, roundabouts and trams) and Desert (a sand
-  piste through dunes and oases) in ones and twos, and lengthen every six
-  stages.
+  piste through dunes and oases): a city every ninth stage, a circuit every
+  tenth, a rally mix between, and longer roads every six stages.
 - **Towns.** Every third stage threads a hill village: right-angle corners
   laid as arcs, narrow old-town streets, blocked side streets closed by
   cones, terraced houses behind garden walls, kerbed pavements and lamp

@@ -29,6 +29,7 @@ import { hasTown, NARROW_HALF_WIDTH } from '@/game/stage/TownPlan';
 import { halfWidthAt } from '@/game/stage/RoadWidth';
 import { createStageWorld } from '@/game/stage/StageWorld';
 import openRoad from './fixtures/openRoad.json';
+import { rallyIndex } from '@/game/stage/regions';
 
 /** A synthetic town laid on the route of a generated stage (index 0, never a real town) around distance `at`, with one blocked side street. */
 function withTown(seed: number, index: number, at: number): { stage: StageDef; town: TownDef } {
@@ -203,8 +204,11 @@ function townStages(): StageDef[] {
 }
 
 describe('town generator', () => {
-  it('puts a town on every third stage and nowhere else, whatever the game seed', () => {
-    for (let index = 0; index < 18; index++) expect(hasTown(index)).toBe(index % 3 === 2);
+  it('puts a town on every third rally stage and nowhere else, whatever the game seed', () => {
+    for (let index = 0; index < 60; index++) {
+      const rally = rallyIndex(index);
+      expect(hasTown(index)).toBe(rally !== null && rally % 3 === 2);
+    }
     for (let seed = 1; seed <= 20; seed++) {
       expect(generateStage(seed, 0).town).toBeUndefined();
       expect(generateStage(seed, 1).town).toBeUndefined();

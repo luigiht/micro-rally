@@ -8,143 +8,30 @@ import {
 } from 'three';
 import { SPECTATOR_JACKETS, SPECTATOR_POSES } from '@/game/stage/Spectators';
 import { box, merge, paint } from './HouseGeometry';
+import {
+  lookFor,
+  POSE_COUNT,
+  type Arm,
+  type Look,
+  type Outfit,
+  type V3,
+} from './SpectatorWardrobe';
 
 /**
  * Low-poly roadside spectators after the faceted crowd in
  * `context/low-poly-people` (a reference only, not shipped): tapered
  * five-sided limbs between posed joints, a faceted head, hands up in one of
  * six poses (fist pump, clapping, both arms up, hands on the head, arms
- * crossed against the cold, waving), dressed for the snow. About 1.75 m
- * tall at scale 1, facing −z, the figure's right at +x.
+ * crossed, waving), dressed for the snow or for a mild day
+ * (`SpectatorWardrobe`). About 1.75 m tall at scale 1, facing −z, the
+ * figure's right at +x.
  *
  * Each pose is two instanced parts, because an instance colour multiplies
- * every vertex colour: the body (skin, trousers, boots, gloves, scarf,
- * headwear) in fixed vertex colours, and the jacket, white with darker
- * cuffs, stripes and zip, for the jacket tint. Pose and jacket both come
+ * every vertex colour: the body (skin, legs, shoes, hands, scarf,
+ * headwear) in fixed vertex colours, and the top (a padded jacket, or a
+ * T-shirt or long-sleeved top), white with darker trim, for the tint. Pose and jacket both come
  * from the prop's variant (`spectatorPose`, `variant % jackets`).
  */
-type V3 = readonly [number, number, number];
-type Headwear = 'beanie' | 'cap' | 'hood' | 'earmuffs';
-
-interface Arm {
-  elbow: V3;
-  hand: V3;
-}
-interface Pose {
-  /** Right (+x) then left arm. */
-  arms: readonly [Arm, Arm];
-  /** Half the distance between the feet. */
-  stance: number;
-  skin: string;
-  trousers: string;
-  boots: string;
-  head: Headwear;
-  /** Hat, cap, earmuff or hair colour. */
-  hat: string;
-  hair: string;
-  scarf: string | null;
-  /** A dark stripe round each upper sleeve, as on the reference's yellow top. */
-  stripes: boolean;
-}
-
-const POSES: readonly Pose[] = [
-  {
-    // Fist pump: right arm high, left hanging.
-    arms: [
-      { elbow: [0.29, 1.64, -0.03], hand: [0.31, 1.9, -0.06] },
-      { elbow: [-0.27, 1.13, 0.02], hand: [-0.24, 0.88, -0.05] },
-    ],
-    stance: 0.12,
-    skin: '#e8b89a',
-    trousers: '#2d3340',
-    boots: '#3b6fd8',
-    head: 'beanie',
-    hat: '#c43a32',
-    hair: '#3a2a20',
-    scarf: '#f1ede4',
-    stripes: false,
-  },
-  {
-    // Clapping, hands together in front of the chest.
-    arms: [
-      { elbow: [0.25, 1.15, -0.05], hand: [0.04, 1.3, -0.2] },
-      { elbow: [-0.25, 1.15, -0.05], hand: [-0.04, 1.3, -0.2] },
-    ],
-    stance: 0.13,
-    skin: '#f0c9ae',
-    trousers: '#34407a',
-    boots: '#e9c23a',
-    head: 'earmuffs',
-    hat: '#e0e4ea',
-    hair: '#a8452e',
-    scarf: null,
-    stripes: true,
-  },
-  {
-    // Both arms up, cheering.
-    arms: [
-      { elbow: [0.34, 1.65, -0.03], hand: [0.27, 1.91, -0.1] },
-      { elbow: [-0.34, 1.65, -0.03], hand: [-0.27, 1.91, -0.1] },
-    ],
-    stance: 0.16,
-    skin: '#8d5a3c',
-    trousers: '#4a4640',
-    boots: '#5cc94a',
-    head: 'cap',
-    hat: '#2f6fb0',
-    hair: '#1f1a17',
-    scarf: null,
-    stripes: false,
-  },
-  {
-    // Hands on the head: "did you see that?"
-    arms: [
-      { elbow: [0.4, 1.58, -0.06], hand: [0.13, 1.74, -0.02] },
-      { elbow: [-0.4, 1.58, -0.06], hand: [-0.13, 1.74, -0.02] },
-    ],
-    stance: 0.14,
-    skin: '#c99272',
-    trousers: '#1f2a44',
-    boots: '#2a2d33',
-    head: 'hood',
-    hat: '#2a2d33',
-    hair: '#2b1f19',
-    scarf: '#d8343a',
-    stripes: false,
-  },
-  {
-    // Arms crossed against the cold.
-    arms: [
-      { elbow: [0.25, 1.15, -0.06], hand: [-0.05, 1.22, -0.17] },
-      { elbow: [-0.25, 1.15, -0.06], hand: [0.05, 1.24, -0.18] },
-    ],
-    stance: 0.11,
-    skin: '#e3ad8c',
-    trousers: '#3a3f47',
-    boots: '#4fd0d6',
-    head: 'beanie',
-    hat: '#2f6fb0',
-    hair: '#6b4a2e',
-    scarf: '#e9b53a',
-    stripes: true,
-  },
-  {
-    // Waving to the car, the other hand on the hip.
-    arms: [
-      { elbow: [0.43, 1.48, -0.08], hand: [0.5, 1.72, -0.2] },
-      { elbow: [-0.36, 1.12, 0.03], hand: [-0.2, 0.98, -0.03] },
-    ],
-    stance: 0.13,
-    skin: '#f2d0b8',
-    trousers: '#5a3a2a',
-    boots: '#d8343a',
-    head: 'beanie',
-    hat: '#e9b53a',
-    hair: '#d9b46a',
-    scarf: '#3f8a4a',
-    stripes: false,
-  },
-];
 
 const WHITE = new Color('#ffffff');
 /** Cuffs, hem, stripes and zip: a darker shade of whatever the jacket is tinted. */
@@ -157,6 +44,11 @@ const SHOULDER_X = 0.2;
 const HIP_Y = 0.93;
 const HIP_X = 0.095;
 const HEAD_Y = 1.62;
+/** Seated figures sit on the ground: the hips this high, the upper body lowered to match. */
+const SEAT_HIP_Y = 0.15;
+const SEAT_DROP = HIP_Y - SEAT_HIP_Y;
+const CAMERA = new Color('#24252b');
+const LENS = new Color('#6f7b86');
 
 const UP = new Vector3(0, 1, 0);
 
@@ -187,21 +79,28 @@ function shoulder(side: 1 | -1): V3 {
   return [SHOULDER_X * side, SHOULDER_Y, 0];
 }
 
-/** Where the sleeve ends and the glove starts. */
+/** Where the sleeve ends and the hand starts. */
 function wrist(arm: Arm): V3 {
   return lerp3(arm.elbow, arm.hand, 0.82);
 }
 
-function headwear(pose: Pose): BufferGeometry[] {
-  const hat = new Color(pose.hat);
-  const hair = new Color(pose.hair);
+/** Where a short sleeve ends, halfway down the upper arm. */
+function shortSleeve(side: 1 | -1, arm: Arm): V3 {
+  return lerp3(shoulder(side), arm.elbow, 0.5);
+}
+
+function headwear(look: Look): BufferGeometry[] {
+  const hat = new Color(look.hat);
+  const hair = new Color(look.hair);
   const rim = hat.clone().multiplyScalar(0.7);
   const parts: BufferGeometry[] = [];
-  if (pose.head !== 'beanie' && pose.head !== 'hood') {
+  if (look.head !== 'beanie' && look.head !== 'hood') {
     // A faceted cap of hair over the crown and the back of the head.
     parts.push(ball(0.118, [0, HEAD_Y + 0.05, 0.02], hair, 1, 0.78, 1.04));
   }
-  switch (pose.head) {
+  const ponytail = () =>
+    segment([0, HEAD_Y + 0.06, 0.1], [0, HEAD_Y - 0.12, 0.14], 0.04, 0.022, hair, 5);
+  switch (look.head) {
     case 'beanie':
       parts.push(
         paint(new CylinderGeometry(0.085, 0.118, 0.12, 7).translate(0, HEAD_Y + 0.1, 0.005), hat),
@@ -221,124 +120,210 @@ function headwear(pose: Pose): BufferGeometry[] {
         segment([0, HEAD_Y + 0.15, 0.005], [0.11, HEAD_Y + 0.01, 0.005], 0.014, 0.014, rim, 4),
         ball(0.048, [-0.112, HEAD_Y - 0.005, 0.005], hat, 0.7, 1, 1),
         ball(0.048, [0.112, HEAD_Y - 0.005, 0.005], hat, 0.7, 1, 1),
-        // A ponytail.
-        segment([0, HEAD_Y + 0.06, 0.1], [0, HEAD_Y - 0.12, 0.14], 0.04, 0.022, hair, 5),
+        ponytail(),
       );
+      break;
+    case 'ponytail':
+      parts.push(ponytail());
       break;
     case 'hood':
       // The hood itself is part of the jacket; a fringe of hair shows under it.
       parts.push(box(0.16, 0.035, 0.04, 0, HEAD_Y + 0.085, -0.085, hair));
       break;
+    case 'hair':
+      break;
   }
   return parts;
 }
 
-function bodyGeometry(pose: Pose): BufferGeometry {
-  const skin = new Color(pose.skin);
-  const trousers = new Color(pose.trousers);
-  const boots = new Color(pose.boots);
+/** Snow boots (a chunky upper, pale sole and toe) or trainers (low, a white sole), the ankle at depth `z`. */
+function shoe(x: number, z: number, look: Look): BufferGeometry[] {
+  const c = new Color(look.shoes);
+  if (look.outfit === 'winter')
+    return [
+      box(0.12, 0.11, 0.25, x, 0.075, z - 0.04, c),
+      box(0.13, 0.03, 0.27, x, 0.015, z - 0.045, SOLE),
+      box(0.1, 0.05, 0.06, x, 0.1, z - 0.15, c),
+    ];
+  return [
+    box(0.105, 0.075, 0.24, x, 0.06, z - 0.045, c),
+    box(0.115, 0.03, 0.26, x, 0.015, z - 0.05, SOLE),
+  ];
+}
+
+/** Hip, knee and ankle for one leg: standing, or sitting with the knee drawn up and the foot flat. */
+function legJoints(look: Look, side: 1 | -1): [V3, V3, V3] {
+  if (look.seated)
+    return [
+      [HIP_X * side, SEAT_HIP_Y, -0.02],
+      [0.13 * side, 0.45, -0.34],
+      [0.12 * side, 0.11, -0.5],
+    ];
+  return [
+    [HIP_X * side, HIP_Y, 0],
+    [((HIP_X + look.stance) / 2 + 0.01) * side, 0.5, -0.03],
+    [look.stance * side, 0.11, 0],
+  ];
+}
+
+/** A compact camera held up to the eye, its lens toward the road. */
+function camera(): BufferGeometry[] {
+  return [
+    box(0.15, 0.09, 0.06, 0, HEAD_Y - 0.01, -0.2, CAMERA),
+    paint(
+      new CylinderGeometry(0.03, 0.03, 0.06, 7)
+        .rotateX(Math.PI / 2)
+        .translate(0.025, HEAD_Y - 0.015, -0.255),
+      LENS,
+    ),
+    box(0.03, 0.02, 0.02, -0.045, HEAD_Y + 0.045, -0.2, CAMERA),
+  ];
+}
+
+function bodyGeometry(look: Look): BufferGeometry {
+  const skin = new Color(look.skin);
+  const legs = new Color(look.legs);
   const parts: BufferGeometry[] = [];
+  // Everything above the hips, built standing and lowered onto the ground when seated.
+  const upper: BufferGeometry[] = [];
 
   for (const side of [1, -1] as const) {
-    const hip: V3 = [HIP_X * side, HIP_Y, 0];
-    const ankle: V3 = [pose.stance * side, 0.11, 0];
-    const knee: V3 = [((HIP_X + pose.stance) / 2 + 0.01) * side, 0.5, -0.03];
-    parts.push(
-      segment(hip, knee, 0.088, 0.068, trousers, 6),
-      ball(0.068, knee, trousers),
-      segment(knee, ankle, 0.066, 0.05, trousers, 6),
-      // Boot: a chunky upper over a pale sole, toe forward.
-      box(0.12, 0.11, 0.25, ankle[0], 0.075, -0.04, boots),
-      box(0.13, 0.03, 0.27, ankle[0], 0.015, -0.045, SOLE),
-      box(0.1, 0.05, 0.06, ankle[0], 0.1, -0.15, boots),
-    );
-    const arm = pose.arms[side === 1 ? 0 : 1];
-    // Mittened hand, a touch bigger than the wrist.
-    parts.push(segment(wrist(arm), arm.hand, 0.045, 0.05, GLOVE, 5), ball(0.05, arm.hand, GLOVE));
+    const [hip, knee, ankle] = legJoints(look, side);
+    if (look.shorts) {
+      // Shorts to just above the knee, bare legs below.
+      const hem = lerp3(hip, knee, 0.8);
+      parts.push(
+        segment(hip, hem, 0.09, 0.08, legs, 6),
+        segment(hem, knee, 0.06, 0.056, skin, 6),
+        ball(0.056, knee, skin),
+        segment(knee, ankle, 0.055, 0.042, skin, 6),
+      );
+    } else {
+      parts.push(
+        segment(hip, knee, 0.088, 0.068, legs, 6),
+        ball(0.068, knee, legs),
+        segment(knee, ankle, 0.066, 0.05, legs, 6),
+      );
+    }
+    parts.push(...shoe(ankle[0], ankle[2], look));
+    const arm = look.arms[side === 1 ? 0 : 1];
+    if (look.sleeves === 'mitten') {
+      // Mittened hand, a touch bigger than the wrist.
+      upper.push(segment(wrist(arm), arm.hand, 0.045, 0.05, GLOVE, 5), ball(0.05, arm.hand, GLOVE));
+    } else if (look.sleeves === 'long') {
+      upper.push(segment(wrist(arm), arm.hand, 0.04, 0.042, skin, 5), ball(0.042, arm.hand, skin));
+    } else {
+      // A bare arm from the T-shirt's sleeve to the hand.
+      upper.push(
+        segment(shortSleeve(side, arm), arm.elbow, 0.055, 0.05, skin, 5),
+        ball(0.05, arm.elbow, skin),
+        segment(arm.elbow, arm.hand, 0.048, 0.04, skin, 5),
+        ball(0.042, arm.hand, skin),
+      );
+    }
   }
-  // Seat of the trousers under the jacket's hem.
-  parts.push(box(0.3, 0.16, 0.19, 0, HIP_Y + 0.02, 0, trousers));
+  // Seat of the trousers under the top's hem.
+  upper.push(box(0.3, 0.16, 0.19, 0, HIP_Y + 0.02, 0, legs));
   // Neck and the faceted head, a little longer than wide.
-  parts.push(segment([0, 1.42, 0], [0, 1.53, 0], 0.052, 0.048, skin, 6));
-  parts.push(
+  upper.push(segment([0, 1.42, 0], [0, 1.53, 0], 0.052, 0.048, skin, 6));
+  upper.push(
     paint(
       new IcosahedronGeometry(0.108, 0).scale(0.95, 1.22, 1.02).translate(0, HEAD_Y, -0.005),
       skin,
     ),
   );
-  if (pose.scarf) {
-    const scarf = new Color(pose.scarf);
-    parts.push(
+  if (look.scarf) {
+    const scarf = new Color(look.scarf);
+    upper.push(
       paint(new CylinderGeometry(0.085, 0.11, 0.09, 6).translate(0, 1.46, 0), scarf),
       box(0.07, 0.22, 0.03, 0.06, 1.33, -0.135, scarf),
     );
   }
-  parts.push(...headwear(pose));
-  return merge(parts);
+  upper.push(...headwear(look));
+  if (look.camera) upper.push(...camera());
+  if (look.seated) for (const g of upper) g.translate(0, -SEAT_DROP, 0);
+  return merge([...parts, ...upper]);
 }
 
-function jacketGeometry(pose: Pose): BufferGeometry {
-  const parts: BufferGeometry[] = [
-    // Padded torso, broader at the chest, a flat face forward.
-    paint(
-      new CylinderGeometry(0.205, 0.175, 0.52, 6)
-        .rotateY(Math.PI / 6)
-        .scale(1, 1, 0.66)
-        .translate(0, 1.17, 0),
-      WHITE,
-    ),
-    // Ribbed hem, collar and a zip down the front.
-    paint(
-      new CylinderGeometry(0.182, 0.182, 0.07, 6)
-        .rotateY(Math.PI / 6)
-        .scale(1, 1, 0.7)
-        .translate(0, 0.94, 0),
-      SHADE,
-    ),
-    paint(new CylinderGeometry(0.08, 0.12, 0.07, 6).translate(0, 1.43, 0), WHITE),
-    box(0.025, 0.46, 0.012, 0, 1.17, -0.118, SHADE),
-  ];
-  if (pose.head === 'hood') {
+/** A six-sided torso band, its flat face forward. */
+function torso(rTop: number, rBottom: number, h: number, y: number, depth: number, c: Color) {
+  return paint(
+    new CylinderGeometry(rTop, rBottom, h, 6)
+      .rotateY(Math.PI / 6)
+      .scale(1, 1, depth)
+      .translate(0, y, 0),
+    c,
+  );
+}
+
+function jacketGeometry(look: Look): BufferGeometry {
+  const winter = look.outfit === 'winter';
+  const parts: BufferGeometry[] = winter
+    ? [
+        // Padded torso, broader at the chest; ribbed hem, collar and a zip down the front.
+        torso(0.205, 0.175, 0.52, 1.17, 0.66, WHITE),
+        torso(0.182, 0.182, 0.07, 0.94, 0.7, SHADE),
+        paint(new CylinderGeometry(0.08, 0.12, 0.07, 6).translate(0, 1.43, 0), WHITE),
+        box(0.025, 0.46, 0.012, 0, 1.17, -0.118, SHADE),
+      ]
+    : [
+        // A slimmer top over the hips, a crew neck in the trim.
+        torso(0.188, 0.168, 0.54, 1.16, 0.62, WHITE),
+        torso(0.17, 0.17, 0.04, 0.9, 0.64, SHADE),
+        paint(new CylinderGeometry(0.068, 0.09, 0.04, 6).translate(0, 1.43, 0), SHADE),
+      ];
+  if (look.head === 'hood') {
     parts.push(
       ball(0.14, [0, HEAD_Y + 0.025, 0.04], WHITE, 1, 1.08, 0.95),
       paint(new CylinderGeometry(0.11, 0.13, 0.08, 6).translate(0, 1.45, 0.02), WHITE),
     );
   }
   for (const side of [1, -1] as const) {
-    const arm = pose.arms[side === 1 ? 0 : 1];
+    const arm = look.arms[side === 1 ? 0 : 1];
     const s = shoulder(side);
+    if (look.sleeves === 'short') {
+      const end = shortSleeve(side, arm);
+      parts.push(
+        ball(0.075, s, WHITE),
+        segment(s, lerp3(s, end, 0.85), 0.07, 0.066, WHITE),
+        segment(lerp3(s, end, 0.85), end, 0.066, 0.066, SHADE),
+      );
+      continue;
+    }
     const w = wrist(arm);
+    const [r0, r1, r2] = winter ? [0.085, 0.07, 0.06] : [0.075, 0.062, 0.054];
     parts.push(
-      ball(0.085, s, WHITE),
-      segment(s, arm.elbow, 0.07, 0.06, WHITE),
-      ball(0.06, arm.elbow, WHITE),
-      segment(arm.elbow, lerp3(arm.elbow, w, 0.82), 0.06, 0.052, WHITE),
+      ball(r0, s, WHITE),
+      segment(s, arm.elbow, r1, r2, WHITE),
+      ball(r2, arm.elbow, WHITE),
+      segment(arm.elbow, lerp3(arm.elbow, w, 0.82), r2, r2 - 0.008, WHITE),
       // Cuff.
-      segment(lerp3(arm.elbow, w, 0.8), w, 0.056, 0.056, SHADE),
+      segment(lerp3(arm.elbow, w, 0.8), w, r2 - 0.004, r2 - 0.004, SHADE),
     );
-    if (pose.stripes) {
+    if (look.stripes) {
       parts.push(
         segment(lerp3(s, arm.elbow, 0.5), lerp3(s, arm.elbow, 0.62), 0.068, 0.067, SHADE),
         segment(lerp3(s, arm.elbow, 0.7), lerp3(s, arm.elbow, 0.8), 0.066, 0.065, SHADE),
       );
     }
   }
-  return merge(parts);
+  const top = merge(parts);
+  return look.seated ? top.translate(0, -SEAT_DROP, 0) : top;
 }
 
-/** Which of the six poses a spectator prop strikes. */
+/** Which of the poses a spectator prop strikes. */
 export function spectatorPose(variant: number): number {
   return Math.floor(variant / SPECTATOR_JACKETS) % SPECTATOR_POSES;
 }
 
-/** Skin, trousers, boots, gloves, scarf and headwear for `pose`, in fixed colours. */
-export function spectatorBodyGeometry(pose: number): BufferGeometry {
-  return bodyGeometry(POSES[pose % POSES.length]!);
+/** Skin, legs, shoes, hands, scarf and headwear for `pose` in `outfit`, in fixed colours. */
+export function spectatorBodyGeometry(pose: number, outfit: Outfit = 'winter'): BufferGeometry {
+  return bodyGeometry(lookFor(pose, outfit));
 }
 
-/** The jacket for `pose`, white with darker trim, for the instance tint. */
-export function spectatorJacketGeometry(pose: number): BufferGeometry {
-  return jacketGeometry(POSES[pose % POSES.length]!);
+/** The top for `pose` in `outfit` (a padded jacket, or a T-shirt or long sleeves), white with darker trim, for the tint. */
+export function spectatorJacketGeometry(pose: number, outfit: Outfit = 'winter'): BufferGeometry {
+  return jacketGeometry(lookFor(pose, outfit));
 }
 
-export const SPECTATOR_POSE_COUNT = POSES.length;
+export const SPECTATOR_POSE_COUNT = POSE_COUNT;

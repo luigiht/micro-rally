@@ -3324,6 +3324,9 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      penalties tag moved above the pace note (one order for desktop and
      touch), so on touch the stack reads clock, checkpoints and money,
      penalties, then the call, left-aligned.
+     A later pass redrew the turbo in two-pixel strokes with fewer parts
+     (ring, hub, outlet and flange, two speed lines; the pinwheel's blades
+     went), since its one-pixel lines read thin and busy on the pad.
 
 172. **2026-11-08 — Unit tests fit the CI runner.** CI on `main` had been
      failing on and off since 2026-11-07 with timeouts in the city tests, a
@@ -3333,3 +3336,125 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      asserts once (1.1 s, same checks). The tests that build cities for
      the rest of their file (`urban`'s first) or read 36 stages
      (`paceNotes`) get a 30 s budget instead of the 5 s default.
+
+173. **2026-11-08 — Terrain never waits on its worker.** By request: the
+     splash showed road and trees over bare sky colour. Terrain was the one
+     layer meshed only in a Web Worker, which first loads its script (in
+     `next dev`, compiled on demand) and rebuilds the stage from the seed;
+     chunk requests sent meanwhile were queued, and if the worker failed to
+     load or threw, they were dropped silently with no fallback. The worker
+     now posts `ready` after its init; until then the manager meshes the
+     nearest chunks itself within a 4 ms budget a frame (a chunk takes
+     0.6–2.7 ms), then hands the rest of its queue over; `onerror` drops the
+     worker and re-queues every loaded chunk without a mesh on the main
+     thread. Tested with a stand-in worker: no worker, slow worker, failing
+     worker.
+
+174. **2026-11-08 — Shadows lead the car and fade at their edge.** By
+     request ("popping" shadows). The sun's 60 m shadow frustum sat centred
+     on the car, so half of it covered road behind while shadows ahead
+     switched on at a hard line about 30 m out; the sun stood only 17 m
+     from its target with a 60 m far plane, so tall spruces and hillsides
+     near the edge could fall outside its depth range. Now: the frustum is
+     80 m across on the same 2048 map (3.9 cm texels, still stepped whole
+     by `ShadowSnap`) and centred 22 m ahead of the car along the camera's
+     horizontal view (none from the isometric view, which looks down);
+     the sun stands 120 m back along the same direction with a 240 m far
+     plane (bias −0.0002 plus a 0.02 normal bias for the longer depth
+     range); and `ShadowEdgeFade` patches three's shared `getShadow` so
+     directional shadows fade over the outer 15 % of the map instead of
+     ending on a line. Cascaded shadow maps would reach further still but
+     need every material patched and several shadow passes; this keeps one
+     pass.
+
+175. **2026-11-08 — Group B's straight engine deck.** By request: the hull
+     dropped from the 0.94 m belt to 0.76 m at z −1.7 behind the rear wheel
+     and rose again to 0.95 m at the tail, so the side stripes (laid at a
+     fixed offset below the belt) dipped in a V and the tail read as a
+     notch. The deck now holds 0.94 m from the cabin to z −1.88, then two
+     short stations round it off: at −1.96 the corners pull in to 0.835 m
+     half-width and the edge drops to 0.925 m, and at −2.0 to 0.78 m and
+     0.9 m, so the tail has rounded corners and a softened top edge rather
+     than a square box. The tail spoiler sits 5 cm lower and a touch
+     narrower to stay on it, and the rear bumper narrows to 1.6 m to match.
+     The city's parked Group Bs share the stations and change with it.
+
+176. **2026-11-08 — Spectators at the Forest mud rally; sitting and
+     photographing poses.** By request. Regions gain `surfaceScenery`
+     (beside `surfacePalettes`; `stageScenery` merges it over the region's
+     density), and the Forest takes 2.2 spectator groups per 100 m on mud
+     only, so the autumn stages get a crowd and the summer ones stay quiet.
+     The pose data moved to `SpectatorWardrobe` (the geometry file would
+     have passed 400 lines): each pose is a figure plus winter clothes, and
+     `lookFor(pose, outfit)` dresses it for the snow or, by a per-pose
+     casual table, for a mild day (a slimmer top with a crew neck and short
+     or long sleeves, bare forearms and hands, jeans, chinos or shorts with
+     bare shins, low trainers, caps, bare heads, ponytails). The outfit is
+     chosen per stage from the region's off-road surface (`spectatorOutfit`:
+     snow regions wear winter) and handed to the kits, so the props and
+     their variants are the same either way. Three poses were added (nine
+     in all): sitting with knees up and hands on them, sitting with a
+     camera, and standing with a camera. Seated figures are built standing
+     and lowered 0.78 m onto the ground above the hips, with the legs
+     re-jointed (hip at 0.15 m, knee up and forward, foot flat), so arm
+     poses keep one frame. The camera is a dark body, grey lens and
+     viewfinder bump in the body's fixed colours. Groups still deal
+     distinct poses and jackets; with nine poses a group of six draws from
+     a wider set.
+
+177. **2026-11-08 — Crowd berms on mud, and small bumps everywhere.** By
+     request. `TerrainDetail` (pure, beside `TerrainField`, which was
+     already long) holds both. Bumps: a second seeded noise, 0.26 m at
+     1/10 m⁻¹ plus 0.1 m at 1/4.5 m⁻¹, scaled by the road blend so the
+     road, the verge strip (flat at deck height) and the flat margin never
+     move, and skipped on coast, dunes, circuits and cities, whose ground is
+     shaped on purpose; applied before the level pads, so houses and
+     terraces stay flat. Berms: capsules (a straight spine, a rounded
+     profile across, round ends; the highest wins where runs overlap) set
+     by `scatterSpectators` on mud stages and registered on the field with
+     `setMounds` before anything else stands on the ground, so the terrain
+     worker meshes them and the wheels ride them. They start 3.4 m past
+     the carriageway, clear of the 3 m verge strip that would otherwise
+     cut through them, so their crowds stand 7.4 m out; not along a
+     village's pavements, nor where another stretch of road passes under.
+     A first cut at 0.6 m × 3.2 m in grass colour barely showed on the 2 m
+     terrain grid, so they grew to 0.7 m × 3.6 m and the sample carries an
+     `earth` mask the mesher paints in the mud road's soil colour, fading
+     back to grass at the foot. Wild props within 0.5 m of a berm are
+     dropped. No colliders, as for the spectators: the car climbs a berm
+     as terrain.
+
+178. **2026-11-08 — Berms at the checkpoints too, and grassed over.** By
+     request: the checkpoint crowds on mud stand behind berms like the
+     start's and the finish's (jump crowds keep the open line, so the
+     crests stay clear), and every berm is painted grass rather than the
+     mud road's soil: the mesher's `berm` colour is the palette's low grass
+     at 82 % brightness, so a berm still reads against the field from its
+     shade and its flat-shaded slopes.
+
+179. **2026-11-08 — A fixed schedule: city every ninth, circuit every
+     tenth, a seven-stage rally mix.** By request, replacing the
+     eighteen-stage `REGION_CYCLE`. `stageSlot(index)`: a city where
+     `index % 9 === 8`, a circuit where `index % 10 === 9` except where the
+     city holds that stage (index 89, 179…; the user chose the city), whose
+     circuit moves to the next index; every other stage takes
+     `RALLY_CYCLE[rallyIndex % 7]` (Forest gravel, Alpine, Forest tarmac,
+     Coast, Arctic, Forest mud, Desert), counting rally stages only so a
+     city or circuit never skips a slot. Forest's surface is fixed per slot
+     (the user asked for gravel, tarmac and mud as their own slots);
+     `drawBrief` still makes its surface draw and ignores it, so a fixed
+     slot leaves the rest of the RNG stream as it was. Villages had been on
+     every third index, which against the new mix would only ever hit
+     Forest; they now fall on every third rally stage (`hasTown` reads
+     `rallyIndex`), which comes round every Forest surface, Alpine and
+     Arctic. Save version 7 drops records where the region changed or the
+     slot now fixes a Forest surface (circuits and same-region stages
+     keep theirs); the old cycle and the plain tenth-stage circuit rule
+     live on in `SaveFile.ts` for the older migrations. Two generator edge
+     cases surfaced on stages the tests now land on: a forced corner side
+     street could still touch another when that one stopped at the 20 m
+     minimum (`planStub` now cuts the other down to its own junction's
+     floor too), and a manhole could sit on the first millimetre of a
+     junction corner's kerb ramp (skipped now). Tests find stages with
+     `tests/unit/stageIndex.ts`; the open-road fixture lost its two entries
+     whose regions moved.

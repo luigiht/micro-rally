@@ -66,14 +66,20 @@ carries a town between 30 % and 55 % of the way along.
 
 ## Regions
 
-| Region | Palette                                                                                                     | Surfaces                      | Weather         |
-| ------ | ----------------------------------------------------------------------------------------------------------- | ----------------------------- | --------------- |
-| Forest | pale sky, two greens, brown trunks; on mud the trees turn autumn (golden larches, orange and rust canopies) | gravel, tarmac, mud           | clear           |
-| Alpine | pale grey sky, near-white ground, frosted pines                                                             | snow (dusted asphalt), tarmac | overcast, clear |
-| Coast  | pale blue sky, dry scrub and limestone, maritime pines, sand and a teal sea                                 | tarmac                        | clear           |
-| Desert | pale sky, warm haze, pale to golden sand, sandstone, coconut palms and dry scrub, teal pools                | sand                          | clear           |
-| Urban  | pale grey-blue sky, concrete pavements, lawn verges and park greens, render and glass                       | tarmac                        | clear, overcast |
-| Arctic | pale sky and near-white snow, dark spruce walls, bare birches, dark trunks                                  | snow (dusted asphalt), tarmac | overcast, clear |
+| Region | Palette                                                                                                                                                              | Surfaces                      | Weather         |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- | --------------- |
+| Forest | pale sky, two greens, brown trunks; on mud the trees turn autumn (golden larches, orange and rust canopies) and the Arctic's spectators come out in everyday clothes | gravel, tarmac, mud           | clear           |
+| Alpine | pale grey sky, near-white ground, frosted pines                                                                                                                      | snow (dusted asphalt), tarmac | overcast, clear |
+| Coast  | pale blue sky, dry scrub and limestone, maritime pines, sand and a teal sea                                                                                          | tarmac                        | clear           |
+| Desert | pale sky, warm haze, pale to golden sand, sandstone, coconut palms and dry scrub, teal pools                                                                         | sand                          | clear           |
+| Urban  | pale grey-blue sky, concrete pavements, lawn verges and park greens, render and glass                                                                                | tarmac                        | clear, overcast |
+| Arctic | pale sky and near-white snow, dark spruce walls, bare birches, dark trunks                                                                                           | snow (dusted asphalt), tarmac | overcast, clear |
+
+All open ground (not the coast, the dunes, circuits or cities, which shape
+their own) carries small bumps and hollows over the broad hills: two
+octaves of noise about 10 m and 5 m across, up to about 35 cm, faded in
+with the road blend so the carriageway, the verge strip and the flat
+margin beside it stay level (`TerrainDetail`).
 
 Night is a placeholder cloned from Forest and not yet in the progression
 loop.
@@ -122,9 +128,21 @@ nearly flat country (relief 9 m, long waves) with long flowing bends.
   Alpine's dusting and the car turns in harder.
 - **Spectators.** Faceted low-poly people after the reference crowd in
   `context/low-poly-people` (tapered limbs between posed joints, a faceted
-  head; `spectator`), in six poses (fist pump, clapping, both arms up,
-  hands on the head, arms crossed, waving), each with its own headwear,
-  skin, trousers and boots, in one of six jacket colours. The finish draws
+  head; `spectator`), in nine poses: six standing and cheering (fist pump,
+  clapping, both arms up, hands on the head, arms crossed, waving), one
+  sitting on the ground with knees up and hands on them, and one sitting and
+  one standing taking a picture with a camera up to the eye. Each has its
+  own headwear, skin, trousers and boots, in one of six jacket colours. On
+  Forest mud stages (`surfaceScenery`) the same crowd comes out in
+  everyday clothes (`SpectatorWardrobe`): T-shirts or long sleeves in six
+  colours, jeans, chinos or shorts, trainers, caps, bare heads and
+  ponytails, bare hands; snow regions keep the padded jackets. On mud the
+  groups and the start, checkpoint and finish crowds stand about 7.4 m
+  past the carriageway's edge, behind a grassy berm (0.7 m high, 3.6 m deep,
+  its foot 3.4 m out, clear of the verge) heaped in 8 m runs along the
+  crowd and a metre past each end of a group, grassed in a lusher shade
+  of the field's green; jump crowds keep the open line. Wild scenery keeps off the berms, and the car rides
+  over them like any ground. The finish draws
   the thickest crowd (45 m before to 25 m after, two rows, a stride
   apart); the start (25 m before to 35 m after), every checkpoint (22 m
   before to 18 m after) and each crest's run-up and landing are lined half
@@ -394,8 +412,8 @@ width`, so a boulevard turns on a 15 m arc and a lane on an 11 m one. The
 ## Circuits
 
 Every tenth stage (index 9, 19, 29, …; never two in a row) is a closed race
-circuit in parkland (`circuit` region, not in the twelve-stage cycle: the
-cycle's region at those indices simply gives way). A layout is drawn by
+circuit in parkland (`circuit` region, in its own slot of the schedule:
+see `stageSlot`). A layout is drawn by
 `CircuitGenerator` from the stage seed in one of three styles, mixing the
 traits of three famous tracks without copying any of them:
 

@@ -5,9 +5,9 @@
  * a puddle, a snowflake, grass blades and sand ripples; `coast` (16×16) is a
  * sun over a leaning palm with waves and the shore below, shown for Coast
  * stages instead of the surface glyph; `circuit` (16×16) is a chequered flag
- * on a pole, for circuit stages; `turbo` (16×16) is a turbocharger: its
- * round housing with a pinwheel inside, the outlet pipe and flange top right
- * and speed lines behind; `checkpoint` is a small chequered flag and `money`
+ * on a pole, for circuit stages; `turbo` (16×16) is a turbocharger in
+ * two-pixel strokes: its round housing round a hub, the outlet and flange top
+ * right and two speed lines behind; `checkpoint` is a small chequered flag and `money`
  * a dollar bill, the compact HUD's labels on touch devices.
  */
 export type PixelIconName =
@@ -42,19 +42,19 @@ const GLYPHS: Record<PixelIconName, readonly string[]> = {
   turbo: [
     '................',
     '................',
-    '................',
+    '..............##',
     '..............##',
     '......##########',
-    '....##.....##.##',
-    '....#....#..####',
-    '##.#....#....###',
-    '...#.#..#....#..',
-    '##.#..#####..#..',
-    '...#....#..#.#..',
-    '##.#....#....#..',
-    '....#..#....#...',
-    '....##.....##...',
-    '......#####.....',
+    '.....###########',
+    '###.###....#####',
+    '###.##......####',
+    '....##..##..##..',
+    '....##..##..##..',
+    '.##.##......##..',
+    '.##.###....###..',
+    '.....########...',
+    '......######....',
+    '................',
     '................',
   ],
   checkpoint: [

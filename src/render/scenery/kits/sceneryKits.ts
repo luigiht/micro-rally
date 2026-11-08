@@ -1,4 +1,4 @@
-import { REGIONS, stagePalette } from '@/game/stage/regions';
+import { REGIONS, spectatorOutfit, stagePalette } from '@/game/stage/regions';
 import type { Prop } from '@/game/stage/SceneryScatter';
 import type { StageBrief } from '@/game/stage/StageGenerator';
 import type { WorldTheme } from '../../theme/WorldTheme';
@@ -16,7 +16,7 @@ export function sceneryKitsFor(
 ): KindKit[] {
   const kits =
     theme.scenery.kit === 'nightcity'
-      ? nightcityKits({ shadows, near })
+      ? nightcityKits({ shadows, near, outfit: spectatorOutfit(stage) })
       : rallyKits(stagePalette(stage), shadows, REGIONS[stage.region].offroad === 'snow');
   if (furniture) return kits;
   // Without the furniture its props are simply not drawn (their colliders stand either way).

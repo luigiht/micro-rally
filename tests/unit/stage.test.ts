@@ -8,7 +8,14 @@ import {
   scatterScenery,
 } from '@/game/stage/SceneryScatter';
 import { MARKER_CLEARANCE, MARKER_SPACING, markerDistances } from '@/game/stage/RoadMarkers';
-import { REGION_CYCLE, REGIONS, isCircuitStage, stagePalette } from '@/game/stage/regions';
+import {
+  REGIONS,
+  isCircuitStage,
+  isCityStage,
+  stagePalette,
+  stageSlot,
+} from '@/game/stage/regions';
+import { stageIndexOf } from './stageIndex';
 import { generateStage, stageBrief, stageHasTown, stageRegion } from '@/game/stage/StageGenerator';
 import { StageRun, TREE_PENALTY_SECONDS } from '@/game/stage/StageRun';
 import { ROAD_BED_DROP, ROAD_LIFT, TRENCH_OUT, TerrainField } from '@/game/stage/TerrainField';
@@ -95,30 +102,52 @@ describe('StageGenerator', () => {
     }
   });
 
-  it('follows the region cycle, never three alike, every region three times a cycle', () => {
-    const n = REGION_CYCLE.length;
-    const regions = Array.from({ length: 3 * n }, (_, i) => stageRegion(i).region);
-    // The cycle's region everywhere but the circuit stages, which are every tenth (index 9, 19, …).
-    regions.forEach((r, i) => expect(r).toBe(isCircuitStage(i) ? 'circuit' : REGION_CYCLE[i % n]));
-    expect(regions.flatMap((r, i) => (r === 'circuit' ? [i] : []))).toEqual([9, 19, 29, 39, 49]);
-    for (let i = 2; i < regions.length; i++) {
-      expect(regions[i - 2] === regions[i - 1] && regions[i - 1] === regions[i]).toBe(false);
+  it('runs a city every ninth stage, a circuit every tenth, and the rally mix between', () => {
+    const regions = Array.from({ length: 200 }, (_, i) => stageRegion(i).region);
+    // Cities at stage 9, 18, 27…; circuits at 10, 20, 30…, except stage 90 (a city), whose circuit is stage 91.
+    expect(regions.flatMap((r, i) => (r === 'urban' ? [i] : [])).slice(0, 4)).toEqual([
+      8, 17, 26, 35,
+    ]);
+    expect(regions.flatMap((r, i) => (r === 'circuit' ? [i] : [])).slice(0, 11)).toEqual([
+      9, 19, 29, 39, 49, 59, 69, 79, 90, 99, 109,
+    ]);
+    expect(regions[89]).toBe('urban');
+    for (let i = 0; i < 200; i++) {
+      expect(regions[i] === 'urban').toBe(isCityStage(i));
+      expect(regions[i] === 'circuit').toBe(isCircuitStage(i));
     }
-    expect(REGION_CYCLE).toHaveLength(18);
-    for (const id of ['forest', 'alpine', 'coast', 'desert', 'urban', 'arctic'])
-      expect(REGION_CYCLE.filter((r) => r === id)).toHaveLength(3);
-    // No city where a circuit lands (every tenth stage falls on the odd cycle indices).
-    for (let i = 1; i < 18; i += 2) expect(REGION_CYCLE[i]).not.toBe('urban');
-    // One circuit in every ten stages, never two in a row, never with a town, and never on a
-    // stage the fixtures and region tests pin.
-    for (let start = 0; start + 10 <= 100; start += 10)
-      expect(
-        Array.from({ length: 10 }, (_, k) => isCircuitStage(start + k)).filter(Boolean),
-      ).toHaveLength(1);
-    for (let i = 1; i < 100; i++) expect(isCircuitStage(i) && isCircuitStage(i - 1)).toBe(false);
-    for (let i = 0; i < 100; i++) if (isCircuitStage(i)) expect(stageHasTown(i)).toBe(false);
-    for (const i of [0, 1, 2, 3, 4, 5, 6, 7, 14, 16, 18]) expect(isCircuitStage(i)).toBe(false);
+    // Every ten stages hold one circuit, never two in a row, never with a town.
+    for (let start = 0; start + 10 <= 200; start += 10) {
+      const n = Array.from({ length: 10 }, (_, k) => isCircuitStage(start + k)).filter(
+        Boolean,
+      ).length;
+      expect(n).toBeLessThanOrEqual(2);
+    }
+    expect(regions.filter((r) => r === 'circuit')).toHaveLength(20);
+    for (let i = 1; i < 200; i++) expect(isCircuitStage(i) && isCircuitStage(i - 1)).toBe(false);
+    for (let i = 0; i < 200; i++) if (isCircuitStage(i)) expect(stageHasTown(i)).toBe(false);
+    // The rally stages cycle through every slot in turn, Forest's surface fixed per slot.
+    const rally = Array.from({ length: 200 }, (_, i) => i).filter(
+      (i) => !isCityStage(i) && !isCircuitStage(i),
+    );
+    const slots = rally
+      .slice(0, 7)
+      .map((i) => `${stageSlot(i).region}/${stageSlot(i).surface ?? '*'}`);
+    expect(slots).toEqual([
+      'forest/gravel',
+      'alpine/*',
+      'forest/tarmac',
+      'coast/*',
+      'arctic/*',
+      'forest/mud',
+      'desert/*',
+    ]);
+    rally.forEach((i, k) => expect(stageSlot(i)).toEqual(stageSlot(rally[k % 7]!)));
     for (let seed = 1; seed <= 6; seed++) {
+      for (const surface of ['gravel', 'tarmac', 'mud'] as const) {
+        const forest = generateStage(seed, stageIndexOf('forest', surface));
+        expect(forest.surface).toBe(surface);
+      }
       const alpine = generateStage(seed, 27);
       expect(['snow', 'tarmac']).toContain(alpine.surface);
       expect(alpine.region).toBe('alpine');
@@ -148,12 +177,11 @@ describe('StageGenerator', () => {
       }
       return total / n;
     };
-    // Alpine 2 carries a village, so only its approaches and run-out count: a smaller margin than open roads showed.
-    expect(curvature(2)).toBeGreaterThan(curvature(0) * 1.08);
+    expect(curvature(stageIndexOf('alpine'))).toBeGreaterThan(curvature(0) * 1.08);
   });
 
   it('steps the difficulty loop every six stages, apart from the region cycle', () => {
-    expect(stageRegion(0)).toEqual({ region: 'forest', loop: 0 });
+    expect(stageRegion(0)).toEqual({ region: 'forest', surface: 'gravel', loop: 0 });
     expect(stageRegion(5).loop).toBe(0);
     expect(stageRegion(6).loop).toBe(1);
     expect(stageRegion(30).loop).toBe(5);
@@ -174,8 +202,7 @@ describe('stagePalette', () => {
     expect(stagePalette({ region: 'forest', surface: 'tarmac' })).toBe(summer);
     expect(stagePalette({ region: 'alpine', surface: 'snow' })).toBe(REGIONS.alpine.palette);
     // Mud is a forest surface the generator actually draws, so autumn is reachable.
-    const briefs = Array.from({ length: 24 }, (_, seed) => stageBrief(seed + 1, 1));
-    expect(briefs.some((b) => b.surface === 'mud')).toBe(true);
+    expect(stageBrief(1, stageIndexOf('forest', 'mud')).surface).toBe('mud');
   });
 });
 

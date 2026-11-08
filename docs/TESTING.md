@@ -58,11 +58,12 @@ cover the pure-TS core and anything else that can run without a browser:
   pavement off the doors and buildings, manholes on the carriageway, every
   kind present), `tramService` (the timetable's headway, direction and
   fades, the tram body's size and lights).
-  `fixtures/openRoad.json` pins six open-road stages (Forest, Alpine and Desert indices of the eighteen-stage cycle) byte-for-byte so town
-  work can never move a road that has no town (keys are `gameSeed/index`;
-  the four index-0 and index-3 entries date from before towns, the two
-  later-loop ones (`5/16`, `13/18`) were re-recorded on 2026-11-05 when the
-  cycle grew to fifteen stages).
+  `fixtures/openRoad.json` pins four open-road stages (Forest gravel at
+  index 0, Alpine at index 27) byte-for-byte so town work can never move a
+  road that has no town (keys are `gameSeed/index`; the two later-loop
+  entries `5/16` and `13/18` were dropped on 2026-11-08 when the fixed
+  schedule gave those indices other regions). Tests find stages by region
+  and surface with `tests/unit/stageIndex.ts` rather than fixed indices.
 - **Economy and saves**: `prize`, `garage`, `save`, `saveManager`,
   `gameStore.server`.
 - **Rendering geometry built in pure TS**: `carHull` (lofted hulls, wells,
@@ -126,11 +127,11 @@ pattern used throughout the project:
 4. Hold `KeyW` for a second or two, press `KeyC` to change camera, `KeyH`
    to hide the HUD or `KeyN` for Nightcity, and take `page.screenshot()`.
 
-Useful stages: game seed 6, stage index 2 is a forest stage with a town
-(spawn about 690 m for the town entry, 1983 m for a finish in three
-seconds); game seed 3, stage index 5 is an alpine town; game seed 1, stage
-index 6 is the first city (a roundabout at 1239–1254 m, spawn 1170; tram
-crossings at 461 and 861 m). Launch Chromium with
+Useful stages (any game seed): index 2 is Forest on tarmac with a village
+(`?spawn=town` for its entry), index 3 Coast, index 4 Arctic, index 5
+Forest on mud with a village and the crowds behind berms, index 6 Desert,
+index 8 the first city, index 9 the first circuit and index 10 an Alpine
+village. Launch Chromium with
 `--use-angle=swiftshader --enable-unsafe-swiftshader` where there is no GPU.
 
 ## What to check before finishing

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { selfApproachOk, START_DISTANCE } from '@/game/stage/Centreline';
 import { parseSaveFile, SAVE_VERSION } from '@/game/save/SaveFile';
-import { REGION_CYCLE, REGIONS } from '@/game/stage/regions';
+import { isCircuitStage, isCityStage, REGIONS } from '@/game/stage/regions';
 import { createRoadHit } from '@/game/stage/RoadPath';
 import { halfWidthAt } from '@/game/stage/RoadWidth';
 import { ringLaneRadius, ringOuterRadius, ringSweep } from '@/game/stage/Roundabout';
@@ -17,8 +17,8 @@ import { RAIL_LIFT, TRAM_BED_HALF, TRAM_GAUGE, tramLift } from '@/game/stage/Tra
 import { planUrban } from '@/game/stage/UrbanPlan';
 
 /** The first city of the cycle, and a later one on a higher difficulty loop. */
-const URBAN_INDEX = 6;
-const LATE_URBAN_INDEX = 24;
+const URBAN_INDEX = 8;
+const LATE_URBAN_INDEX = 26;
 const SEEDS = [1, 2, 3, 4, 5, 6];
 const URBAN = REGIONS.urban.urban!;
 
@@ -35,10 +35,11 @@ function fieldFor(seed: number, index = URBAN_INDEX): TerrainField {
 }
 
 describe('the cycle', () => {
-  it('has three cities in eighteen stages, none where a circuit lands, none with a village of its own', () => {
-    expect(REGION_CYCLE).toHaveLength(18);
-    expect(REGION_CYCLE.filter((r) => r === 'urban')).toHaveLength(3);
-    for (let i = 1; i < 18; i += 2) expect(REGION_CYCLE[i]).not.toBe('urban');
+  it('puts a city on every ninth stage and nowhere else, none with a village of its own', () => {
+    for (let i = 0; i < 200; i++) {
+      expect(stageRegion(i).region === 'urban', `stage ${i + 1}`).toBe(i % 9 === 8);
+      expect(isCityStage(i) && isCircuitStage(i)).toBe(false);
+    }
     expect(stageRegion(URBAN_INDEX).region).toBe('urban');
     expect(stageRegion(LATE_URBAN_INDEX).region).toBe('urban');
     for (let i = 0; i < 60; i++)
@@ -498,6 +499,7 @@ describe('save migration', () => {
       updatedAt: 5,
     })!;
     expect(save.version).toBe(SAVE_VERSION);
-    expect(Object.keys(save.records)).toEqual(['2']);
+    // 6, 7 and 12 change region with v5; 2 (Forest) goes with v7, whose Forest surfaces are fixed.
+    expect(Object.keys(save.records)).toEqual([]);
   });
 });

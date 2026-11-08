@@ -7,8 +7,46 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ## 2026-11-08
 
+### Changed
+
+- **A fixed stage schedule.** Every ninth stage is a city (9, 18, 27…) and
+  every tenth a circuit (10, 20, 30…); where they would meet the city keeps
+  the stage and the circuit follows. The stages between run in turn through
+  Forest on gravel, Alpine, Forest on tarmac, Coast, Arctic, Forest on mud
+  and Desert, so Forest mud's crowds come round every seven rally stages.
+  Villages fall on every third of those. Best times on stages that changed
+  are cleared (saves move to version 7). [179]
+
+### Fixed
+
+- **Tempesta Group B's tail.** The rear deck no longer dips behind the
+  rear wheel: it runs level at the belt line to the tail, so the side
+  stripes stay straight, and the tail's corners and top edge are rounded
+  off. [175]
+- **Shadows no longer pop in.** The sun's shadows now cover the road ahead
+  of the car, where the camera looks, reach further (80 m across), and fade
+  out toward their edge instead of stopping on a hard line, so tree and
+  building shadows grow in as you approach. Tall trees and hillsides at the
+  edge keep their shadows. [174]
+- **Ground on the splash and at the start.** The terrain no longer goes
+  missing for the first seconds (or for good) while its background worker
+  starts up: the nearest ground is laid straight away, and the worker takes
+  over once ready, or not at all if it fails. [173]
+
 ### Added
 
+- **Berms at the mud rally, and bumpier ground.** On Forest mud stages the
+  roadside groups and the start, checkpoint and finish crowds stand behind
+  low grassy berms heaped between them and the road, which the car can
+  drive over. Away from the road, the ground everywhere now has small
+  bumps and hollows instead of perfectly smooth hills; the road and its
+  verges stay level. [177, 178]
+- **Spectators sit and take pictures.** Some spectators now sit on the
+  ground with their knees up, and some hold a camera to the eye, sitting
+  or standing. [176]
+- **A crowd at the Forest mud rally.** Forest stages on mud get the
+  roadside crowds too, in everyday clothes: T-shirts, long sleeves, jeans
+  and shorts, trainers, caps and ponytails. [176]
 - **Pace notes.** A co-driver's call for the next corner, centred under the
   stage clock: a pixel-art card graded like a real rally book, 1 (tightest)
   to 6 (barely a bend) with square, acute and hairpin for sharper ones,

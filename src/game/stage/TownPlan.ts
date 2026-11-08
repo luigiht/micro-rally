@@ -1,3 +1,4 @@
+import { rallyIndex } from './regions';
 import { hashSeed, mulberry32 } from '../rng';
 
 /** Corner arcs: 12 m, or 10 m on the sharpest (over 95°) corners; a leg may set its own (`radius`, wide city streets). */
@@ -12,16 +13,18 @@ export function tangentLength(turn: number, radius?: number): number {
 }
 
 /**
- * Every third stage carries a town (indices 2, 5, 8, …, stages 3, 6, 9, …
- * to the player), the same in every game and in whichever region the
- * progression puts there. Never index 0 (the splash demo and the smoke
- * tests drive it) nor index 3 (the alpine stage the curvature test
- * compares), never two in a row. Regions that build no villages (the coast,
- * the desert) skip theirs: see `stageHasTown`.
+ * Every third rally stage carries a town (counted along the rally mix,
+ * `rallyIndex`, so the cities and circuits never shift them: rally stages
+ * 2, 5, 8, …), the same in every game and in whichever region the mix puts
+ * there; against the mix's seven slots that comes round every Forest
+ * surface, Alpine and Arctic. Never the first stage (the splash demo and
+ * the smoke tests drive it), never two in a row. Regions that build no
+ * villages (the coast, the desert) skip theirs: see `stageHasTown`.
  */
 const TOWN_EVERY = 3;
 export function hasTown(index: number): boolean {
-  return index % TOWN_EVERY === TOWN_EVERY - 1;
+  const rally = rallyIndex(index);
+  return rally !== null && rally % TOWN_EVERY === TOWN_EVERY - 1;
 }
 
 /** Half width of the narrow old-town streets some towns have through their middle. */

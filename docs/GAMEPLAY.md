@@ -70,19 +70,20 @@ the last sector board or lap line passed.
 
 ## Progression
 
-- Stages run through an eighteen-stage cycle of regions: Forest ×2, Alpine,
-  Arctic, Coast, Forest, Urban, Desert, Alpine ×2, Urban, Coast, Urban,
-  Arctic, Desert, Coast, Desert, Arctic, then round again, so the same
-  scenery never shows more than twice in a row and each region gets three
-  stages in eighteen. Every six stages the roads lengthen by 25 % and the
-  bends tighten a little, so there is always a next stage.
-- Every third stage, that is stages 3, 6, 9 and so on, carries a town: the
-  route leaves the open road, threads a village of right-angle corners,
-  narrow streets and blocked side streets, and rejoins the stage. The cycle
-  puts most of those stages on Forest, Alpine and Arctic; the Coast road and the
-  Desert build no villages, so a town index that falls there (stage 12,
-  for one) stays open road, and an Urban stage is a city from start to
-  finish anyway.
+- Every ninth stage (9, 18, 27…) is a city, and every tenth (10, 20,
+  30…) a circuit race; where the two would meet (stage 90, 180…) the city
+  keeps the stage and the circuit is the next one. The stages between run
+  through a seven-stage rally mix in turn: Forest on gravel, Alpine, Forest
+  on tarmac, Coast, Arctic, Forest on mud (the autumn rally, with its crowds
+  behind berms) and Desert, so the same region never runs twice in a row.
+  Every six stages the roads lengthen by 25 % and the bends tighten a
+  little, so there is always a next stage.
+- Every third rally stage carries a town: the route leaves the open road,
+  threads a village of right-angle corners, narrow streets and blocked side
+  streets, and rejoins the stage. Counted along the mix, villages come round
+  every Forest surface, Alpine and Arctic; the Coast road and the Desert
+  build none, so a town slot that falls there stays open road, and cities
+  and circuits are never counted.
 - Any stage up to the first unfinished one can be driven again from the
   Game panel's stage list.
 
