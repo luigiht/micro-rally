@@ -190,12 +190,13 @@ describe('garage in the store', () => {
     };
     const save = parseSaveFile(v3)!;
     expect(save.version).toBe(SAVE_VERSION);
-    // 6 then goes with the v4 migration: the first Desert stage is the first city now.
+    // 6 then goes with the v4 migration (the first Desert stage is the first city now) and 3
+    // with the v5 one (the second Alpine is the first Arctic).
     expect(
       Object.keys(save.records)
         .map(Number)
         .sort((a, b) => a - b),
-    ).toEqual([0, 3, 9]);
+    ).toEqual([0, 9]);
   });
 
   it('drops v4 records at indices whose region changed with the fifteen-stage cycle, keeping the rest', () => {
@@ -221,7 +222,7 @@ describe('garage in the store', () => {
       Object.keys(save.records)
         .map(Number)
         .sort((a, b) => a - b),
-    ).toEqual([0, 3, 5, 8, 9]);
+    ).toEqual([0, 5, 8, 9]);
   });
 
   it('shares one grip setup across the dealership', () => {

@@ -218,6 +218,7 @@ export const it: Messages = {
     night: 'Notte',
     urban: 'Urbano',
     circuit: 'Circuito',
+    arctic: 'Artico',
   },
   controls: [
     { keys: 'W / S · ↑ / ↓', action: 'Acceleratore / freno, tieni premuto per la retro' },

@@ -134,7 +134,7 @@ function pair(
  * they are. Colliders are the daytime ones, so every body stays inside them.
  */
 export function nightcityKits({ shadows, near }: NightcityKitOptions): KindKit[] {
-  const trees = ['tree', 'broadleaf', 'palm'] as const;
+  const trees = ['tree', 'broadleaf', 'palm', 'spruce'] as const;
   const townWalls = [new Color('#1a1c26'), new Color('#20232f')] as const;
   const townRoofs = [new Color('#0f1118'), new Color('#141722')] as const;
   const carTints = ['#2a2d3a', '#1f2a3a', '#33303a', '#1c1f28', '#2d2630'].map((c) => new Color(c));

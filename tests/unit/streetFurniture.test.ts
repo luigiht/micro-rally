@@ -84,8 +84,12 @@ describe('streetFurniture', () => {
           const uz = p.z - st.z0;
           const along = ux * Math.sin(h) + uz * Math.cos(h);
           const across = ux * Math.cos(h) - uz * Math.sin(h);
-          if (along < 0 || along > len || Math.abs(Math.abs(across) - st.halfWidth - 1.6) > 0.3)
-            continue;
+          // On the route the pavement follows the ribbon's edge, which tapers before the junctions.
+          const hw =
+            st.route && stage.path.nearest(p.x, p.z, 20, hit)
+              ? halfWidthAt(stage, hit.along)
+              : st.halfWidth;
+          if (along < 0 || along > len || Math.abs(Math.abs(across) - hw - 1.6) > 0.3) continue;
           if (across > 0) perSide.left++;
           else perSide.right++;
         }

@@ -72,6 +72,11 @@ flowchart LR
   colliders, the mesher paints the mask rock and the shore sand, and the
   renderer draws the walls (`render/road/SeaWallBuilder.ts` over
   `StoneWallGeometry.ts`) and the sea (`render/terrain/SeaPlane.ts`).
+- Arctic: no modules of its own. The region's `terrain.banks` heaps the
+  snow ridges in `TerrainField.bankLift` (both the mesh sample and the
+  wheels' deck), `SceneryDensity.spruces` feeds the `spruce` prop kind
+  through the ordinary scatter, and `RallyKits` dresses it in three parts
+  (trunk, tinted foliage, snow caps); Nightcity treats spruces as trees.
 - Circuits (`game/stage/CircuitGenerator.ts`, `CircuitStage.ts`,
   `CircuitTrackside.ts`): every tenth stage is a closed race
   circuit. The generator draws a lap as a closed `RoadPath` (`closed`: the

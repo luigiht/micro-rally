@@ -190,6 +190,10 @@ export class TerrainField implements TerrainQuery {
   readonly coast: Coastline | null;
   /** Dune sea instead of hills. */
   private readonly dunes: boolean;
+  /** A ridge of snow heaped along both verges (the Arctic), as height and width; null elsewhere. */
+  private readonly banks: { height: number; width: number } | null;
+  /** Road distances of the crests `addCrests` raised on the straights, for the tests and the probes. */
+  readonly crestsAt: number[] = [];
   /** The oases, on dune stages: set by `scatterScenery` with their pads, read by the renderer for the pools. */
   oases: Oasis[] = [];
   private readonly roadHeights: Float64Array;
@@ -243,6 +247,7 @@ export class TerrainField implements TerrainQuery {
     this.amplitude = reliefAmplitude(region, stage.loop) * (stage.circuit?.relief ?? 1);
     this.frequency = region.terrain.frequency;
     this.dunes = region.terrain.dunes === true;
+    this.banks = region.terrain.banks ?? null;
     this.coast = region.coast
       ? new Coastline(
           stage,
@@ -648,13 +653,29 @@ export class TerrainField implements TerrainQuery {
         (ROAD_LIFT + ROAD_BED_DROP) * (1 - smoothstep(-TRENCH_IN, TRENCH_OUT, f)),
       );
     }
-    const raw = deck + (base - deck) * t - trench;
+    const raw = deck + (base - deck) * t - trench + this.bankLift(st);
     // Under a city's pavements the terraces' pads do not reach: a pad vertex there would tilt the
     // coarse terrain face up through the pavement as a green wedge along the building.
     out.height = out.paved ? raw : this.applyPads(x, z, raw);
     out.roadBlend = 1 - t;
     out.roadDistance = st.distance;
     return out;
+  }
+
+  /**
+   * The snow bank beside the carriageway: a rounded ridge from the verge's
+   * edge out over `banks.width`, `banks.height` high at its crest, that
+   * wheels climb and the terrain mesh heaps. Nothing where a town's pavements
+   * run, nor beside a side street.
+   */
+  private bankLift(st: StreetHit): number {
+    const b = this.banks;
+    if (!b || st.stub) return 0;
+    if (this.town && townFade(this.town, st.along) > 0) return 0;
+    const out = st.distance - st.hw - 0.6;
+    if (out <= 0 || out >= b.width) return 0;
+    const u = out / b.width;
+    return b.height * Math.sin(Math.PI * u) ** 1.3;
   }
 
   /** The surface without the pavements' kerb lift: the deck tarmac, kerb faces and pavements are built on. */
@@ -666,7 +687,7 @@ export class TerrainField implements TerrainQuery {
     const deck = st.deck + ROAD_LIFT;
     const flat = this.flatMarginFor(st);
     const t = smoothstep(st.hw + flat, st.hw + flat + this.blendWidth(st), st.distance);
-    return this.applyPads(x, z, deck + (base - deck) * t);
+    return this.applyPads(x, z, deck + (base - deck) * t) + this.bankLift(st);
   }
 
   /**
@@ -760,6 +781,66 @@ export class TerrainField implements TerrainQuery {
     for (let i = 0; i < (closed ? count - 1 : count); i++)
       raw[i] = this.groundHeight(xs[i]!, zs[i]!);
     const smooth = smoothRoadProfile(raw, spacing, closed);
-    return this.urban ? this.urban.levelProfile(smooth, spacing, this.stage.path) : smooth;
+    if (this.urban) return this.urban.levelProfile(smooth, spacing, this.stage.path);
+    const crests = REGIONS[this.stage.region].terrain.crests;
+    if (crests && !closed) this.addCrests(smooth, crests);
+    return smooth;
+  }
+
+  /**
+   * Humps on the straights for the car to jump: about every `every` metres,
+   * where the road runs straight for the hump's length and no gate, town or
+   * start stands, a raised cosine `height` high over `length` is added to
+   * the profile (its steepest grade is π·height/length, under the limiter's
+   * 12 % for the regions that ask). Seeded from the stage.
+   */
+  private addCrests(
+    heights: Float64Array,
+    crests: { every: number; height: number; length: number },
+  ): void {
+    const path = this.stage.path;
+    const spacing = path.spacing;
+    const rand = mulberry32(hashSeed(this.stage.seed, 'crests'));
+    const keepOut = [this.stage.startDistance, ...this.stage.gates.map((g) => g.distance)];
+    const town = this.town;
+    const half = crests.length / 2;
+    const straight = (d: number) => {
+      const i0 = Math.max(1, Math.floor((d - half - 6) / spacing));
+      const i1 = Math.min(path.count - 1, Math.ceil((d + half + 6) / spacing));
+      let turn = 0;
+      for (let i = i0; i <= i1; i++) {
+        const a = path.headings[i]! - path.headings[i - 1]!;
+        turn += Math.abs(Math.atan2(Math.sin(a), Math.cos(a)));
+      }
+      // Straight enough, and level enough that the hump's grade adds to little: a hump on a slope
+      // would pass the limiter's grade.
+      const rise = Math.abs(heights[i1]! - heights[i0]!) / ((i1 - i0) * spacing);
+      return turn < 0.4 && rise < 0.06;
+    };
+    for (
+      let d = this.stage.startDistance + 160 + rand() * crests.every;
+      d < path.length - 120;
+      d += crests.every * (0.7 + 0.6 * rand())
+    ) {
+      // Slide along a little for a straight stretch; give up on this one if none is near.
+      let at = NaN;
+      for (let probe = 0; probe <= 120; probe += 6) {
+        const c = d + probe;
+        if (keepOut.some((k) => Math.abs(k - c) < half + 16)) continue;
+        if (town && c > town.from - half - 60 && c < town.to + half + 60) continue;
+        if (straight(c)) {
+          at = c;
+          break;
+        }
+      }
+      if (Number.isNaN(at)) continue;
+      this.crestsAt.push(at);
+      const i0 = Math.max(0, Math.ceil((at - half) / spacing));
+      const i1 = Math.min(heights.length - 1, Math.floor((at + half) / spacing));
+      for (let i = i0; i <= i1; i++) {
+        const t = (i * spacing - (at - half)) / crests.length;
+        heights[i]! += (crests.height / 2) * (1 - Math.cos(2 * Math.PI * t));
+      }
+    }
   }
 }

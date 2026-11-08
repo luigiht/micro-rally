@@ -95,14 +95,20 @@ function cornerStreets(
   const c = leg.corner!;
   const hin = leg.headingIn;
   const hout = leg.headingOut;
+  // The junction is the narrower of its two streets wide: the wider one drops its lanes before
+  // it (see `traceWidths`), so every arm and kerb here meets a ribbon of one width.
+  const hw = Math.min(
+    legs[i - 1]?.halfWidth ?? leg.halfWidth,
+    legs[i + 1]?.halfWidth ?? leg.halfWidth,
+  );
   const junction: Junction = {
     x: c.x,
     z: c.z,
     arms: [
-      { heading: hin + Math.PI, halfWidth: legs[i - 1]?.halfWidth ?? leg.halfWidth, role: 'in' },
-      { heading: hout, halfWidth: legs[i + 1]?.halfWidth ?? leg.halfWidth, role: 'out' },
-      { heading: hin, halfWidth: leg.halfWidth, role: 'blocked' },
-      { heading: hout + Math.PI, halfWidth: leg.halfWidth, role: 'blocked' },
+      { heading: hin + Math.PI, halfWidth: hw, role: 'in' },
+      { heading: hout, halfWidth: hw, role: 'out' },
+      { heading: hin, halfWidth: hw, role: 'blocked' },
+      { heading: hout + Math.PI, halfWidth: hw, role: 'blocked' },
     ],
     radius: leg.radius,
   };
@@ -110,9 +116,9 @@ function cornerStreets(
   // The first corner's blocked straight ends in the town hall, the landmark the driver brakes toward,
   // and carries the direction board. A corner cannot do without its streets: each is fitted among
   // those already planned, cut down to what fits if it must.
-  const on = stubSite(c, hin, leg.halfWidth, first ? 'hall' : undefined, site.stubLength);
+  const on = stubSite(c, hin, hw, first ? 'hall' : undefined, site.stubLength);
   on.arrowTurn = leg.turn > 0 ? 1 : -1;
-  for (const s of [on, stubSite(c, hout + Math.PI, leg.halfWidth, undefined, site.stubLength)]) {
+  for (const s of [on, stubSite(c, hout + Math.PI, hw, undefined, site.stubLength)]) {
     applyPlan(s, planStub(stubs, s, true)!);
     stubs.push(s);
   }
@@ -211,9 +217,10 @@ export function layoutTown(
   const stubs: StubSite[] = [];
   const roundabouts: Roundabout[] = [];
   const legs = trace.legs;
-  // A city's per-sample widths come straight from the trace, so they are known before anything is laid.
-  const cityWidths = city ? traceWidths(path, legs, base) : undefined;
-  const citySource = { halfWidth: base, path, ...(cityWidths ? { widths: cityWidths } : {}) };
+  // A city's per-sample widths come from the trace, so the rings can be laid before the junctions
+  // exist; the final widths, with the lane drops before the junction corners, follow once they do.
+  const roughWidths = city ? traceWidths(path, legs, base) : undefined;
+  const citySource = { halfWidth: base, path, ...(roughWidths ? { widths: roughWidths } : {}) };
   // Every street and junction first, so each house can be checked against all of them. The
   // corners' streets are planned before any crossroads, so a crossroads whose streets would run
   // into them is left out rather than cutting them down; then every side street is laid. A
@@ -236,15 +243,12 @@ export function layoutTown(
     legs.forEach((leg, i) => {
       if (leg.kind === 'straight' && hasCrossroads(legs, i)) crossroadsStreets(site, stubs, leg);
     });
+  const cityWidths = city ? traceWidths(path, legs, base, site.junctions) : undefined;
+  if (cityWidths) citySource.widths = cityWidths;
   // A city's long side streets stop short of the route's other legs and of every ring.
   if (city) {
-    clipStubsToRoads(
-      site,
-      stubs,
-      { halfWidth: base, path, widths: traceWidths(path, legs, base) },
-      roundabouts,
-    );
-    joinStubs(stubs, { halfWidth: base, path, widths: traceWidths(path, legs, base) });
+    clipStubsToRoads(site, stubs, citySource, roundabouts);
+    joinStubs(stubs, citySource);
   }
   for (const s of stubs) layStub(site, s);
   const hit = createRoadHit();

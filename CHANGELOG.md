@@ -7,8 +7,42 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ## 2026-11-07
 
+### Added
+
+- **Arctic.** A new region: a Finnish winter rally stage on snow-dusted
+  asphalt through flat frozen country, the road running between thick snow
+  banks the car rides up if it leaves the tarmac, walled in by tall
+  snow-capped spruces with bare birches between, under a pale sky. Snow
+  tongues spill from the banks onto the road and patches cross it, crests
+  on the straights launch the car, and studded-tyre grip with quicker,
+  deeper steering makes the snow far less slidy than the Alpine's. Villages
+  where the cycle puts them, under snow. The region cycle grows to eighteen
+  stages (stage 4 is the first Arctic); saves move to version 6 and keep
+  money, cars and upgrades, dropping best times only at the stages whose
+  region moved. [161]
+
+### Changed
+
+- **Coconut palms.** The desert's palms are coconut palms now: a leaning,
+  curving, ringed trunk, eight drooping fronds and a cluster of coconuts,
+  in place of the straight date palm.
+- **Stage icons.** The stage list marks Coast stages with a sun over a palm
+  tree and waves instead of the winding-road glyph, circuits with a
+  chequered flag instead of a track outline, Alpine stages with two
+  snow-capped mountains instead of the surface glyph, and the new Arctic
+  with two spruces.
+
 ### Fixed
 
+- **Trams clear the cones.** The cone row across a side street that carries a
+  tram line leaves the tram bed clear, so a tram no longer drives through two
+  cones. [160]
+- **Clean city junctions.** Where a wider street meets a narrower one at a
+  corner, the junction is the narrower width from kerb to kerb and the
+  wider street drops its lanes over 30 m before it, so kerbs no longer
+  wobble or step inside the junction; lane dashes and medians stop at the
+  lane drop, and the zebra and stop line sit on the approach ahead of the
+  junction. [160]
 - **City stages load faster.** Selecting or advancing to a city no longer
   freezes the page for seconds: the city layout and the terrain under it
   look up nearby buildings, walls and terraces through a spatial grid

@@ -78,12 +78,15 @@ export interface SimEnv {
   gripScale: number;
   manualGearbox: boolean;
   steerSensitivity: number;
+  /** Multiplier on the steering lock (how far the wheels turn), 1 by default. */
+  steerLock: number;
 }
 
 export const DEFAULT_ENV: Readonly<SimEnv> = {
   gripScale: 1,
   manualGearbox: false,
   steerSensitivity: 1,
+  steerLock: 1,
 };
 
 export interface SpawnPose {
@@ -257,7 +260,7 @@ export class VehicleSim {
     // Steering assist: trim lock so the front slip angle stays near the tyres' peak instead of
     // ploughing. The window follows the axle's own slip, so counter-steer is never blocked,
     // and always spans a share of the mechanical lock so the driver can still over-drive it.
-    const lock = p.maxSteer / (1 + speed / p.steerFalloffSpeed);
+    const lock = (p.maxSteer * env.steerLock) / (1 + speed / p.steerFalloffSpeed);
     const betaF = Math.atan2(vLat + s.yawRate * p.cgToFront, vxAbs);
     const alphaMax = (mu / p.corneringFront) * STEER_ASSIST_MARGIN;
     const floor = lock * STEER_ASSIST_FLOOR;

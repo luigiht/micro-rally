@@ -46,7 +46,8 @@ export type PropKind =
   | 'hydrant'
   | 'bollard'
   | 'treePit'
-  | 'manhole';
+  | 'manhole'
+  | 'spruce';
 
 export interface Prop {
   kind: PropKind;
@@ -95,7 +96,8 @@ const TOWN_HOUSE_CLEARANCE = 40;
 export const CANOPY_RADIUS: Readonly<Partial<Record<PropKind, number>>> = {
   tree: 1.4,
   broadleaf: 2.2,
-  palm: 1.8,
+  palm: 2.6,
+  spruce: 1.3,
 };
 const CANOPY_CELL = 6;
 
@@ -160,6 +162,7 @@ const COLLIDER_RADIUS: Readonly<Record<PropKind, number>> = {
   bollard: 0.12,
   treePit: 0,
   manhole: 0,
+  spruce: 0.5,
 };
 /** A parked car collides as two circles along its length (local z, nose at +z). */
 export const CAR_COLLIDER = { radius: 0.95, spread: 1.1 } as const;
@@ -208,6 +211,7 @@ export function scatterScenery(field: TerrainField): Prop[] {
   const clearance = trackside ? outermostBarrier(trackside) - stage.halfWidth + 4 : MIN_CLEARANCE;
   const stand = trackside ? grandstandSpot(stage, trackside) : null;
   const kinds: readonly [PropKind, number][] = [
+    ['spruce', density.spruces ?? 0],
     ['tree', density.trees],
     ['broadleaf', density.broadleaf],
     ['bush', density.bushes],

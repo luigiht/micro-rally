@@ -76,6 +76,8 @@ export class LaneMarkings {
       const d0 = i * sp;
       const d1 = d0 + sp;
       if (blank(d0) || blank(d1)) continue;
+      // Nor through a lane drop: the lines resume once the street holds its new width.
+      if (Math.abs(halfWidthAt(stage, d0) - halfWidthAt(stage, d1)) > 1e-6) continue;
       const parked = onParkingStretch(parking, d0) && onParkingStretch(parking, d1);
       const bay = parked ? BAY_WIDTH : 0;
       const hw0 = halfWidthAt(stage, d0) - bay;

@@ -208,6 +208,7 @@ export const en = {
     night: 'Night',
     urban: 'Urban',
     circuit: 'Circuit',
+    arctic: 'Arctic',
   },
   controls: [
     { keys: 'W / S · ↑ / ↓', action: 'Throttle / brake, hold to reverse' },

@@ -71,11 +71,55 @@ carries a town between 30 % and 55 % of the way along.
 | Forest | pale sky, two greens, brown trunks; on mud the trees turn autumn (golden larches, orange and rust canopies) | gravel, tarmac, mud           | clear           |
 | Alpine | pale grey sky, near-white ground, frosted pines                                                             | snow (dusted asphalt), tarmac | overcast, clear |
 | Coast  | pale blue sky, dry scrub and limestone, maritime pines, sand and a teal sea                                 | tarmac                        | clear           |
-| Desert | pale sky, warm haze, pale to golden sand, sandstone, date palms and dry scrub, teal pools                   | sand                          | clear           |
+| Desert | pale sky, warm haze, pale to golden sand, sandstone, coconut palms and dry scrub, teal pools                | sand                          | clear           |
 | Urban  | pale grey-blue sky, concrete pavements, lawn verges and park greens, render and glass                       | tarmac                        | clear, overcast |
+| Arctic | pale sky and near-white snow, dark spruce walls, bare birches, dark trunks                                  | snow (dusted asphalt), tarmac | overcast, clear |
 
 Night is a placeholder cloned from Forest and not yet in the progression
 loop.
+
+## Arctic
+
+A Finnish winter rally stage, Alpine's flat cousin: the same snow-dusted
+asphalt (or cleared tarmac) and the same village rules, but on frozen,
+nearly flat country (relief 9 m, long waves) with long flowing bends.
+
+- **Unmarked road.** No edge lines: the winter road carries only its snow,
+  the marker posts and the banks.
+- **Snow banks.** A rounded ridge of snow 0.9 m high is heaped along both
+  verges, from 0.6 m beyond the carriageway out over 3.2 m
+  (`terrain.banks`): the terrain mesh heaps it and the wheels climb it, so
+  leaving the road means riding up the bank. None through a village, where
+  the pavements run, and none beside a side street.
+- **Forest wall.** Tall spruces (`spruce`: a thin trunk the whole height
+  carrying eight or nine irregular whorls of foliage from just above the snow, each an octagonal
+  truncated cone of its own width and depth set a little off the axis, with
+  gaps between them where the trunk shows, to a tip near 14 m, after the
+  low-poly snowy pine kept as a reference in `context/environment` and the
+  photographs; 0.7–1.5× scale) stand about 230 per 100 m right behind the
+  banks, with a few ordinary pines, bare pale birches, bushes and rocks
+  between. Two silhouettes: every other one (the even variants) carries
+  snow, a white sleeve round each whorl's top, a snowed tip and a drift
+  round the foot; the odd ones are bare and shaped differently.
+- **Crests.** About every 190 m, where the road runs straight and level
+  for 36 m and no gate, start or village is near, a raised cosine hump
+  1.1 m high over 36 m is added to the road profile (`terrain.crests`,
+  `TerrainField.addCrests`): the car jumps it at speed, and its steepest
+  grade with the road's own stays under 17 %.
+- **Drifts.** Snow lies on the road whatever the surface, even cleared
+  tarmac: long drifts across the full width, tens of metres each over
+  about a third of the road, with a sharp core and ragged ends (each side's
+  snow runs out to the centre on its own, shifted a few metres by its own
+  noise, so a drift starts and ends unevenly), and small blobs from each
+  bank onto the carriageway between them, two to six metres long and up to
+  45 % of the half width (`RoadBuilder`, where the region heaps banks).
+  Visual only: grip is the surface's.
+- **Handling.** Studded tyres: the sim's grip is 1.45× the surface's, the
+  steering rate 1.25× and the lock 1.2× (`handling`, read into the
+  `SimEnv` by the driving session), so snow here is far less slidy than the
+  Alpine's dusting and the car turns in harder.
+- **Look.** Pale sky and fog, near-white ground, dark blue-green spruce,
+  dark trunks; houses under snow like the Alpine's.
 
 ## Coast
 
@@ -165,7 +209,7 @@ A Desert stage is a piste of packed sand through a dune sea, with oases.
 - **Oases.** Along the road every 180–340 m, 30–65 m off it on either side,
   where the dunes are level enough: a hollow 11 m across (give or take) sunk
   1.4 m under the lowest point of its rim and blending back over 9 m, a pool
-  of water standing 0.45 m over its floor, a ring of six to ten date palms on
+  of water standing 0.45 m over its floor, a ring of six to ten coconut palms (a leaning, ringed trunk curving 2.3 m off the vertical over 6.75 m, eight drooping fronds and a cluster of coconuts, after the low-poly model kept as a reference in `context/palm-tree`) on
   the rim and a few scrub bushes at the water. The wild scatter keeps out of
   the pools. No villages: a town index that falls on a desert stage stays
   open road.
@@ -191,14 +235,17 @@ width`, so a boulevard turns on a 15 m arc and a lane on an 11 m one. The
   (kinks, avenue curves and roundabouts carry it through): a narrow one-way lane (3.2 m half
   width, at most once a stage, square corners and short blocks), two lanes
   (4.5 m), three (5.5 m) or a four-lane boulevard (7 m, always at the start
-  and the finish). The stage's base width is the boulevard's; every street
-  holds its own width from end to end and the change happens in the middle
-  of the junction between two streets (over the middle 40 % of the corner
-  arc, or along a roundabout's deflections), so a street never changes its
-  lane count and each one reaches the junction at its own width. Streets
-  with two or more 3.3 m lanes carry dashed white lane dividers and, when the
-  count is even, a solid centre line, left off through junctions and
-  roundabouts. Every boulevard carries a kerbed green median down its middle
+  and the finish). The stage's base width is the boulevard's. A junction
+  between two streets of different widths is the narrower one wide from
+  kerb to kerb: the ribbon holds that width from 6 m beyond where the
+  junction's kerbs hand over on either side (room for the zebra and its
+  stop line), and the wider street drops its lanes over the 30 m before
+  that (shorter where the next junction's hold comes first), so no kerb
+  steps or wobbles inside a junction and a boulevard reads as a boulevard
+  until the lane drop. A roundabout's deflections ease the width along
+  their arcs. Streets with two or more 3.3 m lanes carry dashed white lane
+  dividers and, when the count is even, a solid centre line, left off
+  through junctions, lane drops and roundabouts. Every boulevard carries a kerbed green median down its middle
   (1.8 m: a 35 cm sidewalk strip each side of a grass strip, a kerb high, rounded at both ends, the
   wheels feel it; small bushes every 7 m along the grass) from 6 m after its start to 6 m before its end, broken
   round every crossroads and never before the first 70 m of road, where the
@@ -216,7 +263,8 @@ width`, so a boulevard turns on a 15 m arc and a lane on an 11 m one. The
   its deck taking the other road's level); two that face each other down
   one line meet in the middle; only one that would reach a roundabout stops
   short with a building across its end, never below 20 m. A wide street's cones stand beyond its junction's
-  own surface. The garden walls round the junction greens are closed: any
+  own surface, and a row across a side street that carries a tram line leaves the tram bed
+  clear (no cone within 1.6 m of the line), so the tram passes between the cones. The garden walls round the junction greens are closed: any
   wall end that meets neither another wall nor a building is joined to the
   nearest such end within 6 m (`TownWallGaps.ts`), the ring walls run
   exactly up to each road's facade lines, and every walled corner takes up

@@ -38,7 +38,7 @@ describe('Desert stages', () => {
   });
 
   it('sit in the cycle on a packed-sand piste through soft sand', () => {
-    expect(REGION_CYCLE).toHaveLength(15);
+    expect(REGION_CYCLE).toHaveLength(18);
     expect(stageRegion(DESERT_INDEX).region).toBe('desert');
     expect(SURFACES.sand.grip).toBeLessThan(SURFACES.gravel.grip);
     expect(SURFACES.sand.grip).toBeGreaterThan(SURFACES.dune.grip);

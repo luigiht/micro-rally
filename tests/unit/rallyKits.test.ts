@@ -34,6 +34,7 @@ const KINDS: PropKind[] = [
   'bollard',
   'treePit',
   'manhole',
+  'spruce',
 ];
 
 const prop = (kind: PropKind, variant = 0): Prop => ({

@@ -10,6 +10,7 @@ import {
   Object3D,
 } from 'three';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
+import { REGIONS } from '@/game/stage/regions';
 import type { StageDef } from '@/game/stage/StageGenerator';
 import { markerDistances } from '@/game/stage/RoadMarkers';
 import { ROAD_LIFT, TRENCH_OUT, type TerrainField } from '@/game/stage/TerrainField';
@@ -71,6 +72,51 @@ function snowCover(i: number): number {
   return SNOW_COVER * smoothstep(PATCH_FROM, PATCH_TO, patchNoise(i));
 }
 
+/**
+ * Where a region heaps snow banks (`terrain.banks`), snow lies on the road
+ * in two ways. Blobs: short tongues from each edge, two to six metres long,
+ * up to `DRIFT_MAX_SHARE` of the half width where two quick noises run high
+ * together. Patches: long drifts across the whole width, tens of metres,
+ * from a slow noise, with a sharp core and ragged ends: each side's snow
+ * runs out to the centre on its own, shifted a few metres back or forth by
+ * its own noise, so a patch starts and ends unevenly rather than fading
+ * across the road at once. Each side draws from its own stretch of the hash
+ * so the two never mirror.
+ */
+const DRIFT_PERIOD = 2.2;
+const DRIFT_PERIOD_B = 1.4;
+const DRIFT_FROM = 0.68;
+const DRIFT_TO = 0.8;
+const DRIFT_MAX_SHARE = 0.45;
+const PATCH_LONG_PERIOD = 9;
+const PATCH_CORE_FROM = 0.6;
+const PATCH_CORE_TO = 0.66;
+const PATCH_EDGE_FROM = 0.52;
+const PATCH_EDGE_TO = 0.6;
+/** How far (in samples) a side's patch end wanders from the core's. */
+const PATCH_RAG = 4;
+function driftNoise(i: number, period: number, salt: number): number {
+  const c = i / period;
+  const k = Math.floor(c);
+  const f = c - k;
+  const a = hash01(k * 7 + salt);
+  return a + (hash01((k + 1) * 7 + salt) - a) * (f * f * (3 - 2 * f));
+}
+const longPatch = (i: number) => driftNoise(i, PATCH_LONG_PERIOD, 21);
+function driftShare(i: number, side: number): number {
+  const j = i + (side > 0 ? 0 : 100003);
+  const n = 0.6 * driftNoise(j, DRIFT_PERIOD, 3) + 0.4 * driftNoise(j, DRIFT_PERIOD_B, 11);
+  const blob = DRIFT_MAX_SHARE * smoothstep(DRIFT_FROM, DRIFT_TO, n);
+  // This side's reach of the long patch, its end shifted by its own noise; past the centre when full.
+  const shift = (driftNoise(j, 3, 17) - 0.5) * 2 * PATCH_RAG;
+  const edge = 1.05 * smoothstep(PATCH_EDGE_FROM, PATCH_EDGE_TO, longPatch(i + shift));
+  return Math.max(blob, edge);
+}
+/** The long patches' core across the full width, sharp-edged; the sides' ragged ends carry it further. */
+function sparseSnowCover(i: number): number {
+  return SNOW_COVER * smoothstep(PATCH_CORE_FROM, PATCH_CORE_TO, longPatch(i));
+}
+
 /** One cross-section of the ribbon: where it is, which way is left, how wide, how high, and its tarmac shade. */
 interface Station {
   d: number;
@@ -87,9 +133,9 @@ interface Station {
 
 /** One ribbon strip: lateral extent, lift, flat colour, optional snow cover and tarmac shade jitter; `town` overrides inside a town. */
 interface Strip {
-  /** Lateral extents as functions of the local half width. */
-  a: (hw: number) => number;
-  b: (hw: number) => number;
+  /** Lateral extents as functions of the local half width and the station's sample index. */
+  a: (hw: number, k: number) => number;
+  b: (hw: number, k: number) => number;
   lift: number;
   color: Color;
   cover?: (i: number) => number;
@@ -168,7 +214,10 @@ export class RoadBuilder {
     const path = stage.path;
     const sp = path.spacing;
     const theme = this.theme;
-    const snowy = stage.surface === 'snow';
+    // Snow lies on the road where the surface is snow, and wherever a region heaps banks: there even
+    // cleared tarmac carries patches and the banks' tongues.
+    const drifts = REGIONS[stage.region].terrain.banks !== undefined;
+    const snowy = stage.surface === 'snow' || drifts;
     const surfaces = theme.surfaces;
     const tarmac = theme.surface ?? surfaces.tarmac;
     const road = new Color(theme.surface ?? (snowy ? surfaces.tarmac : surfaces[stage.surface]));
@@ -222,7 +271,8 @@ export class RoadBuilder {
       (side > 0 ? openings.left : openings.right).some((o) => d > o.from && d < o.to);
     // Road, two verges and two edge lines; lateral extents follow the local half width. A sand
     // piste has no painted lines: its packed sand reads against the dunes on its own.
-    const lined = stage.surface !== 'sand';
+    // No edge lines on a sand piste, nor where snow banks line the road: the winter road is unmarked.
+    const lined = stage.surface !== 'sand' && !drifts;
     const edgeLines: Strip[] = [
       {
         a: (hw) => hw - 0.35 - LINE_WIDTH,
@@ -247,10 +297,31 @@ export class RoadBuilder {
         b: (hw) => hw,
         lift: ROAD_LIFT,
         color: road,
-        cover: snowy && theme.snowPatches ? snowCover : undefined,
+        cover: snowy && theme.snowPatches ? (drifts ? sparseSnowCover : snowCover) : undefined,
         shaded: true,
         town: paved,
       },
+      // Snow tongues from the banks onto the carriageway, a hair above it, where the region heaps banks.
+      ...(snowy && drifts
+        ? ([
+            {
+              a: (hw, k) => hw - hw * driftShare(k, 1),
+              b: (hw) => hw + 0.3,
+              lift: ROAD_LIFT + 0.006,
+              color: dust,
+              shaded: true,
+              side: 1,
+            },
+            {
+              a: (hw) => -hw - 0.3,
+              b: (hw, k) => -hw + hw * driftShare(k, -1),
+              lift: ROAD_LIFT + 0.006,
+              color: dust,
+              shaded: true,
+              side: -1,
+            },
+          ] satisfies Strip[])
+        : []),
       {
         a: (hw) => hw,
         b: (hw) => hw + VERGE_WIDTH,
@@ -320,10 +391,10 @@ export class RoadBuilder {
         // a is the right-hand edge; wind counter-clockwise seen from above. A kerb face raises one edge instead.
         const ra = strip.rise !== undefined && strip.rise < 0 ? -strip.rise : 0;
         const rb = strip.rise !== undefined && strip.rise > 0 ? strip.rise : 0;
-        vertex(p, strip.a(p.hw), strip, ra);
-        vertex(p, strip.b(p.hw), strip, rb);
-        vertex(q, strip.a(q.hw), strip, ra);
-        vertex(q, strip.b(q.hw), strip, rb);
+        vertex(p, strip.a(p.hw, p.k), strip, ra);
+        vertex(p, strip.b(p.hw, p.k), strip, rb);
+        vertex(q, strip.a(q.hw, q.k), strip, ra);
+        vertex(q, strip.b(q.hw, q.k), strip, rb);
         index.push(base, base + 2, base + 1, base + 2, base + 3, base + 1);
       }
     }

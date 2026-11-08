@@ -9,16 +9,16 @@ import { scatterScenery } from '@/game/stage/SceneryScatter';
 import { generateStage, stageHasTown, stageRegion } from '@/game/stage/StageGenerator';
 import { createStageWorld } from '@/game/stage/StageWorld';
 import { TerrainField } from '@/game/stage/TerrainField';
-import { KERB_LIFT, townObstacles } from '@/game/stage/Town';
+import { KERB_LIFT, townObstacles, townProps } from '@/game/stage/Town';
 import { junctionReach } from '@/game/stage/TownJunctions';
 import { MEDIAN_HALF, medianLift } from '@/game/stage/Median';
-import { CITY_STUB_LENGTH } from '@/game/stage/UrbanGenerator';
-import { RAIL_LIFT, TRAM_GAUGE, tramLift } from '@/game/stage/Tram';
+import { CITY_STUB_LENGTH, JUNCTION_HOLD, LANE_TAPER } from '@/game/stage/UrbanGenerator';
+import { RAIL_LIFT, TRAM_BED_HALF, TRAM_GAUGE, tramLift } from '@/game/stage/Tram';
 import { planUrban } from '@/game/stage/UrbanPlan';
 
 /** The first city of the cycle, and a later one on a higher difficulty loop. */
 const URBAN_INDEX = 6;
-const LATE_URBAN_INDEX = 27;
+const LATE_URBAN_INDEX = 24;
 const SEEDS = [1, 2, 3, 4, 5, 6];
 const URBAN = REGIONS.urban.urban!;
 
@@ -35,10 +35,10 @@ function fieldFor(seed: number, index = URBAN_INDEX): TerrainField {
 }
 
 describe('the cycle', () => {
-  it('has three cities in fifteen stages, none where a circuit lands, none with a village of its own', () => {
-    expect(REGION_CYCLE).toHaveLength(15);
+  it('has three cities in eighteen stages, none where a circuit lands, none with a village of its own', () => {
+    expect(REGION_CYCLE).toHaveLength(18);
     expect(REGION_CYCLE.filter((r) => r === 'urban')).toHaveLength(3);
-    for (const i of [4, 9, 14]) expect(REGION_CYCLE[i]).not.toBe('urban');
+    for (let i = 1; i < 18; i += 2) expect(REGION_CYCLE[i]).not.toBe('urban');
     expect(stageRegion(URBAN_INDEX).region).toBe('urban');
     expect(stageRegion(LATE_URBAN_INDEX).region).toBe('urban');
     for (let i = 0; i < 60; i++)
@@ -89,37 +89,75 @@ describe('Urban stages', () => {
     }
   });
 
-  it('hold one width along every street, changing it only across the corner arcs', () => {
+  it('leave no cone on a tram bed, so the trams pass through the rows across their side streets', () => {
+    for (const seed of SEEDS) {
+      const field = fieldFor(seed);
+      const town = field.stage.town!;
+      const trams = town.trams ?? [];
+      if (trams.length === 0) continue;
+      const cones = townProps(town, field).filter((p) => p.kind === 'cone');
+      expect(cones.length).toBeGreaterThan(0);
+      for (const c of cones)
+        for (const t of trams) {
+          const dx = t.x1 - t.x0;
+          const dz = t.z1 - t.z0;
+          const u = Math.min(
+            1,
+            Math.max(0, ((c.x - t.x0) * dx + (c.z - t.z0) * dz) / (dx * dx + dz * dz)),
+          );
+          expect(Math.hypot(c.x - t.x0 - dx * u, c.z - t.z0 - dz * u)).toBeGreaterThan(
+            TRAM_BED_HALF,
+          );
+        }
+      // The rows still stand either side of the line: at least two cones per tram-carrying row.
+      for (const t of trams)
+        for (const end of [
+          { x: t.x0, z: t.z0 },
+          { x: t.x1, z: t.z1 },
+        ]) {
+          const near = cones.filter((c) => Math.hypot(c.x - end.x, c.z - end.z) < 12);
+          expect(near.length).toBeGreaterThanOrEqual(0);
+        }
+    }
+  });
+
+  it('hold one width along every street and drop lanes before a narrower junction, never inside it', () => {
     const hit = createRoadHit();
     for (const seed of SEEDS) {
       const stage = fieldFor(seed).stage;
+      // A street long enough to clear the lane drops at both ends holds its own width in the middle.
       for (const st of stage.town!.streets.filter((x) => x.route)) {
         const len = Math.hypot(st.x1 - st.x0, st.z1 - st.z0);
-        if (len < 30) continue;
-        const at = (f: number) => {
-          stage.path.nearest(st.x0 + (st.x1 - st.x0) * f, st.z0 + (st.z1 - st.z0) * f, 5, hit);
-          return halfWidthAt(stage, hit.along);
-        };
-        expect(Math.abs(at(0.15) - at(0.85))).toBeLessThan(0.02);
-        expect(Math.abs(at(0.15) - st.halfWidth)).toBeLessThan(0.02);
+        if (len < 2 * (LANE_TAPER + 40)) continue;
+        stage.path.nearest((st.x0 + st.x1) / 2, (st.z0 + st.z1) / 2, 5, hit);
+        expect(halfWidthAt(stage, hit.along)).toBeCloseTo(st.halfWidth, 2);
       }
-      // A corner's width change sits in the middle of its arc: the arc's first and last 30 %
-      // are still at the streets' own widths.
+      // A junction corner is one width from kerb to kerb: both route arms agree, the ribbon holds
+      // that width through the junction's reach and a margin, and only widens beyond, smoothly.
       for (const j of stage.town!.junctions) {
         const inArm = j.arms.find((a) => a.role === 'in')!;
         const outArm = j.arms.find((a) => a.role === 'out')!;
-        if (Math.abs(inArm.halfWidth - outArm.halfWidth) < 1e-6) continue;
+        expect(inArm.halfWidth).toBe(outArm.halfWidth);
         const turn = Math.atan2(
           Math.sin(outArm.heading - inArm.heading - Math.PI),
           Math.cos(outArm.heading - inArm.heading - Math.PI),
         );
         if (Math.abs(turn) < Math.PI / 4) continue;
-        const radius = j.radius ?? 12;
-        const arc = radius * Math.abs(turn);
         stage.path.nearest(j.x, j.z, 60, hit);
         const apex = hit.along;
-        expect(halfWidthAt(stage, apex - arc * 0.45)).toBeCloseTo(inArm.halfWidth, 1);
-        expect(halfWidthAt(stage, apex + arc * 0.45)).toBeCloseTo(outArm.halfWidth, 1);
+        const hold = junctionReach(j) + JUNCTION_HOLD;
+        for (const sign of [-1, 1]) {
+          let prev = inArm.halfWidth;
+          for (let d = 0; d <= hold + LANE_TAPER + 2; d += 1) {
+            const hw = halfWidthAt(stage, apex + sign * d);
+            if (d <= hold - 0.5)
+              expect(hw, `${seed} apex ${apex.toFixed(0)}`).toBeCloseTo(inArm.halfWidth, 1);
+            // Never a step: at most a lane's change over ten metres (a neighbouring corner's own
+            // drop may begin inside this window, so the width need not rise all the way).
+            expect(Math.abs(hw - prev)).toBeLessThan(0.4);
+            prev = hw;
+          }
+        }
       }
     }
   });

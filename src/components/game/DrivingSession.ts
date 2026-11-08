@@ -16,7 +16,8 @@ import { createControlInput, mergeControlInput } from '@/game/vehicle/ControlInp
 import { createVehiclePose, interpolatePose } from '@/game/vehicle/interpolatePose';
 import type { TerrainQuery } from '@/game/vehicle/Terrain';
 import { axleMarkIntensities } from '@/game/vehicle/wheelContacts';
-import { DEFAULT_ENV, VehicleSim, type SpawnPose } from '@/game/vehicle/VehicleSim';
+import { DEFAULT_ENV, type SimEnv, VehicleSim, type SpawnPose } from '@/game/vehicle/VehicleSim';
+import { REGIONS } from '@/game/stage/regions';
 import { useGameStore } from '@/state/gameStore';
 import { useSettingsStore } from '@/state/settingsStore';
 import { INITIAL_STAGE_HUD, useStageHudStore } from '@/state/stageHudStore';
@@ -96,7 +97,7 @@ export class DrivingSession {
         : mergeControlInput(this.keyboard.input, TOUCH_INPUT, this.merged);
     const px = s.x;
     const pz = s.z;
-    this.sim.step(dt, input, this.world.terrain, DEFAULT_ENV);
+    this.sim.step(dt, input, this.world.terrain, this.env);
     let impact = 0;
     if (this.world.obstacles) impact = resolveObstacleCollisions(s, this.world.obstacles);
     if (this.world.trams) {
@@ -113,6 +114,9 @@ export class DrivingSession {
     this.recordStep(run, dt);
   };
 
+  /** The sim's environment for this stage: the region's handling over the defaults. */
+  private readonly env: Readonly<SimEnv>;
+
   constructor(
     spec: CarSpec,
     private readonly world: DriveWorld,
@@ -124,6 +128,15 @@ export class DrivingSession {
     this.bodyScale = spec.bodyScale;
     this.sim.reset(world.spawn, world.terrain);
     this.run = world.stage ? new StageRun(world.stage) : null;
+    const handling = world.stage ? REGIONS[world.stage.region].handling : undefined;
+    this.env = handling
+      ? {
+          ...DEFAULT_ENV,
+          gripScale: handling.grip,
+          steerSensitivity: handling.steer,
+          steerLock: handling.lock,
+        }
+      : DEFAULT_ENV;
     if (this.run && world.startAlong !== undefined) this.run.skipGatesBefore(world.startAlong);
     this.gateFractions = this.run?.gateFractions ?? [];
     useUiStore.getState().stopReplay();

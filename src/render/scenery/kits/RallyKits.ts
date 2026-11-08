@@ -54,32 +54,187 @@ function canopyGeometry(): BufferGeometry {
   return merged;
 }
 
-/** A date palm's trunk: slim, tapering, leaning a little. */
-const PALM_LEAN = 0.1;
-const PALM_HEIGHT = 4.4;
+/**
+ * A tall Finnish spruce, after the low-poly snowy pine in `context/environment`
+ * (used as a reference only) and the photographs: a thin trunk the whole
+ * height, with irregular whorls of foliage on it, each an octagonal truncated
+ * cone of its own width and depth, set a little off the axis and turned, with
+ * gaps between them where the trunk shows, narrowing to a tip near 14 m. Two
+ * silhouettes: the snowy trees (even variants) and the bare ones (odd), so
+ * the forest wall never repeats one cone. In instanced parts so each takes
+ * the right colour: the trunk in the palette's trunk colour, the foliage
+ * white for the pine tint, and, on the snowy trees, a white snow sleeve
+ * round every whorl's top, a snowed tip and a drift round the foot.
+ */
+interface Whorl {
+  y: number;
+  h: number;
+  r: number;
+  dx: number;
+  dz: number;
+  turn: number;
+}
+const SPRUCE_TOP = 13.6;
+const SPRUCE_SNOWY: readonly Whorl[] = [
+  { y: 1.3, h: 1.6, r: 2.5, dx: -0.1, dz: 0.15, turn: 0.45 },
+  { y: 3.1, h: 1.3, r: 1.9, dx: 0.15, dz: -0.1, turn: 0.2 },
+  { y: 4.6, h: 1.1, r: 1.45, dx: -0.2, dz: 0.1, turn: 0.6 },
+  { y: 5.9, h: 1.55, r: 1.95, dx: 0.1, dz: 0.2, turn: 0.1 },
+  { y: 7.7, h: 1.0, r: 1.15, dx: -0.1, dz: -0.2, turn: 0.4 },
+  { y: 8.9, h: 1.3, r: 1.5, dx: 0.2, dz: 0.05, turn: 0.3 },
+  { y: 10.4, h: 0.9, r: 0.9, dx: -0.1, dz: 0.1, turn: 0.5 },
+  { y: 11.5, h: 1.1, r: 0.95, dx: 0.1, dz: -0.05, turn: 0.2 },
+  { y: 12.6, h: 0.9, r: 0.6, dx: 0.0, dz: 0.05, turn: 0.3 },
+];
+const SPRUCE_BARE: readonly Whorl[] = [
+  { y: 1.6, h: 1.4, r: 2.2, dx: 0.15, dz: -0.15, turn: 0.1 },
+  { y: 3.3, h: 1.2, r: 1.6, dx: -0.15, dz: 0.15, turn: 0.3 },
+  { y: 4.8, h: 1.7, r: 2.15, dx: 0.2, dz: -0.1, turn: 0.1 },
+  { y: 6.9, h: 1.0, r: 1.25, dx: -0.1, dz: -0.2, turn: 0.5 },
+  { y: 8.2, h: 1.45, r: 1.6, dx: 0.15, dz: 0.2, turn: 0.2 },
+  { y: 9.9, h: 0.9, r: 1.0, dx: -0.2, dz: 0.0, turn: 0.6 },
+  { y: 11.1, h: 1.2, r: 1.05, dx: 0.1, dz: 0.1, turn: 0.4 },
+  { y: 12.5, h: 1.0, r: 0.6, dx: -0.05, dz: 0.05, turn: 0.2 },
+];
+/** How much narrower a whorl's top is than its base. */
+const WHORL_TAPER = 0.42;
+/** The snow sleeve round each whorl's top: this tall, this much proud of the foliage. */
+const SNOW_SLEEVE = 0.45;
+const SNOW_PROUD = 1.07;
 
-function palmTrunkGeometry(): BufferGeometry {
-  const g = new CylinderGeometry(0.13, 0.22, PALM_HEIGHT, 6).translate(0, PALM_HEIGHT / 2, 0);
-  g.rotateZ(PALM_LEAN);
-  return g;
+function whorlGeometry(w: Whorl, rTop: number, rBottom: number, h: number, y: number) {
+  return new CylinderGeometry(rTop, rBottom, h, 8).rotateY(w.turn).translate(w.dx, y + h / 2, w.dz);
 }
 
-/** Seven drooping fronds and a knot of dates at the top of the leaning trunk. */
+function spruceTrunkGeometry(): BufferGeometry {
+  return new CylinderGeometry(0.09, 0.32, SPRUCE_TOP, 6).translate(0, SPRUCE_TOP / 2, 0);
+}
+function spruceFoliageGeometry(whorls: readonly Whorl[]): BufferGeometry {
+  const parts = whorls.map((w) => whorlGeometry(w, w.r * WHORL_TAPER, w.r, w.h, w.y));
+  parts.push(new ConeGeometry(0.42, 1.4, 8).translate(0, SPRUCE_TOP - 0.1, 0));
+  const merged = mergeGeometries(parts)!;
+  for (const g of parts) g.dispose();
+  return merged;
+}
+function spruceSnowGeometry(whorls: readonly Whorl[]): BufferGeometry {
+  // A sleeve round the top of each whorl (a frustum a hair wider than the foliage there), the tip
+  // under snow, and a mound of drifted snow round the foot.
+  const parts = whorls.map((w) => {
+    const rTop = w.r * WHORL_TAPER;
+    const rAt = w.r + ((rTop - w.r) * (w.h - SNOW_SLEEVE)) / w.h;
+    return whorlGeometry(
+      w,
+      rTop * SNOW_PROUD,
+      rAt * SNOW_PROUD,
+      SNOW_SLEEVE,
+      w.y + w.h - SNOW_SLEEVE,
+    );
+  });
+  parts.push(new ConeGeometry(0.44, 1.44, 8).translate(0, SPRUCE_TOP - 0.06, 0));
+  parts.push(new CylinderGeometry(1.1, 1.45, 0.32, 8).translate(0, 0.16, 0));
+  const merged = mergeGeometries(parts)!;
+  for (const g of parts) g.dispose();
+  return merged;
+}
+/** Which spruce variants wear snow: the even ones, about half. */
+const snowySpruce = (p: Prop) => p.variant % 2 === 0;
+
+/**
+ * A coconut palm, after the low-poly model in `context/palm-tree` (used as a
+ * reference only): a trunk that leans and curves 2.3 m off the vertical over
+ * 6.75 m, ringed, carrying eight drooping fronds (each three flat segments
+ * bending down from the crown) and a cluster of coconuts under them. Three
+ * instanced parts: the trunk in the palette's trunk colour, the fronds
+ * white for the leaf tint, the coconuts their own brown.
+ */
+const PALM_HEIGHT = 6.75;
+const PALM_LEAN = 2.3;
+const PALM_SEGMENTS = 7;
+const FROND_COUNT = 8;
+/** The crown's centre: where the curved trunk ends. */
+function palmTop(): [number, number] {
+  return [-PALM_LEAN, PALM_HEIGHT];
+}
+/** A point on the trunk's curve at height share `t`: a parabola leaning to −x. */
+function palmAxis(t: number): [number, number] {
+  return [-PALM_LEAN * t * t, PALM_HEIGHT * t];
+}
+function palmTrunkGeometry(): BufferGeometry {
+  const parts: BufferGeometry[] = [];
+  for (let i = 0; i < PALM_SEGMENTS; i++) {
+    const t0 = i / PALM_SEGMENTS;
+    const t1 = (i + 1) / PALM_SEGMENTS;
+    const [x0, y0] = palmAxis(t0);
+    const [x1, y1] = palmAxis(t1);
+    const len = Math.hypot(x1 - x0, y1 - y0) + 0.08;
+    const r0 = 0.3 - 0.14 * t0;
+    const r1 = 0.3 - 0.14 * t1;
+    const seg = new CylinderGeometry(r1, r0, len, 7).toNonIndexed();
+    // Lean each segment along its chord (a rotation about z by θ tips the axis to (−sin θ, cos θ)),
+    // and ring it with a slightly wider collar at its foot.
+    const tilt = Math.atan2(-(x1 - x0), y1 - y0);
+    seg.rotateZ(tilt);
+    seg.translate((x0 + x1) / 2, (y0 + y1) / 2, 0);
+    parts.push(seg);
+    const ring = new CylinderGeometry(r0 * 1.12, r0 * 1.12, 0.14, 7).toNonIndexed();
+    ring.rotateZ(tilt);
+    ring.translate(x0, y0 + 0.07, 0);
+    parts.push(ring);
+  }
+  const merged = mergeGeometries(parts)!;
+  for (const g of parts) g.dispose();
+  return merged;
+}
+
+/** Eight fronds from the crown, each three flat segments that droop further the further out. */
 function palmCrownGeometry(): BufferGeometry {
   const parts: BufferGeometry[] = [];
-  const topX = -Math.sin(PALM_LEAN) * PALM_HEIGHT;
-  const topY = Math.cos(PALM_LEAN) * PALM_HEIGHT;
-  for (let i = 0; i < 7; i++) {
-    // Non-indexed like the date knot, so the parts merge.
-    const frond = new BoxGeometry(0.5, 0.08, 2.4).translate(0, 0, 1.2).toNonIndexed();
-    frond.rotateX(0.55 + (i % 2) * 0.25);
-    frond.rotateY((Math.PI * 2 * i) / 7);
-    frond.translate(topX, topY, 0);
-    parts.push(frond);
+  const [topX, topY] = palmTop();
+  for (let i = 0; i < FROND_COUNT; i++) {
+    const yaw = (Math.PI * 2 * i) / FROND_COUNT + (i % 2) * 0.2;
+    // The frond's own droop: a little upward at the base, then down and further down.
+    let x = 0;
+    let y = 0.25;
+    let pitch = -0.25 + (i % 3) * 0.08;
+    const lengths = [1.1, 1.0, 0.9];
+    const widths = [0.55, 0.6, 0.42];
+    for (let k = 0; k < 3; k++) {
+      const seg = new BoxGeometry(widths[k]!, 0.07, lengths[k]!)
+        .translate(0, 0, lengths[k]! / 2)
+        .toNonIndexed();
+      seg.rotateX(pitch);
+      seg.translate(0, y, x);
+      seg.rotateY(yaw);
+      seg.translate(topX, topY, 0);
+      parts.push(seg);
+      x += Math.cos(pitch) * lengths[k]!;
+      y -= Math.sin(pitch) * lengths[k]!;
+      pitch += 0.45;
+    }
   }
-  parts.push(new IcosahedronGeometry(0.35, 0).translate(topX, topY - 0.2, 0));
+  // A knot where the fronds meet, hiding their roots.
+  parts.push(new IcosahedronGeometry(0.42, 0).translate(topX, topY + 0.1, 0));
   const merged = mergeGeometries(parts)!;
-  for (const p of parts) p.dispose();
+  for (const g of parts) g.dispose();
+  return merged;
+}
+
+/** A cluster of coconuts hanging under the crown. */
+function palmCoconutGeometry(): BufferGeometry {
+  const [topX, topY] = palmTop();
+  const parts: BufferGeometry[] = [];
+  for (let i = 0; i < 5; i++) {
+    const a = (Math.PI * 2 * i) / 5;
+    parts.push(
+      new IcosahedronGeometry(0.2, 0).translate(
+        topX + Math.cos(a) * 0.32,
+        topY - 0.35 - (i % 2) * 0.12,
+        Math.sin(a) * 0.32,
+      ),
+    );
+  }
+  const merged = mergeGeometries(parts)!;
+  for (const g of parts) g.dispose();
   return merged;
 }
 
@@ -213,6 +368,37 @@ export function rallyKits(palette: RegionPalette, shadows: boolean, snow: boolea
       castShadow: shadows,
     },
     {
+      sources: ['spruce'],
+      geometry: spruceFoliageGeometry(SPRUCE_SNOWY),
+      material: mat('#ffffff'),
+      tint: pine,
+      castShadow: shadows,
+      accept: snowySpruce,
+    },
+    {
+      sources: ['spruce'],
+      geometry: spruceFoliageGeometry(SPRUCE_BARE),
+      material: mat('#ffffff'),
+      tint: pine,
+      castShadow: shadows,
+      accept: (p) => !snowySpruce(p),
+    },
+    {
+      sources: ['spruce'],
+      geometry: spruceTrunkGeometry(),
+      material: mat(palette.trunk),
+      tint: null,
+      castShadow: shadows,
+    },
+    {
+      sources: ['spruce'],
+      geometry: spruceSnowGeometry(SPRUCE_SNOWY),
+      material: mat('#eef2f5'),
+      tint: null,
+      castShadow: false,
+      accept: snowySpruce,
+    },
+    {
       sources: ['broadleaf'],
       geometry: canopyGeometry(),
       material: mat('#ffffff'),
@@ -232,6 +418,13 @@ export function rallyKits(palette: RegionPalette, shadows: boolean, snow: boolea
       material: mat('#ffffff'),
       tint: leaf,
       castShadow: shadows,
+    },
+    {
+      sources: ['palm'],
+      geometry: palmCoconutGeometry(),
+      material: mat('#6e4a2a'),
+      tint: null,
+      castShadow: false,
     },
     {
       sources: ['tree', 'broadleaf'],

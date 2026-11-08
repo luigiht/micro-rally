@@ -1,7 +1,7 @@
 import { hashSeed, mulberry32 } from '../rng';
 import { DOOR_OFFSET } from './BuildingCatalog';
 import { onMedian } from './Median';
-import type { RoadSample } from './RoadPath';
+import { createRoadHit, type RoadSample } from './RoadPath';
 import { halfWidthAt, type RoadWidthSource } from './RoadWidth';
 import { handoffRadius, onRoundabout } from './Roundabout';
 import type { Prop } from './SceneryScatter';
@@ -102,6 +102,7 @@ export function streetFurniture(
 ): Prop[] {
   const out: Prop[] = [];
   const rand = mulberry32(hashSeed(seed, 'furniture'));
+  const hit = createRoadHit();
   const rings = town.roundabouts ?? [];
   // Doors and streets gridded, so each candidate checks the few round it rather than the city's thousands.
   const doors = new SpatialHash<Pt>(DOOR_CLEAR);
@@ -152,9 +153,16 @@ export function streetFurniture(
   ): boolean => {
     const lx = Math.cos(heading);
     const lz = -Math.sin(heading);
-    const off = (st.halfWidth + ACROSS[kind]) * side;
-    const x = st.x0 + Math.sin(heading) * d + lx * off;
-    const z = st.z0 + Math.cos(heading) * d + lz * off;
+    const ax = st.x0 + Math.sin(heading) * d;
+    const az = st.z0 + Math.cos(heading) * d;
+    // On the route the pavement follows the ribbon's actual edge, which tapers before a junction.
+    const hw =
+      st.route && stage.path.nearest(ax, az, 10, hit)
+        ? halfWidthAt(stage, hit.along)
+        : st.halfWidth;
+    const off = (hw + ACROSS[kind]) * side;
+    const x = ax + lx * off;
+    const z = az + lz * off;
     if (inMouth(st, x, z)) return false;
     if (kind !== 'lamp' && kind !== 'bollard' && nearDoor(x, z)) return false;
     const y = ground.deckAt(x, z) + KERB_LIFT;

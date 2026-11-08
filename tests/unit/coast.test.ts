@@ -12,7 +12,7 @@ import { dayTheme, NIGHTCITY_THEME } from '@/render/theme/WorldTheme';
 
 /** The first Coast stage of the cycle, and one on the hardest difficulty loop. */
 const COAST_INDEX = 4;
-const LATE_COAST_INDEX = 28;
+const LATE_COAST_INDEX = 47;
 const SEEDS = [1, 2, 3, 4, 5, 6];
 const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
 
@@ -66,17 +66,18 @@ describe('region cycle', () => {
       const [a, b, c] = [i, i + 1, i + 2].map((k) => REGION_CYCLE[k % n]);
       expect(a === b && b === c).toBe(false);
     }
-    for (const id of ['forest', 'alpine', 'coast', 'desert', 'urban'])
+    for (const id of ['forest', 'alpine', 'coast', 'desert', 'urban', 'arctic'])
       expect(REGION_CYCLE.filter((r) => r === id)).toHaveLength(3);
     expect(stageRegion(0).region).toBe('forest');
-    expect(stageRegion(3).region).toBe('alpine');
+    expect(stageRegion(2).region).toBe('alpine');
+    expect(stageRegion(3).region).toBe('arctic');
     expect(stageRegion(COAST_INDEX).region).toBe('coast');
     const townRegions = new Set<string>();
     for (let i = 0; i < 48; i++) {
       if (!stageHasTown(i)) continue;
       townRegions.add(stageRegion(i).region);
     }
-    expect([...townRegions].sort()).toEqual(['alpine', 'forest']);
+    expect([...townRegions].sort()).toEqual(['alpine', 'arctic', 'forest']);
   });
 });
 

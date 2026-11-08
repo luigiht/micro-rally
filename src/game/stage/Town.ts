@@ -3,7 +3,7 @@ import type { Median } from './Median';
 import { roundaboutBlocks, type Roundabout } from './Roundabout';
 import type { Prop } from './SceneryScatter';
 import { junctionReach } from './TownJunctions';
-import type { TramLine } from './Tram';
+import { TRAM_BED_HALF, type TramLine } from './Tram';
 
 /**
  * A town section on a stage: a level plateau carrying a street grid the route
@@ -212,6 +212,9 @@ function segmentDistance(x0: number, z0: number, x1: number, z1: number, x: numb
   t = t < 0 ? 0 : t > 1 ? 1 : t;
   return Math.hypot(x - (x0 + dx * t), z - (z0 + dz * t));
 }
+/** A cone keeps this far clear of a tram bed's edge, so the trams pass between the cones. */
+const CONE_CLEAR = 0.3;
+
 /** Cones stand this far apart across a closed street. */
 export const CONE_SPACING = 1.5;
 /** Pavements stand this far above the carriageway, behind a vertical kerb face. */
@@ -309,6 +312,7 @@ export function townProps(
       rotation: b.yaw,
       variant: b.variant,
     });
+  const trams = town.trams ?? [];
   for (const r of town.cones) {
     const n = Math.max(3, Math.round((2 * r.halfLength) / CONE_SPACING) + 1);
     const lx = Math.cos(r.yaw);
@@ -317,6 +321,13 @@ export function townProps(
       const o = -r.halfLength + (2 * r.halfLength * i) / (n - 1);
       const x = r.x + lx * o;
       const z = r.z + lz * o;
+      // No cone on a tram bed: the trams run through the rows across their side streets.
+      if (
+        trams.some(
+          (t) => segmentDistance(t.x0, t.z0, t.x1, t.z1, x, z) < TRAM_BED_HALF + CONE_CLEAR,
+        )
+      )
+        continue;
       out.push({
         kind: 'cone',
         x,

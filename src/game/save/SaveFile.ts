@@ -8,7 +8,7 @@ export interface StageRecord {
   splits: number[];
 }
 
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 export const DRIVER_NAME_MAX = 24;
 
 /** Everything needed to resume a game. Nothing personal beyond the driver name. */
@@ -91,12 +91,28 @@ function isCoastStage(index: number): boolean {
   return !isCircuitStage(index) && CYCLE_V4[index % CYCLE_V4.length] === 'coast';
 }
 
-/** A stage whose region differs between the v4 cycle and the current one (never a circuit, which sits outside both). */
-function regionChanged(index: number): boolean {
-  return (
-    !isCircuitStage(index) &&
-    CYCLE_V4[index % CYCLE_V4.length] !== REGION_CYCLE[index % REGION_CYCLE.length]
-  );
+/** The fifteen-stage cycle of v5 saves, which v6's eighteen-stage cycle with the Arctic replaced. */
+const CYCLE_V5: readonly RegionId[] = [
+  'forest',
+  'forest',
+  'alpine',
+  'alpine',
+  'coast',
+  'forest',
+  'urban',
+  'desert',
+  'alpine',
+  'desert',
+  'urban',
+  'coast',
+  'urban',
+  'coast',
+  'desert',
+];
+
+/** A stage whose region differs between two cycles (never a circuit, which sits outside both). */
+function regionChanged(index: number, from: readonly RegionId[], to: readonly RegionId[]): boolean {
+  return !isCircuitStage(index) && from[index % from.length] !== to[index % to.length];
 }
 
 /**
@@ -121,9 +137,23 @@ function migrateV3(raw: Record<string, unknown>): Record<string, unknown> {
 function migrateV4(raw: Record<string, unknown>): Record<string, unknown> {
   const records = isRecord(raw.records) ? raw.records : {};
   const kept = Object.fromEntries(
-    Object.entries(records).filter(([key]) => !regionChanged(Number(key))),
+    Object.entries(records).filter(([key]) => !regionChanged(Number(key), CYCLE_V4, CYCLE_V5)),
   );
   return { ...raw, version: 5, records: kept };
+}
+
+/**
+ * v5 saves predate the Arctic: the region cycle grew from fifteen stages to
+ * eighteen, so from stage 4 on many indices are another region's road now
+ * (the first Arctic stands where the second Alpine was). Records at every
+ * index whose region changed are dropped; the rest keep their meaning.
+ */
+function migrateV5(raw: Record<string, unknown>): Record<string, unknown> {
+  const records = isRecord(raw.records) ? raw.records : {};
+  const kept = Object.fromEntries(
+    Object.entries(records).filter(([key]) => !regionChanged(Number(key), CYCLE_V5, REGION_CYCLE)),
+  );
+  return { ...raw, version: 6, records: kept };
 }
 
 function parseCurrent(raw: Record<string, unknown>): SaveFile | null {
@@ -169,6 +199,7 @@ export function parseSaveFile(data: unknown): SaveFile | null {
   if (raw.version === 2) raw = migrateV2(raw);
   if (raw.version === 3) raw = migrateV3(raw);
   if (raw.version === 4) raw = migrateV4(raw);
+  if (raw.version === 5) raw = migrateV5(raw);
   if (raw.version === SAVE_VERSION) return parseCurrent(raw);
   return null;
 }

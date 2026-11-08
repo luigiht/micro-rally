@@ -100,14 +100,15 @@ describe('StageGenerator', () => {
     const regions = Array.from({ length: 3 * n }, (_, i) => stageRegion(i).region);
     // The cycle's region everywhere but the circuit stages, which are every tenth (index 9, 19, …).
     regions.forEach((r, i) => expect(r).toBe(isCircuitStage(i) ? 'circuit' : REGION_CYCLE[i % n]));
-    expect(regions.flatMap((r, i) => (r === 'circuit' ? [i] : []))).toEqual([9, 19, 29, 39]);
+    expect(regions.flatMap((r, i) => (r === 'circuit' ? [i] : []))).toEqual([9, 19, 29, 39, 49]);
     for (let i = 2; i < regions.length; i++) {
       expect(regions[i - 2] === regions[i - 1] && regions[i - 1] === regions[i]).toBe(false);
     }
-    for (const id of ['forest', 'alpine', 'coast', 'desert', 'urban'])
+    expect(REGION_CYCLE).toHaveLength(18);
+    for (const id of ['forest', 'alpine', 'coast', 'desert', 'urban', 'arctic'])
       expect(REGION_CYCLE.filter((r) => r === id)).toHaveLength(3);
-    // No city where a circuit lands (every tenth stage falls on cycle indices 4, 9 and 14).
-    for (const i of [4, 9, 14]) expect(REGION_CYCLE[i]).not.toBe('urban');
+    // No city where a circuit lands (every tenth stage falls on the odd cycle indices).
+    for (let i = 1; i < 18; i += 2) expect(REGION_CYCLE[i]).not.toBe('urban');
     // One circuit in every ten stages, never two in a row, never with a town, and never on a
     // stage the fixtures and region tests pin.
     for (let start = 0; start + 10 <= 100; start += 10)
@@ -118,7 +119,7 @@ describe('StageGenerator', () => {
     for (let i = 0; i < 100; i++) if (isCircuitStage(i)) expect(stageHasTown(i)).toBe(false);
     for (const i of [0, 1, 2, 3, 4, 5, 6, 7, 14, 16, 18]) expect(isCircuitStage(i)).toBe(false);
     for (let seed = 1; seed <= 6; seed++) {
-      const alpine = generateStage(seed, 3);
+      const alpine = generateStage(seed, 27);
       expect(['snow', 'tarmac']).toContain(alpine.surface);
       expect(alpine.region).toBe('alpine');
     }
@@ -130,21 +131,25 @@ describe('StageGenerator', () => {
       let n = 0;
       for (let seed = 1; seed <= 6; seed++) {
         const stage = generateStage(seed, index);
-        // Open-road tuning only: a stage with a town is a different kind of road.
-        if (stage.town) continue;
-        const { headings } = stage.path;
+        // Open-road tuning only: the stretch through a town (and its approaches) is a different kind of road.
+        const { headings, spacing } = stage.path;
+        const town = stage.town;
         let sum = 0;
+        let count = 0;
         for (let i = 1; i < headings.length; i++) {
+          if (town && i * spacing > town.from - 120 && i * spacing < town.to + 120) continue;
           let d = headings[i]! - headings[i - 1]!;
           d = Math.atan2(Math.sin(d), Math.cos(d));
           sum += Math.abs(d);
+          count++;
         }
-        total += sum / headings.length;
+        total += sum / count;
         n++;
       }
       return total / n;
     };
-    expect(curvature(3)).toBeGreaterThan(curvature(0) * 1.15);
+    // Alpine 2 carries a village, so only its approaches and run-out count: a smaller margin than open roads showed.
+    expect(curvature(2)).toBeGreaterThan(curvature(0) * 1.08);
   });
 
   it('steps the difficulty loop every six stages, apart from the region cycle', () => {

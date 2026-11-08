@@ -1,7 +1,8 @@
 import type { Surface } from '../vehicle/surfaces';
 import type { BuildingStyle } from './Town';
 
-export type RegionId = 'forest' | 'coast' | 'desert' | 'alpine' | 'night' | 'circuit' | 'urban';
+export type RegionId =
+  'forest' | 'coast' | 'desert' | 'alpine' | 'night' | 'circuit' | 'urban' | 'arctic';
 export type Weather = 'clear' | 'overcast' | 'rain' | 'night';
 
 export interface RegionPalette {
@@ -27,6 +28,8 @@ export interface SceneryDensity {
   rocks: number;
   /** Houses per 100 m of road, well back from it. */
   houses: number;
+  /** Tall spruces (the Arctic's forest wall) per 100 m of road; none when unset. */
+  spruces?: number;
 }
 
 /** A region whose stages have oases (see `Oases`): how often along the road, how wide the pool, how many palms. */
@@ -86,8 +89,20 @@ export interface RegionDef {
   urban?: UrbanDef;
   /** Whether the town stages (every third, see `stageHasTown`) build a village here: the cliff road and the dunes have none. */
   towns: boolean;
-  /** Hills by default; `dunes` makes them a dune sea (see `TerrainField.duneHeight`). */
-  terrain: { amplitude: number; frequency: number; dunes?: boolean };
+  /**
+   * Hills by default; `dunes` makes them a dune sea (see `TerrainField.duneHeight`); `banks` heaps a
+   * ridge of snow this high and wide along both verges; `crests` raises a hump this high over this
+   * length on the straights about every `every` metres, for the car to jump.
+   */
+  terrain: {
+    amplitude: number;
+    frequency: number;
+    dunes?: boolean;
+    banks?: { height: number; width: number };
+    crests?: { every: number; height: number; length: number };
+  };
+  /** How the car handles here, as multipliers on the sim's grip, steering rate and steering lock; 1 each when unset. */
+  handling?: { grip: number; steer: number; lock: number };
   /** Road curviness 0..1. */
   twistiness: number;
   baseLength: number;
@@ -350,6 +365,54 @@ const URBAN: RegionDef = {
   },
 };
 
+/**
+ * Arctic: a Finnish winter rally stage. Flat, frozen country under a pale
+ * sky; the road (snow-dusted asphalt, or cleared tarmac) runs between thick
+ * snow banks heaped along both verges, with a dense wall of tall spruces
+ * right behind them and the odd bare birch, long flowing bends rather than
+ * the Alpine's switchbacks. Villages where the cycle puts them, under snow.
+ */
+const ARCTIC: RegionDef = {
+  id: 'arctic',
+  surfaces: [
+    ['snow', 3],
+    ['tarmac', 1],
+  ],
+  offroad: 'snow',
+  weathers: [
+    ['overcast', 2],
+    ['clear', 1],
+  ],
+  palette: {
+    sky: '#dfe8f1',
+    fog: '#e8eef4',
+    grassLow: '#eaf0f5',
+    grassHigh: '#f8fafc',
+    rock: '#8a8f98',
+    shoulder: '#e2e8ee',
+    foliage: '#2c4a3b',
+    foliageAlt: '#3a5c48',
+    canopy: '#c6ccd2',
+    canopyAlt: '#d8dde2',
+    trunk: '#4a3b2e',
+    boulder: '#8f949b',
+  },
+  terrain: {
+    amplitude: 9,
+    frequency: 1 / 320,
+    banks: { height: 0.9, width: 3.2 },
+    crests: { every: 190, height: 1.1, length: 36 },
+  },
+  // Studded tyres on packed snow: far more grip than the Alpine's dusting gives, and quicker, deeper steering.
+  handling: { grip: 1.45, steer: 1.25, lock: 1.2 },
+  // Long flowing bends and straights for the crests, not the Alpine's switchbacks.
+  twistiness: 0.65,
+  baseLength: 1900,
+  scenery: { trees: 30, broadleaf: 14, bushes: 8, rocks: 2, houses: 0.4, spruces: 230 },
+  parSpeed: 16,
+  towns: true,
+};
+
 export const REGIONS: Readonly<Record<RegionId, RegionDef>> = {
   forest: FOREST,
   alpine: ALPINE,
@@ -359,6 +422,7 @@ export const REGIONS: Readonly<Record<RegionId, RegionDef>> = {
   night: { ...FOREST, id: 'night' },
   circuit: CIRCUIT,
   urban: URBAN,
+  arctic: ARCTIC,
 };
 
 /**
@@ -372,32 +436,36 @@ export function isCircuitStage(index: number): boolean {
 }
 
 /**
- * The progression: a fixed fifteen-stage cycle (Forest ×2, Alpine ×2, Coast,
- * Forest, Urban, Desert, Alpine, Desert, Urban, Coast, Urban, Coast, Desert),
- * laid so that no region shows three stages running, each gets three of
- * every fifteen, the town stages (every third, see `stageHasTown`) build
- * their village on Forest and Alpine (cycle indices 2, 5 and 8; the cliff
- * road, the dunes and the city have none), and no city sits where the
- * circuits land (every tenth stage falls on cycle indices 4, 9 and 14).
- * Stage 1 is Forest, stage 4 Alpine and stage 5 the first Coast, as they
- * always were; stage 7 is the first city and stage 8 the first Desert.
+ * The progression: a fixed eighteen-stage cycle (Forest ×2, Alpine, Arctic,
+ * Coast, Forest, Urban, Desert, Alpine ×2, Urban, Coast, Urban, Arctic,
+ * Desert, Coast, Desert, Arctic), laid so that no region shows three stages
+ * running, each gets three of every eighteen, the town stages (every third,
+ * see `stageHasTown`) build their village on Forest, Alpine and Arctic
+ * (cycle indices 2, 5, 8 and 17; the cliff road, the dunes and the city have
+ * none), and no city sits where the circuits land (every tenth stage falls
+ * on the odd cycle indices). Stage 1 is Forest and stage 5 the first Coast,
+ * as they always were; stage 4 is the first Arctic, stage 7 the first city
+ * and stage 8 the first Desert.
  */
 export const REGION_CYCLE: readonly RegionId[] = [
   'forest',
   'forest',
   'alpine',
-  'alpine',
+  'arctic',
   'coast',
   'forest',
   'urban',
   'desert',
   'alpine',
-  'desert',
+  'alpine',
   'urban',
   'coast',
   'urban',
+  'arctic',
+  'desert',
   'coast',
   'desert',
+  'arctic',
 ];
 /** Stages per difficulty loop: every sixth stage the roads grow 25 % longer and bend tighter. */
 export const STAGES_PER_LOOP = 6;

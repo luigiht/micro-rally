@@ -54,7 +54,7 @@ cover the pure-TS core and anything else that can run without a browser:
   pavement off the doors and buildings, manholes on the carriageway, every
   kind present), `tramService` (the timetable's headway, direction and
   fades, the tram body's size and lights).
-  `fixtures/openRoad.json` pins six open-road stages byte-for-byte so town
+  `fixtures/openRoad.json` pins six open-road stages (Forest, Alpine and Desert indices of the eighteen-stage cycle) byte-for-byte so town
   work can never move a road that has no town (keys are `gameSeed/index`;
   the four index-0 and index-3 entries date from before towns, the two
   later-loop ones (`5/16`, `13/18`) were re-recorded on 2026-11-05 when the

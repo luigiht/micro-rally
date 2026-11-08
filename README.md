@@ -13,9 +13,11 @@ another device.
 - **Procedural stages.** Every stage is generated from your game's seed: a
   winding road through terrain, checkpoint gates in order and a finish line,
   with a par time, prize money for finishing and repair fees for hitting the
-  scenery. Regions cycle Forest, Alpine, Coast (a cliff road over the sea)
-  and Desert (a sand piste through dunes and oases) in ones and twos, and
-  lengthen every six stages.
+  scenery. Regions cycle Forest, Alpine, Arctic (a Finnish winter road
+  between snow banks and tall spruces), Coast (a cliff road over the sea),
+  Urban (a city of boulevards, roundabouts and trams) and Desert (a sand
+  piste through dunes and oases) in ones and twos, and lengthen every six
+  stages.
 - **Towns.** Every third stage threads a hill village: right-angle corners
   laid as arcs, narrow old-town streets, blocked side streets closed by
   cones, terraced houses behind garden walls, kerbed pavements and lamp

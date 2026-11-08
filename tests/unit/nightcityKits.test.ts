@@ -41,6 +41,7 @@ const KINDS: PropKind[] = [
   'bollard',
   'treePit',
   'manhole',
+  'spruce',
 ];
 
 const prop = (kind: PropKind, x = 0, z = 0, variant = 0): Prop => ({
@@ -72,7 +73,8 @@ describe('nightcityKits', () => {
         if (kind === 'tree') roles[treeRole(p) ?? 'none']++;
       }
       // Trees and bushes are thinned by hash; everything else is dressed every time.
-      if (kind === 'tree' || kind === 'broadleaf') expect(hits).toBeGreaterThan(15);
+      if (kind === 'tree' || kind === 'broadleaf' || kind === 'spruce')
+        expect(hits).toBeGreaterThan(15);
       else expect(hits).toBe(60);
     }
     expect(roles.tower).toBeGreaterThan(8);

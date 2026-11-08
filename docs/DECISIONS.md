@@ -3097,3 +3097,91 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      hashes; roughly double that before) to ~0.45–0.5 s, against ~0.14 s
      for a forest stage; the rest arrives as 50–150 ms tasks in the first
      second of the countdown.
+
+160. **2026-11-07 — City junctions take the narrower street's width; the
+     wider street drops its lanes before them.** By request: at a 60°
+     corner between a four-lane boulevard and a two-lane street the width
+     eased over the middle of the corner arc, so the outer kerb wobbled
+     through an S inside the junction and jogged where the pavement met
+     it, the four lanes ran straight into two, and the zebra sat in the
+     flare. Now `traceWidths` takes the junctions: a corner between
+     different widths holds the narrower from `JUNCTION_HOLD` (6 m) beyond
+     `junctionReach` either side of the arc's middle, and the wider street
+     tapers to it over `LANE_TAPER` (30 m) outside that, clamped to the
+     next junction's hold when it comes sooner, only ever narrowing (as
+     the village's `buildWidths` does), so overlapping constraints settle
+     on the narrowest. `cornerStreets` gives every arm of such a junction
+     the narrower width, so its kerbs, cones and traffic lights meet a
+     ribbon of one width (the kerbs follow `halfWidthAt`, so they needed
+     no change). Lane markings skip any segment whose width changes,
+     medians stop where their boulevard begins to narrow, and route
+     furniture stands off the ribbon's actual edge rather than the street's
+     nominal width, so lamps and tree pits follow the taper. Crossings
+     were already laid past the junction's reach, so they now land on the
+     held stretch ahead of the junction. Layout needs the junctions before
+     the final widths, so `layoutTown` lays the roundabouts on a rough
+     width pass and computes the real one once the corners and crossroads
+     are in. Verified at seed 1 stage 12 (2014 m, four to two lanes) and
+     seed 3 stage 12 (491 m, four lanes to one). In the same pass, by
+     request, `townProps` leaves out any cone within `TRAM_BED_HALF` + 0.3 m
+     of a tram line: the rows across the tram streets had two cones on the
+     rails, which the trams drove through.
+
+161. **2026-11-08 — Arctic: a Finnish winter region as Alpine's flat
+     cousin; the cycle grows to eighteen stages and saves to v6.** By
+     request, from six reference photographs of Rally Sweden and Finland
+     (snow-walled roads through tall spruce forest, cars on snow-dusted
+     tarmac, pale skies). Rather than a new land model, the region reuses
+     the hill generator with low relief (amplitude 9, long waves) and the
+     Alpine's surface mix, and adds two small, generic hooks: a
+     `terrain.banks` ridge heaped along both verges in `TerrainField`
+     (applied to the mesh sample and to `deckAt`, so the wheels ride up the
+     bank, with `townFade` and side streets excepted), and a `spruces`
+     scenery density feeding a new `spruce` prop kind placed by the ordinary
+     scatter. The spruce is three instanced parts so each takes the right
+     colour: the trunk in the palette's trunk colour, the foliage tiers
+     white for the pine tint, the snow its own white (one tinted part
+     turned the trunk black and the caps green). On request the shape then
+     followed the low-poly snowy pine GLB kept in `context/environment`
+     (a reference only, not shipped): six stacked octagonal truncated
+     cones with a snow ring on every shoulder, a snowed tip and a drift at
+     the foot, and only the even variants wear the snow, so the wall mixes
+     snowy and bare trees; then the whorls became irregular (own width,
+     depth and offset, gaps showing the trunk, two silhouettes) and start
+     just above the snow. Three more requests the same day: `handling`
+     on the region (grip, steering rate and a new `steerLock` multiplier
+     in `SimEnv`, read by `DrivingSession`), so the Arctic's snow drives
+     like studded tyres rather than the Alpine's dusting; `terrain.crests`,
+     humps on straight, level stretches that `TerrainField.addCrests` adds
+     to the smoothed profile for the car to jump (the hump's own grade is
+     π·h/L, under 10 %, and it only goes where the road is near level, so
+     the sum stays under 17 %); and the banks' snow spilling onto the road
+     as per-side tongue strips in `RoadBuilder`, whose strip extents now
+     take the station index, with patches and tongues on cleared tarmac
+     too wherever a region heaps banks. Twistiness dropped to 0.65 for the
+     straights. Nightcity treats
+     spruces as trees, so its towers and masts stand in their slots. The
+     cycle is eighteen stages with Arctic at indices 3, 13 and 17 (the
+     placement the user chose for a new region: the first at stage 4, where
+     the second Alpine was; Alpine moves to 9), still never three alike,
+     every region three times, villages on 2, 5, 8 and now 17 (an Arctic
+     village under snow), cities on even indices where no circuit lands;
+     `SAVE_VERSION` is 6 with the v5 cycle frozen and the v4 migration
+     pinned to it, as decision 125 did. The open-road fixture's index-3
+     keys moved to 27 (Alpine, loop 4), and the Alpine curvature test
+     measures stage 2 outside its village, since no early Alpine is open
+     road any more. A Nippon river-valley region was built the day before
+     on the same cycle change and scrapped before commit at the user's
+     request.
+
+162. **2026-11-08 — Coconut palms after the reference model.** By request,
+     from the low-poly coconut palm GLB kept in `context/palm-tree` (a
+     reference only, not shipped, like the pine): the trunk is seven
+     tapered cylinder segments along a parabola leaning 2.3 m off the
+     vertical over 6.75 m, each with a collar ring at its foot (a rotation
+     about z by θ tips a cylinder's axis to (−sin θ, cos θ), so the tilt is
+     atan2(−dx, dy); the first draft had the sign wrong and scattered the
+     segments); the crown is eight fronds of three flat segments drooping
+     further the further out, with a knot hiding their roots; the coconuts
+     are a third instanced part in their own brown. The palm's canopy
+     spacing grew to 2.6 m for the wider crown.

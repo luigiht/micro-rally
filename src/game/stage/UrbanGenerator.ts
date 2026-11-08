@@ -2,7 +2,7 @@ import type { UrbanDef } from './regions';
 import type { Median } from './Median';
 import { createRoadHit, type RoadPath } from './RoadPath';
 import { ringChords, ringOuterRadius, ringPoint, ringSweep, type Roundabout } from './Roundabout';
-import type { Planting, Street } from './Town';
+import type { Junction, Planting, Street } from './Town';
 import { junctionKerbs } from './TownKerbs';
 import { junctionReach } from './TownJunctions';
 import { applyPlan, planStub, stubSite, type StubSite } from './TownSideStreets';
@@ -273,38 +273,110 @@ export function cityTrams(site: Site, roundabouts: readonly Roundabout[]): TramL
   return out;
 }
 
-/** A junction corner changes the route's width over this middle share of its arc, centred on the junction. */
+/** A junction corner without a junction to measure (none in practice) changes the route's width over this middle share of its arc. */
 const CORNER_CHANGE = 0.4;
 /** A roundabout's deflection changes width over this share of its arc at the end away from the ring. */
 const DEFLECTION_CHANGE = 0.4;
+/**
+ * Where a wider street meets a narrower one at a junction corner, the
+ * junction takes the narrower width: it holds from `JUNCTION_HOLD` beyond
+ * where the junction's kerbs hand over to the ribbon on either side (room
+ * for the crossing and its stop line), and the wider street drops its lanes
+ * over `LANE_TAPER` before that, so no kerb steps inside the junction.
+ */
+export const LANE_TAPER = 30;
+export const JUNCTION_HOLD = 6;
 
 /**
  * Half width per path sample from the traced legs: every straight holds its
- * own width along its length; a corner eases from one street's width to the
- * next's over the middle of its arc, inside the junction, so both streets
- * reach the junction at their own width; a curve (a roundabout's deflection)
- * eases over its whole length. `base` before the first leg and after the
- * last (both boulevards).
+ * own width along its length; a curve (a roundabout's deflection) eases
+ * over its whole length; a corner between streets of two widths holds the
+ * narrower through its junction and tapers the wider down to it outside
+ * (see `LANE_TAPER`), given the junctions to measure the hold from; without
+ * them it eases over the middle of its arc. `base` before the first leg and
+ * after the last (both boulevards).
  */
 export function traceWidths(
   path: RoadPath,
   legs: readonly TracedLeg[],
   base: number,
+  junctions?: readonly Junction[],
 ): Float64Array {
   const w = new Float64Array(path.count).fill(base);
   const hit = createRoadHit();
   const along = (p: { x: number; z: number }) =>
     path.nearest(p.x, p.z, 30, hit) ? hit.along : NaN;
-  for (let k = 0; k < legs.length; k++) {
-    const leg = legs[k]!;
-    const a0 = along(leg.points[0]!);
-    const a1 = along(leg.points[leg.points.length - 1]!);
-    if (Number.isNaN(a0) || Number.isNaN(a1) || a1 <= a0) continue;
-    // A straight, and the arc round a roundabout's island, hold their own width; a corner or a
-    // deflection eases from the previous leg's to the next's.
-    const own = leg.kind === 'straight' || leg.roundabout !== undefined;
-    const from = own ? leg.halfWidth : (legs[k - 1]?.halfWidth ?? leg.halfWidth);
-    const to = own ? leg.halfWidth : (legs[k + 1]?.halfWidth ?? leg.halfWidth);
+  const ends: [number, number][] = legs.map((leg) => [
+    along(leg.points[0]!),
+    along(leg.points[leg.points.length - 1]!),
+  ]);
+  const own = (leg: TracedLeg) => leg.kind === 'straight' || leg.roundabout !== undefined;
+  // Every street and ring at its own width first, then the corners and deflections over them.
+  legs.forEach((leg, k) => {
+    const [a0, a1] = ends[k]!;
+    if (!own(leg) || Number.isNaN(a0) || Number.isNaN(a1) || a1 <= a0) return;
+    const i0 = Math.max(0, Math.ceil(a0 / path.spacing));
+    const i1 = Math.min(path.count - 1, Math.floor(a1 / path.spacing));
+    for (let i = i0; i <= i1; i++) w[i] = leg.halfWidth;
+  });
+  // The junction corners' holds first, so each one's taper can stop short of a neighbour's hold.
+  interface Hold {
+    k: number;
+    lo: number;
+    hi: number;
+    narrow: number;
+    wide: number;
+    /** Which side the wider street lies: -1 before the junction, 1 after. */
+    wideSide: -1 | 1;
+  }
+  const holds: Hold[] = [];
+  legs.forEach((leg, k) => {
+    const [a0, a1] = ends[k]!;
+    if (leg.kind !== 'corner' || !leg.corner || Number.isNaN(a0) || Number.isNaN(a1) || a1 <= a0)
+      return;
+    const from = legs[k - 1]?.halfWidth ?? leg.halfWidth;
+    const to = legs[k + 1]?.halfWidth ?? leg.halfWidth;
+    if (Math.abs(from - to) < 1e-9) return;
+    const j = junctions?.find((q) => Math.hypot(q.x - leg.corner!.x, q.z - leg.corner!.z) < 0.5);
+    if (!j) return;
+    const mid = (a0 + a1) / 2;
+    const hold = junctionReach(j) + JUNCTION_HOLD;
+    holds.push({
+      k,
+      lo: mid - hold,
+      hi: mid + hold,
+      narrow: Math.min(from, to),
+      wide: Math.max(from, to),
+      wideSide: from > to ? -1 : 1,
+    });
+  });
+  for (const h of holds) {
+    // The taper runs `LANE_TAPER` beyond the hold on the wider side, or as far as the next
+    // junction's hold if that comes first. Only ever narrows, so overlaps settle on the narrowest.
+    let taper = LANE_TAPER;
+    for (const o of holds) {
+      if (o === h) continue;
+      if (h.wideSide > 0 && o.lo > h.hi) taper = Math.min(taper, o.lo - h.hi);
+      if (h.wideSide < 0 && o.hi < h.lo) taper = Math.min(taper, h.lo - o.hi);
+    }
+    taper = Math.max(1, taper);
+    const lo = h.wideSide < 0 ? h.lo - taper : h.lo;
+    const hi = h.wideSide > 0 ? h.hi + taper : h.hi;
+    const i0 = Math.max(0, Math.ceil(lo / path.spacing));
+    const i1 = Math.min(path.count - 1, Math.floor(hi / path.spacing));
+    for (let i = i0; i <= i1; i++) {
+      const d = i * path.spacing;
+      const out = d < h.lo ? h.lo - d : d > h.hi ? d - h.hi : 0;
+      const t = Math.min(1, out / taper);
+      w[i] = Math.min(w[i]!, h.narrow + (h.wide - h.narrow) * t);
+    }
+  }
+  const held = new Set(holds.map((h) => h.k));
+  legs.forEach((leg, k) => {
+    const [a0, a1] = ends[k]!;
+    if (own(leg) || held.has(k) || Number.isNaN(a0) || Number.isNaN(a1) || a1 <= a0) return;
+    const from = legs[k - 1]?.halfWidth ?? leg.halfWidth;
+    const to = legs[k + 1]?.halfWidth ?? leg.halfWidth;
     const i0 = Math.max(0, Math.ceil(a0 / path.spacing));
     const i1 = Math.min(path.count - 1, Math.floor(a1 / path.spacing));
     // A roundabout's deflections change width away from the ring: with the change spread over the
@@ -321,7 +393,7 @@ export function traceWidths(
       const e = t * t * (3 - 2 * t);
       w[i] = from + (to - from) * e;
     }
-  }
+  });
   return w;
 }
 
@@ -390,9 +462,11 @@ export function cityMedians(
           ]
         : [];
     });
+    // Also no median where the boulevard has begun dropping its lanes toward a junction.
     const inSpan = (t: number) =>
       path.nearest(o.x + f.x * t, o.z + f.z * t, 10, hit) &&
-      spans.some(([a, b]) => hit.along > a && hit.along < b);
+      (spans.some(([a, b]) => hit.along > a && hit.along < b) ||
+        halfWidthAt(stage, hit.along) < leg.halfWidth - 1e-3);
     for (let [t0, t1] of pieces) {
       while (t0 < t1 && inSpan(t0)) t0 += 1;
       while (t1 > t0 && inSpan(t1)) t1 -= 1;

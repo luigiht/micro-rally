@@ -94,6 +94,8 @@ are in [../CHANGELOG.md](../CHANGELOG.md).
 
 - [x] Desert region in the cycle: a packed-sand piste (new `sand` surface, soft `dune` off it) graded through a dune sea of ridged noise, oases planned along the road as flattened hollows with a pool, a ring of date palms and scrub
 
+- [x] Arctic region in the cycle: a flat Finnish winter stage on snow-dusted asphalt between heaped snow banks the wheels climb, walled by tall snow-capped spruces; the cycle grew to eighteen stages (save v6)
+
 - [x] Deploy-ready for Vercel: Supabase Postgres save store (migration in `supabase/`), URL resolution from Vercel env, security headers, `docs/DEPLOY.md`
 
 - [x] Hidden Nightcity mode on `N`: the stage re-dressed in place as a neon night city (themes as data, HDR vertex-colour neon, stilt towers and signs where the scenery stood, one parametric cyberpunk car, bloom only while on)

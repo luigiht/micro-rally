@@ -2,11 +2,10 @@
  * One-bit glyphs (8×8 unless noted) drawn as crisp SVG rects in the current text colour.
  * `garage` is a car seen head-on; `handbrake` is a pedal pad with grip
  * ridges; the surface glyphs are a road with a dashed centre line, pebbles,
- * a puddle, a snowflake, grass blades and sand ripples; `coast` (16×16) is a road running
- * away from the viewer, wide at the foot and bending right as it narrows,
- * its centre line dashed, shown for Coast stages instead of the surface
- * glyph; `circuit` is a closed track in plan, inner and outer edges, for
- * circuit stages.
+ * a puddle, a snowflake, grass blades and sand ripples; `coast` (16×16) is a
+ * sun over a leaning palm with waves and the shore below, shown for Coast
+ * stages instead of the surface glyph; `circuit` (16×16) is a chequered flag
+ * on a pole, for circuit stages.
  */
 export type PixelIconName =
   | 'restart'
@@ -29,7 +28,9 @@ export type PixelIconName =
   | 'sand'
   | 'coast'
   | 'circuit'
-  | 'urban';
+  | 'urban'
+  | 'arctic'
+  | 'alpine';
 
 const GLYPHS: Record<PixelIconName, readonly string[]> = {
   restart: [
@@ -219,34 +220,81 @@ const GLYPHS: Record<PixelIconName, readonly string[]> = {
     '#..##..#',
     '......#.',
   ],
-  // 16×16: a road running away from the viewer, wide at the foot, bending right as it narrows, its centre line dashed.
+  // 16×16: a sun with eight rays over a leaning palm, waves and the shore below.
   coast: [
-    '........####....',
-    '........##.#....',
-    '........####....',
-    '.......#####....',
-    '.......##.##....',
-    '......######....',
-    '.....######.....',
-    '....###.###.....',
-    '....#######.....',
-    '...########.....',
-    '...###..###.....',
-    '...#########....',
-    '...#########....',
-    '..####..####....',
-    '..##########....',
-    '..##########....',
+    '...#......#.#...',
+    '.#.#.#..##.#.##.',
+    '..###..#.##.#..#',
+    '#.###.#.#.#.#...',
+    '..###....###....',
+    '.#.#.#....#.....',
+    '...#......#.....',
+    '..........#.....',
+    '.........##.....',
+    '.........#......',
+    '.........#......',
+    '........##......',
+    '........#.......',
+    '........#.......',
+    '.##..##..##..##.',
+    '################',
   ],
+  // 16×16: two mountains, a big one left and a small one right, each with its peak in outline (the snow) over a zigzag snow line.
+  alpine: [
+    '.....#..........',
+    '....#.#.........',
+    '....#.#.........',
+    '...#...#........',
+    '...#...#........',
+    '..#.#.#.#.......',
+    '..#######...#...',
+    '..#######..#.#..',
+    '.#########.#.#..',
+    '.##########.#.#.',
+    '###############.',
+    '###############.',
+    '################',
+    '################',
+    '################',
+    '################',
+  ],
+  // 16×16: two spruces side by side, the right one taller, on a snow line.
+  arctic: [
+    '...........#....',
+    '..........###...',
+    '....#....#####..',
+    '...###....###...',
+    '..#####..#####..',
+    '...###..#######.',
+    '..#####...###...',
+    '.#######.#####..',
+    '..#####.#######.',
+    '.#######..###...',
+    '#########.#####.',
+    '....#...#######.',
+    '....#......#....',
+    '....#......#....',
+    '################',
+    '################',
+  ],
+  // 16×16: a chequered flag on a pole, its free edge waving.
   circuit: [
-    '.######.',
-    '#......#',
-    '#.####.#',
-    '#.#..#.#',
-    '#.#..#.#',
-    '#.####.#',
-    '#......#',
-    '.######.',
+    '##..............',
+    '##..............',
+    '####..##..##....',
+    '####..##..##....',
+    '##..##..##..##..',
+    '##..##..##..##..',
+    '####..##..##..##',
+    '####..##..##..##',
+    '##..##..##..##..',
+    '##..##..##..##..',
+    '####..##..##....',
+    '####..##..##....',
+    '##..............',
+    '##..............',
+    '##..............',
+    '##..............',
   ],
   urban: [
     '................',
