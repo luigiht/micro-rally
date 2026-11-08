@@ -30,6 +30,10 @@ cover the pure-TS core and anything else that can run without a browser:
   determinism, every car composed under power), `controlInput`,
   `fixedStepper`, `collisions`, `wheelContacts`, `skidMarks`.
 - **Stages and towns**: `stage` (generation invariants, regions, curvature),
+  `paceNotes` (grades from radius and turn on built roads, named corners,
+  long, links, the next call through and past a corner and round a lap,
+  every grade across generated stages), `paceNotePixels` (cards inside
+  their frame, right-handers mirrored, digits only on the scale),
   `coast` (the region cycle, hairpins and grade, water and beach, the fall
   and climb either side of the road, the retainers and their colliders, the
   rock mask and shore colours), `desert` (the cycle, the two sand surfaces,
@@ -92,9 +96,9 @@ starve each other's frame loops.
 | `install.spec.ts`   | The install strip: Android shows Install once `beforeinstallprompt` fires and Not now hides it across a reload; iPhone gets the Share → Add to Home Screen text; nothing when standalone or on a desktop pointer |
 | `smoke.spec.ts`     | The splash keeps its still backdrop under Playwright's software WebGL; start a game, drive, the progress bar moves                                                                                               |
 | `camera.spec.ts`    | `C` cycles the four cameras and Settings shows and sets the same view                                                                                                                                            |
-| `hud.spec.ts`       | `H` hides and shows the HUD chrome; Esc opens a dialog over it                                                                                                                                                   |
+| `hud.spec.ts`       | `H` hides and shows the HUD chrome; Esc opens a dialog over it; the pace note shows from the start and Settings turns it off                                                                                     |
 | `nightcity.spec.ts` | `N` toggles the hidden Nightcity re-skin in place; the clock and progress bar stay                                                                                                                               |
-| `mobile.spec.ts`    | Phone-landscape profile: touch pads, pause menu, Garage in the toolbar                                                                                                                                           |
+| `mobile.spec.ts`    | Phone-landscape profile: touch pads, pause menu, Garage in the toolbar; checkpoint and money icons in one row, the pace note below, the turbo pad over steer-left only when fitted                               |
 | `save.spec.ts`      | Game IDs, the save API, continuing a game                                                                                                                                                                        |
 
 Tips: run the suite on its own with nothing else on port 3100 and no heavy

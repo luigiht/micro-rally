@@ -17,6 +17,16 @@ export const es: Messages = {
     gear: 'Marcha',
     reverse: 'R',
   },
+  paceNotes: {
+    label: 'Nota de ruta',
+    left: 'Izquierda',
+    right: 'Derecha',
+    grades: { acute: 'aguda', hairpin: 'horquilla', square: 'escuadra' },
+    long: 'larga',
+    into: 'a',
+    and: 'y',
+    distance: '{m} m',
+  },
   splash: {
     nameLabel: 'Nombre del piloto',
     namePlaceholder: 'Tu nombre',
@@ -162,6 +172,7 @@ export const es: Messages = {
     gas: 'Acelerador',
     brake: 'Freno',
     handbrake: 'Freno de mano',
+    turbo: 'Turbo',
   },
   toolbar: {
     label: 'Menú del juego',
@@ -184,6 +195,9 @@ export const es: Messages = {
       cinematic: 'Cinemática',
     },
     languages: { en: 'English', es: 'Español', it: 'Italiano' },
+    paceNotes: 'Notas de ruta',
+    paceNotesHint:
+      'Anuncia la próxima curva: 1 es la más cerrada y 6 apenas una curva; escuadra, aguda y horquilla son aún más cerradas.',
     close: 'Cerrar',
   },
   game: {

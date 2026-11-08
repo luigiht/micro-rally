@@ -20,6 +20,7 @@ import { DEFAULT_ENV, type SimEnv, VehicleSim, type SpawnPose } from '@/game/veh
 import { REGIONS } from '@/game/stage/regions';
 import { useGameStore } from '@/state/gameStore';
 import { useSettingsStore } from '@/state/settingsStore';
+import { stagePaceNotes } from '@/game/stage/PaceNotes';
 import { INITIAL_STAGE_HUD, useStageHudStore } from '@/state/stageHudStore';
 import { useTelemetryStore } from '@/state/telemetryStore';
 import { useUiStore } from '@/state/uiStore';
@@ -148,6 +149,8 @@ export class DrivingSession {
       ...INITIAL_STAGE_HUD,
       gateCount: world.stage?.gates.length ?? 0,
       gateFractions: this.gateFractions,
+      paceNotes: world.stage ? stagePaceNotes(world.stage) : [],
+      along: this.run?.along ?? 0,
       stage: world.stage
         ? {
             index: world.stage.index,
@@ -308,6 +311,7 @@ export class DrivingSession {
       time: run.totalTime,
       gatesPassed: this.gateFractions.length,
       progress: run.progressAt(this.pose.x, this.pose.z),
+      along: run.along,
       lap: run.lap,
     });
   }
@@ -396,6 +400,7 @@ export class DrivingSession {
       useStageHudStore.setState({
         time: this.replayTime,
         progress: run.progressAt(this.pose.x, this.pose.z, gatesPassed),
+        along: run.along,
         gatesPassed,
         lap: run.lapAt(this.replayTime),
       });
@@ -406,6 +411,7 @@ export class DrivingSession {
         time: run.totalTime,
         gatesPassed: run.gatesPassed,
         progress: run.progressAt(s.x, s.z),
+        along: run.along,
         penalties: run.penalties,
         hits: run.hits,
         lap: run.lap,

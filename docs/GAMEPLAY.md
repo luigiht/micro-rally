@@ -137,9 +137,9 @@ lens, grounds the helicopter and holds shots longer.
 
 ## HUD and controls
 
-The HUD shows the stage clock, checkpoints passed, penalties, money, a
-progress bar down the left edge with checkpoint ticks and a finish flag, and
-speed and gear bottom right. The toolbar carries Settings and Game (on touch
+The HUD shows the stage clock, checkpoints passed, the pace note, penalties,
+money, a progress bar down the left edge with checkpoint ticks and a finish
+flag, and speed and gear bottom right. The toolbar carries Settings and Game (on touch
 devices a single Pause button opens a menu of Game, Garage and Settings).
 `H` hides all of that for a clean view; dialogs, the countdown and the touch
 controls stay. The backtick opens a debug overlay (fps, draw calls, physics
@@ -160,10 +160,14 @@ Nightcity, a hidden cyberpunk re-skin of the stage (see
 | `` ` ``               | Debug overlay                                           |
 | `Esc`                 | Close any panel, leave a replay, or open the Game panel |
 
-Touch devices get steer pads bottom left, brake and gas pads bottom right
-(hold brake to reverse), a pedal-shaped handbrake button and the Pause
-button. Keyboard and touch input merge, so a laptop with a touchscreen can
-use both.
+Touch devices get steer pads bottom left, with a turbo pad (a pixel-art
+turbocharger) over steer-left once the car has a turbo, brake and gas pads
+bottom right (hold brake to reverse), a pedal-shaped handbrake button and the
+Pause button. Keyboard and touch input merge, so a laptop with a touchscreen
+can use both. On touch devices the HUD stack hugs the top-left: the clock,
+then a row of a flag and the checkpoints passed beside a dollar bill and the money
+(the words stay for screen readers), then any penalties, then the pace note,
+left-aligned so it clears the countdown.
 
 ## Garage
 
@@ -205,9 +209,31 @@ physics so they cannot drift from the truth.
 | Mulsanne LM Prototype | $29,000 | "Special": a 1970 Le Mans coupé  |
 | Toro Dakar Buggy      | $32,000 | "Special": a rally-raid buggy    |
 
+### Pace notes
+
+Under the clock a co-driver's card calls the next corner, read off the road's
+geometry as a rally book grades it: a side and a grade from the corner's
+tightest sustained radius (averaged over 10 m) and its total turn.
+
+| Call     | When                                                  |
+| -------- | ----------------------------------------------------- |
+| 6 … 1    | Radius up to 120, 75, 48, 30, 20 and 13 m             |
+| Square   | 70–110° on a radius of 12 m or less (junctions)       |
+| Acute    | 115° or more on 16 m or less                          |
+| Hairpin  | 150° or more on 26 m or less (open ones too)          |
+| Long     | A numbered corner turning 100° or more                |
+| Into/and | The next corner starts within 20 m: into when tighter |
+
+Cards run red (acute, hairpin) through orange and yellow to green (6), but
+the arrow's shape and the number carry the call on their own. The card shows
+the distance to the corner in 10 m steps, holds through it and moves on to
+the next once the car is out; screen readers hear the call when it changes,
+not the distance. On circuits the notes repeat every lap. Settings turns
+them off.
+
 ## Settings
 
-Language (English, Spanish, Italian), camera, and the full controls table
+Language (English, Spanish, Italian), camera, pace notes on or off, and the full controls table
 for keyboard and touch. Sound, graphics quality tiers and steering options
 from the brief are not built yet.
 

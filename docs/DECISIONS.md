@@ -3280,3 +3280,47 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      lip) carries on above, so the only shared planes are back-to-back
      caps that are always hidden; the green tip is dropped under the snow
      cone, and the top whorl starts at 12.7 m. Bare trees are unchanged.
+
+170. **2026-11-08 — Pace notes from the road's geometry.** By request, a
+     HUD call for the next corner after rally co-drivers' books and the
+     DiRT/WRC icon cards the user supplied (redrawn as original pixel art).
+     Following the convention that a grade is read off a corner's tightest
+     sustained radius and its total turn (as Tornante publishes its notes),
+     `PaceNotes` smooths the path's curvature over 10 m, groups same-side
+     stretches tighter than 120 m (merging gaps under 8 m), drops those
+     turning under 14°, and grades the rest: hairpin (≥150°, ≤26 m), acute
+     (≥115°, ≤16 m), square (70–110°, ≤12 m), else 1–6 by radius (13, 20,
+     30, 48, 75, 120 m); numbered corners turning ≥100° are long, and a
+     corner starting within 20 m of the last is linked (into when tighter).
+     Calibrated over 72 stages: about 13 calls/km on rally stages, mostly
+     3s and 4s as on real stages, coast switchbacks as hairpins, village
+     junctions as squares, about 2/km on circuits. First cut: a 16 m
+     hairpin limit graded the switchbacks "2 long", and a 14 m square
+     limit swallowed every 1 into squares. The HUD gets the notes once and
+     the race distance at 10 Hz (`StageRun.along`, unwrapped per lap), so
+     the callout re-renders at most ten times a second. The first cards
+     were smooth vector arrows; by request they became 20 × 20 pixel art
+     (two-pixel frame, notched corners, 45°-only strokes) drawn at whole
+     multiples (60 px, 40 px for a linked corner) and centred under the
+     clock in the HUD's column. The number keeps the grade readable
+     without colour; screen readers get the call, not the countdown.
+
+171. **2026-11-08 — Compact touch HUD and a turbo pad.** By request. On
+     coarse pointers the words "Checkpoint" and "Money" give way to 8 × 8
+     pixel glyphs (a chequered flag, a dollar bill; drawn at 2×, 16 px) with the words kept as
+     `sr-only` text, and the two tags share a row under the clock. Money
+     stays one element (`data-testid="money"`, which the tests read): it
+     lives in the row and is `absolute bottom-left` on desktop beside the
+     Garage button, `static` in the row on touch. The pace note follows the
+     row; on touch it is left-aligned, since centred on a short landscape
+     phone it ran into the countdown. The turbo already existed (Shift,
+     once fitted or on turbo cars) with no touch input: a pad over
+     steer-left now sets `TOUCH_INPUT.turbo`, shown only when the car as
+     upgraded has `turboForce > 0`. Its 16 × 16 glyph (a turbocharger:
+     housing, pinwheel, outlet and flange, speed lines) was hand-drawn
+     after a generated draft read as noise at that size, and draws at 2×
+     (32 px) so its pixels stay square; the 8 × 8 pad glyphs stay at 3×.
+     Follow-up, by request: the coin became a dollar bill, and the
+     penalties tag moved above the pace note (one order for desktop and
+     touch), so on touch the stack reads clock, checkpoints and money,
+     penalties, then the call, left-aligned.

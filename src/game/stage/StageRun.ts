@@ -32,9 +32,16 @@ export class StageRun {
   private readonly sample: RoadSample = { x: 0, z: 0, heading: 0 };
   private readonly hit: RoadHit = createRoadHit();
   private progressValue = 0;
+  private alongValue: number;
 
   constructor(readonly stage: StageDef) {
     this.tracker = new CheckpointTracker(stage.gates);
+    this.alongValue = stage.startDistance;
+  }
+
+  /** Race distance (road metres, unwrapped per lap on a circuit) at the last `progressAt`. */
+  get along(): number {
+    return this.alongValue;
   }
 
   get totalTime(): number {
@@ -62,7 +69,8 @@ export class StageRun {
    */
   progressAt(x: number, z: number, gatesPassed = this.tracker.next): number {
     if (this.stage.path.nearest(x, z, this.stage.halfWidth * 6, this.hit)) {
-      this.progressValue = this.fraction(this.raceDistance(this.hit.along, gatesPassed));
+      this.alongValue = this.raceDistance(this.hit.along, gatesPassed);
+      this.progressValue = this.fraction(this.alongValue);
     }
     return this.progressValue;
   }

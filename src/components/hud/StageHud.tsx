@@ -6,6 +6,7 @@ import { useGameStore, type StageResult } from '@/state/gameStore';
 import { useSettingsStore } from '@/state/settingsStore';
 import { useStageHudStore } from '@/state/stageHudStore';
 import { useUiStore } from '@/state/uiStore';
+import { PaceNoteCallout } from './PaceNoteCallout';
 import { PixelIcon } from './PixelIcon';
 
 function Countdown() {
@@ -180,7 +181,7 @@ export function StageHud() {
     );
   return (
     <>
-      {/* Centred on desktop; on touch devices the stack hugs the top-left and money joins it. */}
+      {/* Centred on desktop; on touch devices the stack hugs the top-left and money joins the checkpoint row. */}
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center p-4 font-pixel text-ink coarse:items-start coarse:pl-14">
         <p
           className="pixel-box px-4 py-2 text-xl leading-none md:text-2xl coarse:flex coarse:h-14 coarse:items-center coarse:px-3 coarse:text-2xl"
@@ -188,20 +189,41 @@ export function StageHud() {
         >
           {formatTime(time)}
         </p>
-        {laps > 0 ? (
-          <>
-            <p className="pixel-tag mt-4 px-2 py-1 text-[10px]" data-testid="lap-counter">
+        {/* Checkpoints (or laps) and, on touch devices, money beside them; on desktop money sits bottom-left. */}
+        <div className="mt-4 flex items-center gap-2">
+          {laps > 0 ? (
+            <p className="pixel-tag px-2 py-1 text-[10px]" data-testid="lap-counter">
               {fill(m.stage.lap, { n: lap, total: laps })}
             </p>
-            {bestLap !== null && (
-              <p className="pixel-tag mt-3 px-2 py-1 text-[10px]">
-                {m.stage.bestLap} {formatTime(bestLap)}
-              </p>
-            )}
-          </>
-        ) : (
-          <p className="pixel-tag mt-4 px-2 py-1 text-[10px]">
-            {fill(m.stage.checkpoint, { n: gatesPassed, total: gateCount })}
+          ) : (
+            <p
+              className="pixel-tag px-2 py-1 text-[10px] coarse:flex coarse:items-center coarse:gap-1.5"
+              data-testid="checkpoint-counter"
+            >
+              <span className="coarse:sr-only">
+                {fill(m.stage.checkpoint, { n: gatesPassed, total: gateCount })}
+              </span>
+              <PixelIcon name="checkpoint" className="hidden size-4 coarse:block" />
+              <span className="hidden coarse:inline" aria-hidden="true">
+                {gatesPassed}/{gateCount}
+              </span>
+            </p>
+          )}
+          <div className="absolute bottom-6 left-6 flex items-center gap-2 coarse:static">
+            <p
+              className="pixel-box px-4 py-3 text-sm coarse:flex coarse:items-center coarse:gap-1.5 coarse:px-2 coarse:py-1 coarse:text-[10px]"
+              data-testid="money"
+            >
+              <span className="coarse:sr-only">{m.stage.money} </span>
+              <PixelIcon name="money" className="hidden size-4 coarse:block" />
+              {formatMoney(money, locale)}
+            </p>
+            <GarageButton />
+          </div>
+        </div>
+        {laps > 0 && bestLap !== null && (
+          <p className="pixel-tag mt-3 px-2 py-1 text-[10px]">
+            {m.stage.bestLap} {formatTime(bestLap)}
           </p>
         )}
         {penalties > 0 && (
@@ -209,6 +231,7 @@ export function StageHud() {
             {fill(m.stage.penalties, { s: penalties })}
           </p>
         )}
+        <PaceNoteCallout />
         {nightcity && (
           <p
             role="status"
@@ -219,15 +242,6 @@ export function StageHud() {
           </p>
         )}
         {replay && <ReplayBar />}
-        <div className="absolute bottom-6 left-6 flex items-center gap-2 coarse:static coarse:mt-3">
-          <p
-            className="pixel-box px-4 py-3 text-sm coarse:px-2 coarse:py-1 coarse:text-[10px]"
-            data-testid="money"
-          >
-            {m.stage.money} {formatMoney(money, locale)}
-          </p>
-          <GarageButton />
-        </div>
       </div>
       <Countdown />
       {result && !replay && <ResultPanel result={result} />}

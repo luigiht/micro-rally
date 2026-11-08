@@ -5,6 +5,27 @@ tags yet: `main` is deployed continuously, so entries are grouped by the day
 they landed. The numbered entries in [docs/DECISIONS.md](docs/DECISIONS.md)
 hold the reasoning behind each change; the numbers in brackets point there.
 
+## 2026-11-08
+
+### Added
+
+- **Pace notes.** A co-driver's call for the next corner, centred under the
+  stage clock: a pixel-art card graded like a real rally book, 1 (tightest)
+  to 6 (barely a bend) with square, acute and hairpin for sharper ones,
+  coloured red to green, with the distance to the corner and "long" where
+  it holds its turn. Corners with no road between are called together
+  ("4 into 2"). The call shows from the start line, holds through the
+  corner and moves to the next once the car is out of it; on circuits it
+  repeats every lap. Settings can turn it off. [170]
+- **Turbo on touch.** Phones and tablets get a turbo pad, a pixel-art
+  turbocharger over steer-left, once the car has a turbo. [171]
+
+### Changed
+
+- **Compact HUD on touch.** The checkpoint and money labels become a flag
+  and a dollar bill beside their values, side by side in one row, with the pace
+  note below them. [171]
+
 ## 2026-11-07
 
 ### Added

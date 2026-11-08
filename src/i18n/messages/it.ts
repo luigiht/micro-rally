@@ -17,6 +17,16 @@ export const it: Messages = {
     gear: 'Marcia',
     reverse: 'R',
   },
+  paceNotes: {
+    label: 'Nota',
+    left: 'Sinistra',
+    right: 'Destra',
+    grades: { acute: 'acuta', hairpin: 'tornante', square: 'a squadra' },
+    long: 'lunga',
+    into: 'in',
+    and: 'e',
+    distance: '{m} m',
+  },
   splash: {
     nameLabel: 'Nome del pilota',
     namePlaceholder: 'Il tuo nome',
@@ -159,6 +169,7 @@ export const it: Messages = {
     gas: 'Acceleratore',
     brake: 'Freno',
     handbrake: 'Freno a mano',
+    turbo: 'Turbo',
   },
   toolbar: {
     label: 'Menu di gioco',
@@ -181,6 +192,9 @@ export const it: Messages = {
       cinematic: 'Cinematica',
     },
     languages: { en: 'English', es: 'Español', it: 'Italiano' },
+    paceNotes: 'Note del navigatore',
+    paceNotesHint:
+      'Annuncia la prossima curva: 1 è la più stretta, 6 appena una piega; a squadra, acuta e tornante sono ancora più strette.',
     close: 'Chiudi',
   },
   game: {

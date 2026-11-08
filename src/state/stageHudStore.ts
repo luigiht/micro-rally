@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { RegionId } from '@/game/stage/regions';
+import type { PaceNote } from '@/game/stage/PaceNotes';
 import type { RunPhase } from '@/game/stage/StageRun';
 import type { Surface } from '@/game/vehicle/surfaces';
 import type { StageResult } from './gameStore';
@@ -27,6 +28,9 @@ export interface StageHudState {
   /** 0..1 along the stage, and where each gate sits on that scale. */
   progress: number;
   gateFractions: number[];
+  /** The stage's pace notes, set once, and the car's race distance along the road (metres). */
+  paceNotes: PaceNote[];
+  along: number;
   penalties: number;
   hits: number;
   /** The lap being driven on a circuit (1-based), the completed laps' times and the fastest. */
@@ -45,6 +49,8 @@ export const INITIAL_STAGE_HUD: StageHudState = {
   gateCount: 0,
   progress: 0,
   gateFractions: [],
+  paceNotes: [],
+  along: 0,
   penalties: 0,
   hits: 0,
   lap: 1,

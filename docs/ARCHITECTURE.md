@@ -30,6 +30,11 @@ flowchart TD
   interpolates transforms for rendering.
 - **`src/components/hud`** — menus, HUD, garage, settings. Subscribes to
   throttled store slices; never re-renders per frame.
+- **Pace notes** — `game/stage/PaceNotes.ts` grades the stage's corners
+  (pure, once per stage); `DrivingSession` puts them in the HUD store with
+  the car's race distance (`StageRun.along`) at 10 Hz, and
+  `hud/PaceNoteCallout` picks the next one (`nextPaceNote`) and draws it
+  with `PaceNoteIcon` from the pixel grids in `hud/paceNotePixels.ts`.
 - **`src/state`** — Zustand stores (game/meta state, settings).
 - **`src/i18n`** — typed dictionaries; `en` is the source of truth for keys.
 
