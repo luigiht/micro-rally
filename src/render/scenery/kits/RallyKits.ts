@@ -17,6 +17,7 @@ import { buildingRoofGeometry, buildingWallsGeometry } from '../BuildingGeometry
 import { houseRoofGeometry, houseWallsGeometry } from '../HouseGeometry';
 import { buildingPlantersGeometry } from '../PlanterGeometry';
 import type { KindKit } from '../SceneryChunkManager';
+import { spectatorKits } from './SpectatorKits';
 import {
   benchGeometry,
   binGeometry,
@@ -84,7 +85,8 @@ const SPRUCE_SNOWY: readonly Whorl[] = [
   { y: 8.9, h: 1.3, r: 1.5, dx: 0.2, dz: 0.05, turn: 0.3 },
   { y: 10.4, h: 0.9, r: 0.9, dx: -0.1, dz: 0.1, turn: 0.5 },
   { y: 11.5, h: 1.1, r: 0.95, dx: 0.1, dz: -0.05, turn: 0.2 },
-  { y: 12.6, h: 0.9, r: 0.6, dx: 0.0, dz: 0.05, turn: 0.3 },
+  // Clear of the whorl below: touching, its snow's top and this whorl's foot would share a plane.
+  { y: 12.7, h: 0.85, r: 0.6, dx: 0.0, dz: 0.05, turn: 0.3 },
 ];
 const SPRUCE_BARE: readonly Whorl[] = [
   { y: 1.6, h: 1.4, r: 2.2, dx: 0.15, dz: -0.15, turn: 0.1 },
@@ -109,19 +111,34 @@ function whorlGeometry(w: Whorl, rTop: number, rBottom: number, h: number, y: nu
 function spruceTrunkGeometry(): BufferGeometry {
   return new CylinderGeometry(0.09, 0.32, SPRUCE_TOP, 6).translate(0, SPRUCE_TOP / 2, 0);
 }
-function spruceFoliageGeometry(whorls: readonly Whorl[]): BufferGeometry {
-  const parts = whorls.map((w) => whorlGeometry(w, w.r * WHORL_TAPER, w.r, w.h, w.y));
-  parts.push(new ConeGeometry(0.42, 1.4, 8).translate(0, SPRUCE_TOP - 0.1, 0));
+/** A whorl's radius where its snow sleeve starts. */
+function sleeveRadius(w: Whorl): number {
+  const rTop = w.r * WHORL_TAPER;
+  return w.r + ((rTop - w.r) * (w.h - SNOW_SLEEVE)) / w.h;
+}
+/**
+ * The green of the whorls and the tip. On a snowy tree each whorl stops
+ * where its snow sleeve starts and the sleeve carries on above it, and the
+ * snowed tip stands alone: stacked, never one surface laid over another, so
+ * no two faces share a plane and fight for depth.
+ */
+function spruceFoliageGeometry(whorls: readonly Whorl[], snowy: boolean): BufferGeometry {
+  const parts = whorls.map((w) =>
+    snowy
+      ? whorlGeometry(w, sleeveRadius(w), w.r, w.h - SNOW_SLEEVE, w.y)
+      : whorlGeometry(w, w.r * WHORL_TAPER, w.r, w.h, w.y),
+  );
+  if (!snowy) parts.push(new ConeGeometry(0.42, 1.4, 8).translate(0, SPRUCE_TOP - 0.1, 0));
   const merged = mergeGeometries(parts)!;
   for (const g of parts) g.dispose();
   return merged;
 }
 function spruceSnowGeometry(whorls: readonly Whorl[]): BufferGeometry {
-  // A sleeve round the top of each whorl (a frustum a hair wider than the foliage there), the tip
-  // under snow, and a mound of drifted snow round the foot.
+  // A sleeve on top of each whorl's green, flaring a hair proud of it so it reads as a lip of
+  // snow; the tip under snow, and a mound of drifted snow round the foot.
   const parts = whorls.map((w) => {
     const rTop = w.r * WHORL_TAPER;
-    const rAt = w.r + ((rTop - w.r) * (w.h - SNOW_SLEEVE)) / w.h;
+    const rAt = sleeveRadius(w);
     return whorlGeometry(
       w,
       rTop * SNOW_PROUD,
@@ -369,7 +386,7 @@ export function rallyKits(palette: RegionPalette, shadows: boolean, snow: boolea
     },
     {
       sources: ['spruce'],
-      geometry: spruceFoliageGeometry(SPRUCE_SNOWY),
+      geometry: spruceFoliageGeometry(SPRUCE_SNOWY, true),
       material: mat('#ffffff'),
       tint: pine,
       castShadow: shadows,
@@ -377,7 +394,7 @@ export function rallyKits(palette: RegionPalette, shadows: boolean, snow: boolea
     },
     {
       sources: ['spruce'],
-      geometry: spruceFoliageGeometry(SPRUCE_BARE),
+      geometry: spruceFoliageGeometry(SPRUCE_BARE, false),
       material: mat('#ffffff'),
       tint: pine,
       castShadow: shadows,
@@ -532,5 +549,11 @@ export function rallyKits(palette: RegionPalette, shadows: boolean, snow: boolea
       vertexColors: true,
     })),
     ...cityFurnitureKits(shadows),
+    ...spectatorKits(() => mat('#ffffff', true), JACKETS, shadows),
   ];
 }
+
+/** Spectators' jackets, by variant: red, blue, yellow, green, orange, black. */
+const JACKETS = ['#d8343a', '#2f6fb0', '#e9b53a', '#3f8a4a', '#e0702a', '#2a2d33'].map(
+  (c) => new Color(c),
+);

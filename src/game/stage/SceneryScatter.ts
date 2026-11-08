@@ -7,6 +7,7 @@ import { streetFurniture } from './StreetFurniture';
 import { REGIONS } from './regions';
 import { createRoadHit, type RoadSample } from './RoadPath';
 import { ISLAND_PAD_BLEND } from './Roundabout';
+import { nearSpectator, scatterSpectators } from './Spectators';
 import { ROAD_LIFT, type TerrainField } from './TerrainField';
 import {
   buildingBaseHeight,
@@ -47,7 +48,8 @@ export type PropKind =
   | 'bollard'
   | 'treePit'
   | 'manhole'
-  | 'spruce';
+  | 'spruce'
+  | 'spectator';
 
 export interface Prop {
   kind: PropKind;
@@ -163,6 +165,7 @@ const COLLIDER_RADIUS: Readonly<Record<PropKind, number>> = {
   treePit: 0,
   manhole: 0,
   spruce: 0.5,
+  spectator: 0,
 };
 /** A parked car collides as two circles along its length (local z, nose at +z). */
 export const CAR_COLLIDER = { radius: 0.95, spread: 1.1 } as const;
@@ -266,6 +269,7 @@ export function scatterScenery(field: TerrainField): Prop[] {
     }
   }
   const houses = scatterHouses(field);
+  const spectators = density.spectators ? scatterSpectators(field, density.spectators) : [];
   // Oases sink their hollows into the dunes alongside the house pads; their palms come once the pads are set.
   const oases = planOases(field);
   field.oases = oases;
@@ -305,12 +309,15 @@ export function scatterScenery(field: TerrainField): Prop[] {
     ...oasisPads(oases),
   ]);
   // Nothing grows through a house or in a pool: drop trees, bushes and rocks inside their footprints.
+  const crowded = nearSpectator(spectators);
   const kept = props.filter(
     (p) =>
       houses.every((h) => Math.hypot(h.x - p.x, h.z - p.z) >= HOUSE_CLEAR_RADIUS * h.scale) &&
-      !inOasis(oases, p.x, p.z),
+      !inOasis(oases, p.x, p.z) &&
+      // Nothing grows where a group of spectators stands, so the group reads from the road.
+      !crowded(p.x, p.z),
   );
-  kept.push(...houses, ...oasisProps(oases, field));
+  kept.push(...houses, ...oasisProps(oases, field), ...spectators);
   if (stage.town)
     kept.push(
       ...townProps(stage.town, field, density.broadleaf > density.trees ? 'broadleaf' : 'tree'),

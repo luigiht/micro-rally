@@ -34,6 +34,25 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Fixed
 
+- **Snow on the road no longer flickers.** The banks' snow tongues are
+  now painted into the road surface itself instead of floating a few
+  millimetres above it, so the tarmac no longer shows through in grey
+  flickering patches or jagged seams; and the sun's shadow follows the car
+  in whole shadow-map steps, so shadow edges hold still while driving.
+  [168]
+- **Snowy spruce tops are clean.** The snow on each whorl of a snowy
+  spruce now sits on top of its green rather than over it, and the
+  highest whorls no longer touch, so their tops no longer show striped,
+  flickering patches from above. [169]
+- **Spectators.** Faceted low-poly spectators in coloured jackets line the
+  Arctic stages behind the snow banks: a big crowd down the run-in to the
+  finish, lighter ones round the start, at every checkpoint and along the
+  run-up to each jump, and groups of five or six between, each member in a
+  different pose and jacket. Six poses (fist pump, clapping, arms
+  up, hands on the head, arms crossed, waving) with beanies, caps, hoods
+  and earmuffs and bright boots. [166, 167]
+- **Snow poles.** Arctic roads are marked by tall thin orange snow poles
+  with a white band near the top, in place of the short white posts.
 - **Lane lines end at the stop line.** A city's lane dashes and centre line
   now stop before each junction's crossing instead of running under the
   zebra and into the mouth. [164]

@@ -77,6 +77,10 @@ flowchart LR
   wheels' deck), `SceneryDensity.spruces` feeds the `spruce` prop kind
   through the ordinary scatter, and `RallyKits` dresses it in three parts
   (trunk, tinted foliage, snow caps); Nightcity treats spruces as trees.
+  Spectators are placed by `game/stage/Spectators.ts` (crowds at the start,
+  gates, crests and finish, groups between) and drawn by
+  `render/scenery/kits/SpectatorKits.ts` as two kits per pose from
+  `SpectatorGeometry.ts`: a fixed-colour body and a white jacket for the tint.
 - Circuits (`game/stage/CircuitGenerator.ts`, `CircuitStage.ts`,
   `CircuitTrackside.ts`): every tenth stage is a closed race
   circuit. The generator draws a lap as a closed `RoadPath` (`closed`: the

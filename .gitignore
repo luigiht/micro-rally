@@ -30,3 +30,6 @@ exports/
 
 # Remotion walkthrough project, kept local
 my-video/
+
+# Promo video renders: too large for GitHub (>100 MB), kept locally
+assets/*.mp4

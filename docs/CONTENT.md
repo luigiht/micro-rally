@@ -85,7 +85,9 @@ asphalt (or cleared tarmac) and the same village rules, but on frozen,
 nearly flat country (relief 9 m, long waves) with long flowing bends.
 
 - **Unmarked road.** No edge lines: the winter road carries only its snow,
-  the marker posts and the banks.
+  the banks and, every 20 m, snow poles in place of the marker posts: a
+  2.4 m thin orange rod with a white band near the top, standing clear of
+  the drifts.
 - **Snow banks.** A rounded ridge of snow 0.9 m high is heaped along both
   verges, from 0.6 m beyond the carriageway out over 3.2 m
   (`terrain.banks`): the terrain mesh heaps it and the wheels climb it, so
@@ -118,6 +120,22 @@ nearly flat country (relief 9 m, long waves) with long flowing bends.
   steering rate 1.25× and the lock 1.2× (`handling`, read into the
   `SimEnv` by the driving session), so snow here is far less slidy than the
   Alpine's dusting and the car turns in harder.
+- **Spectators.** Faceted low-poly people after the reference crowd in
+  `context/low-poly-people` (tapered limbs between posed joints, a faceted
+  head; `spectator`), in six poses (fist pump, clapping, both arms up,
+  hands on the head, arms crossed, waving), each with its own headwear,
+  skin, trousers and boots, in one of six jacket colours. The finish draws
+  the thickest crowd (45 m before to 25 m after, two rows, a stride
+  apart); the start (25 m before to 35 m after), every checkpoint (22 m
+  before to 18 m after) and each crest's run-up and landing are lined half
+  as thickly (two strides apart). Crowds leave a 4 m gap at each board or
+  arch and deal from a shuffled deck of the 36 pose-and-jacket pairings,
+  so no pairing repeats within six people. Between them stand about two
+  groups per 100 m (`scenery.spectators`) of five or six people, no two in
+  a group sharing a pose or a jacket. All stand just behind the snow banks
+  facing the road, never in a village's buildings nor where another
+  stretch of road passes; the wild scatter keeps 2.2 m clear of them.
+  Decoration only, no colliders.
 - **Look.** Pale sky and fog, near-white ground, dark blue-green spruce,
   dark trunks; houses under snow like the Alpine's.
 

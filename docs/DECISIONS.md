@@ -3210,3 +3210,73 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      and stop line laid beyond them (`CROSSING_EXTENT`) and 1.5 m, so a
      line always stops at the stop line; junctions without openings keep
      the reach-based fallback with the same extent added.
+
+165. **2026-11-08 — Arctic spectators.** By request: a `spectator` prop
+     kind (a vertex-coloured low-poly figure, the jacket white for a
+     six-colour tint) placed by `scatterSpectators` in groups of two to
+     five a stride apart, about four groups per 100 m over both sides,
+     just behind the banks and facing the road, clear of gates, the start
+     and villages, seeded from the stage; wild props within 2.2 m are
+     dropped so the groups read. No colliders: a crowd of 1.75 m figures
+     as obstacles would punish leaving the road more than the banks
+     already do. The density is a `SceneryDensity` field, so other
+     regions can take spectators later.
+
+166. **2026-11-08 — Detailed, posed spectators and crowds at the key
+     spots.** By request, after the faceted crowd in
+     `context/low-poly-people` (screenshots and a `.blend`, a reference
+     only: there is no Blender here to export it and `context/` is not
+     shipped). Each figure is built from tapered, open-ended five- and
+     six-sided prisms between posed joints with icosahedron joints and a
+     faceted head, about 600 triangles, in six poses that each carry their
+     own headwear, skin, trousers and boots. The figure is now two
+     instanced parts per pose, a fixed-colour body and a white jacket,
+     because an instance colour multiplies every vertex colour: the first
+     single-mesh version tinted faces and hats with the jacket. The
+     variant packs jacket and pose (`variant % 6`, then the pose).
+     Placement moved to `game/stage/Spectators.ts` (SceneryScatter was
+     past 400 lines) and gained crowds lining both sides round the start,
+     every checkpoint, each crest's run-up and landing and the finish,
+     with a 4 m gap at boards and arches and a check against other
+     stretches of road; the groups between rose from 1.4 to 2.2 per
+     100 m. That is about 1,000–1,400 figures a stage; the jump crowds
+     were thinned (one row, a quarter with someone behind) after a first
+     cut gave 1,600, and the wild-prop clearance uses a spatial hash
+     rather than testing every prop against every spectator. Scenery
+     streaming keeps only nearby chunks, so low tiers draw fewer.
+
+167. **2026-11-08 — Lighter crowds, fuller groups, no repeated outfits.**
+     By request: the start, checkpoint and jump crowds are halved by
+     setting their front row two strides apart (`Crowd.spacing`), leaving
+     the finish as it was; a stage now carries about 700–900 figures. The
+     groups between are five or six people (were two to five), and each
+     group shuffles the six poses and the six jackets and pairs them off,
+     so no two members share a pose (which also fixes their headwear,
+     boots and trousers) or a jacket. Crowds deal from a shuffled deck of
+     all 36 pairings that skips any of the last six dealt when a fresh
+     deck starts, so neighbours never match across the reshuffle either.
+
+168. **2026-11-08 — Snow tongues in the road plane; texel-stepped sun.**
+     By request (flickering grey shadows and jagged edges where the
+     Arctic's snow met the tarmac). The banks' tongues were a second
+     ribbon 6 mm over the carriageway and 0.3 m over the verge; at
+     distance and from the overhead cameras the two depths fought, so
+     tarmac showed through the snow in flickering grey patches and saw-
+     toothed seams. `RoadBuilder` now cuts the carriageway across into a
+     snowy band at each edge and the bare middle, all at `ROAD_LIFT` with
+     shared edges (the middle closes to nothing where the tongues cross;
+     zero-width bands are skipped; junction mouths stay bare). Separately,
+     `followSun` moved the shadow camera with the car by fractions of a
+     texel, resampling every shadow edge each frame; `ShadowSnap` now
+     steps the sun's target in whole texels (60 m / 2048) across the plane
+     facing the light, on the shadow camera's own axes.
+
+169. **2026-11-08 — Spruce snow stacked, not laid over.** By request, the
+     same depth fight as #168 on the snowy spruces: each snow sleeve's top
+     cap shared the whorl's top plane, the top whorl's foot sat on the one
+     below (12.6 m), and the snowed tip wrapped the green tip within a
+     couple of centimetres. On snowy trees each green whorl now stops
+     where its sleeve starts and the sleeve (still a hair proud, for the
+     lip) carries on above, so the only shared planes are back-to-back
+     caps that are always hidden; the green tip is dropped under the snow
+     cone, and the top whorl starts at 12.7 m. Bare trees are unchanged.

@@ -41,6 +41,8 @@ const SNOW_COVER = 0.45;
  */
 const VERGE_WIDTH = 3;
 const SAMPLES_PER_PIECE = 100;
+/** Snow poles on bank-lined roads stand this tall. */
+const SNOW_POLE_HEIGHT = 2.4;
 /** The edge line stands this far above the carriageway it is painted on. */
 export const LINE_ABOVE_DECK = 0.02;
 export const LINE_LIFT = ROAD_LIFT + LINE_ABOVE_DECK;
@@ -291,35 +293,38 @@ export class RoadBuilder {
         side: -1,
       },
     ];
+    // Snow tongues from the banks onto the carriageway where the region heaps banks. They are part
+    // of the carriageway itself, not a layer over it: the ribbon is cut across into a snowy band at
+    // each edge and the bare middle, in one plane with shared edges, so tarmac never shows through
+    // the snow nor fights it for depth or shadow. Across a junction's mouth the edge stays bare.
+    const tongues = snowy && drifts;
+    const reach = (k: number, side: number) =>
+      tongues && !open(side, k * sp) ? Math.min(1, driftShare(k, side)) : 0;
+    // The bare middle's right (−) and left (+) edges, meeting halfway where the two tongues cross.
+    const middleA = (hw: number, k: number) => {
+      const lo = -hw + hw * reach(k, -1);
+      const hi = hw - hw * reach(k, 1);
+      return lo <= hi ? lo : (lo + hi) / 2;
+    };
+    const middleB = (hw: number, k: number) => {
+      const lo = -hw + hw * reach(k, -1);
+      const hi = hw - hw * reach(k, 1);
+      return lo <= hi ? hi : (lo + hi) / 2;
+    };
     const strips: Strip[] = [
       {
-        a: (hw) => -hw,
-        b: (hw) => hw,
+        a: middleA,
+        b: middleB,
         lift: ROAD_LIFT,
         color: road,
         cover: snowy && theme.snowPatches ? (drifts ? sparseSnowCover : snowCover) : undefined,
         shaded: true,
         town: paved,
       },
-      // Snow tongues from the banks onto the carriageway, a hair above it, where the region heaps banks.
-      ...(snowy && drifts
+      ...(tongues
         ? ([
-            {
-              a: (hw, k) => hw - hw * driftShare(k, 1),
-              b: (hw) => hw + 0.3,
-              lift: ROAD_LIFT + 0.006,
-              color: dust,
-              shaded: true,
-              side: 1,
-            },
-            {
-              a: (hw) => -hw - 0.3,
-              b: (hw, k) => -hw + hw * driftShare(k, -1),
-              lift: ROAD_LIFT + 0.006,
-              color: dust,
-              shaded: true,
-              side: -1,
-            },
+            { a: middleB, b: (hw) => hw, lift: ROAD_LIFT, color: dust, shaded: true },
+            { a: (hw) => -hw, b: middleA, lift: ROAD_LIFT, color: dust, shaded: true },
           ] satisfies Strip[])
         : []),
       {
@@ -387,6 +392,13 @@ export class RoadBuilder {
         if (strip.side !== undefined && open(strip.side, (p.d + q.d) / 2)) continue;
         const mid = (p.d + q.d) / 2;
         if (strip.rise !== undefined && (!town || townFade(town, mid) < 0.02)) continue;
+        // A band with no width at either end (a tongue-free stretch of edge) draws nothing.
+        if (
+          strip.rise === undefined &&
+          strip.b(p.hw, p.k) - strip.a(p.hw, p.k) < 1e-4 &&
+          strip.b(q.hw, q.k) - strip.a(q.hw, q.k) < 1e-4
+        )
+          continue;
         const base = pos.length / 3;
         // a is the right-hand edge; wind counter-clockwise seen from above. A kerb face raises one edge instead.
         const ra = strip.rise !== undefined && strip.rise < 0 ? -strip.rise : 0;
@@ -419,11 +431,18 @@ export class RoadBuilder {
       stage.town ? [[stage.town.from, stage.town.to]] : [],
     );
     const count = distances.length * 2;
-    const postGeo = new BoxGeometry(0.14, 0.9, 0.14).translate(0, 0.45, 0);
-    const capGeo = new BoxGeometry(0.16, 0.18, 0.16).translate(0, 0.98, 0);
+    // Where snow banks line the road the posts are snow poles: a tall thin orange rod with a white
+    // band near the top, standing clear of the drifts; elsewhere a short white post with an orange cap.
+    const snowPoles = REGIONS[stage.region].terrain.banks !== undefined;
+    const postGeo = snowPoles
+      ? new BoxGeometry(0.06, SNOW_POLE_HEIGHT, 0.06).translate(0, SNOW_POLE_HEIGHT / 2, 0)
+      : new BoxGeometry(0.14, 0.9, 0.14).translate(0, 0.45, 0);
+    const capGeo = snowPoles
+      ? new BoxGeometry(0.07, 0.3, 0.07).translate(0, SNOW_POLE_HEIGHT - 0.45, 0)
+      : new BoxGeometry(0.16, 0.18, 0.16).translate(0, 0.98, 0);
     this.geometries.push(postGeo, capGeo);
-    const postMat = themedMaterial(this.theme.post);
-    const capMat = themedMaterial(this.theme.cap);
+    const postMat = themedMaterial(snowPoles ? this.theme.cap : this.theme.post);
+    const capMat = themedMaterial(snowPoles ? this.theme.post : this.theme.cap);
     this.materials.push(postMat, capMat);
     const posts = new InstancedMesh(postGeo, postMat, count);
     const caps = new InstancedMesh(capGeo, capMat, count);

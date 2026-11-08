@@ -28,6 +28,7 @@ import {
 import type { KindKit } from '../SceneryChunkManager';
 import { BUILDING_STYLES, FURNITURE_KINDS, furnitureGeometry, parkedCarKits } from './RallyKits';
 import { trafficLensGlowGeometry } from '../CityFurnitureGeometry';
+import { spectatorKits } from './SpectatorKits';
 import { NEON } from '../../theme/WorldTheme';
 
 /** The nearest point of the stage road to a prop, and how far it is. */
@@ -194,6 +195,13 @@ export function nightcityKits({ shadows, near }: NightcityKitOptions): KindKit[]
       },
     ]),
     ...pair(['lamp'], nightLampBodyGeometry(), lampHeadGlowGeometry(), shadows),
+    // Spectators in the dark, in their own dark coats, the rest of them dimmed.
+    ...spectatorKits(
+      body,
+      [new Color('#2a2d3a'), new Color('#1f2a3a'), new Color('#33303a')],
+      shadows,
+      [new Color('#6a6e7a')],
+    ),
     // The city's furniture in its own paint, the traffic lights' lenses glowing.
     ...FURNITURE_KINDS.filter((k) => k !== 'trafficLight').map((kind): KindKit => ({
       sources: [kind],

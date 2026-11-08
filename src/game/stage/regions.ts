@@ -30,6 +30,8 @@ export interface SceneryDensity {
   houses: number;
   /** Tall spruces (the Arctic's forest wall) per 100 m of road; none when unset. */
   spruces?: number;
+  /** Small groups of roadside spectators per 100 m of road; none when unset. */
+  spectators?: number;
 }
 
 /** A region whose stages have oases (see `Oases`): how often along the road, how wide the pool, how many palms. */
@@ -408,7 +410,15 @@ const ARCTIC: RegionDef = {
   // Long flowing bends and straights for the crests, not the Alpine's switchbacks.
   twistiness: 0.65,
   baseLength: 1900,
-  scenery: { trees: 30, broadleaf: 14, bushes: 8, rocks: 2, houses: 0.4, spruces: 230 },
+  scenery: {
+    trees: 30,
+    broadleaf: 14,
+    bushes: 8,
+    rocks: 2,
+    houses: 0.4,
+    spruces: 230,
+    spectators: 2.2,
+  },
   parSpeed: 16,
   towns: true,
 };
