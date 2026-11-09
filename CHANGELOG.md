@@ -9,6 +9,8 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Added
 
+- **No villages in the Arctic.** Arctic stages are open country only;
+  villages stay in the Forest and the Alpine. [190]
 - **Arctic stages at dusk.** Every third Arctic stage now runs just after
   sunset (the rest stay in daylight): an
   indigo sky with a pink and orange afterglow on the horizon, little light

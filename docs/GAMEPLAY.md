@@ -81,7 +81,7 @@ the last sector board or lap line passed.
 - Every third rally stage carries a town: the route leaves the open road,
   threads a village of right-angle corners, narrow streets and blocked side
   streets, and rejoins the stage. Counted along the mix, villages come round
-  every Forest surface, Alpine and Arctic; the Coast road and the Desert
+  every Forest surface and the Alpine; the Coast road, the Arctic and the Desert
   build none, so a town slot that falls there stays open road, and cities
   and circuits are never counted.
 - Any stage up to the first unfinished one can be driven again from the

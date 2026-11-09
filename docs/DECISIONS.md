@@ -3660,3 +3660,11 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      middle rather than the highest point under them, still running down
      past the lowest, so on a bank's slope the snow may bury the foot of
      their high end instead of the board towering over it.
+
+190. **2026-11-09 — No villages on Arctic stages.** By request the Arctic is
+     open country only: `towns` is false for the region, so a town slot
+     (every third rally stage, `hasTown`) that falls on an Arctic stage
+     stays open road, as on the Coast and in the Desert. Villages now come
+     round on Forest (every surface) and the Alpine. The Arctic stages
+     that had a village drive a different road now; their best times stay
+     (the save version is unchanged).

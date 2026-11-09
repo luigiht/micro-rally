@@ -10,19 +10,17 @@ const SEEDS = [1, 2, 3];
 const ARCTIC = REGIONS.arctic;
 
 describe('Arctic stages', () => {
-  it('sit in the rally mix, villages allowed, on snow-dusted asphalt or tarmac', () => {
+  it('sit in the rally mix, never through a village, on snow', () => {
     expect(ARCTIC_INDEX).toBe(4);
     expect(stageRegion(ARCTIC_INDEX).region).toBe('arctic');
-    expect(ARCTIC.towns).toBe(true);
-    expect(
-      Array.from({ length: 60 }, (_, i) => i).some(
-        (i) => stageHasTown(i) && stageRegion(i).region === 'arctic',
-      ),
-    ).toBe(true);
+    expect(ARCTIC.towns).toBe(false);
+    for (let i = 0; i < 200; i++)
+      if (stageRegion(i).region === 'arctic') expect(stageHasTown(i), `stage ${i}`).toBe(false);
     for (const seed of SEEDS) {
       const stage = createStageWorld(seed, ARCTIC_INDEX).stage;
       expect(stage.region).toBe('arctic');
-      expect(['snow', 'tarmac']).toContain(stage.surface);
+      expect(stage.surface).toBe('snow');
+      expect(stage.town).toBeUndefined();
     }
   });
 

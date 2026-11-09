@@ -86,8 +86,8 @@ loop.
 
 ## Arctic
 
-A Finnish winter rally stage, Alpine's flat cousin: the same snow-dusted
-asphalt (or cleared tarmac) and the same village rules, but on frozen,
+A Finnish winter rally stage, Alpine's flat cousin, but a snowed-over road
+with no villages, on frozen,
 nearly flat country (relief 9 m, long waves) with long flowing bends.
 
 - **At dusk.** Every third Arctic stage (the third, sixth… of the region;

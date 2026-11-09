@@ -62,7 +62,7 @@ function fieldFor(seed: number): TerrainField {
 }
 
 describe('region cycle', () => {
-  it('never shows a region twice running, mixes every rally region, and keeps villages to forest, alpine and arctic', () => {
+  it('never shows a region twice running, mixes every rally region, and keeps villages to forest and alpine', () => {
     for (let i = 1; i < 200; i++)
       expect(stageRegion(i).region, `stage ${i + 1}`).not.toBe(stageRegion(i - 1).region);
     for (const id of ['forest', 'alpine', 'coast', 'desert', 'arctic'])
@@ -75,7 +75,7 @@ describe('region cycle', () => {
       if (!stageHasTown(i)) continue;
       townRegions.add(stageRegion(i).region);
     }
-    expect([...townRegions].sort()).toEqual(['alpine', 'arctic', 'forest']);
+    expect([...townRegions].sort()).toEqual(['alpine', 'forest']);
   });
 });
 

@@ -375,10 +375,10 @@ const URBAN: RegionDef = {
 
 /**
  * Arctic: a Finnish winter rally stage. Flat, frozen country under a pale
- * sky; the road (snow-dusted asphalt, or cleared tarmac) runs between thick
+ * sky; the road, snowed over from bank to bank, runs between thick
  * snow banks heaped along both verges, with a dense wall of tall spruces
  * right behind them and the odd bare birch, long flowing bends rather than
- * the Alpine's switchbacks. Villages where the cycle puts them, under snow.
+ * the Alpine's switchbacks. No villages: open country only.
  */
 const ARCTIC: RegionDef = {
   id: 'arctic',
@@ -425,7 +425,8 @@ const ARCTIC: RegionDef = {
     spectators: 2.2,
   },
   parSpeed: 16,
-  towns: true,
+  // Open country only: the snowed-over road never runs through a village.
+  towns: false,
 };
 
 export const REGIONS: Readonly<Record<RegionId, RegionDef>> = {
