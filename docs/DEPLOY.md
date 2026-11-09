@@ -31,7 +31,15 @@ decision is where online saves live.
    `VERCEL_URL`) is used for Open Graph, robots and the sitemap. Set it
    explicitly if you serve the game from a custom domain that isn't the
    Vercel production domain.
-6. **Deploy.** Every push to `main` is a production deployment; pull requests
+6. **Feedback email.** The feedback page (`/feedback`, linked from the Game
+   panel) posts to `/api/feedback`, which emails luis@luigiht.com through
+   Resend's HTTP API. Create an API key at resend.com and set
+   `RESEND_API_KEY` (secret, server-only). Set `FEEDBACK_FROM` to a sender on
+   a domain verified in Resend, e.g. `Micro Rally <feedback@luigiht.com>`;
+   until then the default `onboarding@resend.dev` sender only delivers to the
+   Resend account's own address. Without the key the route answers
+   `503 mail_unconfigured` and the form shows "could not be sent".
+7. **Deploy.** Every push to `main` is a production deployment; pull requests
    get preview URLs. CI (`.github/workflows/ci.yml`) runs the same
    `pnpm check` and the Playwright suite.
 

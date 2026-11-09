@@ -52,7 +52,7 @@ export const en = {
   },
   privacy: {
     title: 'Privacy',
-    updated: 'Last updated: 29 October 2026',
+    updated: 'Last updated: 9 November 2026',
     intro:
       'Micro Rally is a free game with no accounts, no ads and no tracking. This page explains the little it does store.',
     sections: [
@@ -76,8 +76,33 @@ export const en = {
         title: 'Your choices',
         body: 'Clearing this site’s data in your browser removes the local copy. There is no delete button yet; to have a save removed from the server, send its Game ID to the author.',
       },
+      {
+        title: 'Feedback',
+        body: 'If you send feedback, your message and the name and email you choose to add are emailed to the author, through an email delivery service, and used only to read and answer it.',
+      },
     ],
     contact: 'Questions about this policy? Reach the author at',
+    back: 'Back to the game',
+  },
+  feedback: {
+    title: 'Share your feedback',
+    intro:
+      'Found a bug, have an idea, or just enjoyed a stage? Tell the author. Name and email are optional; add an email if you would like a reply.',
+    nameLabel: 'Name (optional)',
+    emailLabel: 'Email (optional)',
+    messageLabel: 'Message',
+    messagePlaceholder: 'What happened, or what would you like to see?',
+    send: 'Send feedback',
+    sending: 'Sending…',
+    sent: 'Thanks! Your feedback is on its way.',
+    another: 'Send more',
+    tooShort: 'Write at least {n} characters.',
+    badEmail: 'That email address does not look right.',
+    question: 'Which carmaker builds the Focus and the Mustang?',
+    questionHint: 'One word: it keeps the robots out.',
+    wrongAnswer: 'Not quite. Have another go.',
+    failed: 'It could not be sent just now. Please try again in a moment.',
+    privacy: 'How feedback is handled: see the privacy page.',
     back: 'Back to the game',
   },
   garage: {
@@ -213,6 +238,7 @@ export const en = {
     syncOffline: 'Saved on this device only. Will retry online.',
     syncSaving: 'Saving…',
     syncIdle: 'Progress is saved automatically.',
+    feedback: 'Share your feedback',
   },
   regions: {
     forest: 'Forest',

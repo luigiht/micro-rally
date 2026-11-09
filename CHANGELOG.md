@@ -7,6 +7,14 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ## 2026-11-09
 
+### Added
+
+- **Share your feedback.** A button at the bottom of the Game panel opens a
+  feedback page in a new tab: write a message, optionally with your name
+  and an email for a reply, and it is emailed to the author. A one-word
+  question keeps the robots out. The privacy
+  page says how feedback is handled. [184]
+
 ### Fixed
 
 - **No more cliff walls on the coast's hairpins.** A hairpin climbs faster

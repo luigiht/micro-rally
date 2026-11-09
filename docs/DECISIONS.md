@@ -3543,3 +3543,27 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      31 m to the leg above is one even bank rather than a wall and a shelf.
      A unit test holds that 6 m point under 7.5 m above the deck along
      seven coast stages, the reported one among them.
+
+184. **2026-11-09 — A feedback page, emailed through Resend.** By request, a
+     "Share your feedback" button at the bottom of the Game panel opens
+     `/feedback` (in a new tab, so the stage in progress survives), styled
+     as the privacy page: optional name and email, a message of 10–4000
+     characters. `/api/feedback` validates it (`lib/feedback.ts`, shared with
+     the form's limits) and sends a plain-text email to luis@luigiht.com
+     through Resend's HTTP API with `fetch`, so no new dependency; the reply
+     address is the player's email when given. A `mailto:` link was dropped
+     (it needs a mail client on the device, and most phones playing in a
+     browser have none set up); SMTP was dropped as heavier to configure on
+     Vercel. Abuse guards: control characters stripped from the name and
+     email so nothing can break into a header, the email held to a strict
+     one-line shape, a hidden honeypot field answered as a success, and a
+     per-instance limit of five sends per address per ten minutes (a brake,
+     not a quota: serverless instances do not share it). Without
+     `RESEND_API_KEY` the route answers 503 and the form says to try again
+     later. The privacy page gains a Feedback section saying what is sent
+     and to whom. As a captcha the form asks which carmaker builds the Focus
+     and the Mustang; the answer (Ford, any case, trailing punctuation
+     aside) is checked only in the route (`api/feedback/answer.ts`), so the
+     page never carries it, and a wrong one is a 400 the form shows beside
+     the field. Cloudflare Turnstile was considered and dropped: its script
+     would break the privacy page's "no third-party scripts".

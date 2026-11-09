@@ -123,6 +123,15 @@ export function GamePanel() {
       <p role="status" className="mt-3 text-xs text-ink/70">
         {syncText}
       </p>
+      {/* A new tab, so the stage in progress is still there afterwards. */}
+      <a
+        href="/feedback"
+        target="_blank"
+        rel="noopener"
+        className="pixel-btn-ghost mt-5 block w-full text-center"
+      >
+        {m.game.feedback}
+      </a>
     </HudDialog>
   );
 }

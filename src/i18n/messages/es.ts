@@ -57,7 +57,7 @@ export const es: Messages = {
   },
   privacy: {
     title: 'Privacidad',
-    updated: 'Última actualización: 29 de octubre de 2026',
+    updated: 'Última actualización: 9 de noviembre de 2026',
     intro:
       'Micro Rally es un juego gratuito sin cuentas, sin anuncios y sin rastreo. Esta página explica lo poco que guarda.',
     sections: [
@@ -81,8 +81,33 @@ export const es: Messages = {
         title: 'Tus opciones',
         body: 'Borrar los datos de este sitio en tu navegador elimina la copia local. Aún no hay botón de borrado; para eliminar una partida del servidor, envía su ID al autor.',
       },
+      {
+        title: 'Comentarios',
+        body: 'Si envías comentarios, tu mensaje y el nombre y el email que decidas añadir se envían por correo al autor, a través de un servicio de envío de email, y solo se usan para leerlos y responderte.',
+      },
     ],
     contact: 'Para preguntas sobre esta política, contacta con el autor en',
+    back: 'Volver al juego',
+  },
+  feedback: {
+    title: 'Comparte tu opinión',
+    intro:
+      '¿Has encontrado un fallo, tienes una idea o te ha gustado un tramo? Cuéntaselo al autor. El nombre y el email son opcionales; añade un email si quieres respuesta.',
+    nameLabel: 'Nombre (opcional)',
+    emailLabel: 'Email (opcional)',
+    messageLabel: 'Mensaje',
+    messagePlaceholder: '¿Qué ha pasado o qué te gustaría ver?',
+    send: 'Enviar',
+    sending: 'Enviando…',
+    sent: '¡Gracias! Tu mensaje va de camino.',
+    another: 'Enviar otro',
+    tooShort: 'Escribe al menos {n} caracteres.',
+    badEmail: 'Ese email no parece correcto.',
+    question: '¿Qué marca de coches fabrica el Focus y el Mustang?',
+    questionHint: 'Una palabra: así dejamos fuera a los robots.',
+    wrongAnswer: 'No es esa. Prueba otra vez.',
+    failed: 'No se ha podido enviar ahora mismo. Inténtalo de nuevo en un momento.',
+    privacy: 'Cómo se tratan los comentarios: consulta la página de privacidad.',
     back: 'Volver al juego',
   },
   garage: {
@@ -226,6 +251,7 @@ export const es: Messages = {
     syncOffline: 'Guardado solo en este dispositivo. Se reintentará en línea.',
     syncSaving: 'Guardando…',
     syncIdle: 'El progreso se guarda automáticamente.',
+    feedback: 'Comparte tu opinión',
   },
   regions: {
     forest: 'Bosque',
