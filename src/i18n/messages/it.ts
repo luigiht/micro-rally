@@ -217,9 +217,6 @@ export const it: Messages = {
       cinematic: 'Cinematica',
     },
     languages: { en: 'English', es: 'Español', it: 'Italiano' },
-    paceNotes: 'Note del navigatore',
-    paceNotesHint:
-      'Annuncia la prossima curva: 1 è la più stretta, 6 appena una piega; a squadra, acuta e tornante sono ancora più strette.',
     close: 'Chiudi',
   },
   game: {

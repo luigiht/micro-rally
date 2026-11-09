@@ -4,7 +4,6 @@ import { nextPaceNote, type PaceNote } from '@/game/stage/PaceNotes';
 import { fill } from '@/i18n/format';
 import type { Messages } from '@/i18n/messages/en';
 import { useMessages } from '@/i18n/useMessages';
-import { useSettingsStore } from '@/state/settingsStore';
 import { useStageHudStore } from '@/state/stageHudStore';
 import { useUiStore } from '@/state/uiStore';
 import { PaceNoteIcon } from './PaceNoteIcon';
@@ -27,17 +26,16 @@ export function callText(note: PaceNote, m: Messages['paceNotes']): string {
  * its card, how far off it starts and, when the next corner follows with no
  * road between, that one too after "into" or "and". It shows from the start
  * line, holds through the corner and moves on to the next once the car is
- * out of it. Reads the 10 Hz HUD store; Settings can turn it off.
+ * out of it. Reads the 10 Hz HUD store.
  */
 export function PaceNoteCallout() {
   const m = useMessages();
-  const enabled = useSettingsStore((s) => s.paceNotes);
   const notes = useStageHudStore((s) => s.paceNotes);
   const along = useStageHudStore((s) => s.along);
   const lapLength = useStageHudStore((s) => s.stage?.lapLength ?? 0);
   const phase = useStageHudStore((s) => s.phase);
   const replay = useUiStore((s) => s.replay);
-  if (!enabled || (phase === 'finished' && !replay)) return null;
+  if (phase === 'finished' && !replay) return null;
   const next = nextPaceNote(notes, along, lapLength);
   if (!next) return null;
   const note = notes[next.index]!;

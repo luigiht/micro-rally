@@ -28,9 +28,7 @@ test('H hides the HUD chrome and shows it again; Esc still opens a dialog over t
   await expect(page.getByRole('button', { name: 'Settings' })).toBeVisible();
 });
 
-test('the pace note calls the next corner from the start line, and Settings turns it off', async ({
-  page,
-}) => {
+test('the pace note calls the next corner from the start line, always on', async ({ page }) => {
   await startGame(page);
   const note = page.getByTestId('pace-note');
   await expect(note).toBeVisible();
@@ -39,9 +37,7 @@ test('the pace note calls the next corner from the start line, and Settings turn
 
   await page.getByRole('button', { name: 'Settings' }).click();
   const dialog = page.getByRole('dialog', { name: 'Settings' });
-  const toggle = dialog.getByRole('checkbox', { name: 'Pace notes' });
-  await expect(toggle).toBeChecked();
-  await toggle.uncheck();
+  await expect(dialog.getByRole('checkbox', { name: 'Pace notes' })).toHaveCount(0);
   await dialog.getByRole('button', { name: 'Close' }).click();
-  await expect(note).toBeHidden();
+  await expect(note).toBeVisible();
 });

@@ -135,7 +135,7 @@ export class StageRenderer {
   constructor(
     private readonly world: StageWorld,
     private readonly opts: StageRenderOptions = DEFAULT_STAGE_RENDER,
-    theme: WorldTheme = dayTheme(REGIONS[world.stage.region]),
+    theme: WorldTheme = dayTheme(REGIONS[world.stage.region], world.stage.dusk === true),
   ) {
     this.theme = theme;
     const region = REGIONS[world.stage.region];

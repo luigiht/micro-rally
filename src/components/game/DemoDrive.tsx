@@ -118,7 +118,10 @@ export function DemoDrive({ paused }: { paused: boolean }) {
 
   return (
     <>
-      <SceneLights lighting={dayTheme(REGIONS[world.stage.region]).lighting} sunRef={sun} />
+      <SceneLights
+        lighting={dayTheme(REGIONS[world.stage.region], world.stage.dusk === true).lighting}
+        sunRef={sun}
+      />
       <group ref={group} />
       <CarModel key={spec.id} ref={car} spec={spec} />
     </>

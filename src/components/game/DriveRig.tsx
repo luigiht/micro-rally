@@ -107,6 +107,7 @@ export function DriveRig({ world, theme, onPose, children }: DriveRigProps) {
     }
     const pose = s.pose;
     car.current?.apply(pose);
+    car.current?.setBraking(s.replaying ? 0 : s.braking);
     const m = marks.current;
     if (m) {
       // Entering or leaving the replay wipes the marks: the replay lays the run's own again from its
@@ -135,7 +136,7 @@ export function DriveRig({ world, theme, onPose, children }: DriveRigProps) {
     <>
       <SceneLights lighting={theme.lighting} sunRef={sun} />
       {children}
-      <CarModel ref={car} spec={spec} nightcity={nightcity} />
+      <CarModel ref={car} spec={spec} nightcity={nightcity} lamps={theme.carLamps === true} />
       {nightcity && <NightcityEffects />}
     </>
   );

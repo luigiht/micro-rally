@@ -119,6 +119,68 @@ function sparseSnowCover(i: number): number {
   return SNOW_COVER * smoothstep(PATCH_CORE_FROM, PATCH_CORE_TO, longPatch(i));
 }
 
+/**
+ * Wheel ruts in a snowed-over road: two grooves about `RUT_GAUGE` apart, each
+ * about `RUT_WIDTH` across with sloped walls and a floor `RUT_DEPTH` down, a
+ * shade darker where the snow is packed. The pair wanders up to `RUT_WANDER`
+ * either side of the centre line over tens of metres, as the cars before
+ * drove it; each groove also strays on its own and widens and narrows every
+ * few metres, and its walls are uneven, so the tracks read as trodden rather
+ * than ruled.
+ */
+const RUT_GAUGE = 1.55;
+const RUT_WIDTH = 0.8;
+const RUT_DEPTH = 0.045;
+const RUT_WANDER = 0.3;
+const RUT_PERIOD = 11;
+/** Each groove's own stray (m) and its width swing (share of `RUT_WIDTH`), over a few metres. */
+const RUT_STRAY = 0.12;
+const RUT_STRAY_PERIOD = 3.2;
+const RUT_SWELL = 0.35;
+const RUT_SWELL_PERIOD = 2.3;
+// Packed snow reads darker than the loose snow either side; by day the pale road needs a clear step.
+const RUT_TONE = [1, 0.9, 0.8, 0.9] as const;
+
+function rutStrips(base: Strip): Strip[] {
+  const centre = (k: number) => (driftNoise(k, RUT_PERIOD, 31) - 0.5) * 2 * RUT_WANDER;
+  // Cut `n` across the carriageway, right to left: wall top, floor, floor, wall top for each rut.
+  // Each groove (r) draws its stray, its width and its two walls' slopes from its own noise.
+  const at = (n: number, k: number) => {
+    const r = n < 4 ? 0 : 1;
+    const f = [-0.5, -0.25, 0.25, 0.5][n % 4]!;
+    const salt = 41 + r * 13;
+    const stray = (driftNoise(k, RUT_STRAY_PERIOD, salt) - 0.5) * 2 * RUT_STRAY;
+    const width =
+      RUT_WIDTH * (1 + (driftNoise(k, RUT_SWELL_PERIOD, salt + 5) - 0.5) * 2 * RUT_SWELL);
+    // The floor's edges sit anywhere from a third to two thirds of the way in, wall by wall.
+    const floor = f > 0 ? 1 : -1;
+    const wall =
+      Math.abs(f) === 0.25 ? 0.15 + 0.2 * driftNoise(k, 1.7, salt + (floor > 0 ? 7 : 9)) : 0.5;
+    return centre(k) + (r === 0 ? -1 : 1) * (RUT_GAUGE / 2) + stray + floor * wall * width;
+  };
+  const cut = (n: number) => (hw: number, k: number) =>
+    n < 0 ? -hw : n >= 8 ? hw : Math.max(-hw, Math.min(hw, at(n, k)));
+  // Edge depths per band: flat, down the wall, floor, up the wall, then again for the second rut.
+  const dips: (readonly [number, number])[] = [
+    [0, 0],
+    [0, RUT_DEPTH],
+    [RUT_DEPTH, RUT_DEPTH],
+    [RUT_DEPTH, 0],
+  ];
+  const out: Strip[] = [];
+  for (let n = -1; n < 8; n++) {
+    const band = (n + 1) % 4;
+    out.push({
+      ...base,
+      a: cut(n),
+      b: cut(n + 1),
+      dip: dips[band]!,
+      tone: RUT_TONE[band]!,
+    });
+  }
+  return out;
+}
+
 /** One cross-section of the ribbon: where it is, which way is left, how wide, how high, and its tarmac shade. */
 interface Station {
   d: number;
@@ -147,6 +209,9 @@ interface Strip {
   side?: number;
   /** A vertical kerb face, only in town: a positive rise lifts the `b` edge by this much, a negative one the `a` edge. */
   rise?: number;
+  /** Heights of the `a` and `b` edges below the strip's lift (a rut's walls and floor), and a shade on its colour. */
+  dip?: readonly [number, number];
+  tone?: number;
 }
 
 /** Ribbon road split into pieces for frustum culling, plus verges, edge lines and marker posts. */
@@ -216,13 +281,15 @@ export class RoadBuilder {
     const path = stage.path;
     const sp = path.spacing;
     const theme = this.theme;
-    // Snow lies on the road where the surface is snow, and wherever a region heaps banks: there even
-    // cleared tarmac carries patches and the banks' tongues.
+    // Snow lies on the road where the surface is snow, and wherever a region heaps banks: there the
+    // whole carriageway is snowed over, edge to edge.
     const drifts = REGIONS[stage.region].terrain.banks !== undefined;
     const snowy = stage.surface === 'snow' || drifts;
     const surfaces = theme.surfaces;
     const tarmac = theme.surface ?? surfaces.tarmac;
-    const road = new Color(theme.surface ?? (snowy ? surfaces.tarmac : surfaces[stage.surface]));
+    const road = new Color(
+      theme.surface ?? (drifts ? surfaces.snow : snowy ? surfaces.tarmac : surfaces[stage.surface]),
+    );
     const dust = new Color(surfaces.snow);
     const tint = new Color();
     const line = themeColor(theme.line);
@@ -297,7 +364,9 @@ export class RoadBuilder {
     // of the carriageway itself, not a layer over it: the ribbon is cut across into a snowy band at
     // each edge and the bare middle, in one plane with shared edges, so tarmac never shows through
     // the snow nor fights it for depth or shadow. Across a junction's mouth the edge stays bare.
-    const tongues = snowy && drifts;
+    // Snow tongues from the banks are only needed where bare tarmac shows between them; a
+    // snowed-over road (banked regions) is snow from edge to edge already.
+    const tongues = snowy && drifts && road.getHex() !== dust.getHex();
     const reach = (k: number, side: number) =>
       tongues && !open(side, k * sp) ? Math.min(1, driftShare(k, side)) : 0;
     // The bare middle's right (−) and left (+) edges, meeting halfway where the two tongues cross.
@@ -317,7 +386,14 @@ export class RoadBuilder {
         b: middleB,
         lift: ROAD_LIFT,
         color: road,
-        cover: snowy && theme.snowPatches ? (drifts ? sparseSnowCover : snowCover) : undefined,
+        cover:
+          !snowy || !theme.snowPatches
+            ? undefined
+            : !drifts
+              ? snowCover
+              : road.getHex() !== dust.getHex()
+                ? sparseSnowCover
+                : undefined,
         shaded: true,
         town: paved,
       },
@@ -371,12 +447,16 @@ export class RoadBuilder {
     const pos: number[] = [];
     const col: number[] = [];
     const index: number[] = [];
+    // A snowed-over road carries the wheel ruts of the cars before: the carriageway is cut across
+    // into bands that dip into two shallow grooves a track's width apart.
+    if (drifts && road.getHex() === dust.getHex()) strips.splice(0, 1, ...rutStrips(strips[0]!));
     // Into and out of a town the ribbon eases over TOWN_FADE: the surface colour toward tarmac, the
     // verges up into pavements, the kerb faces growing with them.
-    const vertex = (st: Station, e: number, strip: Strip, raise = 0) => {
+    const vertex = (st: Station, e: number, strip: Strip, raise = 0, dip = 0) => {
       const t = strip.town !== undefined && town !== undefined ? townFade(town, st.d) : 0;
-      const y = st.y + strip.lift + (t > 0 ? (strip.town!.lift - strip.lift) * t : 0) + raise * t;
-      const shade = strip.shaded ? st.shade : 1;
+      const y =
+        st.y + strip.lift + (t > 0 ? (strip.town!.lift - strip.lift) * t : 0) + raise * t - dip;
+      const shade = (strip.shaded ? st.shade : 1) * (strip.tone ?? 1);
       const c = strip.cover
         ? tint.copy(strip.color).lerp(dust, strip.cover(st.k) * (1 - t))
         : tint.copy(strip.color);
@@ -403,10 +483,11 @@ export class RoadBuilder {
         // a is the right-hand edge; wind counter-clockwise seen from above. A kerb face raises one edge instead.
         const ra = strip.rise !== undefined && strip.rise < 0 ? -strip.rise : 0;
         const rb = strip.rise !== undefined && strip.rise > 0 ? strip.rise : 0;
-        vertex(p, strip.a(p.hw, p.k), strip, ra);
-        vertex(p, strip.b(p.hw, p.k), strip, rb);
-        vertex(q, strip.a(q.hw, q.k), strip, ra);
-        vertex(q, strip.b(q.hw, q.k), strip, rb);
+        const [da, db] = strip.dip ?? [0, 0];
+        vertex(p, strip.a(p.hw, p.k), strip, ra, da);
+        vertex(p, strip.b(p.hw, p.k), strip, rb, db);
+        vertex(q, strip.a(q.hw, q.k), strip, ra, da);
+        vertex(q, strip.b(q.hw, q.k), strip, rb, db);
         index.push(base, base + 2, base + 1, base + 2, base + 3, base + 1);
       }
     }

@@ -96,7 +96,7 @@ the last sector board or lap line passed.
 | Coast   | tarmac, 11 m wide                 | grass               | cliff road 5–35 m over the sea, hairpin stacks           | 1600 m      | 15 m/s    |
 | Desert  | sand                              | dune                | dunes of 11 m relief, oases                              | 1900 m      | 16 m/s    |
 | Urban   | tarmac, 6–14 m wide               | grass               | a city keeping 16 m of relief, roundabouts               | 1700 m      | 13 m/s    |
-| Arctic  | snow 3 (dusted asphalt), tarmac 1 | snow                | flat (amplitude 9), snow banks either side, spruce walls | 1900 m      | 16 m/s    |
+| Arctic  | snow 1 (snowed over)              | snow                | flat (amplitude 9), snow banks either side, spruce walls | 1900 m      | 16 m/s    |
 | Circuit | race asphalt, 12 m wide, kerbs    | grass, gravel traps | gentle hills; three laps of a 1.7–2.4 km lap             | 3 laps      | 20 m/s    |
 
 On a Coast stage the road follows the shore a few metres back from a
@@ -234,7 +234,7 @@ them off.
 
 ## Settings
 
-Language (English, Spanish, Italian), camera, pace notes on or off, and the full controls table
+Language (English, Spanish, Italian), camera and the full controls table
 for keyboard and touch. Sound, graphics quality tiers and steering options
 from the brief are not built yet.
 

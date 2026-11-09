@@ -220,9 +220,6 @@ export const es: Messages = {
       cinematic: 'Cinemática',
     },
     languages: { en: 'English', es: 'Español', it: 'Italiano' },
-    paceNotes: 'Notas de ruta',
-    paceNotesHint:
-      'Anuncia la próxima curva: 1 es la más cerrada y 6 apenas una curva; escuadra, aguda y horquilla son aún más cerradas.',
     close: 'Cerrar',
   },
   game: {

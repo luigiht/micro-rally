@@ -1,6 +1,6 @@
 'use client';
 
-import { useImperativeHandle, useMemo, useRef, type Ref } from 'react';
+import { useEffect, useImperativeHandle, useMemo, useRef, type Ref } from 'react';
 import { Color, type Group } from 'three';
 import type { CarId, CarSpec } from '@/game/vehicle/CarSpec';
 import type { VehiclePose } from '@/game/vehicle/interpolatePose';
@@ -18,6 +18,7 @@ import { SaloonBody } from './bodies/SaloonBody';
 import { T16HatchBody } from './bodies/T16HatchBody';
 import { Underglow } from './bodies/Underglow';
 import { WrcHatchBody } from './bodies/WrcHatchBody';
+import { CarLamps } from '@/render/car/CarLamps';
 import { NIGHTCITY_COLORS } from '@/render/car/NightcityHull';
 import { CarInterior, type CarInteriorHandle } from './CarInterior';
 import { Box, CAR_COLORS as C } from './CarParts';
@@ -26,6 +27,8 @@ export interface CarModelHandle {
   apply(pose: Readonly<VehiclePose>): void;
   /** Show the right parts for a camera: the interior view hides the roof and glass and shows the cabin fittings. */
   setView(mode: CameraMode): void;
+  /** Brake input this frame, 0..1: lights the brake lamps when the car has its lamps on. */
+  setBraking(level: number): void;
 }
 
 /** Wheels can rise this far into their wells before the body bottoms out (matches the sim). */
@@ -129,13 +132,17 @@ export function CarModel({
   spec,
   ref,
   nightcity = false,
+  lamps = false,
 }: {
   spec: CarSpec;
   ref: Ref<CarModelHandle>;
   nightcity?: boolean;
+  /** Headlamps with a beam down the road and brake lamps (after dark). */
+  lamps?: boolean;
 }) {
   const root = useRef<Group>(null);
   const body = useRef<Group>(null);
+  const carLamps = useRef<CarLamps | null>(null);
   const wheels = useRef<Group>(null);
   const cabin = useRef<Group>(null);
   const interior = useRef<CarInteriorHandle>(null);
@@ -173,7 +180,24 @@ export function CarModel({
       if (cabin.current) cabin.current.visible = mode !== 'interior';
       interior.current?.setVisible(mode === 'interior');
     },
+    setBraking(level) {
+      carLamps.current?.setBraking(level);
+    },
   }));
+
+  // On the sprung body, so they lean with it; refitted whenever the body changes.
+  useEffect(() => {
+    const b = body.current;
+    if (!lamps || !b) return;
+    const l = new CarLamps();
+    b.add(l.group);
+    l.fit(b, b);
+    carLamps.current = l;
+    return () => {
+      l.dispose();
+      carLamps.current = null;
+    };
+  }, [lamps, spec, nightcity]);
 
   const half = spec.trackWidth / 2;
   const r = spec.wheelRadius;

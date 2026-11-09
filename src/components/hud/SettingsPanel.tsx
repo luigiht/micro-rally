@@ -8,12 +8,11 @@ import { useUiStore } from '@/state/uiStore';
 import { ControlsTable } from './ControlsTable';
 import { HudDialog } from './HudDialog';
 
-/** The Settings panel: language, camera, pace notes and the controls reference. Audio and quality arrive in milestone 7. */
+/** The Settings panel: language, camera and the controls reference. Audio and quality arrive in milestone 7. */
 export function SettingsPanel() {
   const m = useMessages();
   const locale = useSettingsStore((s) => s.locale);
   const camera = useSettingsStore((s) => s.camera);
-  const paceNotes = useSettingsStore((s) => s.paceNotes);
 
   return (
     <HudDialog
@@ -54,20 +53,6 @@ export function SettingsPanel() {
         ))}
       </select>
       <p className="mt-2 text-xs text-ink/70 coarse:hidden">{m.settings.cameraHint}</p>
-
-      <label className="mt-6 flex items-center gap-3 font-pixel text-xs">
-        <input
-          type="checkbox"
-          className="pixel-checkbox"
-          checked={paceNotes}
-          onChange={(e) => useSettingsStore.getState().setPaceNotes(e.target.checked)}
-          aria-describedby="settings-pace-notes-hint"
-        />
-        {m.settings.paceNotes}
-      </label>
-      <p id="settings-pace-notes-hint" className="mt-2 text-xs text-ink/70">
-        {m.settings.paceNotesHint}
-      </p>
 
       <h3 className="mt-6 font-pixel text-xs">{m.settings.controls}</h3>
       <ControlsTable />

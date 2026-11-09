@@ -73,7 +73,7 @@ carries a town between 30 % and 55 % of the way along.
 | Coast  | pale blue sky, dry scrub and limestone, maritime pines, sand and a teal sea                                                                                          | tarmac                        | clear           |
 | Desert | pale sky, warm haze, pale to golden sand, sandstone, coconut palms and dry scrub, teal pools                                                                         | sand                          | clear           |
 | Urban  | pale grey-blue sky, concrete pavements, lawn verges and park greens, render and glass                                                                                | tarmac                        | clear, overcast |
-| Arctic | pale sky and near-white snow, dark spruce walls, bare birches, dark trunks                                                                                           | snow (dusted asphalt), tarmac | overcast, clear |
+| Arctic | pale sky and near-white snow, dark spruce walls, bare birches, dark trunks                                                                                           | snow, edge to edge            | overcast, clear |
 
 All open ground (not the coast, the dunes, circuits or cities, which shape
 their own) carries small bumps and hollows over the broad hills: two
@@ -89,6 +89,16 @@ loop.
 A Finnish winter rally stage, Alpine's flat cousin: the same snow-dusted
 asphalt (or cleared tarmac) and the same village rules, but on frozen,
 nearly flat country (relief 9 m, long waves) with long flowing bends.
+
+- **At dusk.** Every third Arctic stage (the third, sixth… of the region;
+  `stageAtDusk`, `StageBrief.dusk`) runs just after sunset, the rest by
+  day (`DUSK_LIGHTING`): a gradient sky dome, indigo overhead and violet at the
+  horizon where the fog meets it, with a pink and orange afterglow low
+  toward where the sun went down; a dim cool sky fill and a faint warm
+  glow, so the snow reads blue-violet. The car runs its lamps
+  (`CarLamps`): two spotlight beams down the road from the nose, and the
+  body's own red tail lamps brightened while braking. No lamp parts are
+  added: the body's own lamps are lit.
 
 - **Unmarked road.** No edge lines: the winter road carries only its snow,
   the banks and, every 20 m, snow poles in place of the marker posts: a

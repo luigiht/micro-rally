@@ -83,6 +83,8 @@ export class DrivingSession {
   private canvas: HTMLElement | null = null;
   /** Seconds of simulated time; stands still while a panel pauses the game. */
   time = 0;
+  /** The brake input of the last physics step, 0..1, for the brake lamps. */
+  braking = 0;
   private readonly tramHits: BoxObstacle[] = [];
 
   /** The clock the world's moving parts (the trams) follow: the replay's while one plays, else the run's. */
@@ -103,6 +105,7 @@ export class DrivingSession {
         : this.autopilot
           ? this.autopilot.drive(s, this.env, this.pilotInput)
           : mergeControlInput(this.keyboard.input, TOUCH_INPUT, this.merged);
+    this.braking = input.brake;
     const px = s.x;
     const pz = s.z;
     this.sim.step(dt, input, this.world.terrain, this.env);

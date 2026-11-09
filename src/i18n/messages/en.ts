@@ -207,9 +207,6 @@ export const en = {
     cameraHint: 'Press C while driving to switch.',
     cameras: { chase: 'Chase', interior: 'Interior', iso: 'Isometric', cinematic: 'Cinematic' },
     languages: { en: 'English', es: 'Español', it: 'Italiano' },
-    paceNotes: 'Pace notes',
-    paceNotesHint:
-      'Calls the next corner: 1 is the tightest, 6 barely a bend; square, acute and hairpin are sharper still.',
     close: 'Close',
   },
   game: {

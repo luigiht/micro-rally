@@ -68,19 +68,9 @@ const HULL: HullSpec = {
   stripeBand: [0.56, 0.14],
   wrapStripes: true,
   // Each tail lamp is the whole C-pillar band between the hatch lip and the roof, the lens the
-  // reference carries beside its rear glass; a white reverse lamp sits where it meets the lip.
+  // reference carries beside its rear glass: the only lamps at the back.
   sideDecals: [{ z0: -1.92, z1: -1.57, u0: 0, u1: 1, color: K.tail, glow: true }],
   capDecals: [
-    {
-      end: 'tail',
-      x0: 0.64,
-      x1: 0.78,
-      y0: 0.86,
-      y1: 0.96,
-      color: K.body,
-      glow: true,
-      mirror: true,
-    },
     // Nose: slim grille slot between the lamps, white band and dark air dam low down.
     { end: 'nose', x0: 0, x1: 0.36, y0: 0.63, y1: 0.69, color: K.trim, mirror: true },
     { end: 'nose', x0: 0, x1: 0.45, y0: 0.53, y1: 0.57, color: K.body, mirror: true },

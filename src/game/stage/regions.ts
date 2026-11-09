@@ -113,6 +113,8 @@ export interface RegionDef {
   scenery: SceneryDensity;
   /** Average speed (m/s) a decent run should hold. */
   parSpeed: number;
+  /** Some of its stages run after sunset (every `DUSK_EVERY`th): a twilight sky, little light, the car's lamps lit. */
+  dusk?: boolean;
 }
 
 const FOREST_PALETTE: RegionPalette = {
@@ -380,10 +382,9 @@ const URBAN: RegionDef = {
  */
 const ARCTIC: RegionDef = {
   id: 'arctic',
-  surfaces: [
-    ['snow', 3],
-    ['tarmac', 1],
-  ],
+  dusk: true,
+  // Snow only: the road is snowed over end to end (a single entry still makes the brief's draw).
+  surfaces: [['snow', 1]],
   offroad: 'snow',
   weathers: [
     ['overcast', 2],

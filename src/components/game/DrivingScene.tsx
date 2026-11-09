@@ -74,13 +74,15 @@ function StageDrive({ gameSeed, stageIndex }: { gameSeed: number; stageIndex: nu
   const group = useRef<Group>(null);
   const renderer = useRef<StageRenderer | null>(null);
   const nightcity = useUiStore((s) => s.nightcity);
-  const theme = nightcity ? NIGHTCITY_THEME : dayTheme(REGIONS[world.stage.region]);
+  const theme = nightcity
+    ? NIGHTCITY_THEME
+    : dayTheme(REGIONS[world.stage.region], world.stage.dusk === true);
 
   useEffect(() => {
     // Read the flag imperatively so a stage that mounts while Nightcity is on starts dark.
     const initial = useUiStore.getState().nightcity
       ? NIGHTCITY_THEME
-      : dayTheme(REGIONS[world.stage.region]);
+      : dayTheme(REGIONS[world.stage.region], world.stage.dusk === true);
     const r = new StageRenderer(world, DEFAULT_STAGE_RENDER, initial);
     group.current?.add(r.group);
     renderer.current = r;

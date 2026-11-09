@@ -9,6 +9,23 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Added
 
+- **Arctic stages at dusk.** Every third Arctic stage now runs just after
+  sunset (the rest stay in daylight): an
+  indigo sky with a pink and orange afterglow on the horizon, little light
+  left on the snow, and your car's headlamps lighting the road ahead in two
+  beams, with each car's own tail lamps glowing brighter red when you
+  brake. [185]
+- **Pace notes are always on.** The Settings toggle is gone. [186]
+- **Arctic roads are snowed over.** Every Arctic stage now runs on snow, and
+  the road is snow from bank to bank instead of asphalt with patches, with
+  two faint wheel ruts pressed into it. [187, 189]
+- **Checkpoint boards stand in the snow.** The boards are a little shorter
+  and stand on the ground at their middle, running down into the lowest
+  ground, so no edge hangs in the air and a snow bank may cover their foot. At dusk the tyre marks are a faint shadow
+  rather than pale streaks. [185]
+- **The Focus's tail.** The white reverse lamps on the tail are gone, so the
+  tail panel runs on in the body's colours; its only rear lamps are the red
+  ones up each side of the rear window.
 - **Share your feedback.** A button at the bottom of the Game panel opens a
   feedback page in a new tab: write a message, optionally with your name
   and an email for a reply, and it is emailed to the author. A one-word

@@ -3567,3 +3567,96 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      page never carries it, and a wrong one is a 400 the form shows beside
      the field. Cloudflare Turnstile was considered and dropped: its script
      would break the privacy page's "no third-party scripts".
+
+185. **2026-11-09 — The Arctic at dusk, with the car's lamps.** By request,
+     Arctic stages run just past sunset with working head and brake lamps.
+     A region opts in with `dusk` (only the Arctic), and `dayTheme` gives it
+     `DUSK_LIGHTING` in place of the day constants, keeping the day kits,
+     road and gates: an indigo background, a violet fog closing in at
+     45–230 m, a cool hemisphere fill at 0.55 (1.9 by day) and the sun as a
+     faint warm glow at 0.3 (2.6), still casting the shadow map so the
+     sun-follow and its texel snapping are unchanged. The sky is a gradient
+     dome (`SkyDome`, a 420 m back-faced sphere on the camera, no fog, no
+     depth writes, tone-mapped like the scene): indigo overhead, the fog's
+     colour at the horizon so distant ground melts into it, and a pink band
+     with an orange core low toward the sun's bearing. The flat background
+     was kept for every other theme. The lamps are `render/car/CarLamps`, an
+     imperative group of lights the car model hangs on its sprung body (so
+     the beams lean and pitch with it) when the theme sets `carLamps`: a
+     spotlight per side of the nose (480 cd each, 90 m, 0.5 rad, aimed 26 m
+     ahead and 1.6 m down, no shadow map; one central beam read as a single
+     lamp). A red point light on the snow behind while braking was tried
+     and dropped by request: braking shows on the car, and its wash tinted
+     the tail panel unevenly with the view, so the Focus's two lamps read
+     as mismatched.
+     The visible lamps are the ones each body already carries. Added lamp
+     lenses were tried first, fitted to the body's bounds and later over its
+     red faces, and dropped: on sloped noses and tails they floated clear of
+     the body. Instead `CarLamps` finds the body's tail lamps by colour in
+     the rear quarter (a hull's glowing decal faces, lit lamp parts, or,
+     when a body has neither, small painted red parts such as the coupé's
+     discs; a red livery never counts) and brightens them 2.6× while
+     braking: the red channel of their vertex colours rewritten in place
+     (all three tone-mapped them pink), emissive intensity raised,
+     the painted ones given a faint red glow after dark. It keeps their
+     original colours and gives them back when it is disposed (a theme
+     change or a garage swap). The brake
+     level is the session's last physics-step brake input (`braking`), off
+     in replays. Braking only rewrites colours and material settings, so it
+     never changes the light count and recompiles shaders. No bloom: the day
+     scene has no composer. Nightcity's toggle
+     still swaps in its own theme on Arctic stages. The tyre marks are drawn
+     unlit, so the snow's pale ink glowed after dark: dusk sets the theme's
+     `skidInk` to a faint dark violet (0.3 opacity) on every surface. And
+     the time-control boards, set on the ground at their centre, hung clear
+     of the Arctic's snow banks at one end: each now stands on the highest
+     of the ground under its two ends and middle and runs down past the
+     lowest, in every region.
+
+186. **2026-11-09 — Pace notes always on.** By request the Settings toggle
+     for the pace notes is gone (with its store field and strings): the
+     call shows on every stage from the start line, as the co-driver's
+     voice is part of the game rather than an option.
+
+187. **2026-11-09 — The Arctic road snowed over.** By request the Arctic
+     drops its cleared-tarmac stages and its road is snow from edge to edge
+     instead of asphalt with patches and tongues from the banks: the region
+     draws `snow` only (a one-entry draw still takes the brief's random
+     number, so every other stage keeps its stream), and where a region
+     heaps banks `RoadBuilder` lays the carriageway in the snow colour with
+     no cover noise and no tongues, which only existed to cover bare
+     asphalt. The road keeps its per-sample shade jitter, so it reads as
+     packed snow against the banks. Nightcity's own dark surface still gets
+     the patches and tongues. Arctic stages that were tarmac now drive as
+     snow, with snow's grip and prize; their best times stay (the save
+     version is unchanged).
+
+188. **2026-11-09 — Dusk on every third Arctic stage.** By request the Arctic
+     stays in daylight and only every third of its stages runs at dusk.
+     `RegionDef.dusk` now means "some stages run after sunset", and
+     `stageAtDusk(index)` (in `StageGenerator`) picks them: the region's
+     third, sixth… stage in the schedule, counted from index 0, so the
+     first Arctic stage (index 4) is by day and the first at dusk is index 22. The brief carries it as `dusk: true` (absent otherwise, so no other
+     brief changes), and `dayTheme(region, dusk)` returns the dusk theme
+     (`DUSK_LIGHTING`, faint tyre marks, the car's lamps) for it, memoised
+     per region and time of day. Counting by schedule rather than drawing
+     from the seed keeps the cadence even and the same in every game.
+
+189. **2026-11-09 — Wheel ruts in the Arctic snow, and lower boards.** By
+     request the snowed-over road carries subtle tyre tracks with some
+     relief: on a banked region's snow road `RoadBuilder` cuts the
+     carriageway into bands that dip into two grooves 1.55 m apart (a car's
+     track), each about 0.8 m across with sloped walls and a floor 4.5 cm
+     down, shaded 10 % darker on the walls and 20 % on the floor where the
+     snow is packed (half that was lost against the pale road by day); the pair wanders up to 0.3 m off the centre line over
+     about eleven metres, and each groove strays up to 0.12 m on its own,
+     swells and narrows by a third every few metres and has uneven walls
+     (its floor's edges anywhere from 15 to 35 % of its width off its
+     middle), all from the road's own noise, so the tracks read as trodden
+     rather than ruled. The dips are drawn only
+     (`Strip.dip`, `Strip.tone`); the wheels still ride the terrain's deck,
+     4.5 cm being below anything the car could feel. The time-control boards
+     are a metre tall (1.15 before) and now stand on the ground at their
+     middle rather than the highest point under them, still running down
+     past the lowest, so on a bank's slope the snow may bury the foot of
+     their high end instead of the board towering over it.

@@ -1,4 +1,4 @@
-import type { RegionDef, RegionId } from '@/game/stage/regions';
+import type { RegionDef } from '@/game/stage/regions';
 import type { Surface } from '@/game/vehicle/surfaces';
 import {
   CAP_COLOR,
@@ -34,6 +34,17 @@ export interface ThemeLighting {
   hemiIntensity: number;
   sunColor: string;
   sunIntensity: number;
+  /** A gradient sky dome in place of the flat background (dusk); the fog matches its horizon. */
+  sky?: SkyGradient;
+}
+
+/** A twilight sky: deep overhead, the fog's colour at the horizon, an afterglow where the sun went down. */
+export interface SkyGradient {
+  zenith: string;
+  horizon: string;
+  /** The wide pink band and the narrow orange one over the sunset. */
+  glow: string;
+  glowHot: string;
 }
 
 export interface RoadTheme {
@@ -112,6 +123,8 @@ export interface WorldTheme {
   /** Tyre-mark ink on every surface; null keeps the per-surface table. */
   skidInk: SkidInk | null;
   circuit: CircuitTheme;
+  /** The car's headlamps and brake lamps are lit (dusk). */
+  carLamps?: boolean;
 }
 
 /** The hues Nightcity is lit in; kits and the car pick from these by hash. */
@@ -137,6 +150,27 @@ const DAY_LIGHTING = {
  * bounce turned the shaded side of its pale limestone olive. Shadows on the cliffs read blue-grey.
  */
 export const COAST_HEMI = { hemiSky: '#e6eef5', hemiGround: '#a3aa94' } as const;
+
+/**
+ * Just past sunset: an indigo sky over an afterglow, a violet haze closing in
+ * nearer than by day, and little light left: a cool sky fill and a faint warm
+ * glow from the west, so the snow reads blue and the car's lamps carry.
+ */
+export const DUSK_LIGHTING: ThemeLighting = {
+  background: '#1d2448',
+  fog: '#4a4a72',
+  fogNear: 45,
+  fogFar: 230,
+  hemiSky: '#7d86c4',
+  hemiGround: '#2a2c44',
+  hemiIntensity: 0.55,
+  sunColor: '#ffa07a',
+  sunIntensity: 0.3,
+  sky: { zenith: '#141a3c', horizon: '#4a4a72', glow: '#b8607a', glowHot: '#ff9a52' },
+};
+
+/** Tyre marks are drawn unlit, so after dark the snow's pale ink would glow: a faint shadow instead. */
+export const DUSK_SKID_INK: SkidInk = { color: '#2b2a44', opacity: 0.3 };
 
 const DAY_GATES: GateTheme = {
   post: '#d9d4c7',
@@ -190,20 +224,27 @@ export function dayRoad(shoulder: string): RoadTheme {
   };
 }
 
-const DAY = new Map<RegionId, WorldTheme>();
+const DAY = new Map<string, WorldTheme>();
 
-/** A region's daytime look, as the game has always drawn it. Memoised, so a theme can be compared by identity. */
-export function dayTheme(region: RegionDef): WorldTheme {
-  let theme = DAY.get(region.id);
+/**
+ * A region's look by day, as the game has always drawn it, or after sunset on
+ * a stage that runs at dusk (`StageBrief.dusk`). Memoised, so a theme can be
+ * compared by identity.
+ */
+export function dayTheme(region: RegionDef, dusk = false): WorldTheme {
+  const key = `${region.id}${dusk ? ':dusk' : ''}`;
+  let theme = DAY.get(key);
   if (!theme) {
     theme = {
       id: 'day',
-      lighting: {
-        background: region.palette.sky,
-        fog: region.palette.fog,
-        ...DAY_LIGHTING,
-        ...(region.coast ? COAST_HEMI : {}),
-      },
+      lighting: dusk
+        ? DUSK_LIGHTING
+        : {
+            background: region.palette.sky,
+            fog: region.palette.fog,
+            ...DAY_LIGHTING,
+            ...(region.coast ? COAST_HEMI : {}),
+          },
       terrain: { mode: 'palette' },
       road: dayRoad(region.palette.shoulder),
       gates: DAY_GATES,
@@ -212,10 +253,11 @@ export function dayTheme(region: RegionDef): WorldTheme {
       seawall: DAY_SEAWALL,
       sea: region.coast?.sea ?? DAY_SEA,
       scenery: { kit: 'rally' },
-      skidInk: null,
+      skidInk: dusk ? DUSK_SKID_INK : null,
       circuit: DAY_CIRCUIT,
+      carLamps: dusk,
     };
-    DAY.set(region.id, theme);
+    DAY.set(key, theme);
   }
   return theme;
 }

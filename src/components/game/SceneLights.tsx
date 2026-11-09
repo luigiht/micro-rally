@@ -6,6 +6,7 @@ import type { VehiclePose } from '@/game/vehicle/interpolatePose';
 import { installShadowEdgeFade } from '@/render/effects/ShadowEdgeFade';
 import { ShadowSnap } from '@/render/effects/ShadowSnap';
 import type { ThemeLighting } from '@/render/theme/WorldTheme';
+import { SkyDome } from './SkyDome';
 
 installShadowEdgeFade();
 
@@ -74,6 +75,7 @@ export function SceneLights({ lighting: l, sunRef }: SceneLightsProps) {
   return (
     <>
       <color attach="background" args={[l.background]} />
+      {l.sky && <SkyDome sky={l.sky} sunset={SUN_DIRECTION} />}
       <fog attach="fog" args={[l.fog, l.fogNear, l.fogFar]} />
       <hemisphereLight args={[l.hemiSky, l.hemiGround, l.hemiIntensity]} />
       <directionalLight

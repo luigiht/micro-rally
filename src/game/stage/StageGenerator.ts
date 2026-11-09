@@ -108,6 +108,8 @@ export interface StageBrief {
   /** Start line to finish line, metres. */
   length: number;
   parTime: number;
+  /** Run after sunset (`stageAtDusk`): a twilight sky and the car's lamps lit. */
+  dusk?: true;
 }
 
 export interface StageDef extends StageBrief {
@@ -132,6 +134,18 @@ export function stageRegion(index: number): { region: RegionId; loop: number; su
 /** A town on every third stage (`hasTown`), except in regions that build none: the coast and the desert. */
 export function stageHasTown(index: number): boolean {
   return hasTown(index) && REGIONS[stageRegion(index).region].towns;
+}
+
+/** In a region that runs at dusk, every this-many'th of its stages does; the rest run by day. */
+export const DUSK_EVERY = 3;
+
+/** Whether the stage at `index` runs at dusk: the third, sixth… stage of a region with `dusk`. */
+export function stageAtDusk(index: number): boolean {
+  const { region } = stageRegion(index);
+  if (!REGIONS[region].dusk) return false;
+  let ordinal = 0;
+  for (let j = 0; j < index; j++) if (stageRegion(j).region === region) ordinal++;
+  return ordinal % DUSK_EVERY === DUSK_EVERY - 1;
 }
 
 /**
@@ -256,7 +270,18 @@ function drawBrief(
   const parTime = layout
     ? Math.round(length / (def.parSpeed * SURFACE_PAR[surface])) + STANDING_START_SECONDS
     : Math.round(length / (def.parSpeed * SURFACE_PAR[surface])) + (town ? TOWN_PAR_SECONDS : 0);
-  return { seed, index, region, loop, name, surface, weather, length, parTime };
+  return {
+    seed,
+    index,
+    region,
+    loop,
+    name,
+    surface,
+    weather,
+    length,
+    parTime,
+    ...(stageAtDusk(index) ? { dusk: true as const } : {}),
+  };
 }
 
 /** A circuit stage's layout, drawn from the stream after the brief's five draws. */

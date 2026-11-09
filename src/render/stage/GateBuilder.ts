@@ -17,7 +17,7 @@ const HEIGHT = 4.4;
 const TILES = 10;
 
 /** Time-control board standing on the ground: plain white plate, yellow "start of control" clock reading 2:50. */
-const BOARD = { width: 0.9, height: 1.15, clock: 0.3, ring: 0.045 } as const;
+const BOARD = { width: 0.9, height: 1.0, clock: 0.3, ring: 0.045 } as const;
 /** Clock hands, clockwise from 12 as the approaching driver sees them. */
 const HOUR_ANGLE = (2 + 50 / 60) * (Math.PI / 6);
 const MINUTE_ANGLE = 50 * (Math.PI / 30);
@@ -98,8 +98,6 @@ export class GateBuilder {
   ) {
     const { width, height, clock, ring } = BOARD;
     const thick = 0.04;
-    // Sunk 0.1 m so it meets sloping ground without a gap.
-    const plateGeo = this.box(width, height + 0.1, thick).translate(0, (height - 0.1) / 2, 0);
     const ringGeo = this.disc(clock + ring, LAYER);
     const faceGeo = this.disc(clock, LAYER);
     const hourGeo = this.box(0.05, clock * 0.55, LAYER).translate(0, clock * 0.275, 0);
@@ -110,8 +108,19 @@ export class GateBuilder {
     for (const side of [-1, 1]) {
       const px = x + Math.cos(heading) * half * side;
       const pz = z - Math.sin(heading) * half * side;
+      // The ground under the plate's ends and middle: it stands on the middle and reaches below the
+      // lowest, so no edge hangs in the air; a snow bank's slope may bury its foot at the high end.
+      let mid = 0;
+      let low = Infinity;
+      for (const u of [-width / 2, 0, width / 2]) {
+        const h = field.heightAt(px + Math.cos(heading) * u, pz - Math.sin(heading) * u);
+        if (u === 0) mid = h;
+        low = Math.min(low, h);
+      }
+      const sink = mid - low + 0.1;
+      const plateGeo = this.box(width, height + sink, thick).translate(0, (height - sink) / 2, 0);
       const board = new Group();
-      board.position.set(px, field.heightAt(px, pz), pz);
+      board.position.set(px, mid, pz);
       board.rotation.y = heading;
       const { board: plateColor, clock, ink } = this.theme;
       const plate = new Mesh(plateGeo, this.material(plateColor));

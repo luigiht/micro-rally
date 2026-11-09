@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { REGIONS } from '@/game/stage/regions';
+import { stageAtDusk, stageBrief, stageRegion } from '@/game/stage/StageGenerator';
 import {
   CAP_COLOR,
   KERB_COLOR,
@@ -12,6 +13,7 @@ import { themeColor, themeGlow, themeHex } from '@/render/theme/themeColor';
 import {
   COAST_HEMI,
   dayTheme,
+  DUSK_LIGHTING,
   flatTheme,
   NIGHTCITY_THEME,
   type ThemeColor,
@@ -68,6 +70,39 @@ describe('WorldTheme', () => {
     }
   });
 
+  it('a stage at dusk gets a twilight sky, little light, the car lamps lit, the day kits', () => {
+    const arctic = dayTheme(REGIONS.arctic, true);
+    expect(REGIONS.arctic.dusk).toBe(true);
+    expect(arctic.id).toBe('day');
+    expect(arctic.lighting).toBe(DUSK_LIGHTING);
+    expect(arctic.carLamps).toBe(true);
+    // Unlit marks: dark and faint after dark, never the snow's pale ink.
+    expect(arctic.skidInk?.opacity).toBeLessThan(0.5);
+    expect(arctic.scenery.kit).toBe('rally');
+    const l = arctic.lighting;
+    // The fog melts distant ground into the sky's horizon; far dimmer than by day.
+    expect(l.sky?.horizon).toBe(l.fog);
+    expect(l.hemiIntensity).toBeLessThan(1.9 / 2);
+    expect(l.sunIntensity).toBeLessThan(2.6 / 4);
+    expect(dayTheme(REGIONS.arctic, true)).toBe(arctic);
+    expect(dayTheme(REGIONS.arctic)).not.toBe(arctic);
+    for (const region of Object.values(REGIONS)) expect(dayTheme(region).carLamps).toBe(false);
+  });
+
+  it('runs every third Arctic stage at dusk and every other stage by day', () => {
+    const arctic: boolean[] = [];
+    for (let i = 0; i < 200; i++) {
+      const { region } = stageRegion(i);
+      if (region === 'arctic') arctic.push(stageAtDusk(i));
+      else expect(stageAtDusk(i)).toBe(false);
+    }
+    expect(arctic.length).toBeGreaterThan(9);
+    arctic.forEach((dusk, k) => expect(dusk).toBe(k % 3 === 2));
+    const first = [...Array(200).keys()].find((i) => stageAtDusk(i))!;
+    expect(stageBrief(1, first).dusk).toBe(true);
+    expect(stageBrief(1, first - 1).dusk).toBeUndefined();
+  });
+
   it('the flat theme is the day theme with its own sky and fog', () => {
     const t = flatTheme('#cfe3e8', '#dde');
     expect(t.id).toBe('day');
@@ -97,7 +132,11 @@ describe('WorldTheme', () => {
   });
 
   it('every colour in every theme is a six-digit hex', () => {
-    const themes = [...Object.values(REGIONS).map(dayTheme), NIGHTCITY_THEME];
+    const themes = [
+      ...Object.values(REGIONS).map((r) => dayTheme(r)),
+      dayTheme(REGIONS.arctic, true),
+      NIGHTCITY_THEME,
+    ];
     for (const t of themes) {
       const list = colours(t);
       expect(list.length).toBeGreaterThan(20);
