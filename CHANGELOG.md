@@ -9,6 +9,11 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Added
 
+- **Spectators on Alpine stages.** The winter crowd from the Arctic now
+  lines the Alpine stages too, at the start, the checkpoints and along the
+  road. [191]
+- **Alpine crowds behind snow berms.** Like the mud stages, the Alpine
+  spectators stand behind low mounds heaped along the road. [192]
 - **No villages in the Arctic.** Arctic stages are open country only;
   villages stay in the Forest and the Alpine. [190]
 - **Arctic stages at dusk.** Every third Arctic stage now runs just after

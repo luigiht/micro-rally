@@ -32,6 +32,8 @@ export interface SceneryDensity {
   spruces?: number;
   /** Small groups of roadside spectators per 100 m of road; none when unset. */
   spectators?: number;
+  /** The crowds stand behind low earth berms. */
+  berms?: boolean;
 }
 
 /** A region whose stages have oases (see `Oases`): how often along the road, how wide the pool, how many palms. */
@@ -157,7 +159,7 @@ const FOREST: RegionDef = {
   palette: FOREST_PALETTE,
   surfacePalettes: { mud: FOREST_AUTUMN },
   // The autumn mud rally draws a crowd, in everyday clothes.
-  surfaceScenery: { mud: { spectators: 2.2 } },
+  surfaceScenery: { mud: { spectators: 2.2, berms: true } },
   terrain: { amplitude: 22, frequency: 1 / 260 },
   twistiness: 0.9,
   baseLength: 1800,
@@ -200,7 +202,16 @@ const ALPINE: RegionDef = {
   terrain: { amplitude: 34, frequency: 1 / 230 },
   twistiness: 1.4,
   baseLength: 1500,
-  scenery: { trees: 78, broadleaf: 6, bushes: 6, rocks: 14, houses: 0.7 },
+  // The Arctic's crowd too: groups in winter clothes on the verges, the start and the checkpoints.
+  scenery: {
+    trees: 78,
+    broadleaf: 6,
+    bushes: 6,
+    rocks: 14,
+    houses: 0.7,
+    spectators: 2.2,
+    berms: true,
+  },
   parSpeed: 14,
   towns: true,
 };

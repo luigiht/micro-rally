@@ -27,7 +27,7 @@ const DEAL_APART = 6;
 /** Groups keep this far from a crowd's ends, so the two never pile up. */
 const CROWD_MARGIN = 10;
 /**
- * Berms on mud stages: earth heaped from this far past the carriageway's edge
+ * Berms (mud and Alpine stages): earth heaped from this far past the carriageway's edge
  * (clear of the verge strip), this deep and high, in runs this long; the
  * crowd stands just behind, its eyes well above the crest.
  */
@@ -88,7 +88,7 @@ function crowds(field: TerrainField): Crowd[] {
  * jumps and the finish (`crowds`), and between them `perHundred` groups
  * per 100 m, five or six people a stride apart, on either side, no two in a
  * group striking the same pose or wearing the same jacket. With `berms` (mud
- * stages) the groups and the start, checkpoint and finish crowds stand a few metres
+ * and Alpine stages) the groups and the start, checkpoint and finish crowds stand a few metres
  * further back, behind a low berm of earth heaped between them and the road
  * (returned as `mounds` for the terrain). All
  * stand just behind the snow banks (or the verge) facing the road, never

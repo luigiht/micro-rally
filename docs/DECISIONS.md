@@ -3668,3 +3668,18 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      round on Forest (every surface) and the Alpine. The Arctic stages
      that had a village drive a different road now; their best times stay
      (the save version is unchanged).
+
+191. **2026-11-09 — The Arctic's crowd on Alpine stages too.** By request
+     the Alpine gets the Arctic's spectators: `scenery.spectators` 2.2 on
+     the region, so `scatterSpectators` stands the same groups at the start,
+     the checkpoints and along the verges. Their clothes follow the region's
+     off-road ground (`spectatorOutfit`), which is snow in the Alpine, so
+     they come in the same winter jackets, hats and boots. The Arctic keeps
+     its crowd.
+
+192. **2026-11-09 — Alpine crowds behind berms.** The mud stages' earth
+     berms in front of the crowds became a region scenery flag,
+     `scenery.berms`, set on the Forest's mud override and on the Alpine, in
+     place of the `surface === 'mud'` test in `SceneryScatter`. On the Alpine
+     the berm takes the field's own tint (`grassLow` darkened), so it reads
+     as a low heap of grey snow with the winter crowd standing behind it.

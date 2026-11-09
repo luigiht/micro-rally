@@ -270,9 +270,9 @@ export function scatterScenery(field: TerrainField): Prop[] {
     }
   }
   const houses = scatterHouses(field);
-  // On mud the crowd stands behind earth berms, which the terrain heaps before anything stands on it.
+  // Berms are heaped into the terrain before anything stands on it.
   const crowd = density.spectators
-    ? scatterSpectators(field, density.spectators, stage.surface === 'mud')
+    ? scatterSpectators(field, density.spectators, density.berms === true)
     : { people: [], mounds: [] };
   const spectators = crowd.people;
   field.setMounds(crowd.mounds);
