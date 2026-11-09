@@ -3477,3 +3477,26 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      good, aimed at the car rather than ahead of it so a 9:16 frame keeps
      it centred. Both are read only outside production builds, like
      `?spawn=`.
+
+181. **2026-11-09 — Coast stacks keep clear of the road below.** Played, the
+     coast's hairpins showed a sheer wall at the lower road's edge with the
+     road above on top of it. Decision 97 spaced stacked legs two radii
+     apart across the stage axis, which holds only while the shore runs
+     along the axis: where it bends the contours close up (by the cosine of
+     the bend), and the long way down, leaving the top after a fixed 50 m,
+     passed over the first hairpin's apex. Measured over sixteen stages,
+     other stretches of road came within 25 m centre to centre (under 8 m
+     on two late-loop stages), 15–22 m above, so the terrain's nearest-road
+     rule switched to the upper deck inside the lower road's blend, or on
+     its verge. `CoastRoad` now holds every part of a stack 36 m from the
+     road below it (two half widths, flat margins and coast blends, so the
+     corridors never meet): each leg's lift grows in 2 m steps until its
+     contour clears the leg below, and the top leg runs on in 10 m steps
+     until the descent clears legs 1–2 and the first hairpin. Blending the
+     terrain between two decks where corridors overlap was considered and
+     dropped: with 20 m between decks over 8 m of ground it only trades a
+     step for a 70° wall. Coast roads change on some seeds (longer by up
+     to a few hundred metres); the save version is unchanged, so a best
+     time set before this may be on a slightly shorter road. A unit test
+     probes 14.5 m out from every sample of six early and late coast
+     stages for another stretch of road.

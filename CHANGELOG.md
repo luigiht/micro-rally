@@ -5,6 +5,17 @@ tags yet: `main` is deployed continuously, so entries are grouped by the day
 they landed. The numbered entries in [docs/DECISIONS.md](docs/DECISIONS.md)
 hold the reasoning behind each change; the numbers in brackets point there.
 
+## 2026-11-09
+
+### Fixed
+
+- **Coast hairpin stacks no longer sit on the road below.** Where the shore
+  bent, a stacked leg or the long way down could pass 25 m or less from the
+  road beneath it, so its cutting rose as a sheer wall at the lower road's
+  edge (and on late loops stepped onto the verge). Stacked legs now move
+  apart where needed and the top leg runs on until the descent is clear of
+  the first hairpin. Some Coast stages are a little longer. [181]
+
 ## 2026-11-08
 
 ### Changed

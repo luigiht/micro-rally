@@ -299,6 +299,27 @@ describe('Coast stages', () => {
     }
   });
 
+  it('keeps every stacked leg and the way down clear of the road below, on late loops too', () => {
+    for (const seed of SEEDS) {
+      for (const stage of [fieldFor(seed).stage, generateStage(seed, LATE_COAST_INDEX)]) {
+        const { path, halfWidth } = stage;
+        const hit = createRoadHit();
+        const s = { x: 0, z: 0, heading: 0 };
+        // Out past the verge and most of the blend, the ground is still this stretch of road's.
+        const reach = halfWidth + 9;
+        for (let d = 100; d < path.length - 100; d += 4) {
+          path.sample(d, s);
+          for (const side of [1, -1]) {
+            const x = s.x + Math.cos(s.heading) * reach * side;
+            const z = s.z - Math.sin(s.heading) * reach * side;
+            expect(path.nearest(x, z, 60, hit)).toBe(true);
+            expect(Math.abs(hit.along - d), `seed ${seed} at ${d} m`).toBeLessThan(60);
+          }
+        }
+      }
+    }
+  });
+
   it('turns through its hairpins without a kink: no heading step over 10° in 2 m, on late loops too', () => {
     for (const seed of SEEDS) {
       for (const stage of [fieldFor(seed).stage, generateStage(seed, LATE_COAST_INDEX)]) {

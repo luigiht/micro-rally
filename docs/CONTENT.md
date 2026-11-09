@@ -185,7 +185,10 @@ retainer wherever the ground falls away beside it.
   36–52 m apart up the slope, each arc fitted to leave one leg and land on the
   next tangentially, every leg under the 12 % grade limit (the climb between
   stacked legs is their spacing times the hill's slope, spread over a hairpin
-  and a leg).
+  and a leg). Every leg, and the way down, keeps 36 m (centre to centre) from
+  the road below it: where the shore bends the contours close up, the legs
+  move further apart and the top leg runs on until the descent clears the
+  first hairpin (decision 181).
 - **Shore.** The water line, a dry-sand beach up to 30 m wide a metre above
   the sea (a couple of metres at a headland), then the cliff band:
   4–24 m tall; where tall it stands at 62° and is terraced into 3–5 m runs of

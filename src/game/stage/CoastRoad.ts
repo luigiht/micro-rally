@@ -33,8 +33,15 @@ const RADIUS_SPAN = 4;
 const RADIUS_HARD = 4;
 /** A hairpin never turns tighter than this, whatever the contours do. */
 const MIN_TURN = 12;
-/** Along the top before the way down. */
+/** Along the top before the way down, and how much longer it runs per try while the descent fouls the stack. */
 const TOP_LEG = 50;
+const TOP_LEG_STEP = 10;
+const TOP_LEG_MAX = 600;
+/**
+ * Stacked legs and the descent keep this far (centre to centre) from the road below: two half
+ * widths, flat margins and coast blends (5.5 + 3 + 9 each side), so the corridors do not meet.
+ */
+const STACK_CLEAR = 36;
 /** The way down holds this grade, under the limiter's 12 %. */
 const DESCENT_GRADE = 0.1;
 /** Light smoothing of the finished polyline: rounds the small corners left where a hairpin meets its leg. */
@@ -169,16 +176,35 @@ export function buildCoastRoad(rand: () => number, total: number, shape: CoastSh
     return Math.abs(f.tx * Math.cos(shape.theta) - f.tz * Math.sin(shape.theta));
   };
 
+  /**
+   * The least lift from `lift` up at which the contour over [uLo, uHi] keeps `STACK_CLEAR` from the
+   * leg in `pts[i0, i1)`: where the shore bends across the axis the contours close up.
+   */
+  const clearLift = (lift: number, uLo: number, uHi: number, i0: number, i1: number): number => {
+    const clear = (l: number) => {
+      for (let uu = uLo; uu <= uHi; uu += STEP) {
+        const [x, z] = contour(uu, l);
+        for (let j = i0; j < i1; j += 2)
+          if (Math.hypot(x - pts[j]!, z - pts[j + 1]!) < STACK_CLEAR) return false;
+      }
+      return true;
+    };
+    let l = lift;
+    while (l < 2 * lift && !clear(l)) l += 2;
+    return l;
+  };
+
   const stack = () => {
     const from = length;
+    const below = pts.length;
     const leg = LEG_MIN + rand() * LEG_SPAN;
     const r = RADIUS_MIN - RADIUS_HARD * shape.difficulty + rand() * RADIUS_SPAN;
     // Leg 1 along the shelf.
     const uA = u;
     for (let d = STEP; d <= leg; d += STEP) push(...contour(uA + d, 0));
     const uT = uA + leg;
-    // Hairpin 1 off the shelf onto the contour two radii inland, then leg 2 back along it.
-    const lift2 = 2 * r;
+    // Hairpin 1 off the shelf onto the contour two radii inland (or further, clear of leg 1), then leg 2 back along it.
+    const lift2 = clearLift(2 * r, uA, uT, below, pts.length);
     const f1 = frame(uT, 0, 1);
     const t1 = fitTurn(lastX, lastZ, f1, lift2, -1, uT);
     turn(lastX, lastZ, f1, t1.rho, t1.alpha);
@@ -186,21 +212,43 @@ export function buildCoastRoad(rand: () => number, total: number, shape: CoastSh
     let leg2 = leg - 20;
     for (let cand = leg - 40; cand <= leg; cand += 5)
       if (skew(t1.uE - cand, lift2) < skew(t1.uE - leg2, lift2)) leg2 = cand;
+    const leg2From = pts.length;
     for (let d = STEP; d <= leg2; d += STEP) push(...contour(t1.uE - d, lift2));
+    const belowEnd = pts.length;
     const uE = t1.uE - leg2;
-    // Hairpin 2 onto the contour two radii further inland, travelled forward again.
-    const lift4 = 4 * r;
+    // Hairpin 2 onto the contour two radii further inland (or further, clear of leg 2), travelled forward again.
+    const lift4 = clearLift(lift2 + 2 * r, uE, t1.uE, leg2From, belowEnd);
     const f2 = frame(uE, lift2, -1);
     const t2 = fitTurn(lastX, lastZ, f2, lift4, 1, uE);
     turn(lastX, lastZ, f2, t2.rho, t2.alpha);
     const land2 = { u: t2.uE };
-    // Along the top, then the long way down to the shelf.
+    // Along the top, then the long way down to the shelf. Where the shore bends the contours close
+    // up, and the way down can pass over the first hairpin's apex a few metres above its cut: the
+    // top leg then runs on until the descent clears the legs and the hairpin below.
     const descent = (lift4 * shape.hillSlope(land2.u)) / DESCENT_GRADE;
-    for (let d = STEP; d <= TOP_LEG + descent; d += STEP) {
-      const f = d <= TOP_LEG ? 0 : smoothstep(0, 1, (d - TOP_LEG) / descent);
-      push(...contour(land2.u + d, lift4 * (1 - f)));
+    const way = (top: number): number[] => {
+      const out: number[] = [];
+      for (let d = STEP; d <= top + descent; d += STEP) {
+        const f = d <= top ? 0 : smoothstep(0, 1, (d - top) / descent);
+        out.push(...contour(land2.u + d, lift4 * (1 - f)));
+      }
+      return out;
+    };
+    const clears = (line: number[], top: number): boolean => {
+      for (let i = 2 * Math.ceil(top / STEP); i < line.length; i += 2)
+        for (let j = below; j < belowEnd; j += 2)
+          if (Math.hypot(line[i]! - pts[j]!, line[i + 1]! - pts[j + 1]!) < STACK_CLEAR)
+            return false;
+      return true;
+    };
+    let top = TOP_LEG;
+    let down = way(top);
+    while (top < TOP_LEG_MAX && !clears(down, top)) {
+      top += TOP_LEG_STEP;
+      down = way(top);
     }
-    u = land2.u + TOP_LEG + descent;
+    for (let i = 0; i < down.length; i += 2) push(down[i]!, down[i + 1]!);
+    u = land2.u + top + descent;
     switchbacks.push({ from, to: length });
   };
 
