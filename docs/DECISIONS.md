@@ -3500,3 +3500,46 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      time set before this may be on a slightly shorter road. A unit test
      probes 14.5 m out from every sample of six early and late coast
      stages for another stretch of road.
+
+182. **2026-11-09 — A sunk bed under the circuits' gravel traps.** Grass
+     showed through the corners' gravel in triangular patches. `KerbBuilder`
+     draws each trap as a flat band 1.5 cm over the runoff, whose terrain
+     sits at the deck's level; but the terrain's 2 m grid and the band's
+     per-sample quads are different straight-line cuts of the same curved
+     road profile, and across a grade change the grid's triangles bowed up
+     to 4.5 cm through the band (on 2–5 % of the points under it, over three
+     circuits). Lifting the band further was considered and dropped: the
+     error grows with the profile's curvature, and a raised band shows an
+     edge from the low cameras. The terrain mesh now sinks 15 cm under the
+     band, ramping back to the runoff's level over the half metre inside
+     its edges (`gravelDepth`, from the trap's lateral edges and the ends
+     of its run along the lap), the same answer as the trench under the
+     road (`ROAD_BED_DROP`). Only `sample` (the mesh) sinks; the wheels
+     still ride `deckAt`, so the gravel drives as before. A unit test
+     checks the mesh, triangle by triangle on the chunks' grid, stays under
+     the band at every point 0.25 m or more inside its edges.
+
+183. **2026-11-09 — Coast ground banked between stacked legs.** Decision
+     181 kept every leg 36 m from the road below, but stage 39 of a played
+     game still showed a sheer wall at a hairpin's outside edge. The cause
+     was the deck, not the plan: a hairpin climbs two contours (about 18 m
+     at the hill's slope) in 60–70 m of road, and the 12 % limiter lets the
+     deck rise about 8 m of that, so the apex runs 13–16 m below the
+     hillside it crosses and the 9 m coast blend stood that cut as a wall;
+     the leg above, 31 m higher at 36 m, sat on top of it. Widening the
+     clearance until the decks fitted a 1.2 bank between them was tried and
+     dropped: nearly every stage needed 52–60 m, which widened the hairpins
+     past the pace notes' 26 m hairpin radius and lost the coast test's two
+     hairpins. Instead `TerrainField` shapes the coast's ground before the
+     road blends into it (`shapedGround`): from every stretch of road within
+     30 m of its flat margin (`RoadPath.visitNear`) the ground stands no more
+     than 1.2 per metre above the deck (a cut opens out instead of rising at
+     the verge), and inland of the shore road's line, fading in over 8 m so
+     the sea cliffs keep their 62°, no more than 1.2 per metre below it;
+     where a lower road's cut and an upper road's fill cross, the ground
+     ramps straight between their flat margins, weighted by distance, so
+     the bank meets each verge level. On the reported hairpin the ground
+     6 m past the margin drops from 16 m above the deck to 6 m, and the
+     31 m to the leg above is one even bank rather than a wall and a shelf.
+     A unit test holds that 6 m point under 7.5 m above the deck along
+     seven coast stages, the reported one among them.

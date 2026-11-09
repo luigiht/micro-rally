@@ -1,15 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import {
+  GRAVEL_FROM_KERB,
+  GRAVEL_TO_BARRIER,
   KERB_HEIGHT,
+  KERB_OUT,
   KERB_RADIUS,
   barrierObstacles,
   circuitTrackside,
   grandstandSpot,
+  gravelDepth,
   outermostBarrier,
 } from '@/game/stage/CircuitTrackside';
 import { scatterScenery } from '@/game/stage/SceneryScatter';
 import { generateStage } from '@/game/stage/StageGenerator';
-import { ROAD_LIFT, TerrainField } from '@/game/stage/TerrainField';
+import { ROAD_LIFT, TerrainField, type TerrainSample } from '@/game/stage/TerrainField';
 
 const stage = generateStage(6, 9);
 const t = circuitTrackside(stage)!;
@@ -99,6 +103,43 @@ describe('circuit trackside', () => {
     expect(field.surfaceAt(s.x + Math.cos(s.heading) * gl, s.z - Math.sin(s.heading) * gl)).toBe(
       'gravel',
     );
+  });
+
+  it('keeps the terrain mesh under the gravel band, so no grass shows through it', () => {
+    const sample: TerrainSample = { height: 0, roadBlend: 0, roadDistance: 0 };
+    const h = (x: number, z: number) => field.sample(x, z, sample).height;
+    // The terrain chunks' 2 m grid, each cell split along its (0,0)–(1,1) diagonal.
+    const mesh = (x: number, z: number) => {
+      const i = Math.floor(x / 2);
+      const j = Math.floor(z / 2);
+      const fx = x / 2 - i;
+      const fz = z / 2 - j;
+      const h00 = h(i * 2, j * 2);
+      const h11 = h(i * 2 + 2, j * 2 + 2);
+      if (fz >= fx) return h00 + (h(i * 2, j * 2 + 2) - h00) * (fz - fx) + (h11 - h00) * fx;
+      return h00 + (h(i * 2 + 2, j * 2) - h00) * (fx - fz) + (h11 - h00) * fz;
+    };
+    const { path, halfWidth } = stage;
+    let checked = 0;
+    for (const side of [1, -1] as const) {
+      const k = side === 1 ? 0 : 1;
+      for (let i = 0; i < path.count - 1; i += 2) {
+        if (!t.gravel[k][i] || !t.gravel[k][i + 1]) continue;
+        const head = path.headings[i]!;
+        // The band as `KerbBuilder` draws it, barely over the runoff.
+        const band = field.roadHeightAt(i * path.spacing) + ROAD_LIFT + 0.015;
+        const inner = halfWidth + KERB_OUT + GRAVEL_FROM_KERB + 0.25;
+        const outer = t.barrier[k][i]! - GRAVEL_TO_BARRIER - 0.25;
+        for (let l = inner; l <= outer; l += 0.5) {
+          const x = path.xs[i]! + Math.cos(head) * l * side;
+          const z = path.zs[i]! - Math.sin(head) * l * side;
+          if (gravelDepth(t, path, halfWidth, i * path.spacing, l * side) < 0.25) continue;
+          checked++;
+          expect(mesh(x, z)).toBeLessThan(band);
+        }
+      }
+    }
+    expect(checked).toBeGreaterThan(500);
   });
 
   it('keeps scenery outside the fences and off the grandstand', () => {

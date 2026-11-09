@@ -188,7 +188,11 @@ retainer wherever the ground falls away beside it.
   and a leg). Every leg, and the way down, keeps 36 m (centre to centre) from
   the road below it: where the shore bends the contours close up, the legs
   move further apart and the top leg runs on until the descent clears the
-  first hairpin (decision 181).
+  first hairpin (decision 181). A hairpin climbs faster than the 12 %
+  deck can, so it runs cut into the hillside; the ground is banked back
+  from every stretch of road at no more than 1.2 per metre, and between a
+  lower road's cut and an upper road's fill it ramps straight from one
+  verge to the other (decision 183).
 - **Shore.** The water line, a dry-sand beach up to 30 m wide a metre above
   the sea (a couple of metres at a headland), then the cliff band:
   4–24 m tall; where tall it stands at 62° and is terraced into 3–5 m runs of

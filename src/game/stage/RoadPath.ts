@@ -173,6 +173,40 @@ export class RoadPath {
     return found;
   }
 
+  /** Calls `visit(along, distance)` for the closest point of every segment within `maxDist`; a segment may come twice. */
+  visitNear(
+    x: number,
+    z: number,
+    maxDist: number,
+    visit: (along: number, distance: number) => void,
+  ): void {
+    const c0x = Math.floor((x - maxDist) / CELL);
+    const c1x = Math.floor((x + maxDist) / CELL);
+    const c0z = Math.floor((z - maxDist) / CELL);
+    const c1z = Math.floor((z + maxDist) / CELL);
+    const max2 = maxDist * maxDist;
+    for (let cx = c0x; cx <= c1x; cx++) {
+      for (let cz = c0z; cz <= c1z; cz++) {
+        const segs = this.grid.get(cellKey(cx, cz));
+        if (!segs) continue;
+        for (let k = 0; k < segs.length; k++) {
+          const i = segs[k]!;
+          const ax = this.xs[i]!;
+          const az = this.zs[i]!;
+          const dx = this.xs[i + 1]! - ax;
+          const dz = this.zs[i + 1]! - az;
+          const len2 = dx * dx + dz * dz;
+          let t = len2 > 0 ? ((x - ax) * dx + (z - az) * dz) / len2 : 0;
+          t = t < 0 ? 0 : t > 1 ? 1 : t;
+          const px = x - (ax + dx * t);
+          const pz = z - (az + dz * t);
+          const d2 = px * px + pz * pz;
+          if (d2 <= max2) visit((i + t) * this.spacing, Math.sqrt(d2));
+        }
+      }
+    }
+  }
+
   private buildGrid(): void {
     const tmp = new Map<number, number[]>();
     for (let i = 0; i < this.count - 1; i++) {

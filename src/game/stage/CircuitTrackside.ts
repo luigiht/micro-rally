@@ -40,6 +40,8 @@ export interface CircuitTrackside {
   kerb: [Uint8Array, Uint8Array];
   /** Per side and sample: gravel trap present. */
   gravel: [Uint8Array, Uint8Array];
+  /** Per side and sample: metres along the lap to the nearer end of its gravel run (0 off gravel). */
+  gravelRun: [Float64Array, Float64Array];
   /** Per side and sample: barrier offset from the centreline, metres. */
   barrier: [Float64Array, Float64Array];
   /** Per side and sample: catch fence stands on the barrier. */
@@ -157,7 +159,23 @@ function buildTrackside(path: RoadPath, halfWidth: number, mainStraight: number)
       gravel[s]![i] = grown[j]! && room > 3 ? 1 : 0;
     }
   }
-  return { curvature, kerb: kerbs, gravel, barrier, fence };
+  const gravelRun: [Float64Array, Float64Array] = [
+    new Float64Array(path.count),
+    new Float64Array(path.count),
+  ];
+  for (const s of [0, 1] as const) {
+    const g = gravel[s];
+    for (let i = 0; i < n; i++) {
+      if (!g[i]) continue;
+      let back = 0;
+      while (back < n && g[(i - back - 1 + n) % n]) back++;
+      let fwd = 0;
+      while (fwd < n && g[(i + fwd + 1) % n]) fwd++;
+      gravelRun[s][i] = Math.min(back, fwd) * path.spacing;
+    }
+    gravelRun[s][n] = gravelRun[s][0]!;
+  }
+  return { curvature, kerb: kerbs, gravel, gravelRun, barrier, fence };
 }
 
 const cache = new WeakMap<StageDef, CircuitTrackside>();
@@ -211,6 +229,30 @@ export function inGravel(
     d > halfWidth + KERB_OUT + GRAVEL_FROM_KERB &&
     d < barrierAt(t, path, along, side) - GRAVEL_TO_BARRIER
   );
+}
+
+/**
+ * How far a point lies inside the gravel band as drawn (metres to its nearest
+ * edge, across or along the lap); 0 outside it.
+ */
+export function gravelDepth(
+  t: CircuitTrackside,
+  path: RoadPath,
+  halfWidth: number,
+  along: number,
+  lateral: number,
+): number {
+  const k = sideIndex(lateral >= 0 ? 1 : -1);
+  const f = path.wrap(along) / path.spacing;
+  const i = Math.min(path.count - 2, Math.max(0, Math.floor(f)));
+  const g = t.gravel[k];
+  if (!g[i] || !g[i + 1]) return 0;
+  const run = t.gravelRun[k];
+  const alongDepth = run[i]! + (run[i + 1]! - run[i]!) * (f - i);
+  const d = Math.abs(lateral);
+  const inner = halfWidth + KERB_OUT + GRAVEL_FROM_KERB;
+  const outer = barrierAt(t, path, along, lateral >= 0 ? 1 : -1) - GRAVEL_TO_BARRIER;
+  return Math.max(0, Math.min(d - inner, outer - d, alongDepth));
 }
 
 /** Where the barrier line stands: one point per sample on this side. */

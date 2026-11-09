@@ -6,12 +6,13 @@ import type { TerrainQuery } from '../vehicle/Terrain';
 import {
   circuitSurface,
   circuitTrackside,
+  gravelDepth,
   kerbLift,
   outermostBarrier,
   type CircuitTrackside,
 } from './CircuitTrackside';
 import { Coastline } from './Coastline';
-import { CoastShape, type CoastSurface } from './CoastShape';
+import { type AxisPoint, CoastShape, type CoastSurface } from './CoastShape';
 import type { Oasis } from './Oases';
 import { REGIONS, reliefAmplitude } from './regions';
 import { createRoadHit } from './RoadPath';
@@ -45,6 +46,18 @@ const BLEND_WIDTH = 16;
 /** On a Coast stage the verges give way to the ground over this much instead, so the cliff edge and the cut show. */
 const COAST_BLEND = 9;
 /**
+ * On a Coast stage the ground beside every stretch of road within
+ * `BANK_REACH` beyond its flat margin climbs no steeper than this above its
+ * deck (rise per metre), so a hairpin cut deep into the hillside opens out
+ * instead of standing as a wall at its edge; inland of the shore road it
+ * falls no steeper below it either, and where a lower road's cut and an
+ * upper road's fill cross, the ground ramps straight from one to the other.
+ */
+const BANK_SLOPE = 1.2;
+const BANK_REACH = 30;
+/** The fill floor fades in over this much inland of the shore road's line, leaving the sea cliffs alone. */
+const FILL_FADE = 8;
+/**
  * The road ribbon is drawn this far above the smoothed road profile; the
  * verge (flat margin) sits at the same level, so ribbon and terrain meet
  * flush at the road edge and wheels roll off without a step.
@@ -63,6 +76,13 @@ export const ROAD_LIFT = 0.08;
 export const ROAD_BED_DROP = 0.25;
 const TRENCH_IN = 0.6;
 export const TRENCH_OUT = 0.4;
+/**
+ * The same for a circuit's gravel traps, drawn barely over the flat runoff:
+ * the bed sinks this far under the band, ramping back to the runoff's level
+ * over `GRAVEL_BED_RAMP` inside its edges.
+ */
+const GRAVEL_BED_DROP = 0.15;
+const GRAVEL_BED_RAMP = 0.5;
 /**
  * Inside a town the hills keep a share of their relief, so streets climb and
  * dip and buildings step down the slope: enough that the tamed hills swing
@@ -223,6 +243,27 @@ export class TerrainField implements TerrainQuery {
   /** Each junction's tarmac, trenched like a carriageway so the junction surface sits clear of the terrain. */
   private readonly junctions: JunctionSurface[];
   private readonly surfaceScratch: CoastSurface = { rock: 0, scree: 0, dry: 0 };
+  /** The lowest cut cap and the highest fill floor over the coast road stretches `visitNear` finds. */
+  private cutCap = Infinity;
+  private fillFloor = -Infinity;
+  /** How far beyond its flat margin the road setting each bound lies. */
+  private cutX = 0;
+  private fillX = 0;
+  private readonly axis: AxisPoint = { u: 0, v: 0 };
+  private readonly envelope = (along: number, distance: number): void => {
+    const deck = this.roadHeightAt(along) + ROAD_LIFT;
+    const beyond = Math.max(0, distance - this.stage.halfWidth - this.flatMargin);
+    const cut = deck + BANK_SLOPE * beyond;
+    if (cut < this.cutCap) {
+      this.cutCap = cut;
+      this.cutX = beyond;
+    }
+    const fill = deck - BANK_SLOPE * beyond;
+    if (fill > this.fillFloor) {
+      this.fillFloor = fill;
+      this.fillX = beyond;
+    }
+  };
   private readonly street: StreetHit = {
     deck: 0,
     distance: Infinity,
@@ -635,8 +676,31 @@ export class TerrainField implements TerrainQuery {
     return this.flatMargin;
   }
 
-  sample(x: number, z: number, out: TerrainSample): TerrainSample {
+  /**
+   * The ground the road blends into: the hills, and on a Coast stage held
+   * within `BANK_SLOPE` of every stretch of road in reach, so stacked legs
+   * never meet in a wall or a step.
+   */
+  private shapedGround(x: number, z: number): number {
     const base = this.groundHeight(x, z);
+    if (!this.coast) return base;
+    this.cutCap = Infinity;
+    this.fillFloor = -Infinity;
+    const reach = this.stage.halfWidth + this.flatMargin + BANK_REACH;
+    this.stage.path.visitNear(x, z, reach, this.envelope);
+    if (this.cutCap === Infinity) return base;
+    const shape = this.coast.shape;
+    const a = shape.toAxis(x, z, this.axis);
+    const inland = a.v - shape.shore(a.u) - shape.roadInland(a.u);
+    const floor = this.fillFloor - (1 - smoothstep(0, FILL_FADE, inland)) * 1000;
+    if (floor <= this.cutCap) return Math.max(Math.min(base, this.cutCap), floor);
+    // A lower road's cut meets an upper road's fill: ramp between their flat margins.
+    const span = this.cutX + this.fillX;
+    return span > 0 ? (this.cutCap * this.fillX + floor * this.cutX) / span : floor;
+  }
+
+  sample(x: number, z: number, out: TerrainSample): TerrainSample {
+    const base = this.shapedGround(x, z);
     const st = this.street;
     if (this.coast) {
       const c = this.coast.surface(x, z, this.surfaceScratch);
@@ -679,6 +743,14 @@ export class TerrainField implements TerrainQuery {
         (ROAD_LIFT + ROAD_BED_DROP) * (1 - smoothstep(-TRENCH_IN, TRENCH_OUT, f)),
       );
     }
+    if (this.trackside && !st.stub)
+      trench +=
+        GRAVEL_BED_DROP *
+        smoothstep(
+          0,
+          GRAVEL_BED_RAMP,
+          gravelDepth(this.trackside, this.stage.path, hw, st.along, this.hit.lateral),
+        );
     const raw = deck + (base - deck) * t - trench + this.bankLift(st) + this.detailAt(x, z, t);
     // Under a city's pavements the terraces' pads do not reach: a pad vertex there would tilt the
     // coarse terrain face up through the pavement as a green wedge along the building.
@@ -706,7 +778,7 @@ export class TerrainField implements TerrainQuery {
 
   /** The surface without the pavements' kerb lift: the deck tarmac, kerb faces and pavements are built on. */
   deckAt(x: number, z: number): number {
-    const base = this.groundHeight(x, z);
+    const base = this.shapedGround(x, z);
     const st = this.street;
     this.nearStreet = this.nearestStreet(x, z, st);
     if (!this.nearStreet) return this.applyPads(x, z, base + this.detailAt(x, z, 1));

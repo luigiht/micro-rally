@@ -9,6 +9,15 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Fixed
 
+- **No more cliff walls on the coast's hairpins.** A hairpin climbs faster
+  than the road may, so it runs cut into the hillside, and that cut stood
+  as a sheer wall at the verge with the road above on top of it. The
+  ground now slopes back from the road at no more than about 50°, and
+  between a hairpin and the leg above it forms one even bank. [183]
+- **Circuit gravel traps no longer show grass through them.** On the
+  corners' gravel, patches of grass broke through the band where the
+  ground's mesh bowed a centimetre or two over it; the ground now sinks a
+  little under the gravel, as it does under the road. [182]
 - **Coast hairpin stacks no longer sit on the road below.** Where the shore
   bent, a stacked leg or the long way down could pass 25 m or less from the
   road beneath it, so its cutting rose as a sheer wall at the lower road's

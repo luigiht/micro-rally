@@ -320,6 +320,34 @@ describe('Coast stages', () => {
     }
   });
 
+  it('cuts the hillside back from the road instead of standing a wall at its edge, hairpins included', () => {
+    // The last stage was reported from a game (stage 39 of 6MXS43EN): a 16 m wall at a hairpin's verge.
+    const stages = [
+      ...SEEDS.slice(0, 3).flatMap((seed) => [
+        fieldFor(seed).stage,
+        generateStage(seed, LATE_COAST_INDEX),
+      ]),
+      generateStage(1101485805, 38),
+    ];
+    for (const stage of stages) {
+      expect(stage.region).toBe('coast');
+      const field = new TerrainField(stage);
+      const { path, halfWidth } = stage;
+      const s = { x: 0, z: 0, heading: 0 };
+      // 6 m beyond the verge's flat margin the ground stands no more than 1.2 per metre above the deck.
+      const out = halfWidth + 3 + 6;
+      for (let d = 100; d < path.length - 100; d += 4) {
+        path.sample(d, s);
+        const deck = field.roadHeightAt(d);
+        for (const side of [1, -1]) {
+          const x = s.x + Math.cos(s.heading) * out * side;
+          const z = s.z - Math.sin(s.heading) * out * side;
+          expect(field.heightAt(x, z) - deck, `seed ${stage.seed} at ${d} m`).toBeLessThan(7.5);
+        }
+      }
+    }
+  });
+
   it('turns through its hairpins without a kink: no heading step over 10° in 2 m, on late loops too', () => {
     for (const seed of SEEDS) {
       for (const stage of [fieldFor(seed).stage, generateStage(seed, LATE_COAST_INDEX)]) {
