@@ -10,9 +10,8 @@ export function themeGlow(c: ThemeColor): number {
 }
 
 /**
- * The colour to bake into vertex attributes: the hex, scaled by its glow when
- * that exceeds one, so a neon face carries HDR values the shader patch and
- * bloom react to. A faint glow (< 1) cannot be baked and is left lit.
+ * The colour to bake into vertex attributes. A faint glow (< 1) cannot be
+ * baked into the colour and is left lit.
  */
 export function themeColor(c: ThemeColor, out = new Color()): Color {
   out.set(themeHex(c));

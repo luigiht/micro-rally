@@ -5,7 +5,6 @@ import type { Prop, PropKind } from '@/game/stage/SceneryScatter';
 import { rallyKits } from '@/render/scenery/kits/RallyKits';
 import type { KindKit } from '@/render/scenery/SceneryChunkManager';
 import { sceneryKitsFor } from '@/render/scenery/kits/sceneryKits';
-import { dayTheme, NIGHTCITY_THEME } from '@/render/theme/WorldTheme';
 
 const KINDS: PropKind[] = [
   'tree',
@@ -96,10 +95,8 @@ describe('rallyKits', () => {
   });
 
   it('forest mud stages dress the trees in autumn and nothing else', () => {
-    const near = () => ({ dist: 50, x: 0, z: 0 });
-    const theme = dayTheme(REGIONS.forest);
-    const summer = sceneryKitsFor(theme, { region: 'forest', surface: 'gravel' }, true, near);
-    const autumn = sceneryKitsFor(theme, { region: 'forest', surface: 'mud' }, true, near);
+    const summer = sceneryKitsFor({ region: 'forest', surface: 'gravel' }, true);
+    const autumn = sceneryKitsFor({ region: 'forest', surface: 'mud' }, true);
     const tint = (kits: KindKit[], kind: PropKind) =>
       kits.find((k) => k.sources.includes(kind) && k.tint)!.tint!.map((c) => c.getHexString());
     expect(tint(autumn, 'broadleaf')).not.toEqual(tint(summer, 'broadleaf'));
@@ -123,18 +120,12 @@ describe('rallyKits', () => {
     }
   });
 
-  it('sceneryKitsFor picks the rally kits by day and a set covering every kind at night', () => {
-    for (const theme of [dayTheme(REGIONS.forest), NIGHTCITY_THEME]) {
-      const kits = sceneryKitsFor(theme, { region: 'forest', surface: 'gravel' }, true, () => ({
-        dist: 50,
-        x: 0,
-        z: 0,
-      }));
-      for (const kind of KINDS) expect(kits.some((k) => k.sources.includes(kind))).toBe(true);
-      for (const k of kits) {
-        k.geometry.dispose();
-        k.material.dispose();
-      }
+  it('sceneryKitsFor returns the region and surface rally kits', () => {
+    const kits = sceneryKitsFor({ region: 'forest', surface: 'gravel' }, true);
+    for (const kind of KINDS) expect(kits.some((k) => k.sources.includes(kind))).toBe(true);
+    for (const k of kits) {
+      k.geometry.dispose();
+      k.material.dispose();
     }
   });
 });

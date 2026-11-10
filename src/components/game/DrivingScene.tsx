@@ -8,9 +8,8 @@ import { createStageWorld } from '@/game/stage/StageWorld';
 import { TEST_TRACK, testTrackTerrain } from '@/game/stage/TestTrack';
 import type { VehiclePose } from '@/game/vehicle/interpolatePose';
 import { DEFAULT_STAGE_RENDER, StageRenderer } from '@/render/stage/StageRenderer';
-import { dayTheme, flatTheme, NIGHTCITY_THEME } from '@/render/theme/WorldTheme';
+import { dayTheme, flatTheme } from '@/render/theme/WorldTheme';
 import { useGameStore } from '@/state/gameStore';
-import { useUiStore } from '@/state/uiStore';
 import { DriveRig } from './DriveRig';
 import type { DriveWorld } from './DrivingSession';
 import { TestTrackView } from './TestTrackView';
@@ -73,29 +72,17 @@ function StageDrive({ gameSeed, stageIndex }: { gameSeed: number; stageIndex: nu
   }, [world]);
   const group = useRef<Group>(null);
   const renderer = useRef<StageRenderer | null>(null);
-  const nightcity = useUiStore((s) => s.nightcity);
-  const theme = nightcity
-    ? NIGHTCITY_THEME
-    : dayTheme(REGIONS[world.stage.region], world.stage.dusk === true);
+  const theme = dayTheme(REGIONS[world.stage.region], world.stage.dusk === true);
 
   useEffect(() => {
-    // Read the flag imperatively so a stage that mounts while Nightcity is on starts dark.
-    const initial = useUiStore.getState().nightcity
-      ? NIGHTCITY_THEME
-      : dayTheme(REGIONS[world.stage.region], world.stage.dusk === true);
-    const r = new StageRenderer(world, DEFAULT_STAGE_RENDER, initial);
+    const r = new StageRenderer(world, DEFAULT_STAGE_RENDER, theme);
     group.current?.add(r.group);
     renderer.current = r;
     return () => {
       r.dispose();
       renderer.current = null;
     };
-  }, [world]);
-
-  // N re-dresses the stage in place; the run (keyed above) is untouched.
-  useEffect(() => {
-    renderer.current?.setTheme(theme);
-  }, [theme]);
+  }, [world, theme]);
 
   const onPose = useCallback((pose: Readonly<VehiclePose>, clock: number) => {
     renderer.current?.update(pose.x, pose.z, clock);
@@ -126,11 +113,10 @@ export function DrivingScene() {
   const stageIndex = useGameStore((s) => s.stageIndex);
   const attempt = useGameStore((s) => s.attempt);
   const testTrack = useTestTrackFlag();
-  const nightcity = useUiStore((s) => s.nightcity);
 
   if (testTrack) {
     return (
-      <DriveRig world={TEST_WORLD} theme={nightcity ? NIGHTCITY_THEME : TEST_THEME}>
+      <DriveRig world={TEST_WORLD} theme={TEST_THEME}>
         <TestTrackView />
       </DriveRig>
     );

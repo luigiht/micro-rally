@@ -2,7 +2,6 @@ import { BufferAttribute, BufferGeometry, Color, Group, Mesh, MeshStandardMateri
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { MEDIAN_HALF, MEDIAN_WALK, type Median } from '@/game/stage/Median';
 import { KERB_LIFT, type GroundQuery } from '@/game/stage/Town';
-import { patchNeon } from '../theme/NeonMaterial';
 import { themeColor } from '../theme/themeColor';
 import type { RoadTheme } from '../theme/WorldTheme';
 
@@ -70,7 +69,6 @@ export class MedianBuilder {
       polygonOffsetFactor: -2,
       polygonOffsetUnits: -2,
     });
-    if (road.neon) patchNeon(this.material);
     const mesh = new Mesh(this.geometry, this.material);
     mesh.receiveShadow = true;
     mesh.castShadow = true;

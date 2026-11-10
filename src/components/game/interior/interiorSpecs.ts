@@ -1,5 +1,4 @@
 import type { CarId } from '@/game/vehicle/CarSpec';
-import { NEON } from '@/render/theme/WorldTheme';
 
 /**
  * Per-car cabin: envelope, kit and palette. Dimensions are in the interior
@@ -22,8 +21,6 @@ export interface InteriorPalette {
   harness: string;
   wheel: string;
   accent: string;
-  /** Emissive intensity of the accent-coloured parts (accent, harness, seat stripe, cage, dials); unset = lit paint. */
-  glow?: number;
 }
 
 export interface InteriorSpec {
@@ -410,26 +407,3 @@ export const INTERIORS: Readonly<Record<CarId, InteriorSpec>> = {
     },
   }),
 };
-
-/**
- * Nightcity's cabin: near-black trim, a softly lit violet cage and every
- * accent in neon, glowing (HDR, so the bloom pass lifts them). The envelope
- * and kit stay the real car's; only the palette changes.
- */
-export const NIGHTCITY_INTERIOR_PALETTE: InteriorPalette = {
-  dash: '#0d0f16',
-  lining: '#13151e',
-  door: '#161925',
-  cage: '#3a2a8a',
-  seat: '#101218',
-  seatAccent: NEON.cyan,
-  harness: NEON.magenta,
-  wheel: '#0b0c12',
-  accent: NEON.cyan,
-  glow: 1.8,
-};
-
-/** The same cabin dressed for Nightcity. */
-export function nightcityInterior(spec: InteriorSpec): InteriorSpec {
-  return { ...spec, palette: NIGHTCITY_INTERIOR_PALETTE };
-}

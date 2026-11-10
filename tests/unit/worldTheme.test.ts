@@ -15,7 +15,6 @@ import {
   dayTheme,
   DUSK_LIGHTING,
   flatTheme,
-  NIGHTCITY_THEME,
   type ThemeColor,
 } from '@/render/theme/WorldTheme';
 
@@ -36,7 +35,6 @@ describe('WorldTheme', () => {
   it('the day theme reproduces the daytime constants for every region', () => {
     for (const region of Object.values(REGIONS)) {
       const t = dayTheme(region);
-      expect(t.id).toBe('day');
       expect(t.lighting).toEqual({
         background: region.palette.sky,
         fog: region.palette.fog,
@@ -49,7 +47,6 @@ describe('WorldTheme', () => {
         sunColor: '#ffffff',
         sunIntensity: 2.6,
       });
-      expect(t.terrain).toEqual({ mode: 'palette' });
       expect(t.road.surfaces).toBe(ROAD_COLORS);
       expect(t.road.surface).toBeNull();
       expect(t.road.snowPatches).toBe(true);
@@ -59,11 +56,9 @@ describe('WorldTheme', () => {
       expect(t.road.kerb).toBe(KERB_COLOR);
       expect(t.road.post).toBe(POST_COLOR);
       expect(t.road.cap).toBe(CAP_COLOR);
-      expect(t.road.neon).toBe(false);
       expect(t.gates.start.map(themeGlow)).toEqual([0.25, 0.25]);
       expect(t.gates.finish.map(themeGlow)).toEqual([0, 0]);
       expect(t.walls).toEqual({ body: '#c9c0b0', cap: '#e3dccf' });
-      expect(t.scenery.kit).toBe('rally');
       expect(t.skidInk).toBeNull();
       // Memoised, so the renderer can compare themes by identity.
       expect(dayTheme(region)).toBe(t);
@@ -73,12 +68,10 @@ describe('WorldTheme', () => {
   it('a stage at dusk gets a twilight sky, little light, the car lamps lit, the day kits', () => {
     const arctic = dayTheme(REGIONS.arctic, true);
     expect(REGIONS.arctic.dusk).toBe(true);
-    expect(arctic.id).toBe('day');
     expect(arctic.lighting).toBe(DUSK_LIGHTING);
     expect(arctic.carLamps).toBe(true);
     // Unlit marks: dark and faint after dark, never the snow's pale ink.
     expect(arctic.skidInk?.opacity).toBeLessThan(0.5);
-    expect(arctic.scenery.kit).toBe('rally');
     const l = arctic.lighting;
     // The fog melts distant ground into the sky's horizon; far dimmer than by day.
     expect(l.sky?.horizon).toBe(l.fog);
@@ -105,37 +98,15 @@ describe('WorldTheme', () => {
 
   it('the flat theme is the day theme with its own sky and fog', () => {
     const t = flatTheme('#cfe3e8', '#dde');
-    expect(t.id).toBe('day');
     expect(t.lighting.background).toBe('#cfe3e8');
     expect(t.lighting.fog).toBe('#dde');
     expect(t.lighting.sunIntensity).toBe(2.6);
-  });
-
-  it('Nightcity is dark with HDR neon on lines, kerbs, caps, tiles and tyre marks', () => {
-    const t = NIGHTCITY_THEME;
-    expect(t.id).toBe('nightcity');
-    expect(t.terrain.mode).toBe('flat');
-    expect(t.road.neon).toBe(true);
-    expect(t.road.snowPatches).toBe(false);
-    expect(t.road.surface).not.toBeNull();
-    expect(t.scenery.kit).toBe('nightcity');
-    for (const c of [t.road.line, t.road.kerb, t.road.cap, ...t.gates.start, ...t.gates.finish]) {
-      expect(themeGlow(c)).toBeGreaterThan(1);
-      const rgb = themeColor(c);
-      expect(Math.max(rgb.r, rgb.g, rgb.b)).toBeGreaterThan(1);
-    }
-    expect(t.skidInk).not.toBeNull();
-    expect(themeGlow(t.skidInk!.color)).toBeGreaterThan(1);
-    // A moon, not a sun: well under the daytime 2.6.
-    expect(t.lighting.sunIntensity).toBeLessThan(1.5);
-    expect(t.lighting.fogFar).toBeLessThan(260);
   });
 
   it('every colour in every theme is a six-digit hex', () => {
     const themes = [
       ...Object.values(REGIONS).map((r) => dayTheme(r)),
       dayTheme(REGIONS.arctic, true),
-      NIGHTCITY_THEME,
     ];
     for (const t of themes) {
       const list = colours(t);

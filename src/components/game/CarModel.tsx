@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useImperativeHandle, useMemo, useRef, type Ref } from 'react';
-import { Color, type Group } from 'three';
+import { useEffect, useImperativeHandle, useRef, type Ref } from 'react';
+import type { Group } from 'three';
 import type { CarId, CarSpec } from '@/game/vehicle/CarSpec';
 import type { VehiclePose } from '@/game/vehicle/interpolatePose';
 import type { CameraMode } from '@/lib/cameraMode';
@@ -12,14 +12,11 @@ import { FocusHatchBody } from './bodies/FocusHatchBody';
 import { GroupBBody } from './bodies/GroupBBody';
 import { HatchbackBody } from './bodies/HatchbackBody';
 import { LeMansBody } from './bodies/LeMansBody';
-import { NightcityBody } from './bodies/NightcityBody';
 import { S1CoupeBody } from './bodies/S1CoupeBody';
 import { SaloonBody } from './bodies/SaloonBody';
 import { T16HatchBody } from './bodies/T16HatchBody';
-import { Underglow } from './bodies/Underglow';
 import { WrcHatchBody } from './bodies/WrcHatchBody';
 import { CarLamps } from '@/render/car/CarLamps';
-import { NIGHTCITY_COLORS } from '@/render/car/NightcityHull';
 import { CarInterior, type CarInteriorHandle } from './CarInterior';
 import { Box, CAR_COLORS as C } from './CarParts';
 
@@ -54,13 +51,11 @@ interface WheelProps {
   z: number;
   radius: number;
   rim: string;
-  /** A lit ring on the rim's outer face (Nightcity), HDR so it blooms. */
-  ring?: Color;
   steerRef?: Ref<Group>;
   spinRef: Ref<Group>;
 }
 
-function Wheel({ x, z, radius, rim, ring, steerRef, spinRef }: WheelProps) {
+function Wheel({ x, z, radius, rim, steerRef, spinRef }: WheelProps) {
   const out = x > 0 ? 1 : -1;
   // Tyre width scales with the wheel, so truck tyres are as fat as they are tall.
   const width = radius * 0.8;
@@ -76,27 +71,12 @@ function Wheel({ x, z, radius, rim, ring, steerRef, spinRef }: WheelProps) {
           <meshStandardMaterial color={rim} flatShading metalness={0.3} roughness={0.5} />
         </mesh>
         <Box p={[0.15 * out, 0, 0]} s={[0.02, radius * 1.1, 0.08]} c={C.trim} />
-        {ring && (
-          <mesh position={[(width / 2 + 0.005) * out, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
-            <torusGeometry args={[radius * 0.62, 0.025, 6, 16]} />
-            <meshBasicMaterial color={ring} />
-          </mesh>
-        )}
       </group>
     </group>
   );
 }
 
-function BodyFor({
-  spec,
-  cabinRef,
-  nightcity,
-}: {
-  spec: CarSpec;
-  cabinRef: Ref<Group>;
-  nightcity: boolean;
-}) {
-  if (nightcity) return <NightcityBody spec={spec} cabinRef={cabinRef} />;
+function BodyFor({ spec, cabinRef }: { spec: CarSpec; cabinRef: Ref<Group> }) {
   switch (spec.id) {
     case 'coupe':
       return <CoupeBody spec={spec} cabinRef={cabinRef} />;
@@ -125,18 +105,15 @@ function BodyFor({
 
 /**
  * Chassis, wheels, interior and the lofted body for `spec.id`. The body rides
- * on the springs; the wheels ride on the ground. `nightcity` draws the
- * cyberpunk body over the same chassis, with dark rims, lit rings and underglow.
+ * on the springs; the wheels ride on the ground.
  */
 export function CarModel({
   spec,
   ref,
-  nightcity = false,
   lamps = false,
 }: {
   spec: CarSpec;
   ref: Ref<CarModelHandle>;
-  nightcity?: boolean;
   /** Headlamps with a beam down the road and brake lamps (after dark). */
   lamps?: boolean;
 }) {
@@ -197,54 +174,33 @@ export function CarModel({
       l.dispose();
       carLamps.current = null;
     };
-  }, [lamps, spec, nightcity]);
+  }, [lamps, spec]);
 
   const half = spec.trackWidth / 2;
   const r = spec.wheelRadius;
   const front = spec.cgToFront;
   const rear = -spec.cgToRear;
-  const rim = nightcity ? NIGHTCITY_COLORS.rim : (RIM[spec.id] ?? C.rim);
-  const ring = useMemo(
-    () => (nightcity ? new Color(NIGHTCITY_COLORS.nose).multiplyScalar(2.5) : undefined),
-    [nightcity],
-  );
+  const rim = RIM[spec.id] ?? C.rim;
   return (
     <group ref={root}>
       <group ref={body} position={[0, 0.1, 0]}>
         <group position={[0, spec.cabinDrop, spec.cabinForward]}>
-          <CarInterior ref={interior} spec={spec} nightcity={nightcity} />
+          <CarInterior ref={interior} spec={spec} />
         </group>
-        <BodyFor spec={spec} cabinRef={cabin} nightcity={nightcity} />
+        <BodyFor spec={spec} cabinRef={cabin} />
       </group>
       {/* Mud flaps hang off the chassis, not the leaning body; sized to the wheel. Some day bodies hang their own. */}
-      {(nightcity || !OWN_FLAPS.has(spec.id)) && (
+      {!OWN_FLAPS.has(spec.id) && (
         <>
           <Box p={[half, 0.75 * r, rear - 1.3 * r]} s={[0.9 * r, 0.8 * r, 0.03]} c={C.trim} />
           <Box p={[-half, 0.75 * r, rear - 1.3 * r]} s={[0.9 * r, 0.8 * r, 0.03]} c={C.trim} />
         </>
       )}
       <group ref={wheels}>
-        <Wheel
-          x={half}
-          z={front}
-          radius={r}
-          rim={rim}
-          ring={ring}
-          steerRef={steerFL}
-          spinRef={spinFL}
-        />
-        <Wheel
-          x={-half}
-          z={front}
-          radius={r}
-          rim={rim}
-          ring={ring}
-          steerRef={steerFR}
-          spinRef={spinFR}
-        />
-        <Wheel x={half} z={rear} radius={r} rim={rim} ring={ring} spinRef={spinRL} />
-        <Wheel x={-half} z={rear} radius={r} rim={rim} ring={ring} spinRef={spinRR} />
-        {nightcity && <Underglow spec={spec} color={NIGHTCITY_COLORS.tail} />}
+        <Wheel x={half} z={front} radius={r} rim={rim} steerRef={steerFL} spinRef={spinFL} />
+        <Wheel x={-half} z={front} radius={r} rim={rim} steerRef={steerFR} spinRef={spinFR} />
+        <Wheel x={half} z={rear} radius={r} rim={rim} spinRef={spinRL} />
+        <Wheel x={-half} z={rear} radius={r} rim={rim} spinRef={spinRR} />
       </group>
     </group>
   );

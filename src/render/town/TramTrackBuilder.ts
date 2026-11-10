@@ -9,7 +9,6 @@ import {
   type TramLine,
 } from '@/game/stage/Tram';
 import { LINE_ABOVE_DECK } from '../road/RoadBuilder';
-import { patchNeon } from '../theme/NeonMaterial';
 import { themeColor } from '../theme/themeColor';
 import type { RoadTheme } from '../theme/WorldTheme';
 
@@ -83,7 +82,6 @@ export class TramTrackBuilder {
       polygonOffsetFactor: -3,
       polygonOffsetUnits: -3,
     });
-    if (road.neon) patchNeon(this.material);
     const mesh = new Mesh(this.geometry, this.material);
     mesh.receiveShadow = true;
     mesh.matrixAutoUpdate = false;

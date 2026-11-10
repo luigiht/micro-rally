@@ -5,6 +5,19 @@ tags yet: `main` is deployed continuously, so entries are grouped by the day
 they landed. The numbered entries in [docs/DECISIONS.md](docs/DECISIONS.md)
 hold the reasoning behind each change; the numbers in brackets point there.
 
+## 2026-11-10
+
+### Added
+
+- **About page.** Gameplay notes, recent changes, common questions and contact
+  details now live together behind four tabs.
+
+### Removed
+
+- **Nightcity mode.** Removed the hidden `N` toggle, alternate stage and car
+  styling, scenery kits, neon effects and HUD indicator. Day and dusk stages
+  remain unchanged.
+
 ## 2026-11-09
 
 ### Added

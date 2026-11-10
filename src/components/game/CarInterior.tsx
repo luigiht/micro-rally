@@ -18,8 +18,7 @@ import {
   SteeringWheel,
   type GearLeverHandle,
 } from './interior/InteriorParts';
-import { EYE, INTERIORS, nightcityInterior } from './interior/interiorSpecs';
-import { NightcityCabin } from './interior/NightcityCabin';
+import { EYE, INTERIORS } from './interior/interiorSpecs';
 import { RaidKit } from './interior/RaidConsole';
 
 export interface CarInteriorHandle {
@@ -35,19 +34,9 @@ const WHEEL_RATIO = 4.5;
  * `InteriorSpec`: envelope (floor, lining, pillars, door cards, bulkhead),
  * roll cage, dash cluster, wheel, levers, bucket seats and the co-driver's
  * kit. Lives inside the leaning body group; shown only in the interior view.
- * `nightcity` keeps the car's envelope and kit but dresses them in the neon
- * palette and adds the light lines and heads-up display.
  */
-export function CarInterior({
-  ref,
-  spec,
-  nightcity = false,
-}: {
-  ref: Ref<CarInteriorHandle>;
-  spec: CarSpec;
-  nightcity?: boolean;
-}) {
-  const s = nightcity ? nightcityInterior(INTERIORS[spec.id]) : INTERIORS[spec.id];
+export function CarInterior({ ref, spec }: { ref: Ref<CarInteriorHandle>; spec: CarSpec }) {
+  const s = INTERIORS[spec.id];
   const p = s.palette;
   const root = useRef<Group>(null);
   const rim = useRef<Group>(null);
@@ -178,7 +167,6 @@ export function CarInterior({
         ))}
       <CoDriverKit spec={s} x={s.coDriverX} />
       {s.extinguisher && <Extinguisher x={s.coDriverX} floorY={floorY} z={cowlZ - 0.55} />}
-      {nightcity && <NightcityCabin spec={s} />}
     </group>
   );
 }

@@ -19,7 +19,6 @@ import type { WorldTheme } from '@/render/theme/WorldTheme';
 import { useGameStore } from '@/state/gameStore';
 import { CarModel, type CarModelHandle } from './CarModel';
 import { DrivingSession, type DriveWorld } from './DrivingSession';
-import { NightcityEffects } from './NightcityEffects';
 import { followSun, SceneLights } from './SceneLights';
 import { usePrefersReducedMotion } from './usePrefersReducedMotion';
 
@@ -85,7 +84,7 @@ export function DriveRig({ world, theme, onPose, children }: DriveRigProps) {
     };
   }, [scene, world]);
 
-  // The theme's ink (neon trails in Nightcity) overrides the per-surface table; runs after the marks exist.
+  // Dusk ink keeps unlit tyre marks from glowing against the snow.
   useEffect(() => {
     const ink = theme.skidInk;
     marks.current?.setInk(ink ? { color: themeColor(ink.color), opacity: ink.opacity } : null);
@@ -131,13 +130,11 @@ export function DriveRig({ world, theme, onPose, children }: DriveRigProps) {
     if (sun.current) followSun(sun.current, pose, state.camera);
   });
 
-  const nightcity = theme.id === 'nightcity';
   return (
     <>
       <SceneLights lighting={theme.lighting} sunRef={sun} />
       {children}
-      <CarModel ref={car} spec={spec} nightcity={nightcity} lamps={theme.carLamps === true} />
-      {nightcity && <NightcityEffects />}
+      <CarModel ref={car} spec={spec} lamps={theme.carLamps === true} />
     </>
   );
 }

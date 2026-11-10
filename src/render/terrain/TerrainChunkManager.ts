@@ -1,18 +1,15 @@
 import { BufferAttribute, BufferGeometry, Group, Mesh, MeshStandardMaterial } from 'three';
 import type { TerrainField } from '@/game/stage/TerrainField';
 import { ChunkStreamer, chunkCoords, chunkKey } from '../ChunkStreamer';
-import type { TerrainTheme } from '../theme/WorldTheme';
 import { meshTerrainChunk, type ChunkMeshData, type TerrainColors } from './meshTerrainChunk';
 import type { TerrainWorkerReply, TerrainWorkerRequest } from './terrain.worker';
 
 /** Main-thread meshing budget per frame (ms): a chunk takes about 0.5–3 ms. */
 const SYNC_BUDGET_MS = 4;
 
-/** The one material every chunk shares: the worker's baked colours by day, a single dark tone at night. */
-export function terrainMaterial(theme: TerrainTheme): MeshStandardMaterial {
-  return theme.mode === 'flat'
-    ? new MeshStandardMaterial({ color: theme.color, flatShading: true, roughness: 0.95 })
-    : new MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.95 });
+/** The one material every chunk shares, with the worker's baked colours. */
+export function terrainMaterial(): MeshStandardMaterial {
+  return new MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.95 });
 }
 
 export interface TerrainChunkOptions {
@@ -45,10 +42,9 @@ export class TerrainChunkManager {
     private readonly colors: TerrainColors,
     private readonly amplitude: number,
     private readonly opts: TerrainChunkOptions,
-    theme: TerrainTheme = { mode: 'palette' },
   ) {
     this.group.name = 'terrain';
-    this.material = terrainMaterial(theme);
+    this.material = terrainMaterial();
     this.streamer = new ChunkStreamer(opts.size, opts.radius, this.request, this.drop);
     try {
       this.worker = new Worker(new URL('./terrain.worker.ts', import.meta.url), { type: 'module' });
@@ -87,14 +83,6 @@ export class TerrainChunkManager {
 
   get loadedCount(): number {
     return this.meshes.size;
-  }
-
-  /** Swap the shared material on every loaded chunk and all to come; the baked geometry is untouched. */
-  setMaterial(theme: TerrainTheme): void {
-    const next = terrainMaterial(theme);
-    for (const mesh of this.meshes.values()) mesh.material = next;
-    this.material.dispose();
-    this.material = next;
   }
 
   dispose(): void {

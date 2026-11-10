@@ -143,7 +143,7 @@ export class SkidMarks {
   private readonly birth: BufferAttribute;
   private readonly trails: WheelTrail[] = [];
   private readonly ink = new Map<Surface, Color>();
-  /** A theme's ink for every surface (Nightcity's neon trails); null keeps the per-surface table. */
+  /** A theme's ink for every surface; null keeps the per-surface table. */
   private override: { color: Color; opacity: number } | null = null;
   private head = 0;
   private written = 0;

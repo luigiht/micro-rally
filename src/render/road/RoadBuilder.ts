@@ -18,7 +18,6 @@ import { halfWidthAt } from '@/game/stage/RoadWidth';
 import { roundaboutOpenings } from '@/game/stage/Roundabout';
 import { KERB_LIFT, townFade } from '@/game/stage/Town';
 import { routeOpenings, type Openings } from '@/game/stage/TownKerbs';
-import { patchNeon } from '../theme/NeonMaterial';
 import { themeColor, themedMaterial } from '../theme/themeColor';
 import type { RoadTheme } from '../theme/WorldTheme';
 
@@ -250,7 +249,6 @@ export class RoadBuilder {
       polygonOffsetFactor: -2,
       polygonOffsetUnits: -2,
     });
-    if (theme.neon) patchNeon(roadMat);
     this.materials.push(roadMat);
     const path = stage.path;
     for (let s0 = 0; s0 < path.count - 1; s0 += SAMPLES_PER_PIECE) {

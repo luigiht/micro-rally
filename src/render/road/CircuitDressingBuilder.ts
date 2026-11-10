@@ -4,7 +4,6 @@ import { STAND, grandstandSpot, type CircuitTrackside } from '@/game/stage/Circu
 import type { RoadSample } from '@/game/stage/RoadPath';
 import type { StageDef } from '@/game/stage/StageGenerator';
 import { ROAD_LIFT, type TerrainField } from '@/game/stage/TerrainField';
-import { patchNeon } from '../theme/NeonMaterial';
 import { themeColor } from '../theme/themeColor';
 import type { CircuitTheme } from '../theme/WorldTheme';
 import { LINE_ABOVE_DECK } from './RoadBuilder';
@@ -38,7 +37,6 @@ export class CircuitDressingBuilder {
     trackside: CircuitTrackside,
     field: TerrainField,
     theme: CircuitTheme,
-    neon: boolean,
   ) {
     this.group.name = 'circuit-dressing';
     this.material = new MeshStandardMaterial({
@@ -49,7 +47,6 @@ export class CircuitDressingBuilder {
       polygonOffsetFactor: -3,
       polygonOffsetUnits: -3,
     });
-    if (neon) patchNeon(this.material);
     const mesh = new TrackMesh();
     const { path, halfWidth: hw, startDistance } = stage;
     const s: RoadSample = { x: 0, z: 0, heading: 0 };

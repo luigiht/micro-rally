@@ -32,14 +32,9 @@ export function VertexColorMesh({ mesh: { positions, colors, glowStart } }: { me
   );
 }
 
-/** A lofted hull; `glow` scales the colours of its glowing faces (HDR above 1, for the Nightcity bloom pass). */
-export function CarHullMesh({ spec, glow = 1 }: { spec: HullSpec; glow?: number }) {
-  const hull = useMemo(() => {
-    const hull = buildCarHull(spec);
-    if (glow !== 1)
-      for (let i = hull.glowStart * 3; i < hull.colors.length; i++) hull.colors[i]! *= glow;
-    return hull;
-  }, [spec, glow]);
+/** A lofted hull with its glowing lamp lenses drawn unlit. */
+export function CarHullMesh({ spec }: { spec: HullSpec }) {
+  const hull = useMemo(() => buildCarHull(spec), [spec]);
   return <VertexColorMesh mesh={hull} />;
 }
 

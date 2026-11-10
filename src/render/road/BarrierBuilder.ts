@@ -2,7 +2,6 @@ import { type BufferGeometry, DoubleSide, Group, Mesh, MeshStandardMaterial } fr
 import { barrierLine, type CircuitTrackside } from '@/game/stage/CircuitTrackside';
 import type { StageDef } from '@/game/stage/StageGenerator';
 import type { TerrainField } from '@/game/stage/TerrainField';
-import { patchNeon } from '../theme/NeonMaterial';
 import { themeColor } from '../theme/themeColor';
 import type { CircuitTheme } from '../theme/WorldTheme';
 import { TrackMesh } from './TrackMesh';
@@ -42,7 +41,6 @@ export class BarrierBuilder {
     trackside: CircuitTrackside,
     field: TerrainField,
     theme: CircuitTheme,
-    neon: boolean,
     fences: boolean,
   ) {
     this.group.name = 'barriers';
@@ -53,7 +51,6 @@ export class BarrierBuilder {
       metalness: 0.25,
       side: DoubleSide,
     });
-    if (neon) patchNeon(this.material);
     const rail = themeColor(theme.rail);
     const post = themeColor(theme.railPost);
     const fence = themeColor(theme.fence);

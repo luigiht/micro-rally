@@ -9,7 +9,6 @@ import type { TerrainField } from '@/game/stage/TerrainField';
 import { junctionReach } from '@/game/stage/TownJunctions';
 import { junctionKerbs } from '@/game/stage/TownKerbs';
 import { CROSSING_EXTENT } from '@/game/stage/Crossings';
-import { patchNeon } from '../theme/NeonMaterial';
 import { themeColor } from '../theme/themeColor';
 import type { RoadTheme } from '../theme/WorldTheme';
 import { LINE_LIFT } from './RoadBuilder';
@@ -138,7 +137,6 @@ export class LaneMarkings {
       polygonOffsetFactor: -3,
       polygonOffsetUnits: -3,
     });
-    if (road.neon) patchNeon(this.material);
     const mesh = new Mesh(this.geometry, this.material);
     mesh.matrixAutoUpdate = false;
     this.group.add(mesh);

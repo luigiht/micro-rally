@@ -98,8 +98,6 @@ are in [../CHANGELOG.md](../CHANGELOG.md).
 
 - [x] Deploy-ready for Vercel: Supabase Postgres save store (migration in `supabase/`), URL resolution from Vercel env, security headers, `docs/DEPLOY.md`
 
-- [x] Hidden Nightcity mode on `N`: the stage re-dressed in place as a neon night city (themes as data, HDR vertex-colour neon, stilt towers and signs where the scenery stood, one parametric cyberpunk car, bloom only while on)
-
 - [x] Town sections on every third stage: the route threads a level street grid with right-angle turns, blocked side streets closed by cones, direction boards, low-poly buildings, pavements and lamp posts; reworked as villages with unbroken facades and garden walls behind every pavement, kerb-return junctions traced exactly against the ribbon, flower boxes under the windows, and trees and bushes in the yards and walled corners
 
 ## 9. Capacitor iOS/Android, docs/ANDROID.md — [ ]

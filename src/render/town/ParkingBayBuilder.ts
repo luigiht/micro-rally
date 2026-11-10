@@ -62,7 +62,7 @@ export class ParkingBayBuilder {
         }
       }
     }
-    this.mesh.finish(road);
+    this.mesh.finish();
   }
 
   dispose(): void {

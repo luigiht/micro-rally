@@ -1,7 +1,5 @@
 import { BufferAttribute, BufferGeometry, Color, Group, Mesh, MeshStandardMaterial } from 'three';
 import type { GroundQuery } from '@/game/stage/Town';
-import { patchNeon } from '../theme/NeonMaterial';
-import type { RoadTheme } from '../theme/WorldTheme';
 
 /** Rectangles are laid in pieces this long along their axis, so they follow the deck. */
 const PIECE = 2;
@@ -64,7 +62,7 @@ export class MarkingMesh {
   }
 
   /** Build the mesh; call once after every rectangle is laid. */
-  finish(road: RoadTheme): void {
+  finish(): void {
     const g = new BufferGeometry();
     g.setAttribute('position', new BufferAttribute(Float32Array.from(this.pos), 3));
     g.setAttribute('color', new BufferAttribute(Float32Array.from(this.col), 3));
@@ -79,7 +77,6 @@ export class MarkingMesh {
       polygonOffsetFactor: -3,
       polygonOffsetUnits: -3,
     });
-    if (road.neon) patchNeon(this.material);
     const mesh = new Mesh(g, this.material);
     mesh.matrixAutoUpdate = false;
     this.group.add(mesh);

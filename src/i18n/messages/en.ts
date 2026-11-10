@@ -105,6 +105,152 @@ export const en = {
     privacy: 'How feedback is handled: see the privacy page.',
     back: 'Back to the game',
   },
+  about: {
+    title: 'About Micro Rally',
+    intro:
+      'A small browser rally game about finding your rhythm, learning the road and making each car your own.',
+    tabs: { gameplay: 'Gameplay', changelog: 'Changelog', faqs: 'FAQs', contact: 'Contact' },
+    gameplay: {
+      intro:
+        'Each run takes you through a seeded, low-poly rally world. Finish stages, earn prize money and tune your car for the roads ahead.',
+      highlights: [
+        {
+          title: 'Stages and progression',
+          body: 'Rally routes move through Forest, Alpine, Coast, Arctic and Desert landscapes. Every ninth stage is a city and every tenth is a three-lap circuit; when they coincide, the city comes first and the circuit follows. The rally mix then loops with longer, tighter roads.',
+        },
+        {
+          title: 'Drive, reset and replay',
+          body: 'Pass checkpoints in order and reach the finish. Off-road surfaces slow you down, while hard impacts add time and repair costs. R returns you to the last checkpoint. Finished runs can be replayed.',
+        },
+        {
+          title: 'Make the car yours',
+          body: 'Spend prize money on engine, turbo, tyres, suspension, brakes, gearbox and weight upgrades, or buy another car. Changes take effect immediately, even during a stage.',
+        },
+        {
+          title: 'Choose your view',
+          body: 'Switch between chase, interior, isometric and cinematic cameras with C or in Settings. Scroll to zoom the chase, isometric and cinematic views.',
+        },
+      ],
+      controlsTitle: 'Controls',
+      controls: [
+        { keys: 'W / S · ↑ / ↓', action: 'Throttle and brake; hold brake to reverse' },
+        { keys: 'A / D · ← / →', action: 'Steer' },
+        { keys: 'Space', action: 'Handbrake' },
+        { keys: 'Shift', action: 'Turbo, when fitted' },
+        { keys: 'R', action: 'Return to the last checkpoint' },
+        { keys: 'C', action: 'Change camera' },
+        { keys: 'Esc', action: 'Close a panel or open the Game panel' },
+      ],
+      touch:
+        'On touchscreens, steering pads, pedals and the Pause menu provide the same essentials.',
+    },
+    changelog: {
+      intro: 'Every release since the first playable build, newest first.',
+      entries: [
+        {
+          date: '10 November 2026',
+          title: 'About page',
+          body: 'Gameplay notes, recent changes, common questions and contact details now live together on the About page.',
+        },
+        {
+          date: '9 November 2026',
+          title: 'Winter rally updates and feedback',
+          body: 'Alpine stages gained spectators; Arctic stages gained dusk runs, fully snow-covered roads and checkpoint boards set into the snow. Arctic villages were removed and pace notes are always on. The Feedback page arrived, alongside fixes for Coast hairpins and circuit gravel traps and a Focus tail update.',
+        },
+        {
+          date: '8 November 2026',
+          title: 'A fixed stage calendar',
+          body: 'The schedule now places a city at every ninth stage and a circuit at every tenth; when they coincide, the city comes first and the circuit follows. The stages between them cycle through seven rally regions, with affected records cleared for the new roads.',
+        },
+        {
+          date: '7 November 2026',
+          title: 'Arctic stages and winter polish',
+          body: 'The Arctic joined the region rotation with snow roads, snowbanks, spruce walls, dusk lighting and roadside spectators. Snow poles and region-specific stage icons arrived; snow marks, trees, roads and checkpoint boards were refined. City junctions and side streets were cleaned up, trams clear cones, and city stages load faster.',
+        },
+        {
+          date: '6 November 2026',
+          title: 'Trams and a detailed city',
+          body: 'Urban stages gained scheduled trams, detailed buildings, crossings, parked cars, street trees, lamps and street furniture. The Boreal Saloon was reshaped, while city junctions, sidewalks, roundabouts, side streets and parked-car placement received fixes.',
+        },
+        {
+          date: '5 November 2026',
+          title: 'Cities, circuits and a changing coast',
+          body: 'Urban stages and three-lap circuit races joined the schedule, with race asphalt, kerbs, gravel traps and barriers. The region cycle and save migrations were updated; Coast stages gained varied shorelines, richer cliffs and terrain. Mobile fullscreen behavior was adjusted.',
+        },
+        {
+          date: '4 November 2026',
+          title: 'Mobile installation and a new special',
+          body: 'The Mulsanne LM Prototype joined the dealership, and phones and tablets gained an install prompt, rotating orientation, Android fullscreen support and full-bleed home-screen icons. The Albion RS Hatch was rebuilt from its road-car shape.',
+        },
+        {
+          date: '3 November 2026',
+          title: 'Coast, Desert and rally raid',
+          body: 'The Coast and Desert regions arrived with distinct roads and terrain, alongside the Toro Dakar Buggy and autumn colours for Forest mud stages. Splash-screen driving and replays were improved; Desert stages stay open road, Coast roads gained their own icon, and the region rotation was refined.',
+        },
+        {
+          date: '2 November 2026',
+          title: 'Cinematic camera, replays and HUD options',
+          body: 'A cinematic camera and finish replays joined the game, along with an option to hide the HUD. Town geometry, junctions and prize progression were refined, replay tyre marks now follow the recording, and the project gained its gameplay, content, testing and changelog documents.',
+        },
+        {
+          date: '1 November 2026',
+          title: 'Towns, interiors and stage history',
+          body: 'Village sections, per-car rally interiors, a stage list and a touch pause menu arrived, alongside the Sochaux T16 and new car model work. Camera controls, handbrake placement and town streets were refined, with fixes to canopy testing and Garage end-to-end coverage.',
+        },
+        {
+          date: '31 October 2026',
+          title: 'Alpine region and more cars',
+          body: 'The Alpine region, snow-covered houses, checkpoint boards and stage history arrived. The Boreal Saloon, Sirocco Dakar Truck, Albion RS Hatch and Edelweiss S1 joined or were rebuilt for the catalogue. Camera behavior, launch revs, terrain under roads, dealership cards and tree placement were refined.',
+        },
+        {
+          date: '30 October 2026',
+          title: 'Garage, handling and tyre marks',
+          body: 'The Garage launched with seven live upgrades and a 3D dealership, alongside lofted procedural cars, the Riviera WRC, Edelweiss S1 and fading tyre marks. Online saves moved to Supabase; handling, wheel placement, responsive Garage layout, search metadata and analytics were updated.',
+        },
+        {
+          date: '29 October 2026',
+          title: 'First playable release',
+          body: 'The first build introduced the browser game foundation, fixed-step vehicle simulation, seeded procedural Forest stages, checkpoints, timing, penalties and prize money. It also brought the rally hatch, low-poly scenery, HUD and Game panel, Game IDs with online saves, four camera views, privacy information and the test and CI setup.',
+        },
+      ],
+    },
+    faqs: [
+      {
+        question: 'How do I start a game?',
+        answer:
+          'Enter a driver name and choose Drive. Leave Game ID empty to begin a new game, or enter an existing ID to continue it.',
+      },
+      {
+        question: 'What is a Game ID?',
+        answer:
+          'It is the key to your game and appears in its URL. Anyone with the ID can load that game, so share it only with people you trust.',
+      },
+      {
+        question: 'Is my progress saved?',
+        answer:
+          'Progress is saved on your device first and then online. If the server is unavailable, the local save stays in place and the game retries later.',
+      },
+      {
+        question: 'Do the stages change each time?',
+        answer:
+          'A stage is generated from your game and stage seeds, so the same stage in the same game is consistent. The schedule continues with longer and tighter roads.',
+      },
+      {
+        question: 'How do I change the camera?',
+        answer:
+          'Press C while driving or choose a camera in Settings. The game has chase, interior, isometric and cinematic views.',
+      },
+    ],
+    contact: {
+      intro: 'Found a bug, have an idea, or want to ask a question? Get in touch.',
+      emailLabel: 'Email',
+      feedbackTitle: 'Send feedback',
+      feedbackBody:
+        'Use the feedback form for a message. Your name and email are optional; add an email if you would like a reply.',
+      feedbackCta: 'Open feedback form',
+    },
+    back: 'Back to the game',
+  },
   garage: {
     button: 'Garage',
     title: 'Garage',
@@ -235,7 +381,8 @@ export const en = {
     syncOffline: 'Saved on this device only. Will retry online.',
     syncSaving: 'Saving…',
     syncIdle: 'Progress is saved automatically.',
-    feedback: 'Share your feedback',
+    feedback: 'Feedback',
+    about: 'About',
   },
   regions: {
     forest: 'Forest',
@@ -315,7 +462,6 @@ export const en = {
     replayTag: 'Replay',
     exitReplay: 'Exit replay',
     replayHint: 'Esc exits · C switches camera',
-    nightcityTag: 'Nightcity',
     resetHint: 'Lost? Press R to return to the last checkpoint.',
   },
 };

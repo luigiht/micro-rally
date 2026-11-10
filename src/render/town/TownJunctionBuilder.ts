@@ -9,7 +9,6 @@ import {
   type Pt,
 } from '@/game/stage/TownKerbs';
 import { LINE_ABOVE_DECK } from '../road/RoadBuilder';
-import { patchNeon } from '../theme/NeonMaterial';
 import { themeColor } from '../theme/themeColor';
 import type { RoadTheme } from '../theme/WorldTheme';
 
@@ -75,7 +74,6 @@ export class TownJunctionBuilder {
       polygonOffsetFactor: -2,
       polygonOffsetUnits: -2,
     });
-    if (road.neon) patchNeon(this.material);
     const mesh = new Mesh(this.geometry, this.material);
     mesh.receiveShadow = true;
     mesh.matrixAutoUpdate = false;

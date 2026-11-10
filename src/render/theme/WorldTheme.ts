@@ -11,14 +11,13 @@ import {
 
 /**
  * Everything the stage renderer needs to know about colour and light, as plain
- * data. `dayTheme` reproduces a region's daytime look exactly; `NIGHTCITY_THEME`
- * is the hidden cyberpunk re-skin the N key toggles. Pure TS: the builders turn
- * these into three.js colours and materials through `themeColor.ts`.
+ * data. `dayTheme` reproduces a region's daytime look, including its dusk
+ * variant. Pure TS: the builders turn these into three.js colours and materials.
  */
 
 /**
  * A colour that may glow. `glow` > 1 bakes the colour that many times over into
- * vertex colours (HDR, so the neon shader patch and bloom pick it up) or sets a
+ * vertex colours or sets a
  * material's emissive intensity; 0 < glow < 1 is the faint self-light only a
  * material can show (the start gantry's tiles). A plain string never glows.
  */
@@ -64,8 +63,6 @@ export interface RoadTheme {
   /** A city's tram tracks: the sett paving between the rails, and the rail heads. */
   tramBed: string;
   rail: ThemeColor;
-  /** Patch the surface material so HDR vertex colours are drawn as emission. */
-  neon: boolean;
 }
 
 export interface GateTheme {
@@ -96,20 +93,13 @@ export interface CircuitTheme {
   stand: { seats: string; frame: string; roof: ThemeColor };
 }
 
-/** `palette`: the worker's baked per-face colours; `flat`: one colour, the bake ignored. */
-export type TerrainTheme = { mode: 'palette' } | { mode: 'flat'; color: string };
-
-export type SceneryKitId = 'rally' | 'nightcity';
-
 export interface SkidInk {
   color: ThemeColor;
   opacity: number;
 }
 
 export interface WorldTheme {
-  id: 'day' | 'nightcity';
   lighting: ThemeLighting;
-  terrain: TerrainTheme;
   road: RoadTheme;
   gates: GateTheme;
   walls: WallTheme;
@@ -119,21 +109,12 @@ export interface WorldTheme {
   seawall: WallTheme;
   /** The sea plane on Coast stages. */
   sea: string;
-  scenery: { kit: SceneryKitId };
   /** Tyre-mark ink on every surface; null keeps the per-surface table. */
   skidInk: SkidInk | null;
   circuit: CircuitTheme;
   /** The car's headlamps and brake lamps are lit (dusk). */
   carLamps?: boolean;
 }
-
-/** The hues Nightcity is lit in; kits and the car pick from these by hash. */
-export const NEON = {
-  cyan: '#19e6ff',
-  magenta: '#ff2bd6',
-  amber: '#ffb020',
-  violet: '#7a3cff',
-} as const;
 
 const DAY_LIGHTING = {
   fogNear: 70,
@@ -220,7 +201,6 @@ export function dayRoad(shoulder: string): RoadTheme {
     cap: CAP_COLOR,
     tramBed: TRAM_BED_COLOR,
     rail: RAIL_COLOR,
-    neon: false,
   };
 }
 
@@ -236,7 +216,6 @@ export function dayTheme(region: RegionDef, dusk = false): WorldTheme {
   let theme = DAY.get(key);
   if (!theme) {
     theme = {
-      id: 'day',
       lighting: dusk
         ? DUSK_LIGHTING
         : {
@@ -245,14 +224,12 @@ export function dayTheme(region: RegionDef, dusk = false): WorldTheme {
             ...DAY_LIGHTING,
             ...(region.coast ? COAST_HEMI : {}),
           },
-      terrain: { mode: 'palette' },
       road: dayRoad(region.palette.shoulder),
       gates: DAY_GATES,
       walls: DAY_WALLS,
       hedges: DAY_HEDGES,
       seawall: DAY_SEAWALL,
       sea: region.coast?.sea ?? DAY_SEA,
-      scenery: { kit: 'rally' },
       skidInk: dusk ? DUSK_SKID_INK : null,
       circuit: DAY_CIRCUIT,
       carLamps: dusk,
@@ -265,85 +242,14 @@ export function dayTheme(region: RegionDef, dusk = false): WorldTheme {
 /** Daytime theme for a world without a region (the test track): only sky and fog differ. */
 export function flatTheme(sky: string, fog: string, shoulder = '#8fbf6a'): WorldTheme {
   return {
-    id: 'day',
     lighting: { background: sky, fog, ...DAY_LIGHTING },
-    terrain: { mode: 'palette' },
     road: dayRoad(shoulder),
     gates: DAY_GATES,
     walls: DAY_WALLS,
     hedges: DAY_HEDGES,
     seawall: DAY_SEAWALL,
     sea: DAY_SEA,
-    scenery: { kit: 'rally' },
     skidInk: null,
     circuit: DAY_CIRCUIT,
   };
 }
-
-/**
- * Nightcity: pitch-black sky, a cold moon, dark ground and asphalt, and every
- * line, kerb, cap and tile in neon. The fog sits just above the background so
- * towers dissolve into the dark without a band, and closer than by day.
- */
-export const NIGHTCITY_THEME: WorldTheme = {
-  id: 'nightcity',
-  lighting: {
-    background: '#02030a',
-    fog: '#07080f',
-    fogNear: 40,
-    fogFar: 200,
-    hemiSky: '#4a5680',
-    hemiGround: '#0c0e16',
-    hemiIntensity: 1.6,
-    sunColor: '#8d9cd8',
-    sunIntensity: 1.0,
-  },
-  terrain: { mode: 'flat', color: '#1a1e2b' },
-  road: {
-    surfaces: ROAD_COLORS,
-    surface: '#2b2f3b',
-    snowPatches: false,
-    verge: '#1c2030',
-    line: { hex: NEON.cyan, glow: 2.2 },
-    pavement: '#323645',
-    kerb: { hex: NEON.magenta, glow: 1.8 },
-    post: '#15171f',
-    cap: { hex: NEON.amber, glow: 2.5 },
-    tramBed: '#262a36',
-    rail: { hex: NEON.cyan, glow: 1.4 },
-    neon: true,
-  },
-  gates: {
-    post: '#15171f',
-    start: [
-      { hex: NEON.cyan, glow: 2.5 },
-      { hex: NEON.violet, glow: 2.5 },
-    ],
-    finish: [
-      { hex: NEON.magenta, glow: 2.5 },
-      { hex: NEON.amber, glow: 2.5 },
-    ],
-    board: '#1a1c26',
-    clock: { hex: NEON.amber, glow: 2.5 },
-    ink: '#05060a',
-  },
-  walls: { body: '#1e2130', cap: '#2e3345' },
-  hedges: { body: '#17251a', cap: '#1f3324' },
-  seawall: { body: '#171a26', cap: '#2a2f41' },
-  sea: '#0a1424',
-  scenery: { kit: 'nightcity' },
-  skidInk: { color: { hex: NEON.cyan, glow: 2 }, opacity: 0.85 },
-  circuit: {
-    kerb: [
-      { hex: NEON.magenta, glow: 1.8 },
-      { hex: NEON.cyan, glow: 1.8 },
-    ],
-    rail: '#3a3f52',
-    railPost: '#15171f',
-    fence: '#232736',
-    gravel: '#262a38',
-    chequer: [{ hex: NEON.cyan, glow: 2 }, '#05060a'],
-    grid: { hex: NEON.cyan, glow: 2 },
-    stand: { seats: '#1e2130', frame: '#15171f', roof: { hex: NEON.violet, glow: 1.5 } },
-  },
-};

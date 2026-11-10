@@ -3,13 +3,11 @@
 import { Canvas } from '@react-three/fiber';
 import { useMessages } from '@/i18n/useMessages';
 import { useGameStore } from '@/state/gameStore';
-import { useUiStore } from '@/state/uiStore';
 import { DrivingScene } from './DrivingScene';
 
 export function GameCanvas() {
   const m = useMessages();
   const carId = useGameStore((s) => s.carId);
-  const nightcity = useUiStore((s) => s.nightcity);
   return (
     <Canvas
       shadows="percentage"
@@ -18,7 +16,6 @@ export function GameCanvas() {
       aria-label={m.boot.canvasLabel}
       data-testid="game-canvas"
       data-car={carId}
-      data-nightcity={nightcity ? 'true' : undefined}
     >
       <DrivingScene />
     </Canvas>

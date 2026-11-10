@@ -16,7 +16,6 @@ import {
 } from '@/game/stage/Roundabout';
 import { stubCut } from '@/game/stage/TownJunctions';
 import { LINE_ABOVE_DECK } from '../road/RoadBuilder';
-import { patchNeon } from '../theme/NeonMaterial';
 import { themeColor } from '../theme/themeColor';
 import type { RoadTheme } from '../theme/WorldTheme';
 
@@ -226,7 +225,6 @@ export class TownStreetBuilder {
       polygonOffsetFactor: -2,
       polygonOffsetUnits: -2,
     });
-    if (road.neon) patchNeon(this.material);
     const mesh = new Mesh(this.geometry, this.material);
     mesh.receiveShadow = true;
     mesh.matrixAutoUpdate = false;

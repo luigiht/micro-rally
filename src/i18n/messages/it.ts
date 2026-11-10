@@ -110,6 +110,155 @@ export const it: Messages = {
     privacy: 'Come vengono trattati i commenti: vedi la pagina sulla privacy.',
     back: 'Torna al gioco',
   },
+  about: {
+    title: 'Informazioni su Micro Rally',
+    intro:
+      'Un piccolo gioco di rally per il browser: trova il tuo ritmo, impara la strada e rendi tua ogni auto.',
+    tabs: { gameplay: 'Gioco', changelog: 'Novità', faqs: 'FAQ', contact: 'Contatti' },
+    gameplay: {
+      intro:
+        'Ogni gara attraversa un mondo rally low-poly generato da un seme. Completa le prove, vinci premi e prepara l’auto per le strade che ti aspettano.',
+      highlights: [
+        {
+          title: 'Prove e progressione',
+          body: 'I rally attraversano foreste, Alpi, costa, Artico e deserto. Ogni nona prova è una città e ogni decima è un circuito di tre giri; quando coincidono, la città viene prima e il circuito subito dopo. Il ciclo rally riprende con strade più lunghe e curve più strette.',
+        },
+        {
+          title: 'Guida, riparti e rivedi',
+          body: 'Supera i checkpoint in ordine e raggiungi il traguardo. Fuori strada perdi velocità; gli urti forti aggiungono tempo e costi di riparazione. Premi R per tornare all’ultimo checkpoint. Le gare concluse si possono rivedere.',
+        },
+        {
+          title: 'Personalizza l’auto',
+          body: 'Spendi i premi per migliorare motore, turbo, gomme, sospensioni, freni, cambio e peso, oppure compra un’altra auto. Le modifiche sono immediate, anche durante una prova.',
+        },
+        {
+          title: 'Scegli la visuale',
+          body: 'Passa tra visuale inseguimento, abitacolo, isometrica e cinematografica con C o dalle Impostazioni. Usa la rotella per zoomare nelle visuali inseguimento, isometrica e cinematografica.',
+        },
+      ],
+      controlsTitle: 'Comandi',
+      controls: [
+        {
+          keys: 'W / S · ↑ / ↓',
+          action: 'Acceleratore e freno; tieni il freno per la retromarcia',
+        },
+        { keys: 'A / D · ← / →', action: 'Sterzo' },
+        { keys: 'Spazio', action: 'Freno a mano' },
+        { keys: 'Maiusc', action: 'Turbo, se installato' },
+        { keys: 'R', action: 'Torna all’ultimo checkpoint' },
+        { keys: 'C', action: 'Cambia visuale' },
+        { keys: 'Esc', action: 'Chiudi un pannello o apri il pannello Gioco' },
+      ],
+      touch:
+        'Sui touchscreen, i comandi di sterzo, i pedali e il menu Pausa offrono le funzioni essenziali.',
+    },
+    changelog: {
+      intro: 'Tutte le versioni dal primo rilascio giocabile, dalla più recente alla più vecchia.',
+      entries: [
+        {
+          date: '10 novembre 2026',
+          title: 'Pagina Informazioni',
+          body: 'La pagina Informazioni raccoglie dettagli sul gioco, aggiornamenti recenti, risposte alle domande frequenti e contatti.',
+        },
+        {
+          date: '9 novembre 2026',
+          title: 'Novità invernali e commenti',
+          body: 'Le prove alpine hanno aggiunto il pubblico; quelle artiche gare al crepuscolo, strade completamente innevate e cartelli dei checkpoint nella neve. Niente villaggi artici e note di gara sempre attive. È arrivata la pagina Commenti, insieme a correzioni per i tornanti costieri e le vie di fuga in ghiaia, oltre a una modifica alla coda della Focus.',
+        },
+        {
+          date: '8 novembre 2026',
+          title: 'Calendario fisso delle prove',
+          body: 'Ora c’è una città ogni nove prove e un circuito ogni dieci; quando coincidono, viene prima la città e il circuito subito dopo. Tra i due si ripete un ciclo rally di sette regioni, con i record interessati cancellati per le nuove strade.',
+        },
+        {
+          date: '7 novembre 2026',
+          title: 'Prove artiche e rifiniture invernali',
+          body: 'L’Artico è entrato nella rotazione con strade innevate, banchi di neve, pareti di abeti, luce del crepuscolo e pubblico a bordo strada. Sono arrivati pali da neve e icone specifiche per le regioni; neve, alberi, strade e checkpoint sono stati rifiniti. Incroci e vie cittadine sono stati corretti, i tram non attraversano più i coni e le città si caricano più velocemente.',
+        },
+        {
+          date: '6 novembre 2026',
+          title: 'Tram e una città più dettagliata',
+          body: 'Le prove urbane hanno ricevuto tram a orario, edifici dettagliati, attraversamenti, auto parcheggiate, alberi, lampioni e arredo urbano. La Boreal Saloon è stata rimodellata e sono stati corretti incroci, marciapiedi, rotonde, vie laterali e posizionamento delle auto.',
+        },
+        {
+          date: '5 novembre 2026',
+          title: 'Città, circuiti e una costa mutevole',
+          body: 'Sono arrivate le prove urbane e le gare in circuito di tre giri, con asfalto da corsa, cordoli, vie di fuga in ghiaia e barriere. Sono state aggiornate la rotazione delle regioni e le migrazioni dei salvataggi; le coste hanno ora profili diversi, scogliere più ricche e terreno più dettagliato. È cambiato anche il fullscreen sui dispositivi mobili.',
+        },
+        {
+          date: '4 novembre 2026',
+          title: 'Installazione mobile e una nuova speciale',
+          body: 'La Mulsanne LM Prototype è entrata nel concessionario. Telefoni e tablet hanno ricevuto un invito all’installazione, orientamento libero, fullscreen su Android e icone Home a tutto campo. La Albion RS Hatch è stata ricostruita seguendo la forma dell’auto stradale.',
+        },
+        {
+          date: '3 novembre 2026',
+          title: 'Costa, deserto e rally raid',
+          body: 'Sono arrivate le regioni Costa e Deserto, con strade e paesaggi distinti, insieme alla Toro Dakar Buggy e ai colori autunnali nelle prove forestali sul fango. Sono migliorati la guida dietro la schermata iniziale e i replay; il deserto non ha villaggi, la costa ha una propria icona e la rotazione delle regioni è stata perfezionata.',
+        },
+        {
+          date: '2 novembre 2026',
+          title: 'Camera cinematografica, replay e opzioni HUD',
+          body: 'Sono arrivate la camera cinematografica e i replay dopo il traguardo, insieme all’opzione per nascondere l’HUD. Sono stati rifiniti villaggi, incroci e premi; i segni degli pneumatici ora seguono il replay e sono stati aggiunti i documenti su gioco, contenuti, test e aggiornamenti.',
+        },
+        {
+          date: '1 novembre 2026',
+          title: 'Villaggi, abitacoli e cronologia prove',
+          body: 'Sono arrivati i villaggi, gli abitacoli specifici per ogni auto, la cronologia delle prove e un menu Pausa touch, insieme alla Sochaux T16 e a nuovi modelli. Sono stati rifiniti visuali, freno a mano e strade dei villaggi, con correzioni ai test del tetto e del concessionario.',
+        },
+        {
+          date: '31 ottobre 2026',
+          title: 'Regione alpina e altre auto',
+          body: 'Sono arrivate la regione alpina, le case innevate, i cartelli dei checkpoint e la cronologia delle prove. Boreal Saloon, Sirocco Dakar Truck, Albion RS Hatch ed Edelweiss S1 sono entrate nel catalogo o sono state ricostruite. Sono state rifinite visuali, giri motore in partenza, terreno sotto la strada, schede del concessionario e distribuzione degli alberi.',
+        },
+        {
+          date: '30 ottobre 2026',
+          title: 'Officina, guida e segni degli pneumatici',
+          body: 'È arrivata l’Officina con sette potenziamenti attivi e un concessionario 3D, insieme ad auto procedurali, Riviera WRC, Edelweiss S1 e segni degli pneumatici che svaniscono. I salvataggi online sono passati a Supabase; sono stati aggiornati guida, ruote, layout adattivo dell’Officina, metadati e analisi.',
+        },
+        {
+          date: '29 ottobre 2026',
+          title: 'Prima versione giocabile',
+          body: 'La prima versione ha introdotto le fondamenta del gioco browser, la simulazione dell’auto a passo fisso e prove forestali procedurali con seme, checkpoint, tempi, penalità e premi. Includeva anche l’auto da rally, paesaggi low-poly, HUD e pannello Gioco, ID partita con salvataggi online, quattro visuali, informazioni sulla privacy e la configurazione di test e CI.',
+        },
+      ],
+    },
+    faqs: [
+      {
+        question: 'Come inizio una partita?',
+        answer:
+          'Inserisci il nome del pilota e premi Guida. Lascia vuoto l’ID partita per iniziarne una nuova oppure inseriscine uno esistente per continuare.',
+      },
+      {
+        question: 'Cos’è l’ID partita?',
+        answer:
+          'È la chiave della tua partita e appare nell’URL. Chiunque abbia l’ID può caricarla: condividilo solo con persone fidate.',
+      },
+      {
+        question: 'I miei progressi vengono salvati?',
+        answer:
+          'I progressi vengono salvati prima sul dispositivo e poi online. Se il server non è disponibile, la copia locale resta intatta e il gioco riprova in seguito.',
+      },
+      {
+        question: 'Le prove cambiano ogni volta?',
+        answer:
+          'Ogni prova viene generata dai semi della partita e della prova, quindi la stessa prova nella stessa partita resta uguale. Il calendario continua con strade più lunghe e curve più strette.',
+      },
+      {
+        question: 'Come cambio visuale?',
+        answer:
+          'Premi C mentre guidi o scegli una visuale nelle Impostazioni. Ci sono visuali inseguimento, abitacolo, isometrica e cinematografica.',
+      },
+    ],
+    contact: {
+      intro: 'Hai trovato un bug, hai un’idea o vuoi fare una domanda? Scrivici.',
+      emailLabel: 'Email',
+      feedbackTitle: 'Invia un commento',
+      feedbackBody:
+        'Usa il modulo per scrivere. Nome ed email sono facoltativi; aggiungi un indirizzo se vuoi ricevere una risposta.',
+      feedbackCta: 'Apri il modulo',
+    },
+    back: 'Torna al gioco',
+  },
   garage: {
     button: 'Officina',
     title: 'Officina',
@@ -245,7 +394,8 @@ export const it: Messages = {
     syncOffline: 'Salvato solo su questo dispositivo. Riproverà online.',
     syncSaving: 'Salvataggio…',
     syncIdle: 'I progressi si salvano automaticamente.',
-    feedback: 'Lascia un commento',
+    feedback: 'Feedback',
+    about: 'Informazioni',
   },
   regions: {
     forest: 'Foresta',
@@ -331,7 +481,6 @@ export const it: Messages = {
     replayTag: 'Replay',
     exitReplay: 'Esci dal replay',
     replayHint: 'Esc esce · C cambia telecamera',
-    nightcityTag: 'Nightcity',
     resetHint: 'Perso? Premi R per tornare all’ultimo controllo.',
   },
 };

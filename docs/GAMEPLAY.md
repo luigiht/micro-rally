@@ -144,9 +144,7 @@ flag, and speed and gear bottom right. The toolbar carries Settings and Game (on
 devices a single Pause button opens a menu of Game, Garage and Settings).
 `H` hides all of that for a clean view; dialogs, the countdown and the touch
 controls stay. The backtick opens a debug overlay (fps, draw calls, physics
-state). One key is deliberately missing from the table below: `N` toggles
-Nightcity, a hidden cyberpunk re-skin of the stage (see
-[CONTENT.md](CONTENT.md)); the run itself is untouched.
+state).
 
 | Key                   | Action                                                  |
 | --------------------- | ------------------------------------------------------- |

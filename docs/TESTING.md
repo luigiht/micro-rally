@@ -70,13 +70,9 @@ cover the pure-TS core and anything else that can run without a browser:
   decals, glow groups), `fenderShell` (the buggy's free-standing mudguards: mirrored, clear of the tyre, wound outward), `svgSilhouette` (the SVG path reader and the extruded bull), `houseGeometry`, `buildingGeometry`,
   `streetFurnitureGeometry`, `cityFurnitureGeometry` (the city's furniture
   and parked car: box parts, outward faces, sizes, white only on the car
-  body), `interiorSpecs`, `nightcityHull` (the one
-  Nightcity body fits every catalogue car and clears the first-person eye).
-- **Themes and kits**: `worldTheme` (the day theme equals the old constants;
-  Nightcity carries HDR neon), `neonMaterial` (the shader patch and three's
-  chunk order), `rallyKits` (the extracted daytime kits), `nightcityKits`
-  (every prop kind dressed, towers inside the tree collider, tiers by
-  distance, signs facing the road), `skidMarks` (`setInk`).
+  body), `interiorSpecs` (every catalogue car fits its first-person cabin).
+- **Themes and kits**: `worldTheme` (day and dusk palettes), `rallyKits`
+  (region and surface scenery), `skidMarks` (`setInk`).
 - **Cameras and replay**: `cameraRigs`, `cinematicCamera` (director rules,
   framing, cuts), `replayTrack`.
 - **i18n**: every locale carries the same keys.
@@ -92,15 +88,14 @@ port outside CI. One worker, Chromium only, with software WebGL
 (`--use-angle=swiftshader`): rendering is CPU-bound, so parallel pages would
 starve each other's frame loops.
 
-| Spec                | Covers                                                                                                                                                                                                           |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `install.spec.ts`   | The install strip: Android shows Install once `beforeinstallprompt` fires and Not now hides it across a reload; iPhone gets the Share → Add to Home Screen text; nothing when standalone or on a desktop pointer |
-| `smoke.spec.ts`     | The splash keeps its still backdrop under Playwright's software WebGL; start a game, drive, the progress bar moves                                                                                               |
-| `camera.spec.ts`    | `C` cycles the four cameras and Settings shows and sets the same view                                                                                                                                            |
-| `hud.spec.ts`       | `H` hides and shows the HUD chrome; Esc opens a dialog over it; the pace note shows from the start and Settings has no toggle for it                                                                             |
-| `nightcity.spec.ts` | `N` toggles the hidden Nightcity re-skin in place; the clock and progress bar stay                                                                                                                               |
-| `mobile.spec.ts`    | Phone-landscape profile: touch pads, pause menu, Garage in the toolbar; checkpoint and money icons in one row, the pace note below, the turbo pad over steer-left only when fitted                               |
-| `save.spec.ts`      | Game IDs, the save API, continuing a game                                                                                                                                                                        |
+| Spec              | Covers                                                                                                                                                                                                           |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `install.spec.ts` | The install strip: Android shows Install once `beforeinstallprompt` fires and Not now hides it across a reload; iPhone gets the Share → Add to Home Screen text; nothing when standalone or on a desktop pointer |
+| `smoke.spec.ts`   | The splash keeps its still backdrop under Playwright's software WebGL; start a game, drive, the progress bar moves                                                                                               |
+| `camera.spec.ts`  | `C` cycles the four cameras and Settings shows and sets the same view                                                                                                                                            |
+| `hud.spec.ts`     | `H` hides and shows the HUD chrome; Esc opens a dialog over it; the pace note shows from the start and Settings has no toggle for it                                                                             |
+| `mobile.spec.ts`  | Phone-landscape profile: touch pads, pause menu, Garage in the toolbar; checkpoint and money icons in one row, the pace note below, the turbo pad over steer-left only when fitted                               |
+| `save.spec.ts`    | Game IDs, the save API, continuing a game                                                                                                                                                                        |
 
 Tips: run the suite on its own with nothing else on port 3100 and no heavy
 process alongside, because the camera spec is sensitive to load. Press keys
@@ -128,7 +123,7 @@ pattern used throughout the project:
 3. Fill the driver name and Game ID, press Drive, wait for the canvas
    (`[data-testid="game-canvas"] canvas`) and about 3.6 s of countdown.
 4. Hold `KeyW` for a second or two, press `KeyC` to change camera, `KeyH`
-   to hide the HUD or `KeyN` for Nightcity, and take `page.screenshot()`.
+   to hide the HUD, and take `page.screenshot()`.
 
 Useful stages (any game seed): index 2 is Forest on tarmac with a village
 (`?spawn=town` for its entry), index 3 Coast, index 4 Arctic, index 5

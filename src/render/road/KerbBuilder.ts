@@ -10,7 +10,6 @@ import {
 } from '@/game/stage/CircuitTrackside';
 import type { StageDef } from '@/game/stage/StageGenerator';
 import { ROAD_LIFT, type TerrainField } from '@/game/stage/TerrainField';
-import { patchNeon } from '../theme/NeonMaterial';
 import { themeColor } from '../theme/themeColor';
 import type { CircuitTheme } from '../theme/WorldTheme';
 import { TrackMesh } from './TrackMesh';
@@ -37,7 +36,6 @@ export class KerbBuilder {
     trackside: CircuitTrackside,
     field: TerrainField,
     theme: CircuitTheme,
-    neon: boolean,
   ) {
     this.group.name = 'kerbs';
     this.material = new MeshStandardMaterial({
@@ -48,7 +46,6 @@ export class KerbBuilder {
       polygonOffsetFactor: -3,
       polygonOffsetUnits: -3,
     });
-    if (neon) patchNeon(this.material);
     const stripes = [themeColor(theme.kerb[0]), themeColor(theme.kerb[1])] as const;
     const gravel = themeColor(theme.gravel);
     const shade = new Color();

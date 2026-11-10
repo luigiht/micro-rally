@@ -87,7 +87,7 @@ flowchart LR
   snow ridges in `TerrainField.bankLift` (both the mesh sample and the
   wheels' deck), `SceneryDensity.spruces` feeds the `spruce` prop kind
   through the ordinary scatter, and `RallyKits` dresses it in three parts
-  (trunk, tinted foliage, snow caps); Nightcity treats spruces as trees.
+  (trunk, tinted foliage, snow caps).
   Spectators are placed by `game/stage/Spectators.ts` (crowds at the start,
   gates, crests and finish, groups between) and drawn by
   `render/scenery/kits/SpectatorKits.ts` as two kits per pose from
@@ -181,22 +181,12 @@ flowchart LR
   lays out in well under a second. `StageRenderer` builds a new city's
   town meshes a few per frame from `update` during the countdown, roads,
   gates, terrain and scenery first.
-- **Themes (Nightcity).** `render/theme/WorldTheme.ts` is the look as data:
-  sky, fog, lights, terrain mode, road, gate and wall colours, scenery kit
-  set and tyre-mark ink. `dayTheme(region)` is today's look; `NIGHTCITY_THEME`
-  the hidden cyberpunk one that `N` toggles through `uiStore.nightcity`.
-  `StageRenderer.setTheme` re-dresses a stage in place: terrain material
-  swap, road/gates/town rebuilt in the theme's colours, scenery rebuilt with
-  the theme's kits (`scenery/kits/RallyKits.ts`, `NightcityKits.ts`, chosen
-  by `sceneryKits.ts`, which tints the rally props in `stagePalette(stage)`:
-  the region's palette, or the one its surface swaps in, autumn on Forest
-  mud). Neon is HDR vertex colour: `themeColor` bakes a
-  glowing colour above one and `theme/NeonMaterial.ts` patches the merged
-  surfaces' materials to draw such faces as emission; glow kits use an unlit
-  material. `DriveRig` passes the theme to `SceneLights`, the tyre marks, the
-  car (`bodies/NightcityBody.tsx` over `render/car/NightcityHull.ts`, one
-  parametric hull for every spec) and mounts `NightcityEffects` (bloom +
-  ACES tone mapping) only while the mode is on.
+- **Themes.** `render/theme/WorldTheme.ts` holds the region's sky, fog, light,
+  road, gate and wall colours as data. `dayTheme(region, dusk)` selects the
+  normal daytime or dusk palette; `StageRenderer` builds the stage with that
+  theme once. `sceneryKits.ts` uses `stagePalette(stage)` to tint the rally
+  props for the region and surface, including autumn on Forest mud. `DriveRig`
+  passes the theme to `SceneLights`, tyre marks and car lamps for dusk.
 - `DrivingSession` (components/game) is a plain class held in a ref. It owns
   the sim, the stepper, input, the camera rig and the `StageRun`, and
   publishes telemetry/HUD snapshots to Zustand at 10 Hz. It also records the

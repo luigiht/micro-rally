@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  EYE,
-  INTERIORS,
-  NIGHTCITY_INTERIOR_PALETTE,
-  nightcityInterior,
-  type InteriorSpec,
-} from '@/components/game/interior/interiorSpecs';
+import { EYE, INTERIORS, type InteriorSpec } from '@/components/game/interior/interiorSpecs';
 import { CAR_SPECS } from '@/game/vehicle/CarSpec';
 import { createVehiclePose, interpolatePose } from '@/game/vehicle/interpolatePose';
 import { createVehicleState } from '@/game/vehicle/VehicleSim';
@@ -76,27 +70,6 @@ describe('interior specs', () => {
       const s = INTERIORS[id];
       expect(rimTop(s), id).toBeLessThan(hoodTop(s) - 0.03);
     }
-  });
-});
-
-describe('Nightcity cabin', () => {
-  it('keeps every car its own envelope and kit and swaps only the palette, which glows', () => {
-    for (const id of Object.keys(CAR_SPECS) as (keyof typeof CAR_SPECS)[]) {
-      const day = INTERIORS[id];
-      const night = nightcityInterior(day);
-      const { palette: dayPalette, ...dayRest } = day;
-      const { palette: nightPalette, ...nightRest } = night;
-      expect(nightRest, id).toEqual(dayRest);
-      expect(nightPalette).toBe(NIGHTCITY_INTERIOR_PALETTE);
-      expect(dayPalette.glow).toBeUndefined();
-    }
-    const p = NIGHTCITY_INTERIOR_PALETTE;
-    expect(p.glow).toBeGreaterThan(1);
-    // Dark trim, neon accents: the accents are not the trim colours.
-    for (const dark of [p.dash, p.lining, p.door, p.seat, p.wheel]) {
-      expect(parseInt(dark.slice(1), 16)).toBeLessThan(0x202030);
-    }
-    expect(new Set([p.accent, p.harness, p.seatAccent]).size).toBeGreaterThanOrEqual(2);
   });
 });
 

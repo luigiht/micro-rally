@@ -3,7 +3,6 @@
 import { useImperativeHandle, useRef, type Ref } from 'react';
 import type { Group, MeshStandardMaterial } from 'three';
 import type { VehiclePose } from '@/game/vehicle/interpolatePose';
-import { NEON } from '@/render/theme/WorldTheme';
 import { Box, Disc, type V3 } from '../CarParts';
 import { EYE, type DashStyle, type InteriorSpec } from './interiorSpecs';
 
@@ -45,49 +44,16 @@ function setLed(m: MeshStandardMaterial | null, on: boolean, color: string): voi
 /** Width of the binnacle hood for a dash style; the digital display needs room for its two small dials. */
 export const hoodWidth = (dash: DashStyle): number => (dash === 'digital' ? 0.5 : 0.44);
 
-/** Round dial with a chrome bezel, cream face, two ticks and a red needle; `neon` makes it a dark face in a lit cyan ring with a magenta needle. */
-export function Dial({
-  p,
-  radius,
-  needleRef,
-  neon = false,
-}: {
-  p: V3;
-  radius: number;
-  needleRef?: Ref<Group>;
-  neon?: boolean;
-}) {
-  const ring = neon ? 1.6 : undefined;
-  const mark = neon ? 2.2 : undefined;
+/** Round dial with a chrome bezel, cream face, two ticks and a red needle. */
+export function Dial({ p, radius, needleRef }: { p: V3; radius: number; needleRef?: Ref<Group> }) {
   return (
     <group position={p}>
-      <Disc
-        p={[0, 0, 0.004]}
-        radius={radius + 0.008}
-        depth={0.01}
-        c={neon ? NEON.cyan : CHROME}
-        glow={ring}
-      />
-      <Disc p={[0, 0, 0]} radius={radius} depth={0.012} c={neon ? '#0b0c12' : '#f4f1ea'} />
-      <Box
-        p={[-radius * 0.7, -radius * 0.55, -0.007]}
-        s={[0.012, 0.004, 0.002]}
-        c={neon ? NEON.cyan : '#2b2a33'}
-        glow={mark}
-      />
-      <Box
-        p={[radius * 0.7, -radius * 0.55, -0.007]}
-        s={[0.012, 0.004, 0.002]}
-        c={neon ? NEON.cyan : '#2b2a33'}
-        glow={mark}
-      />
+      <Disc p={[0, 0, 0.004]} radius={radius + 0.008} depth={0.01} c={CHROME} />
+      <Disc p={[0, 0, 0]} radius={radius} depth={0.012} c="#f4f1ea" />
+      <Box p={[-radius * 0.7, -radius * 0.55, -0.007]} s={[0.012, 0.004, 0.002]} c="#2b2a33" />
+      <Box p={[radius * 0.7, -radius * 0.55, -0.007]} s={[0.012, 0.004, 0.002]} c="#2b2a33" />
       <group ref={needleRef} position={[0, 0, -0.009]} rotation={[0, 0, NEEDLE_MIN]}>
-        <Box
-          p={[0, radius * 0.45, 0]}
-          s={[0.006, radius * 0.9, 0.003]}
-          c={neon ? NEON.magenta : '#d9343a'}
-          glow={mark}
-        />
+        <Box p={[0, radius * 0.45, 0]} s={[0.006, radius * 0.9, 0.003]} c="#d9343a" />
       </group>
       <Disc p={[0, 0, -0.011]} radius={0.008} depth={0.005} c="#2b2a33" />
     </group>
@@ -95,17 +61,7 @@ export function Dial({
 }
 
 /** Row of toggle switches with a red kill switch. */
-function SwitchPanel({
-  p,
-  count,
-  accent,
-  glow,
-}: {
-  p: V3;
-  count: number;
-  accent: string;
-  glow?: number;
-}) {
+function SwitchPanel({ p, count, accent }: { p: V3; count: number; accent: string }) {
   const w = count * 0.034 + 0.06;
   return (
     <group position={p}>
@@ -119,7 +75,7 @@ function SwitchPanel({
         />
       ))}
       <Disc p={[w / 2 - 0.028, 0.012, -0.012]} radius={0.014} depth={0.01} c="#d9343a" />
-      <Box p={[w / 2 - 0.028, -0.022, -0.012]} s={[0.02, 0.006, 0.004]} c={accent} glow={glow} />
+      <Box p={[w / 2 - 0.028, -0.022, -0.012]} s={[0.02, 0.006, 0.004]} c={accent} />
     </group>
   );
 }
@@ -182,7 +138,6 @@ export function DashCluster({
   const y = yc + clusterRise;
   const hoodW = hoodWidth(dash);
   const shiftCount = dash === 'period' ? 1 : SHIFT_STEPS.length;
-  const neon = (p.glow ?? 0) > 0;
   return (
     <group>
       {/* Binnacle hood */}
@@ -190,15 +145,15 @@ export function DashCluster({
       <Box p={[x, y + 0.065, bz - 0.34]} s={[hoodW + 0.02, 0.014, 0.2]} c={p.dash} />
       {dash === 'period' && (
         <>
-          <Dial p={[x, y, faceZ]} radius={0.058} needleRef={tacho} neon={neon} />
-          <Dial p={[x + 0.14, y - 0.01, faceZ]} radius={0.042} needleRef={speedo} neon={neon} />
-          <Dial p={[x - 0.14, y - 0.01, faceZ]} radius={0.03} neon={neon} />
+          <Dial p={[x, y, faceZ]} radius={0.058} needleRef={tacho} />
+          <Dial p={[x + 0.14, y - 0.01, faceZ]} radius={0.042} needleRef={speedo} />
+          <Dial p={[x - 0.14, y - 0.01, faceZ]} radius={0.03} />
         </>
       )}
       {dash === 'analogue' && (
         <>
-          <Dial p={[x + 0.075, y, faceZ]} radius={0.045} needleRef={speedo} neon={neon} />
-          <Dial p={[x - 0.075, y, faceZ]} radius={0.045} needleRef={tacho} neon={neon} />
+          <Dial p={[x + 0.075, y, faceZ]} radius={0.045} needleRef={speedo} />
+          <Dial p={[x - 0.075, y, faceZ]} radius={0.045} needleRef={tacho} />
         </>
       )}
       {dash === 'digital' && (
@@ -214,20 +169,10 @@ export function DashCluster({
               }}
             />
           ))}
-          <Box
-            p={[x - 0.06, y - 0.014, faceZ - 0.004]}
-            s={[0.1, 0.04, 0.004]}
-            c={p.accent}
-            glow={p.glow}
-          />
-          <Box
-            p={[x + 0.06, y - 0.014, faceZ - 0.004]}
-            s={[0.1, 0.04, 0.004]}
-            c={neon ? NEON.magenta : '#3a3944'}
-            glow={p.glow}
-          />
-          <Dial p={[x + 0.2, y - 0.01, faceZ]} radius={0.028} neon={neon} />
-          <Dial p={[x - 0.2, y - 0.01, faceZ]} radius={0.028} neon={neon} />
+          <Box p={[x - 0.06, y - 0.014, faceZ - 0.004]} s={[0.1, 0.04, 0.004]} c={p.accent} />
+          <Box p={[x + 0.06, y - 0.014, faceZ - 0.004]} s={[0.1, 0.04, 0.004]} c="#3a3944" />
+          <Dial p={[x + 0.2, y - 0.01, faceZ]} radius={0.028} />
+          <Dial p={[x - 0.2, y - 0.01, faceZ]} radius={0.028} />
         </>
       )}
       {/* Shift lights on the hood, with the blue turbo lamp at the end of the row */}
@@ -253,7 +198,6 @@ export function DashCluster({
         p={[STACK_X, yc - 0.04, face - 0.005]}
         count={dash === 'period' ? 4 : dash === 'analogue' ? 6 : 8}
         accent={p.accent}
-        glow={p.glow}
       />
       {[-0.05, 0.05].map((dx) => (
         <Disc

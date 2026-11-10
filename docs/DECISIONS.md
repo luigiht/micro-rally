@@ -3683,3 +3683,11 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      place of the `surface === 'mud'` test in `SceneryScatter`. On the Alpine
      the berm takes the field's own tint (`grassLow` darkened), so it reads
      as a low heap of grey snow with the winter crowd standing behind it.
+
+193. **2026-11-10 — Remove Nightcity.** Removed the hidden `N` action,
+     session state, alternate world theme, scenery and car variants, neon
+     material patching, bloom effect and HUD tag. The stage renderer now builds
+     its region's day or dusk theme once instead of supporting in-place theme
+     swaps. Ordinary dusk lighting remains. The original implementation
+     decision stays in this log as historical context; current gameplay,
+     architecture and testing docs describe only the supported game.

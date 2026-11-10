@@ -9,7 +9,7 @@ import { TerrainField } from '@/game/stage/TerrainField';
 import { SeaWallBuilder } from '@/render/road/SeaWallBuilder';
 import { meshTerrainChunk, terrainColors } from '@/render/terrain/meshTerrainChunk';
 import { SeaPlane } from '@/render/terrain/SeaPlane';
-import { dayTheme, NIGHTCITY_THEME } from '@/render/theme/WorldTheme';
+import { dayTheme } from '@/render/theme/WorldTheme';
 
 /** The first Coast stage of the cycle, and one on the hardest difficulty loop. */
 const COAST_INDEX = stageIndexOf('coast');
@@ -277,11 +277,9 @@ describe('Coast stages', () => {
     expect(tally.cliffBare / tally.cliff).toBeGreaterThan(0.85);
   });
 
-  it('themes the sea and the wall by day and in Nightcity', () => {
+  it('uses the region sea and a default sea for inland themes', () => {
     expect(dayTheme(REGIONS.coast).sea).toBe(REGIONS.coast.coast!.sea);
     expect(dayTheme(REGIONS.forest).sea).toMatch(/^#[0-9a-f]{6}$/i);
-    expect(NIGHTCITY_THEME.sea).not.toBe(dayTheme(REGIONS.coast).sea);
-    expect(NIGHTCITY_THEME.seawall.body).not.toBe(dayTheme(REGIONS.coast).seawall.body);
   });
 
   it('lays the wall line along its side of the road at the wall offset, hairpins included', () => {

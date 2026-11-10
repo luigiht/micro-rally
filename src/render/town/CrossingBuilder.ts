@@ -62,7 +62,7 @@ export class CrossingBuilder {
         line,
       );
     }
-    this.mesh.finish(road);
+    this.mesh.finish();
   }
 
   dispose(): void {
