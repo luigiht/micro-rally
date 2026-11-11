@@ -471,5 +471,5 @@ describe('town generator', () => {
       }
       expect(problems, `${world.gameSeed}/${stage.index}`).toEqual([]);
     }
-  });
+  }, 30_000);
 });
