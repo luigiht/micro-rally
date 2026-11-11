@@ -6,7 +6,7 @@
 @custom-variant short (@media (max-height: 480px));
 
 @theme {
-  --color-paper: #F9F4EB;
+  --color-paper: #f9f4eb;
   --color-ink: #2b2a33;
   --color-rally: #e8623a;
   --color-moss: #5d8a4a;
