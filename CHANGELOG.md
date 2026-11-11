@@ -101,6 +101,11 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Fixed
 
+- **Playable without a graphics card.** Where the browser draws 3D in
+  software, stages now leave out the tall grass, leaves, road stones, tree
+  shadows and close-up pine detail, and draw scenery a little less far, so
+  the countdown and the car keep pace instead of crawling. [233]
+
 - **Start and finish gantries on solid ground, with a full shadow.** On the
   built-up Autumnal lane the gantry posts stood on air above the bank; each
   post now reaches down to the ground at its foot. The chequered banner now

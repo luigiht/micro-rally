@@ -2,6 +2,7 @@
 
 import { forceShotKind, SHOT_KINDS, type ShotKind } from './cameras/CinematicShots';
 import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
+import { useThree } from '@react-three/fiber';
 import type { Group } from 'three';
 import type { CatalogCarId } from '@/game/economy/cars';
 import { STAGE_TYPES, type StageTypeId } from '@/game/stage/regions';
@@ -9,7 +10,12 @@ import { calendarSlot, cycleSlot, type StageSlot } from '@/game/stage/StageGener
 import { createStageWorld } from '@/game/stage/StageWorld';
 import { TEST_TRACK, testTrackTerrain } from '@/game/stage/TestTrack';
 import type { VehiclePose } from '@/game/vehicle/interpolatePose';
-import { DEFAULT_STAGE_RENDER, StageRenderer } from '@/render/stage/StageRenderer';
+import { isSoftwareRenderer, rendererName } from '@/lib/gpu';
+import {
+  DEFAULT_STAGE_RENDER,
+  SOFTWARE_STAGE_RENDER,
+  StageRenderer,
+} from '@/render/stage/StageRenderer';
 import { dayTheme, flatTheme } from '@/render/theme/WorldTheme';
 import { useGameStore } from '@/state/gameStore';
 import { getLiveRelay } from '@/state/opponentStore';
@@ -103,16 +109,25 @@ function StageDrive({
   const renderer = useRef<StageRenderer | null>(null);
   const self = useRef<Readonly<VehiclePose> | null>(null);
   const theme = dayTheme(STAGE_TYPES[world.stage.stageType], world.stage.dusk === true);
+  // Software WebGL gets the light stage: the full one would crawl there.
+  const gl = useThree((s) => s.gl);
+  const renderOptions = useMemo(
+    () =>
+      isSoftwareRenderer(rendererName(gl.getContext()))
+        ? SOFTWARE_STAGE_RENDER
+        : DEFAULT_STAGE_RENDER,
+    [gl],
+  );
 
   useEffect(() => {
-    const r = new StageRenderer(world, DEFAULT_STAGE_RENDER, theme);
+    const r = new StageRenderer(world, renderOptions, theme);
     group.current?.add(r.group);
     renderer.current = r;
     return () => {
       r.dispose();
       renderer.current = null;
     };
-  }, [world, theme]);
+  }, [world, theme, renderOptions]);
 
   const onPose = useCallback(
     (pose: Readonly<VehiclePose>, clock: number, session: DrivingSession) => {

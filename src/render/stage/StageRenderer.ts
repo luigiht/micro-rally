@@ -94,6 +94,24 @@ export const DEFAULT_STAGE_RENDER: StageRenderOptions = {
 };
 
 /**
+ * Where WebGL runs in software (no usable GPU, acceleration switched off, a
+ * headless browser) every frame costs hundreds of milliseconds, and the
+ * fixed-step sim only advances a tenth of a second a frame: the stage
+ * crawls. There the nature extras go (tall grass, leaves, road stones), the
+ * trees cast no shadows, every pine is its stand-in and scenery streams in
+ * to 150 m instead of 220 m. Colliders and the stage itself are unchanged.
+ */
+export const SOFTWARE_STAGE_RENDER: StageRenderOptions = {
+  ...DEFAULT_STAGE_RENDER,
+  sceneryRadius: 150,
+  sceneryDetailRadius: 0,
+  shadows: false,
+  leafLitter: false,
+  tallGrass: false,
+  roadStones: false,
+};
+
+/**
  * A city's street builders (junction plates, walls, trams, markings…) take
  * most of a second together, so a new stage builds them over its first
  * frames, during the countdown, spending about this long per frame (at least

@@ -21,6 +21,14 @@ export interface GraphicsProbe {
   software: boolean;
 }
 
+/** A live WebGL context's renderer name (the unmasked one where the browser shares it). */
+export function rendererName(gl: WebGLRenderingContext | WebGL2RenderingContext): string {
+  const info = gl.getExtension('WEBGL_debug_renderer_info');
+  return String(
+    info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER),
+  );
+}
+
 /** Opens and discards a WebGL context to read the renderer's name. Browser only. */
 export function probeGraphics(): GraphicsProbe {
   try {
@@ -28,10 +36,7 @@ export function probeGraphics(): GraphicsProbe {
     const gl = (canvas.getContext('webgl2') ??
       canvas.getContext('webgl')) as WebGLRenderingContext | null;
     if (!gl) return { webgl: false, renderer: '', software: true };
-    const info = gl.getExtension('WEBGL_debug_renderer_info');
-    const renderer = String(
-      info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER),
-    );
+    const renderer = rendererName(gl);
     gl.getExtension('WEBGL_lose_context')?.loseContext();
     return { webgl: true, renderer, software: isSoftwareRenderer(renderer) };
   } catch {

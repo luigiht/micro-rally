@@ -4328,3 +4328,17 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      instanced in 100 m pieces so stretches out of view are culled, cast no
      shadow, and are skipped in town. They sit behind the `roadStones`
      render option and add about 8 draw calls and 10k triangles in view.
+
+233. **2026-11-11 — A light stage for software WebGL.** After the Pinewood
+     work, CI's smoke tests timed out waiting for the clock. CI draws WebGL
+     with SwiftShader, Pinewood is the first stage of a new game, and the
+     fixed-step sim advances at most 0.1 s a frame. At several hundred
+     milliseconds a frame, the 3 s countdown outlasted the 10 s wait. A
+     player without a usable GPU would see the same crawl. `DrivingScene`
+     now reads the canvas's own renderer name (`rendererName`, shared with
+     the splash's probe in `lib/gpu.ts`). On a software rasteriser it builds
+     the stage with `SOFTWARE_STAGE_RENDER`: no tall grass, leaf litter,
+     road stones or tree shadows, stand-in pines throughout (detail radius 0) and scenery to 150 m. Colliders and the stage are unchanged. This
+     is the first step of the Auto quality tier, ahead of the Settings
+     tiers planned for milestone 7. Locally under SwiftShader the clock now
+     starts about 3 s after the canvas.
