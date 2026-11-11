@@ -1,4 +1,4 @@
-import { expect, test, type Browser, type Page } from '@playwright/test';
+import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test';
 import { CANVAS } from './helpers';
 
 /** The lobby polls every 4 s, so news from the other driver can take that long to show. */
@@ -6,9 +6,17 @@ const POLL = { timeout: 10_000 };
 /** A driver who leaves a stage vanishes from the other's once their live record goes stale (4 s). */
 const STALE = { timeout: 15_000 };
 
+/** Every context a test opens, closed after it whether it passed or not: a page left driving a stage would starve the tests after it. */
+const contexts: BrowserContext[] = [];
+test.afterEach(async () => {
+  await Promise.all(contexts.splice(0).map((c) => c.close()));
+});
+
 /** A fresh browser (own storage) on the splash, through the Multiplayer choice. */
 async function multiplayerPage(browser: Browser, path = '/'): Promise<Page> {
-  const page = await (await browser.newContext()).newPage();
+  const context = await browser.newContext();
+  contexts.push(context);
+  const page = await context.newPage();
   await page.goto(path);
   if (!path.includes('session=')) await page.getByRole('button', { name: 'Multiplayer' }).click();
   await expect(page.getByLabel('Driver name')).toBeVisible();
@@ -115,31 +123,58 @@ test('two drivers share a session, and a stage opens only once both have run the
   await expect(table).toContainText('4:40.00');
   await expect(table.getByText('Stage win:')).toHaveCount(1);
 
-  // Driving a stage: no money or garage, and the Game panel leads back to the session.
+  // Driving a stage: no money or garage, and the Game panel leads back to the lobby.
   await ada.getByRole('button', { name: 'Drive stage 2' }).click();
   await expect(ada.locator(CANVAS)).toBeVisible();
   await expect(ada.getByTestId('stage-timer')).toBeVisible();
   await expect(ada.getByTestId('money')).toHaveCount(0);
-
-  // Bo drives it too: each sees the other on the stage, live.
-  await bo.getByRole('button', { name: 'Drive stage 2' }).click();
-  // Building a stage while another page renders one on software WebGL takes a while.
-  await expect(bo.locator(CANVAS)).toBeVisible({ timeout: 30_000 });
-  await expect(bo.getByRole('img', { name: /^Ada is on this stage/ })).toBeVisible(POLL);
-  await expect(ada.getByRole('img', { name: /^Bo is on this stage/ })).toBeVisible(POLL);
-
   await ada.getByRole('button', { name: 'Game' }).click();
   const panel = ada.getByRole('dialog', { name: 'Game' });
   await expect(panel.getByTestId('session-id')).toHaveText(shown);
   await panel.getByRole('button', { name: 'Back to lobby' }).click();
-  // Ada has left the stage, so she drops off Bo's.
-  await expect(bo.getByTestId('opponent-marker')).toHaveCount(0, STALE);
   await expect(ada.getByRole('button', { name: 'Drive stage 2' })).toBeVisible();
+
+  // Live: Bo drives stage 2 while Ada is on it too. Her windows go through the relay from here,
+  // so only one page renders a stage on CI's software WebGL; Bo's are sampled by his running stage.
+  await bo.getByRole('button', { name: 'Drive stage 2' }).click();
+  await expect(bo.locator(CANVAS)).toBeVisible({ timeout: 30_000 });
+  const adaSeat = await seatOf(ada, id);
+  let t = 0;
+  let bosWindow: { stageIndex: number; samples: number[] } | null = null;
+  const adaDrives = async () => {
+    t += 0.5;
+    // One sample: run clock, eleven pose fields, then progress (40 %).
+    const samples = [t, ...new Array<number>(11).fill(0), 0.4];
+    const res = await ada.request.post(`/api/sessions/${id}/live`, {
+      data: { ...adaSeat, stageIndex: 1, run: 'e2e-ada', samples },
+    });
+    expect(res.ok(), await res.text()).toBeTruthy();
+    const { other } = (await res.json()) as { other: typeof bosWindow };
+    if (other) bosWindow = other;
+  };
+  // Bo sees Ada beside his progress bar...
+  await expect(async () => {
+    await adaDrives();
+    await expect(bo.getByRole('img', { name: 'Ada is on this stage, 40% along' })).toBeVisible({
+      timeout: 1_000,
+    });
+  }).toPass({ timeout: 30_000 });
+  // ...and his own car reaches her, sampled from his stage as it runs.
+  await expect
+    .poll(
+      async () => {
+        await adaDrives();
+        return bosWindow?.samples.length ?? 0;
+      },
+      { timeout: 30_000 },
+    )
+    .toBeGreaterThan(0);
+  expect(bosWindow!.stageIndex).toBe(1);
+  // Ada goes quiet (she left the stage): once her last window is stale she drops off Bo's bar.
+  await expect(bo.getByTestId('opponent-marker')).toHaveCount(0, STALE);
+
   await ada.getByRole('button', { name: 'Leave session' }).click();
   await expect(ada.getByRole('button', { name: 'Single player' })).toBeVisible();
-
-  // Bo is still rendering a stage; close every page so later tests get the CPU.
-  await Promise.all([ada, bo, cy].map((page) => page.context().close()));
 });
 
 test('the session API refuses unknown sessions and stray runs', async ({ request }) => {
