@@ -3,10 +3,10 @@ import type { Surface } from '../vehicle/surfaces';
 import type { SpawnPose } from '../vehicle/VehicleSim';
 import type { Gate } from './Checkpoints';
 import {
+  RALLY_CYCLE,
   STAGE_TYPES,
   stageSlot,
   STAGES_PER_LOOP,
-  isCircuitStage,
   type StageTypeId,
   type Weather,
   reliefAmplitude,
@@ -34,7 +34,7 @@ import { buildCoastRoad } from './CoastRoad';
 import { CoastShape } from './CoastShape';
 import { buildWidths, halfWidthAt } from './RoadWidth';
 import { layoutTown } from './TownGenerator';
-import { hasTown, planTown } from './TownPlan';
+import { hasTown, planTown, TOWN_EVERY } from './TownPlan';
 import { planUrban } from './UrbanPlan';
 
 export { ROAD_SPACING } from './Centreline';
@@ -149,6 +149,51 @@ export function stageAtDusk(index: number): boolean {
 }
 
 /**
+ * What runs at a stage index: its type, its difficulty loop (roads grow
+ * longer and tighter every `STAGES_PER_LOOP` stages), and whether it carries
+ * a town and runs at dusk. The career follows the calendar
+ * (`calendarSlot`); a multiplayer session cycles through the types its host
+ * picked (`cycleSlot`). Plain data, so it can be posted to the terrain worker.
+ */
+export interface StageSlot {
+  stageType: StageTypeId;
+  loop: number;
+  town: boolean;
+  dusk: boolean;
+}
+
+/** The career calendar's slot: cities, circuits and the rally mix. */
+export function calendarSlot(index: number): StageSlot {
+  const { stageType, loop } = stageTypeAt(index);
+  return { stageType, loop, town: stageHasTown(index), dusk: stageAtDusk(index) };
+}
+
+/**
+ * A run of stages cycling through `types` in order: stage `index` is
+ * `types[index % types.length]`. As in the calendar, a town stands on every
+ * third rally stage of a type that has towns, and a dusk-running type runs
+ * every third of its own stages at dusk.
+ */
+export function cycleSlot(types: readonly StageTypeId[], index: number): StageSlot {
+  const typeAt = (j: number) => types[j % types.length]!;
+  const stageType = typeAt(index);
+  const def = STAGE_TYPES[stageType];
+  const rally = (t: StageTypeId) => RALLY_CYCLE.includes(t);
+  let rallyBefore = 0;
+  let sameBefore = 0;
+  for (let j = 0; j < index; j++) {
+    if (rally(typeAt(j))) rallyBefore++;
+    if (typeAt(j) === stageType) sameBefore++;
+  }
+  return {
+    stageType,
+    loop: Math.floor(index / STAGES_PER_LOOP),
+    town: rally(stageType) && def.towns && rallyBefore % TOWN_EVERY === TOWN_EVERY - 1,
+    dusk: def.dusk === true && sameBefore % DUSK_EVERY === DUSK_EVERY - 1,
+  };
+}
+
+/**
  * A checkpoint board stands at least this far along the road from a city
  * junction or a roundabout's ring, so it never stands in a mouth or on the
  * ring.
@@ -248,6 +293,7 @@ function drawBrief(
   stageType: StageTypeId,
   loop: number,
   town: boolean,
+  dusk: boolean,
   layout: CircuitLayout | null,
 ): StageBrief {
   const def = STAGE_TYPES[stageType];
@@ -279,18 +325,26 @@ function drawBrief(
     weather,
     length,
     parTime,
-    ...(stageAtDusk(index) ? { dusk: true as const } : {}),
+    ...(dusk ? { dusk: true as const } : {}),
   };
 }
 
 /** A circuit stage's layout, drawn from the stream after the brief's five draws. */
-function circuitLayout(index: number, seed: number): CircuitLayout | null {
-  return isCircuitStage(index) ? generateCircuit(resume(seed)) : null;
+function circuitLayout(stageType: StageTypeId, seed: number): CircuitLayout | null {
+  return stageType === 'circuit' ? generateCircuit(resume(seed)) : null;
 }
 
-/** Name, surface, length and par of a stage without building its road (for lists); a circuit's layout is drawn to know its lap. */
-export function stageBrief(gameSeed: number, index: number): StageBrief {
-  const { stageType, loop } = stageTypeAt(index);
+/**
+ * Name, surface, length and par of a stage without building its road (for
+ * lists); a circuit's layout is drawn to know its lap. `slot` defaults to
+ * the career calendar's.
+ */
+export function stageBrief(
+  gameSeed: number,
+  index: number,
+  slot: StageSlot = calendarSlot(index),
+): StageBrief {
+  const { stageType, loop, town, dusk } = slot;
   const seed = hashSeed(gameSeed, STAGE_TYPES[stageType].seedKey, index);
   return drawBrief(
     mulberry32(seed),
@@ -298,8 +352,9 @@ export function stageBrief(gameSeed: number, index: number): StageBrief {
     index,
     stageType,
     loop,
-    stageHasTown(index),
-    circuitLayout(index, seed),
+    town,
+    dusk,
+    circuitLayout(stageType, seed),
   );
 }
 
@@ -335,14 +390,18 @@ function circuitStage(brief: StageBrief, layout: CircuitLayout): StageDef {
   };
 }
 
-/** Deterministic stage from (game seed, global stage index). */
-export function generateStage(gameSeed: number, index: number): StageDef {
-  const { stageType, loop } = stageTypeAt(index);
+/** Deterministic stage from (game seed, stage index), in the calendar's slot unless given another. */
+export function generateStage(
+  gameSeed: number,
+  index: number,
+  slot: StageSlot = calendarSlot(index),
+): StageDef {
+  const { stageType, loop, dusk } = slot;
   const def = STAGE_TYPES[stageType];
   const seed = hashSeed(gameSeed, def.seedKey, index);
-  const withTown = stageHasTown(index);
-  const layout = circuitLayout(index, seed);
-  const brief = drawBrief(mulberry32(seed), seed, index, stageType, loop, withTown, layout);
+  const withTown = slot.town;
+  const layout = circuitLayout(stageType, seed);
+  const brief = drawBrief(mulberry32(seed), seed, index, stageType, loop, withTown, dusk, layout);
   if (layout) return circuitStage(brief, layout);
   const { surface, length } = brief;
   const twist = def.twistiness * (1 + 0.15 * Math.min(loop, 4));

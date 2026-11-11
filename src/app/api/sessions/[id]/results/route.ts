@@ -1,6 +1,5 @@
-import { checkResult, parseResultInput } from '@/game/multiplayer/Session';
+import { checkResult, parseResultInput, sessionBrief } from '@/game/multiplayer/Session';
 import { isValidGameId, normalizeGameId } from '@/game/save/GameId';
-import { stageBrief } from '@/game/stage/StageGenerator';
 import { fail, ok, readBody, tokenMatches } from '../../sessionApi';
 import { getSessionStore, toView } from '../../sessionStore';
 
@@ -25,9 +24,11 @@ export async function POST(req: Request, { params }: Ctx): Promise<Response> {
   if (!session) return fail('not_found', 404);
   const player = session.players.find((p) => p.id === body.playerId);
   if (!player || !tokenMatches(player.tokenHash, body.token)) return fail('forbidden', 403);
+  // A run is driven in the seat's car, so a seat without one can't have run a stage.
+  if (!(player.carId ?? session.carId)) return fail('no_car', 409);
 
   const par =
-    input.stageIndex < session.stageCount ? stageBrief(session.seed, input.stageIndex).parTime : 0;
+    input.stageIndex < session.stageCount ? sessionBrief(session, input.stageIndex).parTime : 0;
   const problem = checkResult(session, player.id, input, par);
   if (problem === 'over' || problem === 'not_current' || problem === 'duplicate')
     return fail(problem, 409);

@@ -9,7 +9,10 @@ how they play is in [GAMEPLAY.md](GAMEPLAY.md).
 ## Stages
 
 A stage is deterministic from `(game seed, stage type, stage index)`, so it is
-identical every time it is driven and records are fair.
+identical every time it is driven and records are fair. The career takes its
+types from the calendar; a multiplayer session cycles through the types its
+host ticked, with towns on every third rally stage and dusk on every third
+stage of a dusk-running type, as the calendar does (`StageSlot`).
 
 - **Brief.** `stageBrief` draws the name, surface, weather, length and par
   from the first draws of the stage's RNG stream, without building the road,
@@ -96,7 +99,9 @@ All open ground (not the coast, the dunes, circuits or cities, which shape
 their own) carries small bumps and hollows over the broad hills: two
 octaves of noise about 10 m and 5 m across, up to about 35 cm, faded in
 with the road blend so the carriageway, the verge strip and the flat
-margin beside it stay level (`TerrainDetail`).
+margin beside it stay level (`TerrainDetail`). On the open road the
+terrain bed sits 15 cm under the road mesh's 3 m verge strips and meets
+their outer edge, so the two never share a plane (`TerrainField.vergeBed`).
 
 ## Arctic
 
@@ -162,8 +167,9 @@ nearly flat country (relief 9 m, long waves) with long flowing bends.
   colours, jeans, chinos or shorts, trainers, caps, bare heads and
   ponytails, bare hands; snow stage types keep the padded jackets. On
   Autumnal, groups and the start, checkpoint and finish crowds stand about
-  6 m past the carriageway's edge, behind a grassy berm (0.35 m high, 2.2 m
-  deep, its foot 3.4 m out, clear of the verge) heaped in 8 m runs along the
+  7 m past the carriageway's edge, behind a grassy berm (0.35 m high, 2.2 m
+  deep, its foot 4.6 m out, most of a terrain cell clear of the verge strip)
+  heaped in 8 m runs along the
   crowd and a metre past each end of a group, grassed in a lusher shade
   of the field's green; jump crowds keep the open line. Wild scenery keeps off the berms, and the car rides
   over them like any ground. The finish draws

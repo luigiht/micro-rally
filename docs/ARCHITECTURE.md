@@ -259,16 +259,36 @@ flowchart LR
   Lobby[SessionLobby\npolls 4 s] --> Client
   Client --> Routes[app/api/sessions…]
   Routes --> SStore[SessionStore\nfile or Supabase]
-  Lobby -->|driveSessionStage| GameStore[gameStore\nseed, stage, car, no Game ID]
+  Lobby -->|driveSessionStage| GameStore[gameStore\nseed, stage, own car, no Game ID]
   GameStore --> Drive[DrivingScene / DrivingSession\nunchanged]
   Drive -->|result in HUD store| Upload[useSessionRunUpload] --> Client
+  Drive -->|pose every frame| Relay[LiveRelay\noutbox + ghost track]
+  Relay -->|4 Hz / 1 Hz| Live[POST /:id/live] --> LStore[LiveStore\nmemory or Supabase]
+  Relay -->|ghost track| Opp[OpponentCar + progress marker]
 ```
 
 - `src/game/multiplayer` is pure: `Session` (types, `sessionStage`,
-  `stageToDrive`, `checkResult`, parsers) and `SessionScore` (`scoreStage`,
-  `sessionStandings`, `sessionWinner`). The routes and the client share it.
+  `stageToDrive`, `checkResult`, parsers), `SessionScore` (`scoreStage`,
+  `sessionStandings`, `sessionWinner`) and `LiveTrack` (the live wire
+  format, the sender's `LiveOutbox` and the receiver's `GhostTrack` jitter
+  buffer). The routes and the client share it. Each `SessionPlayer` carries
+  the car that driver picked in the lobby (null until then), and a
+  `SessionView` the ticked `stageTypes`; `sessionSlot` / `sessionBrief` turn
+  them into each stage's `StageSlot` (absent types: the career calendar).
+- Stage generation takes a `StageSlot` (type, difficulty loop, town, dusk):
+  `calendarSlot(index)` is the career's and the default, `cycleSlot(types,
+index)` a session's. `createStageWorld`, `stageBrief` and the terrain
+  worker's `init` message all carry it; the game store's `stageTypes` tells
+  `DrivingScene` which one to build.
 - `src/app/api/sessions`: `POST /` creates (host in seat 0), `GET /:id`,
-  `POST /:id/join` takes the free seat, `POST /:id/results` counts a run.
+  `POST /:id/join` takes the free seat, `POST /:id/car` sets the seat's car
+  once (`car_set` after that), `POST /:id/results` counts a run (only from
+  a seat with a car),
+  `POST /:id/live` swaps the two drivers' latest live windows (seat token
+  checked against a per-process cache of seat hashes). `liveStore.ts` keeps
+  those windows in memory (dev, e2e, self-hosting) or in Supabase's
+  unlogged `session_live` table through the `session_live_exchange`
+  function, one round trip per exchange.
   `sessionApi.ts` mints and checks seat tokens (stored as SHA-256 hashes).
   `sessionStore.ts` chooses the store the same way saves do. The file store
   queues changes per session, and `supabaseSessionStore.ts` uses three
@@ -276,10 +296,19 @@ flowchart LR
 - `src/lib/multiplayer/SessionClient.ts`: the fetch client (errors as
   `SessionApiError` codes), `SessionSeats` (seat tokens, last session and
   name in Web Storage) and the `?session=` helpers.
+- `src/lib/multiplayer/LiveRelay.ts`: the exchange loop (every 250 ms while
+  the other driver is on the stage, every second otherwise) feeding the
+  ghost track and a presence callback.
 - `src/state/sessionStore.ts`: the session view, this device's seat, the
   lobby/drive screen and the upload state, with the actions (`enterSession`,
   `driveSessionStage`, `submitRun`, `retireStage`, `backToLobby`,
-  `leaveSession`).
+  `leaveSession`) and `opponentOf`. `src/state/opponentStore.ts` holds the
+  one `LiveRelay` and the other driver's presence for the HUD.
+- `useSessionLive` (in `SessionDriveShell`) starts the relay for each run
+  of a stage; `StageDrive` records the car into it every frame and mounts
+  `OpponentCar`, which plays the ghost track back as the other driver's
+  car (no lamps, fading when close) with an `OpponentDecor` name tag.
+  `StageProgress` shows their initial beside the progress bar.
 - `GameRoot` routes a solo game to `GameShell` (autosave) and a session to
   `SessionLobby` or `SessionDriveShell`. Both shells render the same
   `DriveView`, and its `session` flag reaches `StageHud` and `HudToolbar`.

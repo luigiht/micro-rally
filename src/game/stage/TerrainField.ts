@@ -77,6 +77,20 @@ export const ROAD_BED_DROP = 0.25;
 const TRENCH_IN = 0.6;
 export const TRENCH_OUT = 0.4;
 /**
+ * The road mesh lays a verge strip this wide beside each edge of the
+ * carriageway, at deck level. Its colour can differ from the ground's (the
+ * Autumnal verges fade out from the mud), so the terrain must never share
+ * its plane: two coplanar surfaces fight for depth, and the coarse terrain
+ * faces flicker through the strip as triangles while the camera moves. On
+ * the open road the bed therefore stays `VERGE_BED_DROP` below the strip
+ * from the trench ramp outwards and rises to meet the strip's outer edge
+ * over its last `VERGE_BED_RAMP`.
+ */
+export const VERGE_WIDTH = 3;
+export const VERGE_BED_DROP = 0.15;
+const VERGE_BED_RAMP = 0.5;
+const VERGE_BED_PAST = 0.3;
+/**
  * The same for a circuit's gravel traps, drawn barely over the flat runoff:
  * the bed sinks this far under the band, ramping back to the runoff's level
  * over `GRAVEL_BED_RAMP` inside its edges.
@@ -733,8 +747,10 @@ export class TerrainField implements TerrainQuery {
       out.paved = beyond < 0.3 ? 2 : beyond < PAVEMENT_WIDTH + PAVED_MARGIN ? 1 : 0;
     }
     const t = smoothstep(hw + flat, hw + flat + this.blendWidth(st), st.distance);
-    let trench =
-      (ROAD_LIFT + ROAD_BED_DROP) * (1 - smoothstep(hw - TRENCH_IN, hw + TRENCH_OUT, st.distance));
+    let trench = Math.max(
+      (ROAD_LIFT + ROAD_BED_DROP) * (1 - smoothstep(hw - TRENCH_IN, hw + TRENCH_OUT, st.distance)),
+      this.vergeBed(st),
+    );
     for (const js of this.junctions) {
       if (Math.hypot(x - js.x, z - js.z) > js.zone) continue;
       const f = js.distance(x, z);
@@ -758,6 +774,22 @@ export class TerrainField implements TerrainQuery {
     out.roadBlend = 1 - t;
     out.roadDistance = st.distance;
     return out;
+  }
+
+  /**
+   * How far the bed sinks under the road mesh's verge strip here (see
+   * `VERGE_WIDTH`). Only on the open road: a town's pavements stand above
+   * the ground already and stop at junction mouths, a circuit's runoff has
+   * its own beds, and a snow bank rises out of the strip on purpose.
+   */
+  private vergeBed(st: StreetHit): number {
+    if (this.banks || this.trackside || st.stub) return 0;
+    if (this.town && townFade(this.town, st.along) > 0) return 0;
+    const beyond = st.distance - st.hw;
+    return (
+      VERGE_BED_DROP *
+      (1 - smoothstep(VERGE_WIDTH - VERGE_BED_RAMP, VERGE_WIDTH + VERGE_BED_PAST, beyond))
+    );
   }
 
   /**

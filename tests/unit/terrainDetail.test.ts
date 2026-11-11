@@ -12,6 +12,7 @@ import { TerrainDetail } from '@/game/stage/TerrainDetail';
 import { RoadBuilder } from '@/render/road/RoadBuilder';
 import { dayTheme } from '@/render/theme/WorldTheme';
 import { stageIndexOf } from './stageIndex';
+import { BERM_DEPTH, BERM_FROM } from '@/game/stage/Spectators';
 
 function forestStages(): { mud: [number, number]; dry: [number, number] } {
   return { mud: [2, stageIndexOf('autumnal')], dry: [2, stageIndexOf('pinewood')] };
@@ -240,7 +241,7 @@ describe('terrain detail', () => {
       let behind = 0;
       for (const p of people) {
         expect(stage.path.nearest(p.x, p.z, 40, hit)).toBe(true);
-        const crest = stage.halfWidth + 3.4 + 1.1;
+        const crest = stage.halfWidth + BERM_FROM + BERM_DEPTH / 2;
         stage.path.sample(hit.along, sample);
         const side = Math.sign(hit.lateral);
         const x = sample.x + Math.cos(sample.heading) * crest * side;

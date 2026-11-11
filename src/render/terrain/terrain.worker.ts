@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 import { STAGE_TYPES } from '@/game/stage/regions';
 import { scatterScenery } from '@/game/stage/SceneryScatter';
-import { generateStage } from '@/game/stage/StageGenerator';
+import { generateStage, type StageSlot } from '@/game/stage/StageGenerator';
 import { TerrainField } from '@/game/stage/TerrainField';
 import {
   meshTerrainChunk,
@@ -11,7 +11,7 @@ import {
 } from './meshTerrainChunk';
 
 export type TerrainWorkerRequest =
-  | { type: 'init'; gameSeed: number; stageIndex: number }
+  | { type: 'init'; gameSeed: number; stageIndex: number; slot: StageSlot }
   | { type: 'chunk'; cx: number; cz: number; size: number; res: number };
 
 /** `ready` once the stage is rebuilt here; until then the main thread meshes the chunks itself. */
@@ -25,7 +25,7 @@ self.onmessage = (e: MessageEvent<TerrainWorkerRequest>) => {
   const msg = e.data;
   if (msg.type === 'init') {
     // Regenerating from the seed is cheaper than serialising the stage, and identical by construction.
-    const stage = generateStage(msg.gameSeed, msg.stageIndex);
+    const stage = generateStage(msg.gameSeed, msg.stageIndex, msg.slot);
     const region = STAGE_TYPES[stage.stageType];
     field = new TerrainField(stage);
     // Scenery placement registers the level pads under houses on the field; the props themselves are not needed here.

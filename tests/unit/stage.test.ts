@@ -18,7 +18,14 @@ import {
 import { stageIndexOf } from './stageIndex';
 import { generateStage, stageBrief, stageHasTown, stageTypeAt } from '@/game/stage/StageGenerator';
 import { StageRun, TREE_PENALTY_SECONDS } from '@/game/stage/StageRun';
-import { ROAD_BED_DROP, ROAD_LIFT, TRENCH_OUT, TerrainField } from '@/game/stage/TerrainField';
+import {
+  ROAD_BED_DROP,
+  ROAD_LIFT,
+  TRENCH_OUT,
+  TerrainField,
+  VERGE_BED_DROP,
+  VERGE_WIDTH,
+} from '@/game/stage/TerrainField';
 import { ObstacleGrid, resolveObstacleCollisions } from '@/game/vehicle/Collisions';
 import { createVehicleState } from '@/game/vehicle/VehicleSim';
 
@@ -261,11 +268,17 @@ describe('TerrainField', () => {
     // Wheels ride the ribbon deck; the mesh bed is sunk beneath it.
     expect(field.heightAt(g.x, g.z)).toBeCloseTo(road + ROAD_LIFT, 6);
     expect(bed.height).toBeCloseTo(road - ROAD_BED_DROP, 6);
-    // On the verge, mesh and driving surface coincide at deck level: no step off the road.
+    // On the verge the wheels still ride deck level, while the mesh bed sits a little under the
+    // road mesh's verge strip so the two never share a plane.
     const off = stage.halfWidth + 1;
     field.sample(g.x + lx * off, g.z + lz * off, bed);
-    expect(field.heightAt(g.x + lx * off, g.z + lz * off)).toBeCloseTo(bed.height, 6);
-    expect(bed.height).toBeCloseTo(field.roadHeightAt(g.distance) + ROAD_LIFT, 1);
+    const verge = field.heightAt(g.x + lx * off, g.z + lz * off);
+    expect(verge).toBeCloseTo(road + ROAD_LIFT, 1);
+    expect(verge - bed.height).toBeCloseTo(VERGE_BED_DROP, 2);
+    // Past the strip, mesh and driving surface coincide again: no step off the verge.
+    const past = stage.halfWidth + VERGE_WIDTH + 0.5;
+    field.sample(g.x + lx * past, g.z + lz * past, bed);
+    expect(field.heightAt(g.x + lx * past, g.z + lz * past)).toBeCloseTo(bed.height, 6);
   });
 
   it('keeps the terrain bed well under the ribbon across the whole carriageway', () => {
@@ -280,14 +293,18 @@ describe('TerrainField', () => {
         // Nearest-point parameter differs a hair from `d` on bends; allow 3 cm.
         expect(bed.height).toBeLessThanOrEqual(road - ROAD_BED_DROP + 0.03);
       }
-      // Just past the trench ramp (under the road mesh's verge strip) and at the strip's outer
-      // edge, the terrain is at deck level, flush with the strip.
-      for (const out of [TRENCH_OUT + 0.2, 2]) {
+      // Past the trench ramp and across the road mesh's verge strip the bed stays under the strip,
+      // and just beyond the strip's outer edge it is back at deck level.
+      const deck = road + ROAD_LIFT;
+      const bedAt = (out: number) => {
         const off = stage.halfWidth + out;
         field.sample(at.x + Math.cos(at.heading) * off, at.z - Math.sin(at.heading) * off, bed);
-        // Out on the verge the nearest-point parameter shifts more on bends; 0.08 still rules out the drop.
-        expect(Math.abs(bed.height - (road + ROAD_LIFT))).toBeLessThan(0.08);
-      }
+        return bed.height;
+      };
+      // Out on the verge the nearest-point parameter shifts more on bends; 0.06 still rules out a fight.
+      for (const out of [TRENCH_OUT + 0.2, 1.5, VERGE_WIDTH - 0.6])
+        expect(bedAt(out)).toBeLessThan(deck - VERGE_BED_DROP + 0.06);
+      expect(Math.abs(bedAt(VERGE_WIDTH + 0.4) - deck)).toBeLessThan(0.08);
     }
   });
 

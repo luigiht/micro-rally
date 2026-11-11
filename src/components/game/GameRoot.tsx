@@ -14,6 +14,7 @@ import { useGameStore } from '@/state/gameStore';
 import { useSessionStore } from '@/state/sessionStore';
 import { useUiStore } from '@/state/uiStore';
 import { useAutosave } from './useAutosave';
+import { useSessionLive } from './useSessionLive';
 import { useSessionRunUpload } from './useSessionRunUpload';
 
 const GameCanvas = dynamic(() => import('./GameCanvas').then((m) => m.GameCanvas), {
@@ -58,9 +59,13 @@ function GameShell() {
   return <DriveView />;
 }
 
-/** Multiplayer: one stage of the session; the first finish is sent to the server. */
+/**
+ * Multiplayer: one stage of the session; the first finish is sent to the
+ * server, and the other driver shows up live while they're on it too.
+ */
 function SessionDriveShell() {
   useSessionRunUpload();
+  useSessionLive();
   return <DriveView session />;
 }
 

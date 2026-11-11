@@ -1,5 +1,11 @@
 import { create } from 'zustand';
-import { stageToDrive, type ResultInput, type SessionView } from '@/game/multiplayer/Session';
+import type { CatalogCarId } from '@/game/economy/cars';
+import {
+  stageToDrive,
+  type ResultInput,
+  type SessionPlayer,
+  type SessionView,
+} from '@/game/multiplayer/Session';
 import {
   SessionApiError,
   SessionClient,
@@ -37,6 +43,11 @@ const OUTSIDE: SessionState = {
 
 /** Multiplayer: the session as last fetched, this device's seat and which screen shows. */
 export const useSessionStore = create<SessionState>()(() => OUTSIDE);
+
+/** The other driver in the session, once someone has taken the second seat. */
+export function opponentOf(s: Pick<SessionState, 'session' | 'seat'>): SessionPlayer | null {
+  return s.session?.players.find((p) => p.id !== s.seat?.playerId) ?? null;
+}
 
 let client: SessionClient | null = null;
 let seats: SessionSeats | null = null;
@@ -89,9 +100,31 @@ export async function refreshSession(): Promise<void> {
 }
 
 /**
+ * Pick this driver's car for the whole session, once, before their first
+ * stage. False when the server can't be reached; a car already picked (a
+ * retry after a lost response) counts as picked.
+ */
+export async function chooseSessionCar(carId: CatalogCarId): Promise<boolean> {
+  const { session, seat } = useSessionStore.getState();
+  if (!session || !seat) return false;
+  try {
+    const next = await getSessionClient().chooseCar(session.id, seat, carId);
+    useSessionStore.setState({ session: next, offline: false });
+    return true;
+  } catch (err) {
+    if (err instanceof SessionApiError && err.code === 'car_set') {
+      await refreshSession();
+      return true;
+    }
+    return false;
+  }
+}
+
+/**
  * Drive the stage the session is waiting on this driver for (again, to
  * restart a run that hasn't finished): the game store gets the session's
- * seed, stage and car, and no Game ID, so nothing is saved to a solo game.
+ * seed, stage and stage types, this driver's car, and no Game ID, so
+ * nothing is saved to a solo game. False until the driver has a car.
  */
 export function driveSessionStage(): boolean {
   const { session, seat } = useSessionStore.getState();
@@ -99,14 +132,17 @@ export function driveSessionStage(): boolean {
   const stage = stageToDrive(session, seat.playerId);
   if (stage === null) return false;
   const me = session.players.find((p) => p.id === seat.playerId);
+  if (!me?.carId) return false;
+  const carId = me.carId;
   useGameStore.setState((s) => ({
     gameId: null,
-    driverName: me?.name ?? '',
+    driverName: me.name,
     gameSeed: session.seed,
     stageIndex: stage,
+    stageTypes: session.stageTypes ?? null,
     attempt: s.attempt + 1,
-    carId: session.carId,
-    ownedCars: [session.carId],
+    carId,
+    ownedCars: [carId],
     upgrades: {},
     money: 0,
     records: {},

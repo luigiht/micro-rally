@@ -1,12 +1,26 @@
 import { isCatalogCar, type CatalogCarId } from '../economy/cars';
 import { isValidGameId } from '../save/GameId';
 import { sanitizeDriverName } from '../save/SaveFile';
+import { RALLY_CYCLE, type StageTypeId } from '../stage/regions';
+import {
+  calendarSlot,
+  cycleSlot,
+  stageBrief,
+  type StageBrief,
+  type StageSlot,
+} from '../stage/StageGenerator';
 
 /** Drivers in a session: the host and one guest. Seats are numbered 0 (host) and 1. */
 export const SESSION_SEATS = 2;
 
 /** How many stages the host can make a session. */
 export const SESSION_LENGTHS = [3, 6, 9] as const;
+
+/**
+ * The stage types a host can tick, in the order a session cycles through
+ * them: the rally mix as the career runs it, then a city and a circuit.
+ */
+export const SESSION_STAGE_TYPES: readonly StageTypeId[] = [...RALLY_CYCLE, 'urban', 'circuit'];
 export type SessionLength = (typeof SESSION_LENGTHS)[number];
 
 /** A counted time faster than this share of par is refused as implausible. */
@@ -20,6 +34,8 @@ export interface SessionPlayer {
   id: string;
   name: string;
   seat: number;
+  /** The car this driver picked in the lobby, for the whole session; null until they pick. */
+  carId: CatalogCarId | null;
 }
 
 /** One driver's counted run of one stage. `time` is null when they retired from it. */
@@ -35,7 +51,12 @@ export interface SessionView {
   id: string;
   seed: number;
   stageCount: SessionLength;
-  carId: CatalogCarId;
+  /**
+   * The ticked stage types the session cycles through, in
+   * `SESSION_STAGE_TYPES` order; absent on sessions created before hosts
+   * picked types, which follow the career calendar.
+   */
+  stageTypes?: StageTypeId[];
   createdAt: number;
   players: SessionPlayer[];
   results: SessionResult[];
@@ -50,6 +71,28 @@ export interface ResultInput {
 
 export function isSessionLength(n: unknown): n is SessionLength {
   return (SESSION_LENGTHS as readonly unknown[]).includes(n);
+}
+
+/** Ticked stage types from the wire, in `SESSION_STAGE_TYPES` order; null unless a non-empty set of known types. */
+export function sessionStageTypes(raw: unknown): StageTypeId[] | null {
+  if (!Array.isArray(raw) || raw.length === 0) return null;
+  if (!raw.every((t) => (SESSION_STAGE_TYPES as readonly unknown[]).includes(t))) return null;
+  const picked = new Set(raw as StageTypeId[]);
+  if (picked.size !== raw.length) return null;
+  return SESSION_STAGE_TYPES.filter((t) => picked.has(t));
+}
+
+/** What runs at the session's stage `index`: its host's types in turn, or the calendar for older sessions. */
+export function sessionSlot(view: Pick<SessionView, 'stageTypes'>, index: number): StageSlot {
+  return view.stageTypes ? cycleSlot(view.stageTypes, index) : calendarSlot(index);
+}
+
+/** Name, type, length and par of the session's stage `index`, without building its road. */
+export function sessionBrief(
+  view: Pick<SessionView, 'seed' | 'stageTypes'>,
+  index: number,
+): StageBrief {
+  return stageBrief(view.seed, index, sessionSlot(view, index));
 }
 
 export function resultFor(
@@ -139,6 +182,11 @@ export function parseResultInput(raw: unknown): ResultInput | null {
   return { stageIndex: stageIndex as number, time: time as number | null, splits };
 }
 
+/** A car a driver may pick for a session: any in the catalogue, as nothing is bought. */
+export function sessionCar(raw: unknown): CatalogCarId | null {
+  return typeof raw === 'string' && isCatalogCar(raw) ? raw : null;
+}
+
 /** A name for the session's scoreboard: trimmed and capped like a driver name; empty when unusable. */
 export function sessionDriverName(raw: unknown): string {
   return typeof raw === 'string' ? sanitizeDriverName(raw) : '';
@@ -147,8 +195,10 @@ export function sessionDriverName(raw: unknown): string {
 function parsePlayer(raw: unknown): SessionPlayer | null {
   if (!isRecord(raw)) return null;
   const { id, name, seat } = raw;
+  const carId = raw.carId === null ? null : sessionCar(raw.carId);
   if (typeof id !== 'string' || typeof name !== 'string' || !Number.isInteger(seat)) return null;
-  return { id, name, seat: seat as number };
+  if (carId === null && raw.carId !== null) return null;
+  return { id, name, seat: seat as number, carId };
 }
 
 function parseResult(raw: unknown): SessionResult | null {
@@ -160,10 +210,11 @@ function parseResult(raw: unknown): SessionResult | null {
 /** Validate a session from the API; null when it isn't one. */
 export function parseSessionView(raw: unknown): SessionView | null {
   if (!isRecord(raw)) return null;
-  const { id, seed, stageCount, carId, createdAt, players, results } = raw;
+  const { id, seed, stageCount, createdAt, players, results } = raw;
   if (typeof id !== 'string' || !isValidGameId(id)) return null;
   if (!finite(seed) || !finite(createdAt) || !isSessionLength(stageCount)) return null;
-  if (typeof carId !== 'string' || !isCatalogCar(carId)) return null;
+  const stageTypes = raw.stageTypes === undefined ? undefined : sessionStageTypes(raw.stageTypes);
+  if (stageTypes === null) return null;
   if (!Array.isArray(players) || !Array.isArray(results)) return null;
   const parsedPlayers = players.map(parsePlayer);
   const parsedResults = results.map(parseResult);
@@ -172,7 +223,7 @@ export function parseSessionView(raw: unknown): SessionView | null {
     id,
     seed,
     stageCount,
-    carId,
+    ...(stageTypes ? { stageTypes } : {}),
     createdAt,
     players: (parsedPlayers as SessionPlayer[]).sort((a, b) => a.seat - b.seat),
     results: parsedResults as SessionResult[],

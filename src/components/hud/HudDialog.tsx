@@ -9,6 +9,8 @@ interface HudDialogProps {
   closeLabel: string;
   onClose: () => void;
   children: ReactNode;
+  /** Pinned under the scrolling content, directly above the Close button. */
+  footer?: ReactNode;
   /** Extra classes for the panel, e.g. a wider max width on short screens. */
   className?: string;
 }
@@ -21,6 +23,7 @@ export function HudDialog({
   closeLabel,
   onClose,
   children,
+  footer,
   className = '',
 }: HudDialogProps) {
   const titleId = `${id}-title`;
@@ -42,14 +45,13 @@ export function HudDialog({
           )}
           {children}
         </div>
-        <button
-          type="button"
-          autoFocus
-          onClick={onClose}
-          className="pixel-btn mt-6 mb-1 w-full shrink-0 short:mt-3"
-        >
-          {closeLabel}
-        </button>
+        {/* With a footer, the content's pb-3 alone spaces it, matching the footer-to-Close gap. */}
+        <div className={`mb-1 flex shrink-0 flex-col gap-3 ${footer ? '' : 'mt-6 short:mt-3'}`}>
+          {footer}
+          <button type="button" autoFocus onClick={onClose} className="pixel-btn w-full">
+            {closeLabel}
+          </button>
+        </div>
       </section>
     </div>
   );

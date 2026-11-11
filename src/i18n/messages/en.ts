@@ -38,7 +38,8 @@ export const en = {
     notFound: 'No saved game was found for {id}. Check it, or clear the field to start a new game.',
     modeTitle: 'Choose a mode',
     singlePlayer: 'Single player',
-    singlePlayerHint: 'Your own career: prize money, a garage and stages without end.',
+    singlePlayerHint:
+      'Your own career at your own pace: race endless stages, upgrade your car and expand your garage.',
     multiplayer: 'Multiplayer',
     multiplayerHint:
       'Two drivers, the same stages and a scoreboard. Nobody moves on until both have finished.',
@@ -120,7 +121,7 @@ export const en = {
     title: 'About Micro Rally',
     intro:
       'A small browser rally game about finding your rhythm, learning the road and making each car your own.',
-    tabs: { gameplay: 'Gameplay', changelog: 'Changelog', faqs: 'FAQs', contact: 'Contact' },
+    tabs: { gameplay: 'Gameplay', changelog: 'Changelog', faqs: 'FAQs' },
     gameplay: {
       intro:
         'Each run takes you through a seeded, low-poly rally world. Finish stages, earn prize money and tune your car for the roads ahead.',
@@ -147,7 +148,7 @@ export const en = {
         },
         {
           title: 'Multiplayer',
-          body: 'Pick Multiplayer on the start screen to race a friend. One of you creates a session of 3, 6 or 9 stages with one car for both, and shares its Session ID. Drive each stage whenever you like; the next one opens once you have both finished. Points come from your pace against par, plus bonuses for the stage win and for each faster section.',
+          body: 'Pick Multiplayer on the start screen to race a friend. One of you creates a session of 3, 6 or 9 stages, ticking the stage types it cycles through, and shares its Session ID or link. Each of you picks a car in the lobby before your first stage and keeps it for the whole session. Drive each stage whenever you like; the next one opens once you have both finished. While you are both on the same stage, you see each other’s car on the road, about a second behind, and the other driver’s initial beside the progress bar. Points come from your pace against par, plus bonuses for the stage win and for each faster section.',
         },
       ],
       controlsTitle: 'Controls',
@@ -168,8 +169,8 @@ export const en = {
       entries: [
         {
           date: '11 November 2026',
-          title: 'Multiplayer, start and finish gates, touch reset and grippier climbs',
-          body: 'A new Multiplayer mode lets two drivers share a session of stages and a scoreboard, with the next stage opening once both have finished; Single player is unchanged. Every start and finish now has a chequered gantry; on rally stages red boards mark the start with a stopwatch and the finish with a chequered flag. Touchscreens gained a back-to-checkpoint button next to Pause, and the touch toolbar, clock and speed readout now line up with the pedals. Alpine and Autumnal stages grip harder so cars climb faster, mud drives a little quicker, and Autumnal verges and edge tracks were refined.',
+          title: 'Multiplayer, live rivals, start and finish gates and grippier climbs',
+          body: 'A new Multiplayer mode lets two drivers share a session of stages and a scoreboard, on the stage types the host ticks, each in a car of their choice, with the next stage opening once both have finished; while both are on the same stage, each sees the other’s car on the road. Single player is unchanged, and Exit game in the Game panel now returns to the start screen. Every start and finish has a chequered gantry; on rally stages red boards mark the start with a stopwatch and the finish with a chequered flag. Touchscreens gained a back-to-checkpoint button next to Pause. Alpine and Autumnal stages grip harder so cars climb faster, mud drives a little quicker, and the flickering triangles at the edges of dirt roads are gone. The About page dropped its Contact tab; send feedback from the Game panel.',
         },
         {
           date: '10 November 2026',
@@ -242,7 +243,12 @@ export const en = {
       {
         question: 'How do I start a game?',
         answer:
-          'Enter a driver name and choose Drive. Leave Game ID empty to begin a new game, or enter an existing ID to continue it.',
+          'Choose Single player on the start screen, enter a driver name and choose Drive. Leave Game ID empty to begin a new game, or enter an existing ID to continue it. Exit game in the Game panel takes you back to the start screen; your progress is saved.',
+      },
+      {
+        question: 'How do I play with a friend?',
+        answer:
+          'Choose Multiplayer on the start screen. One of you creates a session, picking how many stages and which stage types, and shares its Session ID or link; the other joins with it. Each of you picks a car in the lobby, kept for the whole session. Drive each stage whenever you like. While you are both on the same stage, you see each other’s car about a second behind real time; the cars pass through each other.',
       },
       {
         question: 'What is a Game ID?',
@@ -270,14 +276,6 @@ export const en = {
           'Press R, or tap the back-to-checkpoint button next to Pause on a touchscreen. The car returns to the road just past the last checkpoint you passed (or to the start), facing down the road; the stage clock keeps running.',
       },
     ],
-    contact: {
-      intro: 'Found a bug, have an idea, or want to ask a question? Get in touch.',
-      emailLabel: 'Email',
-      feedbackTitle: 'Send feedback',
-      feedbackBody:
-        'Use the feedback form for a message. Your name and email are optional; add an email if you would like a reply.',
-      feedbackCta: 'Open feedback form',
-    },
     back: 'Back to the game',
   },
   garage: {
@@ -388,6 +386,7 @@ export const en = {
   game: {
     title: 'Game',
     restartStage: 'Restart stage',
+    exitGame: 'Exit game',
     close: 'Close',
     stageSection: 'This stage',
     stageName: 'Stage',
@@ -475,7 +474,13 @@ export const en = {
     joinTab: 'Join session',
     stagesLabel: 'Stages',
     stagesOption: '{n} stages',
-    carLabel: 'Car',
+    typesLabel: 'Stage types',
+    typesHint: 'The stages run through the ticked types in turn.',
+    typesNone: 'Tick at least one stage type.',
+    yourCar: 'Your car',
+    carHint: 'Pick your car for the whole session: it is fixed once you start your first stage.',
+    choosingCar: 'Choosing a car…',
+    summaryTypes: '{n} stages · {types}',
     create: 'Create session',
     idLabel: 'Session ID',
     idPlaceholder: 'XXXX-XXXX',
@@ -486,7 +491,7 @@ export const en = {
     full: 'Session {id} already has two drivers.',
     unavailable: 'Multiplayer can’t reach the server right now. Try again in a moment.',
     lobbyTitle: 'Session',
-    summary: '{n} stages · {car}',
+    summary: '{n} stages',
     shareHint: 'Send the Session ID or the link to the other driver.',
     copyLink: 'Copy link',
     copied: 'Copied!',
@@ -509,9 +514,9 @@ export const en = {
     winner: '{name} wins the session!',
     draw: 'The session ends in a draw!',
     leave: 'Leave session',
-    backToSession: 'Back to session',
+    backToLobby: 'Back to lobby',
     leaveRunHint:
-      'Leaving now doesn’t count this run; you can drive the stage again from the session.',
+      'Leaving now doesn’t count this run; you can drive the stage again from the lobby.',
     restart: 'Restart stage',
     retire: 'Retire from stage',
     retireConfirm:
@@ -528,6 +533,7 @@ export const en = {
     stagePoints: 'Stage points',
     opponentPending: 'Still to run this stage',
     opponentMissing: 'No second driver yet',
+    opponentMarker: '{name} is on this stage, {pct}% along',
   },
   stage: {
     go: 'GO!',

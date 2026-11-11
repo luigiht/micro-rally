@@ -1,5 +1,9 @@
-import { isCatalogCar } from '@/game/economy/cars';
-import { isSessionLength, sessionDriverName } from '@/game/multiplayer/Session';
+import {
+  isSessionLength,
+  SESSION_STAGE_TYPES,
+  sessionDriverName,
+  sessionStageTypes,
+} from '@/game/multiplayer/Session';
 import { createGameId } from '@/game/save/GameId';
 import { fail, hashToken, newPlayerId, newSeed, newToken, ok, readBody } from './sessionApi';
 import { getSessionStore, toView, type StoredSession } from './sessionStore';
@@ -7,7 +11,12 @@ import { getSessionStore, toView, type StoredSession } from './sessionStore';
 /** Fresh IDs to try before giving up; 32^8 IDs make even a second try a rarity. */
 const ID_ATTEMPTS = 5;
 
-/** Create a session with its host in seat 0. Answers the session, the host's player ID and secret token. */
+/**
+ * Create a session of `stageCount` stages cycling through the ticked
+ * `stageTypes` (every type when absent), with its host in seat 0. Drivers
+ * pick their cars in the lobby. Answers the session, the host's player ID
+ * and secret token.
+ */
 export async function POST(req: Request): Promise<Response> {
   const store = getSessionStore();
   if (!store) return fail('storage_unconfigured', 503);
@@ -15,9 +24,11 @@ export async function POST(req: Request): Promise<Response> {
   if (!body) return fail('invalid_json');
   const name = sessionDriverName(body.name);
   if (!name) return fail('invalid_name');
-  const { stageCount, carId } = body;
+  const { stageCount } = body;
   if (!isSessionLength(stageCount)) return fail('invalid_length');
-  if (typeof carId !== 'string' || !isCatalogCar(carId)) return fail('invalid_car');
+  const stageTypes =
+    body.stageTypes === undefined ? [...SESSION_STAGE_TYPES] : sessionStageTypes(body.stageTypes);
+  if (!stageTypes) return fail('invalid_types');
 
   const token = newToken();
   const host = { id: newPlayerId(), name, seat: 0, tokenHash: hashToken(token) };
@@ -26,7 +37,7 @@ export async function POST(req: Request): Promise<Response> {
       id: createGameId(),
       seed: newSeed(),
       stageCount,
-      carId,
+      stageTypes,
       createdAt: Date.now(),
       players: [host],
       results: [],

@@ -1,14 +1,19 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { CATALOG_IDS, type CatalogCarId } from '@/game/economy/cars';
-import { SESSION_LENGTHS, type SessionLength } from '@/game/multiplayer/Session';
+import {
+  SESSION_LENGTHS,
+  SESSION_STAGE_TYPES,
+  type SessionLength,
+} from '@/game/multiplayer/Session';
 import { formatGameId, isValidGameId, normalizeGameId } from '@/game/save/GameId';
 import { DRIVER_NAME_MAX, sanitizeDriverName } from '@/game/save/SaveFile';
 import { fill } from '@/i18n/format';
 import { useMessages } from '@/i18n/useMessages';
 import { readSessionParam, SessionApiError } from '@/lib/multiplayer/SessionClient';
+import type { StageTypeId } from '@/game/stage/regions';
 import { enterSession, getSessionClient, getSessionSeats } from '@/state/sessionStore';
+import { StageTypePicker } from './StageTypePicker';
 
 type Choice = 'create' | 'join';
 
@@ -26,7 +31,11 @@ function readPrefill(): Prefill {
   return { choice: linked ? 'join' : 'create', id, name: seats.lastName };
 }
 
-/** Multiplayer on the splash: a driver name, then start a new session or join one by its Session ID. */
+/**
+ * Multiplayer on the splash: a driver name, then start a new session (how
+ * many stages, and which stage types they cycle through) or join one by its
+ * Session ID. Each driver picks their car in the lobby.
+ */
 export function MultiplayerForm() {
   const m = useMessages();
   const [initial] = useState(readPrefill);
@@ -34,7 +43,7 @@ export function MultiplayerForm() {
   const [name, setName] = useState(initial.name);
   const [id, setId] = useState(initial.id);
   const [stageCount, setStageCount] = useState<SessionLength>(SESSION_LENGTHS[0]);
-  const [carId, setCarId] = useState<CatalogCarId>('hatchback');
+  const [types, setTypes] = useState<ReadonlySet<StageTypeId>>(() => new Set(SESSION_STAGE_TYPES));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,7 +51,9 @@ export function MultiplayerForm() {
   const holdsSeat = choice === 'join' && isValidGameId(id) && getSessionSeats().get(id) !== null;
   const canSubmit =
     !busy &&
-    (choice === 'create' ? typedName !== '' : isValidGameId(id) && (holdsSeat || typedName !== ''));
+    (choice === 'create'
+      ? typedName !== '' && types.size > 0
+      : isValidGameId(id) && (holdsSeat || typedName !== ''));
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -54,7 +65,8 @@ export function MultiplayerForm() {
     if (typedName) seats.lastName = typedName;
     try {
       if (choice === 'create') {
-        const { session, seat } = await client.create(typedName, stageCount, carId);
+        const picked = SESSION_STAGE_TYPES.filter((t) => types.has(t));
+        const { session, seat } = await client.create(typedName, stageCount, picked);
         enterSession(session, seat);
         return;
       }
@@ -124,7 +136,7 @@ export function MultiplayerForm() {
       </div>
 
       {choice === 'create' ? (
-        <div className="grid grid-cols-[auto_1fr] gap-3">
+        <>
           <div>
             <label htmlFor="session-stages" className="block font-pixel text-xs">
               {m.session.stagesLabel}
@@ -142,24 +154,8 @@ export function MultiplayerForm() {
               ))}
             </select>
           </div>
-          <div className="min-w-0">
-            <label htmlFor="session-car" className="block font-pixel text-xs">
-              {m.session.carLabel}
-            </label>
-            <select
-              id="session-car"
-              className="pixel-select mt-2 w-full"
-              value={carId}
-              onChange={(e) => setCarId(e.target.value as CatalogCarId)}
-            >
-              {CATALOG_IDS.map((car) => (
-                <option key={car} value={car}>
-                  {m.cars[car].name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+          <StageTypePicker picked={types} onChange={setTypes} />
+        </>
       ) : (
         <div>
           <label htmlFor="session-id" className="block font-pixel text-xs">

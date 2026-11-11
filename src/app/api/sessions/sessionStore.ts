@@ -1,6 +1,7 @@
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { CatalogCarId } from '@/game/economy/cars';
+import type { StageTypeId } from '@/game/stage/regions';
 import { isValidGameId } from '@/game/save/GameId';
 import type {
   SessionLength,
@@ -11,8 +12,13 @@ import type {
 import type { StoreEnv } from '../games/gameStore';
 import { SupabaseSessionStore } from './supabaseSessionStore';
 
-/** A seat as the server keeps it: the player plus the hash of their secret token. */
-export interface StoredPlayer extends SessionPlayer {
+/**
+ * A seat as the server keeps it: the player plus the hash of their secret
+ * token. `carId` is missing until the driver picks a car in the lobby (and
+ * on seats from before drivers picked their own, which drive the session's).
+ */
+export interface StoredPlayer extends Omit<SessionPlayer, 'carId'> {
+  carId?: CatalogCarId;
   tokenHash: string;
 }
 
@@ -20,7 +26,10 @@ export interface StoredSession {
   id: string;
   seed: number;
   stageCount: SessionLength;
-  carId: CatalogCarId;
+  /** The ticked stage types; absent on older sessions, which follow the career calendar. */
+  stageTypes?: StageTypeId[];
+  /** Older sessions' shared car: the fallback for their seats stored without one. */
+  carId?: CatalogCarId;
   createdAt: number;
   players: StoredPlayer[];
   results: SessionResult[];
@@ -39,6 +48,8 @@ export interface SessionStore {
   addPlayer(id: string, player: StoredPlayer): Promise<boolean>;
   /** Record a run; false when this player already has one for the stage. */
   addResult(id: string, result: SessionResult): Promise<boolean>;
+  /** Give a seat its car, once; false when it already has one (or there is no such seat). */
+  setCar(id: string, playerId: string, carId: CatalogCarId): Promise<boolean>;
 }
 
 /** The public face of a stored session: no token hashes. */
@@ -47,10 +58,10 @@ export function toView(s: StoredSession): SessionView {
     id: s.id,
     seed: s.seed,
     stageCount: s.stageCount,
-    carId: s.carId,
+    ...(s.stageTypes ? { stageTypes: s.stageTypes } : {}),
     createdAt: s.createdAt,
     players: s.players
-      .map(({ id, name, seat }) => ({ id, name, seat }))
+      .map(({ id, name, seat, carId }) => ({ id, name, seat, carId: carId ?? s.carId ?? null }))
       .sort((a, b) => a.seat - b.seat),
     results: s.results,
   };
@@ -115,6 +126,20 @@ export class FileSessionStore implements SessionStore {
       if (!s) throw new Error('session not found');
       if (s.players.some((p) => p.seat === player.seat || p.id === player.id)) return false;
       await this.write({ ...s, players: [...s.players, player] });
+      return true;
+    });
+  }
+
+  setCar(id: string, playerId: string, carId: CatalogCarId): Promise<boolean> {
+    return this.serial(id, async () => {
+      const s = await this.read(id);
+      if (!s) throw new Error('session not found');
+      const player = s.players.find((p) => p.id === playerId);
+      if (!player || player.carId) return false;
+      await this.write({
+        ...s,
+        players: s.players.map((p) => (p.id === playerId ? { ...p, carId } : p)),
+      });
       return true;
     });
   }

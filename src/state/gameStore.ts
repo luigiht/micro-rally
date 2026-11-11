@@ -7,6 +7,7 @@ import {
   type UpgradeLevels,
 } from '@/game/economy/upgrades';
 import { SAVE_VERSION, type SaveFile, type StageRecord } from '@/game/save/SaveFile';
+import type { StageTypeId } from '@/game/stage/regions';
 import { frontierStage } from '@/game/stage/StageHistory';
 
 export type { StageRecord };
@@ -35,6 +36,8 @@ interface GameState {
   carId: CatalogCarId;
   ownedCars: CatalogCarId[];
   upgrades: UpgradeLevels;
+  /** A multiplayer session's stage types, which its stages cycle through; null for the career calendar. */
+  stageTypes: StageTypeId[] | null;
   startGame: (gameId: string, driverName: string) => void;
   loadGame: (save: SaveFile, driverName?: string) => void;
   leaveGame: () => void;
@@ -65,6 +68,7 @@ const NO_GAME = {
   carId: 'hatchback' as CatalogCarId,
   ownedCars: ['hatchback'] as CatalogCarId[],
   upgrades: {} as UpgradeLevels,
+  stageTypes: null as StageTypeId[] | null,
 };
 
 /** Meta-game state; persisted through `snapshotSave` / `loadGame`. */
@@ -84,6 +88,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
       carId: save.carId,
       ownedCars: save.ownedCars,
       upgrades: save.upgrades,
+      stageTypes: null,
       attempt: 0,
     }),
   leaveGame: () => set({ ...NO_GAME }),

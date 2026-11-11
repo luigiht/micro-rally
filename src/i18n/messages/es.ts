@@ -42,7 +42,8 @@ export const es: Messages = {
       'No se encontró ninguna partida guardada para {id}. Revísalo o vacía el campo para empezar una partida nueva.',
     modeTitle: 'Elige un modo',
     singlePlayer: 'Un jugador',
-    singlePlayerHint: 'Tu propia carrera: premios en metálico, un garaje y tramos sin fin.',
+    singlePlayerHint:
+      'Tu propia carrera, a tu ritmo: corre tramos sin fin, mejora tu coche y amplía tu garaje.',
     multiplayer: 'Multijugador',
     multiplayerHint:
       'Dos pilotos, los mismos tramos y una clasificación. Nadie avanza hasta que ambos terminan.',
@@ -125,7 +126,7 @@ export const es: Messages = {
     title: 'Acerca de Micro Rally',
     intro:
       'Un pequeño juego de rally para navegador: encuentra tu ritmo, aprende cada carretera y haz tuyo cada coche.',
-    tabs: { gameplay: 'Juego', changelog: 'Novedades', faqs: 'Preguntas', contact: 'Contacto' },
+    tabs: { gameplay: 'Juego', changelog: 'Novedades', faqs: 'Preguntas' },
     gameplay: {
       intro:
         'Cada carrera te lleva por un mundo de rally low-poly generado con una semilla. Termina tramos, gana premios y prepara el coche para las carreteras que vienen.',
@@ -152,7 +153,7 @@ export const es: Messages = {
         },
         {
           title: 'Multijugador',
-          body: 'Elige Multijugador en la pantalla de inicio para competir con un amigo. Uno crea una sesión de 3, 6 o 9 tramos con un mismo coche para los dos y comparte su ID de sesión. Corred cada tramo cuando queráis; el siguiente se abre cuando ambos habéis terminado. Los puntos salen de vuestro ritmo frente al tiempo de referencia, más bonificaciones por ganar el tramo y por cada sector más rápido.',
+          body: 'Elige Multijugador en la pantalla de inicio para competir con un amigo. Uno crea una sesión de 3, 6 o 9 tramos, marcando los tipos de tramo que recorre por turnos, y comparte su ID de sesión o el enlace. Cada uno elige su coche en la sala antes de su primer tramo y lo conserva toda la sesión. Corred cada tramo cuando queráis; el siguiente se abre cuando ambos habéis terminado. Mientras estéis los dos en el mismo tramo, veréis el coche del otro en la carretera, con un segundo de retraso, y la inicial del otro piloto junto a la barra de progreso. Los puntos salen de vuestro ritmo frente al tiempo de referencia, más bonificaciones por ganar el tramo y por cada sector más rápido.',
         },
       ],
       controlsTitle: 'Controles',
@@ -176,8 +177,8 @@ export const es: Messages = {
       entries: [
         {
           date: '11 de noviembre de 2026',
-          title: 'Multijugador, salida y meta, reinicio táctil y más agarre en subida',
-          body: 'Un nuevo modo Multijugador permite a dos pilotos compartir una sesión de tramos y una clasificación; el siguiente tramo se abre cuando ambos han terminado, y el modo Un jugador no cambia. Cada salida y cada meta tienen ahora un pórtico a cuadros; en los tramos de rally, paneles rojos marcan la salida con un cronómetro y la meta con una bandera a cuadros. Las pantallas táctiles estrenan un botón para volver al último control junto a Pausa, y la barra táctil, el reloj y el velocímetro se alinean con los pedales. Los tramos Alpino y Otoñal tienen más agarre para subir más rápido, el barro frena un poco menos y se pulieron los arcenes y las rodadas del Otoñal.',
+          title: 'Multijugador, rivales en directo, salida y meta y más agarre en subida',
+          body: 'Un nuevo modo Multijugador permite a dos pilotos compartir una sesión de tramos y una clasificación, en los tipos de tramo que marque el anfitrión, cada uno con el coche que elija; el siguiente tramo se abre cuando ambos han terminado, y mientras los dos están en el mismo tramo cada uno ve el coche del otro en la carretera. El modo Un jugador no cambia, y Salir del juego, en el panel Juego, vuelve a la pantalla de inicio. Cada salida y cada meta tienen un pórtico a cuadros; en los tramos de rally, paneles rojos marcan la salida con un cronómetro y la meta con una bandera a cuadros. Las pantallas táctiles estrenan un botón para volver al último control junto a Pausa. Los tramos Alpino y Otoñal tienen más agarre para subir más rápido, el barro frena un poco menos y desaparecen los triángulos que parpadeaban en los bordes de las pistas de tierra. La página Acerca de pierde la pestaña Contacto; las opiniones se envían desde el panel Juego.',
         },
         {
           date: '10 de noviembre de 2026',
@@ -250,7 +251,12 @@ export const es: Messages = {
       {
         question: '¿Cómo empiezo una partida?',
         answer:
-          'Escribe el nombre del piloto y pulsa Conducir. Deja vacío el ID de partida para empezar una nueva o introduce uno existente para continuar.',
+          'Elige Un jugador en la pantalla de inicio, escribe el nombre del piloto y pulsa Conducir. Deja vacío el ID de partida para empezar una nueva o introduce uno existente para continuar. Salir del juego, en el panel Juego, te devuelve a la pantalla de inicio; tu progreso queda guardado.',
+      },
+      {
+        question: '¿Cómo juego con un amigo?',
+        answer:
+          'Elige Multijugador en la pantalla de inicio. Uno crea una sesión, eligiendo cuántos tramos y qué tipos de tramo, y comparte su ID de sesión o el enlace; el otro se une con él. Cada uno elige un coche en la sala, que conserva toda la sesión. Corred cada tramo cuando queráis. Mientras estéis los dos en el mismo tramo, veréis el coche del otro con un segundo de retraso; los coches se atraviesan sin chocar.',
       },
       {
         question: '¿Qué es el ID de partida?',
@@ -278,14 +284,6 @@ export const es: Messages = {
           'Pulsa R o, en pantallas táctiles, el botón de volver al control junto a Pausa. El coche vuelve a la carretera justo después del último control superado (o a la salida), mirando hacia delante; el cronómetro del tramo sigue corriendo.',
       },
     ],
-    contact: {
-      intro: '¿Has encontrado un fallo, tienes una idea o quieres hacer una pregunta? Escríbenos.',
-      emailLabel: 'Correo',
-      feedbackTitle: 'Enviar un comentario',
-      feedbackBody:
-        'Usa el formulario para escribir. El nombre y el email son opcionales; añade un email si quieres recibir respuesta.',
-      feedbackCta: 'Abrir formulario',
-    },
     back: 'Volver al juego',
   },
   garage: {
@@ -404,6 +402,7 @@ export const es: Messages = {
   game: {
     title: 'Juego',
     restartStage: 'Reiniciar tramo',
+    exitGame: 'Salir del juego',
     close: 'Cerrar',
     stageSection: 'Este tramo',
     stageName: 'Tramo',
@@ -494,7 +493,13 @@ export const es: Messages = {
     joinTab: 'Unirse',
     stagesLabel: 'Tramos',
     stagesOption: '{n} tramos',
-    carLabel: 'Coche',
+    typesLabel: 'Tipos de tramo',
+    typesHint: 'Los tramos recorren por turnos los tipos marcados.',
+    typesNone: 'Marca al menos un tipo de tramo.',
+    yourCar: 'Tu coche',
+    carHint: 'Elige tu coche para toda la sesión: queda fijado al empezar tu primer tramo.',
+    choosingCar: 'Eligiendo coche…',
+    summaryTypes: '{n} tramos · {types}',
     create: 'Crear sesión',
     idLabel: 'ID de sesión',
     idPlaceholder: 'XXXX-XXXX',
@@ -506,7 +511,7 @@ export const es: Messages = {
     unavailable:
       'El multijugador no puede conectar con el servidor ahora mismo. Inténtalo de nuevo en un momento.',
     lobbyTitle: 'Sesión',
-    summary: '{n} tramos · {car}',
+    summary: '{n} tramos',
     shareHint: 'Envía el ID de sesión o el enlace al otro piloto.',
     copyLink: 'Copiar enlace',
     copied: '¡Copiado!',
@@ -529,9 +534,9 @@ export const es: Messages = {
     winner: '¡{name} gana la sesión!',
     draw: '¡La sesión termina en empate!',
     leave: 'Salir de la sesión',
-    backToSession: 'Volver a la sesión',
+    backToLobby: 'Volver a la sala',
     leaveRunHint:
-      'Si sales ahora, esta pasada no cuenta; puedes volver a correr el tramo desde la sesión.',
+      'Si sales ahora, esta pasada no cuenta; puedes volver a correr el tramo desde la sala.',
     restart: 'Reiniciar tramo',
     retire: 'Abandonar el tramo',
     retireConfirm:
@@ -548,6 +553,7 @@ export const es: Messages = {
     stagePoints: 'Puntos del tramo',
     opponentPending: 'Aún no ha corrido este tramo',
     opponentMissing: 'Aún no hay segundo piloto',
+    opponentMarker: '{name} está en este tramo, al {pct} %',
   },
   stage: {
     go: '¡YA!',

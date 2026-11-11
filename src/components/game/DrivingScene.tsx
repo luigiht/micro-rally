@@ -3,16 +3,30 @@
 import { forceShotKind, SHOT_KINDS, type ShotKind } from './cameras/CinematicShots';
 import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import type { Group } from 'three';
-import { STAGE_TYPES } from '@/game/stage/regions';
+import type { CatalogCarId } from '@/game/economy/cars';
+import { STAGE_TYPES, type StageTypeId } from '@/game/stage/regions';
+import { calendarSlot, cycleSlot, type StageSlot } from '@/game/stage/StageGenerator';
 import { createStageWorld } from '@/game/stage/StageWorld';
 import { TEST_TRACK, testTrackTerrain } from '@/game/stage/TestTrack';
 import type { VehiclePose } from '@/game/vehicle/interpolatePose';
 import { DEFAULT_STAGE_RENDER, StageRenderer } from '@/render/stage/StageRenderer';
 import { dayTheme, flatTheme } from '@/render/theme/WorldTheme';
 import { useGameStore } from '@/state/gameStore';
+import { getLiveRelay } from '@/state/opponentStore';
+import { opponentOf, useSessionStore } from '@/state/sessionStore';
+import { useStageHudStore } from '@/state/stageHudStore';
 import { DriveRig } from './DriveRig';
-import type { DriveWorld } from './DrivingSession';
+import type { DriveWorld, DrivingSession } from './DrivingSession';
+import { OpponentCar } from './OpponentCar';
 import { TestTrackView } from './TestTrackView';
+
+/** The live relay samples the stage progress with each pose, for the other driver's progress bar. */
+const readProgress = () => useStageHudStore.getState().progress;
+
+interface Opponent {
+  name: string;
+  carId: CatalogCarId;
+}
 
 const TEST_WORLD: DriveWorld = { terrain: testTrackTerrain, spawn: TEST_TRACK.spawn };
 const TEST_THEME = flatTheme('#cfe3e8', '#cfe3e8');
@@ -49,8 +63,23 @@ if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined') {
   if (kind && (SHOT_KINDS as readonly string[]).includes(kind)) forceShotKind(kind as ShotKind);
 }
 
-function StageDrive({ gameSeed, stageIndex }: { gameSeed: number; stageIndex: number }) {
-  const world = useMemo(() => createStageWorld(gameSeed, stageIndex), [gameSeed, stageIndex]);
+function StageDrive({
+  gameSeed,
+  stageIndex,
+  slot,
+  opponent,
+}: {
+  gameSeed: number;
+  stageIndex: number;
+  /** What runs at this index: the calendar's slot, or a session's. */
+  slot: StageSlot;
+  /** Multiplayer: the other driver, shown live when they're on this stage too. */
+  opponent: Opponent | null;
+}) {
+  const world = useMemo(
+    () => createStageWorld(gameSeed, stageIndex, slot),
+    [gameSeed, stageIndex, slot],
+  );
   const drive = useMemo<DriveWorld>(() => {
     const at =
       DEV_SPAWN === 'town' ? Math.max(0, (world.stage.town?.from ?? 120) - 120) : DEV_SPAWN;
@@ -72,6 +101,7 @@ function StageDrive({ gameSeed, stageIndex }: { gameSeed: number; stageIndex: nu
   }, [world]);
   const group = useRef<Group>(null);
   const renderer = useRef<StageRenderer | null>(null);
+  const self = useRef<Readonly<VehiclePose> | null>(null);
   const theme = dayTheme(STAGE_TYPES[world.stage.stageType], world.stage.dusk === true);
 
   useEffect(() => {
@@ -84,13 +114,20 @@ function StageDrive({ gameSeed, stageIndex }: { gameSeed: number; stageIndex: nu
     };
   }, [world, theme]);
 
-  const onPose = useCallback((pose: Readonly<VehiclePose>, clock: number) => {
-    renderer.current?.update(pose.x, pose.z, clock);
-  }, []);
+  const onPose = useCallback(
+    (pose: Readonly<VehiclePose>, clock: number, session: DrivingSession) => {
+      renderer.current?.update(pose.x, pose.z, clock);
+      self.current = pose;
+      // A no-op outside multiplayer; a replay isn't live driving.
+      if (!session.replaying) getLiveRelay().record(clock, pose, session.braking, readProgress);
+    },
+    [],
+  );
 
   return (
     <DriveRig world={drive} theme={theme} onPose={onPose}>
       <group ref={group} />
+      {opponent && <OpponentCar carId={opponent.carId} name={opponent.name} self={self} />}
     </DriveRig>
   );
 }
@@ -112,7 +149,27 @@ export function DrivingScene() {
   const gameSeed = useGameStore((s) => s.gameSeed);
   const stageIndex = useGameStore((s) => s.stageIndex);
   const attempt = useGameStore((s) => s.attempt);
+  // A session cycles through its host's stage types; the career follows the calendar.
+  const typesKey = useGameStore((s) => s.stageTypes?.join(',') ?? '');
+  const slot = useMemo(
+    () =>
+      typesKey
+        ? cycleSlot(typesKey.split(',') as StageTypeId[], stageIndex)
+        : calendarSlot(stageIndex),
+    [typesKey, stageIndex],
+  );
   const testTrack = useTestTrackFlag();
+  // Two primitive reads: a selector building an object would re-render on every store change.
+  const opponentName = useSessionStore((s) =>
+    s.screen === 'drive' ? (opponentOf(s)?.name ?? null) : null,
+  );
+  const opponentCar = useSessionStore((s) =>
+    s.screen === 'drive' ? (opponentOf(s)?.carId ?? null) : null,
+  );
+  const opponent = useMemo<Opponent | null>(
+    () => (opponentName && opponentCar ? { name: opponentName, carId: opponentCar } : null),
+    [opponentName, opponentCar],
+  );
 
   if (testTrack) {
     return (
@@ -123,9 +180,11 @@ export function DrivingScene() {
   }
   return (
     <StageDrive
-      key={`${gameSeed}-${stageIndex}-${attempt}`}
+      key={`${gameSeed}-${stageIndex}-${typesKey}-${attempt}`}
       gameSeed={gameSeed}
       stageIndex={stageIndex}
+      slot={slot}
+      opponent={opponent}
     />
   );
 }

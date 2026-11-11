@@ -3,6 +3,7 @@ import type { TerrainField } from '@/game/stage/TerrainField';
 import { ChunkStreamer, chunkCoords, chunkKey } from '../ChunkStreamer';
 import { meshTerrainChunk, type ChunkMeshData, type TerrainColors } from './meshTerrainChunk';
 import type { TerrainWorkerReply, TerrainWorkerRequest } from './terrain.worker';
+import type { StageSlot } from '@/game/stage/StageGenerator';
 
 /** Main-thread meshing budget per frame (ms): a chunk takes about 0.5–3 ms. */
 const SYNC_BUDGET_MS = 4;
@@ -38,6 +39,7 @@ export class TerrainChunkManager {
   constructor(
     gameSeed: number,
     stageIndex: number,
+    slot: StageSlot,
     private readonly field: TerrainField,
     private readonly colors: TerrainColors,
     private readonly amplitude: number,
@@ -53,7 +55,7 @@ export class TerrainChunkManager {
         else this.receive(e.data);
       };
       this.worker.onerror = () => this.dropWorker();
-      this.post({ type: 'init', gameSeed, stageIndex });
+      this.post({ type: 'init', gameSeed, stageIndex, slot });
     } catch {
       this.worker = null;
     }

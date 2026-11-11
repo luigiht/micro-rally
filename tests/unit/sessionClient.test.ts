@@ -11,9 +11,9 @@ const session = {
   id: 'ABCD2345',
   seed: 1,
   stageCount: 3,
-  carId: 'hatchback',
   createdAt: 1,
-  players: [{ id: 'p1', name: 'Ada', seat: 0 }],
+  stageTypes: ['alpine', 'arctic'],
+  players: [{ id: 'p1', name: 'Ada', seat: 0, carId: null }],
   results: [],
 };
 
@@ -38,14 +38,29 @@ async function codeOf(p: Promise<unknown>): Promise<string> {
 describe('SessionClient', () => {
   it('creates a session and returns the seat', async () => {
     const { api, calls } = client(201, { session, playerId: 'p1', token: 't' });
-    const seated = await api.create('Ada', 3, 'hatchback');
+    const seated = await api.create('Ada', 3, ['alpine', 'arctic']);
     expect(seated.seat).toEqual({ playerId: 'p1', token: 't' });
     expect(seated.session.players[0]!.name).toBe('Ada');
+    expect(seated.session.stageTypes).toEqual(['alpine', 'arctic']);
     expect(calls[0]!.url).toBe('/api/sessions');
     expect(JSON.parse(String(calls[0]!.init!.body))).toEqual({
       name: 'Ada',
       stageCount: 3,
-      carId: 'hatchback',
+      stageTypes: ['alpine', 'arctic'],
+    });
+  });
+
+  it('joins with a name, then picks the car with the seat', async () => {
+    const { api, calls } = client(201, { session, playerId: 'p2', token: 't2' });
+    await api.join('ABCD2345', 'Bo');
+    expect(calls[0]!.url).toBe('/api/sessions/ABCD2345/join');
+    expect(JSON.parse(String(calls[0]!.init!.body))).toEqual({ name: 'Bo' });
+    await api.chooseCar('ABCD2345', { playerId: 'p2', token: 't2' }, 'buggy');
+    expect(calls[1]!.url).toBe('/api/sessions/ABCD2345/car');
+    expect(JSON.parse(String(calls[1]!.init!.body))).toEqual({
+      playerId: 'p2',
+      token: 't2',
+      carId: 'buggy',
     });
   });
 

@@ -1,6 +1,6 @@
-import { isCatalogCar } from '@/game/economy/cars';
+import { isCatalogCar, type CatalogCarId } from '@/game/economy/cars';
 import { isValidGameId } from '@/game/save/GameId';
-import { isSessionLength, type SessionResult } from '@/game/multiplayer/Session';
+import { isSessionLength, sessionStageTypes, type SessionResult } from '@/game/multiplayer/Session';
 import type { SessionStore, StoredPlayer, StoredSession } from './sessionStore';
 
 interface PlayerRow {
@@ -8,6 +8,8 @@ interface PlayerRow {
   player_id: string;
   name: string;
   token_hash: string;
+  /** Null on seats taken before drivers picked their own car. */
+  car_id: string | null;
 }
 
 interface ResultRow {
@@ -21,29 +23,36 @@ interface SessionRow {
   id: string;
   seed: number;
   stage_count: number;
-  car_id: string;
+  /** Null on sessions whose drivers pick their cars in the lobby. */
+  car_id: string | null;
+  /** Null on sessions from before hosts picked stage types. */
+  stage_types: string[] | null;
   created_at: string;
   session_players: PlayerRow[];
   session_results: ResultRow[];
 }
 
 const SELECT =
-  'id,seed,stage_count,car_id,created_at,' +
-  'session_players(seat,player_id,name,token_hash),' +
+  'id,seed,stage_count,car_id,stage_types,created_at,' +
+  'session_players(seat,player_id,name,token_hash,car_id),' +
   'session_results(stage_index,player_id,time,splits)';
 
 function fromRow(row: SessionRow): StoredSession | null {
-  if (!isSessionLength(row.stage_count) || !isCatalogCar(row.car_id)) return null;
+  if (!isSessionLength(row.stage_count)) return null;
+  const stageTypes = row.stage_types ? sessionStageTypes(row.stage_types) : undefined;
+  if (stageTypes === null) return null;
   return {
     id: row.id,
     seed: Number(row.seed),
     stageCount: row.stage_count,
-    carId: row.car_id,
+    ...(stageTypes ? { stageTypes } : {}),
+    ...(row.car_id && isCatalogCar(row.car_id) ? { carId: row.car_id } : {}),
     createdAt: Date.parse(row.created_at),
     players: row.session_players.map((p) => ({
       id: p.player_id,
       name: p.name,
       seat: p.seat,
+      ...(p.car_id && isCatalogCar(p.car_id) ? { carId: p.car_id } : {}),
       tokenHash: p.token_hash,
     })),
     results: row.session_results.map((r) => ({
@@ -101,6 +110,7 @@ export class SupabaseSessionStore implements SessionStore {
       player_id: p.id,
       name: p.name,
       token_hash: p.tokenHash,
+      car_id: p.carId ?? null,
     };
   }
 
@@ -109,7 +119,8 @@ export class SupabaseSessionStore implements SessionStore {
       id: s.id,
       seed: s.seed,
       stage_count: s.stageCount,
-      car_id: s.carId,
+      car_id: s.carId ?? null,
+      stage_types: s.stageTypes ?? null,
       created_at: new Date(s.createdAt).toISOString(),
     });
     if (!created) return false;
@@ -130,6 +141,21 @@ export class SupabaseSessionStore implements SessionStore {
 
   addPlayer(id: string, player: StoredPlayer): Promise<boolean> {
     return this.insert('session_players', this.playerRow(id, player));
+  }
+
+  /** Set the seat's car only where it has none: a second pick updates no row. */
+  async setCar(id: string, playerId: string, carId: CatalogCarId): Promise<boolean> {
+    const q = `session_id=eq.${encodeURIComponent(id)}&player_id=eq.${encodeURIComponent(playerId)}&car_id=is.null`;
+    const res = await this.fetchFn(`${this.base}/session_players?${q}`, {
+      method: 'PATCH',
+      headers: this.headers({
+        'content-type': 'application/json',
+        prefer: 'return=representation',
+      }),
+      body: JSON.stringify({ car_id: carId }),
+    });
+    if (!res.ok) throw new Error(`supabase car update failed: ${res.status}`);
+    return ((await res.json()) as unknown[]).length === 1;
   }
 
   addResult(id: string, r: SessionResult): Promise<boolean> {

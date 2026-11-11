@@ -4,7 +4,7 @@ import { STAGE_TYPES } from './regions';
 import { createRoadHit, type RoadSample } from './RoadPath';
 import type { Prop } from './SceneryScatter';
 import type { TerrainMound } from './TerrainDetail';
-import type { TerrainField } from './TerrainField';
+import { VERGE_WIDTH, type TerrainField } from './TerrainField';
 import { townBlocks } from './Town';
 
 /** Jacket colours and poses a spectator's variant picks from: `variant % jackets`, then the pose. */
@@ -29,10 +29,12 @@ const DEAL_APART = 6;
 const CROWD_MARGIN = 10;
 /**
  * Small protective berms: earth heaped beyond the verge, between the road
- * and spectators, in runs this long.
+ * and spectators, in runs this long. Their foot stays most of a terrain
+ * cell (2 m) clear of the road mesh's verge strip: a terrain face with a
+ * corner up on a berm would otherwise tilt up through the strip's edge.
  */
-const BERM_FROM = 3.4;
-const BERM_DEPTH = 2.2;
+export const BERM_FROM = VERGE_WIDTH + 1.6;
+export const BERM_DEPTH = 2.2;
 const BERM_HEIGHT = 0.35;
 const BERM_RUN = 8;
 

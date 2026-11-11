@@ -3,12 +3,16 @@ import {
   checkResult,
   parseResultInput,
   parseSessionView,
+  SESSION_STAGE_TYPES,
+  sessionBrief,
   sessionOver,
   sessionStage,
+  sessionStageTypes,
   stageToDrive,
   type SessionResult,
   type SessionView,
 } from '@/game/multiplayer/Session';
+import { stageBrief } from '@/game/stage/StageGenerator';
 
 const run = (stageIndex: number, playerId: string, time: number | null = 100): SessionResult => ({
   stageIndex,
@@ -22,9 +26,14 @@ function view(results: SessionResult[] = [], players = ['a', 'b']): SessionView 
     id: 'ABCD2345',
     seed: 7,
     stageCount: 3,
-    carId: 'hatchback',
+    stageTypes: ['alpine', 'desert'],
     createdAt: 1,
-    players: players.map((id, seat) => ({ id, name: id.toUpperCase(), seat })),
+    players: players.map((id, seat) => ({
+      id,
+      name: id.toUpperCase(),
+      seat,
+      carId: seat === 0 ? 'hatchback' : null,
+    })),
     results,
   };
 }
@@ -120,7 +129,40 @@ describe('parsing', () => {
   it('refuses a view with a bad ID, length or car', () => {
     expect(parseSessionView({ ...view(), id: 'nope' })).toBeNull();
     expect(parseSessionView({ ...view(), stageCount: 4 })).toBeNull();
-    expect(parseSessionView({ ...view(), carId: 'tank' })).toBeNull();
+    const [a, b] = view().players;
+    expect(parseSessionView({ ...view(), players: [a, { ...b, carId: 'tank' }] })).toBeNull();
+    expect(parseSessionView({ ...view(), players: [a, { ...b, carId: undefined }] })).toBeNull();
+    expect(parseSessionView({ ...view(), stageTypes: [] })).toBeNull();
+    expect(parseSessionView({ ...view(), stageTypes: ['moon'] })).toBeNull();
+    // An older session without stage types follows the career calendar.
+    const older: Partial<SessionView> = { ...view() };
+    delete older.stageTypes;
+    expect(parseSessionView(older)?.stageTypes).toBeUndefined();
+  });
+});
+
+describe('session stage types', () => {
+  it('reads a ticked set in the picker’s order and refuses junk', () => {
+    expect(sessionStageTypes(['circuit', 'alpine', 'pinewood'])).toEqual([
+      'pinewood',
+      'alpine',
+      'circuit',
+    ]);
+    expect(sessionStageTypes(['alpine', 'alpine'])).toBeNull();
+    expect(sessionStageTypes([])).toBeNull();
+    expect(sessionStageTypes('alpine')).toBeNull();
+    expect(sessionStageTypes([...SESSION_STAGE_TYPES])).toEqual([...SESSION_STAGE_TYPES]);
+  });
+
+  it('cycles the session’s stages through its types, and older sessions through the calendar', () => {
+    const v = { seed: 7, stageTypes: ['alpine', 'desert'] as SessionView['stageTypes'] };
+    expect([0, 1, 2, 3].map((i) => sessionBrief(v, i).stageType)).toEqual([
+      'alpine',
+      'desert',
+      'alpine',
+      'desert',
+    ]);
+    expect(sessionBrief({ seed: 7 }, 1)).toEqual(stageBrief(7, 1));
     expect(parseSessionView({ ...view(), results: [{ stageIndex: 0 }] })).toBeNull();
   });
 });

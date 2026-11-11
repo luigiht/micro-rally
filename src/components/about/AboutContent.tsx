@@ -3,9 +3,8 @@
 import Link from 'next/link';
 import { useState, type KeyboardEvent } from 'react';
 import { useMessages } from '@/i18n/useMessages';
-import { FEEDBACK_TO } from '@/lib/feedback';
 
-type AboutTab = 'gameplay' | 'changelog' | 'faqs' | 'contact';
+type AboutTab = 'gameplay' | 'changelog' | 'faqs';
 
 export function AboutContent() {
   const m = useMessages();
@@ -14,7 +13,6 @@ export function AboutContent() {
     { id: 'gameplay', label: m.about.tabs.gameplay },
     { id: 'changelog', label: m.about.tabs.changelog },
     { id: 'faqs', label: m.about.tabs.faqs },
-    { id: 'contact', label: m.about.tabs.contact },
   ];
   function handleTabKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number) {
     let nextIndex: number;
@@ -43,7 +41,7 @@ export function AboutContent() {
         <div
           role="tablist"
           aria-label={m.about.title}
-          className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4"
+          className="mt-7 grid grid-cols-1 gap-3 min-[360px]:grid-cols-3"
         >
           {tabs.map((tab, index) => {
             const selected = tab.id === activeTab;
@@ -56,7 +54,7 @@ export function AboutContent() {
                 aria-selected={selected}
                 aria-controls="about-panel"
                 tabIndex={selected ? 0 : -1}
-                className={`${selected ? 'pixel-btn' : 'pixel-btn-ghost'} min-h-12 px-2 text-[10px]`}
+                className={`${selected ? 'pixel-btn' : 'pixel-btn-ghost'} min-h-12 px-1 text-[9px] min-[400px]:px-2 min-[400px]:text-[10px]`}
                 onClick={() => setActiveTab(tab.id)}
                 onKeyDown={(event) => handleTabKeyDown(event, index)}
               >
@@ -132,29 +130,6 @@ export function AboutContent() {
                   </section>
                 ))}
               </div>
-            </>
-          )}
-
-          {activeTab === 'contact' && (
-            <>
-              <h2 className="font-pixel text-xs">{m.about.tabs.contact}</h2>
-              <p className="mt-3 text-sm">{m.about.contact.intro}</p>
-              <section className="mt-6 border-t border-ink/15 pt-4">
-                <h3 className="font-pixel text-[10px]">{m.about.contact.emailLabel}</h3>
-                <a
-                  href={`mailto:${FEEDBACK_TO}`}
-                  className="mt-2 inline-block text-sm underline underline-offset-4 hover:text-rally"
-                >
-                  {FEEDBACK_TO}
-                </a>
-              </section>
-              <section className="mt-6 border-t border-ink/15 pt-4">
-                <h3 className="font-pixel text-[10px]">{m.about.contact.feedbackTitle}</h3>
-                <p className="mt-2 text-sm leading-relaxed">{m.about.contact.feedbackBody}</p>
-                <Link href="/feedback" className="pixel-btn mt-5 inline-block">
-                  {m.about.contact.feedbackCta}
-                </Link>
-              </section>
             </>
           )}
         </section>

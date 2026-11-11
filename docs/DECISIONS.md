@@ -3902,3 +3902,114 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      live and a shared start countdown. Migration
      `20261111120000_sessions.sql` must run on the Supabase project before
      multiplayer works in production.
+
+211. **2026-11-11 — Exit game, and Back to lobby.** By request, both Game
+     panels get an **Exit game** button directly above Close. `HudDialog`
+     takes an optional `footer`, pinned with Close below the scrolling
+     content, so the button stays in reach however long the panel is. Solo
+     clears `?game=` and calls `gameStore.leaveGame`; unmounting the game
+     flushes the autosave with its last snapshot, so the start screen still
+     offers Continue. In a session it is `leaveSession`, the lobby's Leave
+     session: the seat stays on the device, so Continue rejoins, and it is
+     disabled while a time is being sent. "Back to session" is renamed
+     **Back to lobby** (`session.backToLobby`; "Volver a la sala", "Torna
+     alla lobby"), since that is where it goes.
+
+212. **2026-11-11 — Own cars and live drivers in Multiplayer.** By request,
+     each driver picks their own car, and drivers on the same stage see each
+     other drive. **Cars**: `carId` moves from the session onto each
+     `SessionPlayer`; create takes the host's, join the guest's (any catalogue
+     car, as nothing is bought). `sessions.car_id` stays as the host's and is
+     the fallback for seats stored before `session_players.car_id` existed,
+     so sessions already in progress keep working. A seat this device holds
+     keeps its car, so the join form hides the car pick on Continue.
+     **Live positions** follow the project's server-only Supabase rule (the
+     anon key never reaches the client) instead of adding a client realtime
+     SDK: `POST /api/sessions/:id/live` takes this driver's last 1.2 s of
+     samples (10 Hz of run clock, 13 numbers each, millimetre-rounded) and
+     answers the other driver's, if fresh (4 s). Sending the whole window
+     each time keeps the server stateless and makes a lost exchange harmless.
+     The client exchanges every 250 ms while the other driver is on the
+     stage and every second otherwise, so an idle driver costs one request
+     a second. Production keeps the windows in an **unlogged**
+     `session_live` table (ephemeral data skips the WAL) and swaps them in
+     one `session_live_exchange` call; the route checks the seat token
+     against a per-process cache of seat hashes, since seats never change.
+     The receiver's `GhostTrack` plays the merged samples back 0.9 s behind
+     the newest, easing its rate (0.5–1.5×) to hold that lag, holding the
+     last pose when samples stop and jumping on a new run, a long outage or
+     a teleport back to a checkpoint. So each driver sees the other about a
+     second late: two drivers side by side each see the other just behind.
+     Extrapolating forward would hide that but puts the car off the road in
+     corners. `OpponentCar` draws the other car with no lamps (their
+     spotlights would recompile every material as it appeared and left),
+     fades its materials near this driver's car or the camera, and floats a
+     constant-size name-tag sprite over it (`OpponentDecor`). The marker
+     beside the progress bar is outside the `progressbar` role so screen
+     readers announce it. A driver who starts a stage before their lobby saw
+     the second driver join refreshes the session when that driver shows up
+     live. Supabase Realtime broadcast would cut the lag to about 0.2 s and
+     the requests to none, at the cost of a client SDK and a public key; it
+     is the upgrade path if the relay's cost or lag starts to matter.
+     Migration `20261111180000_session_cars_live.sql` must run on the
+     Supabase project before this works in production.
+
+213. **2026-11-11 — The terrain bed sinks under the verge strips.** By
+     report: on dirt stages, pale terrain triangles flickered through the
+     verge beside the road as the camera moved. The road mesh lays a 3 m
+     verge strip at deck level beside each edge, and the terrain sat at
+     exactly the same height from 0.4 m out, so
+     the two were coplanar and only the road material's polygon offset
+     decided which drew. That was invisible while verges matched the ground,
+     but the Autumnal verge fades out from the mud, so the terrain's pale,
+     flat-shaded faces showed through as triangles. Rebuilding the mesh's
+     actual triangles (2 m grid, same diagonals) along an Autumnal stage
+     measured the terrain within 3 cm of the strip over 61–87 % of its
+     middle and outer bands, and poking up to 26 cm through its outer edge.
+     Now, on the open road (`vergeBed`), the bed stays `VERGE_BED_DROP`
+     (15 cm) under the strip from the trench ramp outwards and ramps back
+     up over the strip's last 0.5 m to reach deck level 0.3 m past its edge,
+     a lip too small to see. The wheels are unaffected: they ride `deckAt`,
+     which never had the trench. Towns (their pavements already stand above
+     the ground and stop at junction mouths), circuits (their runoff has its
+     own beds) and snow-banked stages (the bank rises out of the strip on
+     purpose) keep their profiles. Most of the remaining poke-through came
+     from crowd berms 3.4 m out: a 2 m terrain face with one corner on a
+     berm tilts up through the strip's edge. `BERM_FROM` is now
+     `VERGE_WIDTH + 1.6` (4.6 m), so those crowds stand 1.2 m further back.
+     After: no coplanar terrain under the strip's inner 1.6 m and about 1 %
+     across its full width, guarded by `vergeBed.test.ts`. `VERGE_WIDTH`
+     moved into `TerrainField` so the road mesh, the bed and the berms
+     share it.
+
+214. **2026-11-11 — Session stage types, and cars picked in the lobby.** By
+     request, creating a session asks only for the number of stages and the
+     stage types, and each driver picks their car individually. Asked how,
+     the user chose ticked types the stages cycle through in order, and a car
+     picked once in the lobby. **Types**: stage generation now takes a
+     `StageSlot` (type, difficulty loop, town, dusk) instead of deriving them
+     from the index inside. `calendarSlot(index)` reproduces the career
+     exactly (tested against the old helpers) and stays the default, so
+     solo play and saves are untouched. `cycleSlot(types, index)` gives
+     stage `i` the type `types[i % n]`, with a town on every third rally
+     stage of a town-building type and dusk on every third stage of a
+     dusk-running type, the calendar's own rules applied to the session's
+     run. A stage's seed is still `(game seed, type, index)`. The slot
+     reaches `createStageWorld` (part of its cache key), `stageBrief` and the
+     terrain worker's `init`, which regenerates the stage itself. Sessions
+     store the ticked types in picker order (`SESSION_STAGE_TYPES`: the rally
+     mix, then Urban and Circuit); a create without them ticks all, and
+     sessions stored before have none and keep the calendar. **Cars**: the
+     create and join forms lose the car; `SessionPlayer.carId` is null until
+     the driver picks in the lobby, where a picker shows above Drive until
+     their first stage. Pressing Drive commits it through `POST /:id/car`,
+     which sets it only where none is set (a PostgREST PATCH filtered on
+     `car_id=is.null`, a queued write in the file store), so it can't change
+     afterwards and a retried request is harmless. Committing on Drive
+     rather than on every change of the picker lets a driver look through
+     the cars first. The results route refuses a run from a seat with no car,
+     and the live relay refreshes the session when the other driver shows up
+     without a car this page knows. Migration
+     `20261111200000_session_types_lobby_cars.sql` adds `sessions.stage_types`
+     and drops `sessions.car_id`'s not-null; it and `20261111180000` must run
+     on the Supabase project before this works in production.

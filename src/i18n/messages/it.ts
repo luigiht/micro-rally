@@ -42,7 +42,8 @@ export const it: Messages = {
       'Nessuna partita salvata trovata per {id}. Controllalo o svuota il campo per iniziare una nuova partita.',
     modeTitle: 'Scegli una modalità',
     singlePlayer: 'Giocatore singolo',
-    singlePlayerHint: 'La tua carriera: premi in denaro, un garage e prove senza fine.',
+    singlePlayerHint:
+      'La tua carriera, al tuo ritmo: corri prove senza fine, migliora la tua auto e amplia il tuo garage.',
     multiplayer: 'Multigiocatore',
     multiplayerHint:
       'Due piloti, le stesse prove e una classifica. Nessuno va avanti finché entrambi non hanno finito.',
@@ -125,7 +126,7 @@ export const it: Messages = {
     title: 'Informazioni su Micro Rally',
     intro:
       'Un piccolo gioco di rally per il browser: trova il tuo ritmo, impara la strada e rendi tua ogni auto.',
-    tabs: { gameplay: 'Gioco', changelog: 'Novità', faqs: 'FAQ', contact: 'Contatti' },
+    tabs: { gameplay: 'Gioco', changelog: 'Novità', faqs: 'FAQ' },
     gameplay: {
       intro:
         'Ogni gara attraversa un mondo rally low-poly generato da un seme. Completa le prove, vinci premi e prepara l’auto per le strade che ti aspettano.',
@@ -152,7 +153,7 @@ export const it: Messages = {
         },
         {
           title: 'Multigiocatore',
-          body: 'Scegli Multigiocatore nella schermata iniziale per sfidare un amico. Uno di voi crea una sessione di 3, 6 o 9 prove con la stessa auto per entrambi e condivide l’ID sessione. Correte ogni prova quando volete; la successiva si apre quando avete finito entrambi. I punti vengono dal ritmo rispetto al tempo di riferimento, più bonus per la vittoria di prova e per ogni settore più veloce.',
+          body: 'Scegli Multigiocatore nella schermata iniziale per sfidare un amico. Uno di voi crea una sessione di 3, 6 o 9 prove, spuntando i tipi di prova che percorre a turno, e condivide l’ID sessione o il link. Ognuno sceglie l’auto nella lobby prima della sua prima prova e la tiene per tutta la sessione. Correte ogni prova quando volete; la successiva si apre quando avete finito entrambi. Mentre siete entrambi sulla stessa prova, vedete l’auto dell’altro sulla strada, con circa un secondo di ritardo, e l’iniziale dell’altro pilota accanto alla barra di avanzamento. I punti vengono dal ritmo rispetto al tempo di riferimento, più bonus per la vittoria di prova e per ogni settore più veloce.',
         },
       ],
       controlsTitle: 'Comandi',
@@ -176,8 +177,8 @@ export const it: Messages = {
       entries: [
         {
           date: '11 novembre 2026',
-          title: 'Multigiocatore, partenza e arrivo, ritorno touch e più aderenza in salita',
-          body: 'Una nuova modalità Multigiocatore permette a due piloti di condividere una sessione di prove e una classifica; la prova successiva si apre quando entrambi hanno finito, e Giocatore singolo non cambia. Ogni partenza e ogni arrivo hanno ora un portale a scacchi; nelle prove rally, cartelli rossi segnano la partenza con un cronometro e l’arrivo con una bandiera a scacchi. Sui touchscreen arriva un pulsante per tornare all’ultimo checkpoint accanto a Pausa, e la barra touch, il cronometro e il tachimetro si allineano ai pedali. Le prove Alpino e Autunnale hanno più aderenza per salire più veloci, il fango frena un po’ meno e i bordi e i solchi dell’Autunnale sono stati rifiniti.',
+          title: 'Multigiocatore, rivali in diretta, partenza e arrivo e più aderenza in salita',
+          body: 'Una nuova modalità Multigiocatore permette a due piloti di condividere una sessione di prove e una classifica, sui tipi di prova scelti da chi la crea, ognuno con l’auto che preferisce; la prova successiva si apre quando entrambi hanno finito, e mentre sono sulla stessa prova ciascuno vede l’auto dell’altro sulla strada. Giocatore singolo non cambia, ed Esci dal gioco, nel pannello Gioco, riporta alla schermata iniziale. Ogni partenza e ogni arrivo hanno un portale a scacchi; nelle prove rally, cartelli rossi segnano la partenza con un cronometro e l’arrivo con una bandiera a scacchi. Sui touchscreen arriva un pulsante per tornare all’ultimo checkpoint accanto a Pausa. Le prove Alpino e Autunnale hanno più aderenza per salire più veloci, il fango frena un po’ meno e spariscono i triangoli che sfarfallavano ai bordi delle strade sterrate. La pagina Informazioni perde la scheda Contatti; il feedback si invia dal pannello Gioco.',
         },
         {
           date: '10 novembre 2026',
@@ -250,7 +251,12 @@ export const it: Messages = {
       {
         question: 'Come inizio una partita?',
         answer:
-          'Inserisci il nome del pilota e premi Guida. Lascia vuoto l’ID partita per iniziarne una nuova oppure inseriscine uno esistente per continuare.',
+          'Scegli Giocatore singolo nella schermata iniziale, inserisci il nome del pilota e premi Guida. Lascia vuoto l’ID partita per iniziarne una nuova oppure inseriscine uno esistente per continuare. Esci dal gioco, nel pannello Gioco, ti riporta alla schermata iniziale; i progressi restano salvati.',
+      },
+      {
+        question: 'Come gioco con un amico?',
+        answer:
+          'Scegli Multigiocatore nella schermata iniziale. Uno di voi crea una sessione, scegliendo quante prove e quali tipi di prova, e condivide l’ID sessione o il link; l’altro la raggiunge con quello. Ognuno sceglie un’auto nella lobby, che tiene per tutta la sessione. Correte ogni prova quando volete. Mentre siete entrambi sulla stessa prova, vedete l’auto dell’altro con circa un secondo di ritardo; le auto si attraversano senza urtarsi.',
       },
       {
         question: 'Cos’è l’ID partita?',
@@ -278,14 +284,6 @@ export const it: Messages = {
           'Premi R oppure, sui touchscreen, il pulsante per tornare al checkpoint accanto a Pausa. L’auto torna in strada subito dopo l’ultimo checkpoint superato (o alla partenza), rivolta in avanti; il cronometro della prova continua a correre.',
       },
     ],
-    contact: {
-      intro: 'Hai trovato un bug, hai un’idea o vuoi fare una domanda? Scrivici.',
-      emailLabel: 'Email',
-      feedbackTitle: 'Invia un commento',
-      feedbackBody:
-        'Usa il modulo per scrivere. Nome ed email sono facoltativi; aggiungi un indirizzo se vuoi ricevere una risposta.',
-      feedbackCta: 'Apri il modulo',
-    },
     back: 'Torna al gioco',
   },
   garage: {
@@ -401,6 +399,7 @@ export const it: Messages = {
   game: {
     title: 'Gioco',
     restartStage: 'Ricomincia la prova',
+    exitGame: 'Esci dal gioco',
     close: 'Chiudi',
     stageSection: 'Questa prova',
     stageName: 'Prova',
@@ -494,7 +493,13 @@ export const it: Messages = {
     joinTab: 'Unisciti',
     stagesLabel: 'Prove',
     stagesOption: '{n} prove',
-    carLabel: 'Auto',
+    typesLabel: 'Tipi di prova',
+    typesHint: 'Le prove passano a turno per i tipi spuntati.',
+    typesNone: 'Spunta almeno un tipo di prova.',
+    yourCar: 'La tua auto',
+    carHint: 'Scegli l’auto per tutta la sessione: resta quella una volta iniziata la prima prova.',
+    choosingCar: 'Sta scegliendo l’auto…',
+    summaryTypes: '{n} prove · {types}',
     create: 'Crea sessione',
     idLabel: 'ID sessione',
     idPlaceholder: 'XXXX-XXXX',
@@ -506,7 +511,7 @@ export const it: Messages = {
     unavailable:
       'Il multigiocatore non riesce a raggiungere il server in questo momento. Riprova tra poco.',
     lobbyTitle: 'Sessione',
-    summary: '{n} prove · {car}',
+    summary: '{n} prove',
     shareHint: 'Invia l’ID sessione o il link all’altro pilota.',
     copyLink: 'Copia link',
     copied: 'Copiato!',
@@ -529,9 +534,9 @@ export const it: Messages = {
     winner: '{name} vince la sessione!',
     draw: 'La sessione finisce in parità!',
     leave: 'Esci dalla sessione',
-    backToSession: 'Torna alla sessione',
+    backToLobby: 'Torna alla lobby',
     leaveRunHint:
-      'Se esci ora questo passaggio non conta; puoi correre di nuovo la prova dalla sessione.',
+      'Se esci ora questo passaggio non conta; puoi correre di nuovo la prova dalla lobby.',
     restart: 'Ricomincia la prova',
     retire: 'Ritirati dalla prova',
     retireConfirm:
@@ -548,6 +553,7 @@ export const it: Messages = {
     stagePoints: 'Punti della prova',
     opponentPending: 'Deve ancora correre questa prova',
     opponentMissing: 'Nessun secondo pilota per ora',
+    opponentMarker: '{name} è su questa prova, al {pct}%',
   },
   stage: {
     go: 'VIA!',

@@ -129,6 +129,7 @@ export class StageRenderer {
     this.terrain = new TerrainChunkManager(
       world.gameSeed,
       world.stage.index,
+      world.slot,
       world.field,
       terrainColors(region.palette, region.coast),
       region.terrain.amplitude,

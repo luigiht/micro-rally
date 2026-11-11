@@ -108,7 +108,8 @@ docs/            BRIEF, PLAN, ARCHITECTURE, DECISIONS, DEPLOY, GAMEPLAY, CONTENT
 ## Deploy
 
 Zero-config on Vercel: import the repository, connect a Supabase project
-(run the migration in `supabase/migrations`) for online saves, and deploy.
+(run the migrations in `supabase/migrations`) for online saves and
+multiplayer, and deploy.
 Without Supabase the game still runs and saves stay on each device.
 Self-hosting uses a file store. Steps, environment variables and a
 post-deploy smoke test are in [docs/DEPLOY.md](docs/DEPLOY.md); see

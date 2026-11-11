@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { formatGameId } from '@/game/save/GameId';
 import { fill, formatTime } from '@/i18n/format';
 import { useMessages } from '@/i18n/useMessages';
+import { writeGameParam } from '@/lib/save/gameUrl';
 import { useGameStore } from '@/state/gameStore';
 import { useSaveStore } from '@/state/saveStore';
 import { useStageHudStore } from '@/state/stageHudStore';
@@ -25,6 +26,18 @@ function Rows({ rows }: { rows: [string, string][] }) {
       ))}
     </dl>
   );
+}
+
+/**
+ * Back to the start screen. Unmounting the game flushes the autosave with the
+ * last snapshot, so nothing is lost; the splash still offers Continue.
+ */
+function exitGame() {
+  const ui = useUiStore.getState();
+  ui.closePanel();
+  ui.stopReplay();
+  writeGameParam(null);
+  useGameStore.getState().leaveGame();
 }
 
 /** The Game panel: this stage, every stage so far, and the driver's name + Game ID. */
@@ -81,6 +94,11 @@ export function GamePanel() {
       title={m.game.title}
       closeLabel={m.game.close}
       onClose={() => useUiStore.getState().closePanel()}
+      footer={
+        <button type="button" onClick={exitGame} className="pixel-btn-ghost w-full">
+          {m.game.exitGame}
+        </button>
+      }
     >
       {stage && (
         <>

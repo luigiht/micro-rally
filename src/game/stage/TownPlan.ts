@@ -21,7 +21,7 @@ export function tangentLength(turn: number, radius?: number): number {
  * the smoke tests drive it), never two in a row. Stage types that build no
  * villages (Coastal and Desert) skip theirs: see `stageHasTown`.
  */
-const TOWN_EVERY = 3;
+export const TOWN_EVERY = 3;
 export function hasTown(index: number): boolean {
   const rally = rallyIndex(index);
   return rally !== null && rally % TOWN_EVERY === TOWN_EVERY - 1;

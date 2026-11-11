@@ -10,14 +10,14 @@ import {
 } from '@/app/api/sessions/sessionStore';
 import { SupabaseSessionStore } from '@/app/api/sessions/supabaseSessionStore';
 
-const host = { id: 'p-host', name: 'Ada', seat: 0, tokenHash: 'aa' };
-const guest = { id: 'p-guest', name: 'Bo', seat: 1, tokenHash: 'bb' };
+const host = { id: 'p-host', name: 'Ada', seat: 0, carId: 'hatchback' as const, tokenHash: 'aa' };
+const guest = { id: 'p-guest', name: 'Bo', seat: 1, carId: 'buggy' as const, tokenHash: 'bb' };
 
 const session: StoredSession = {
   id: 'ABCD2345',
   seed: 42,
   stageCount: 3,
-  carId: 'hatchback',
+  stageTypes: ['alpine', 'circuit'],
   createdAt: 1_700_000_000_000,
   players: [host],
   results: [],
@@ -53,6 +53,19 @@ describe('FileSessionStore', () => {
     expect(saved?.results).toEqual([run]);
   });
 
+  it('gives a seat its car once', async () => {
+    const store = await fileStore();
+    const bare = { id: guest.id, name: guest.name, seat: guest.seat, tokenHash: guest.tokenHash };
+    await store.create({ ...session, players: [host, bare] });
+    expect(await store.setCar('ABCD2345', 'p-guest', 'dakar')).toBe(true);
+    expect(await store.setCar('ABCD2345', 'p-guest', 'wrc')).toBe(false);
+    expect(await store.setCar('ABCD2345', 'p-host', 'wrc')).toBe(false);
+    expect(await store.setCar('ABCD2345', 'nobody', 'wrc')).toBe(false);
+    const saved = await store.read('ABCD2345');
+    expect(saved?.players.map((p) => p.carId)).toEqual(['hatchback', 'dakar']);
+    expect(saved?.stageTypes).toEqual(['alpine', 'circuit']);
+  });
+
   it('keeps both runs when two drivers finish at the same moment', async () => {
     const store = await fileStore();
     await store.create({ ...session, players: [host, guest] });
@@ -75,6 +88,16 @@ describe('toView', () => {
     expect(JSON.stringify(view)).not.toContain('tokenHash');
     expect(view.players.map((p) => p.seat)).toEqual([0, 1]);
   });
+
+  it('gives each driver their own car: none until picked, an older session’s shared one', () => {
+    const legacy = { id: guest.id, name: guest.name, seat: guest.seat, tokenHash: guest.tokenHash };
+    const view = toView({ ...session, players: [host, guest] });
+    expect(view.players.map((p) => p.carId)).toEqual(['hatchback', 'buggy']);
+    expect(toView({ ...session, players: [host, legacy] }).players[1]!.carId).toBeNull();
+    const old = toView({ ...session, carId: 'wrc', players: [host, legacy] });
+    expect(old.players.map((p) => p.carId)).toEqual(['hatchback', 'wrc']);
+    expect(view.stageTypes).toEqual(['alpine', 'circuit']);
+  });
 });
 
 /** A PostgREST stand-in: inserts with primary keys (409 on conflict) and the embedded select. */
@@ -94,6 +117,16 @@ function fakeSupabase() {
     const url = new URL(String(input));
     const table = url.pathname.split('/').pop()!;
     calls.push(`${init?.method ?? 'GET'} ${table}`);
+    if (init?.method === 'PATCH') {
+      // Only the set-once car update: rows matching every eq./is.null filter get the body.
+      const filters = [...url.searchParams.entries()];
+      const patch = JSON.parse(String(init.body)) as Record<string, unknown>;
+      const hits = tables[table]!.filter((r) =>
+        filters.every(([k, v]) => (v === 'is.null' ? r[k] == null : r[k] === v.replace('eq.', ''))),
+      );
+      for (const r of hits) Object.assign(r, patch);
+      return Response.json(hits);
+    }
     if (init?.method === 'POST') {
       const row = JSON.parse(String(init.body)) as Record<string, unknown>;
       const key = (r: Record<string, unknown>) => keys[table]!.map((k) => r[k]).join('|');
@@ -130,7 +163,28 @@ describe('SupabaseSessionStore', () => {
 
     const read = await store.read('ABCD2345');
     expect(read).toEqual({ ...session, players: [host, guest], results: [run] });
-    expect(db.tables.session_players![0]).toMatchObject({ token_hash: 'aa', seat: 0 });
+    expect(db.tables.sessions![0]).toMatchObject({
+      stage_types: ['alpine', 'circuit'],
+      car_id: null,
+    });
+    expect(db.tables.session_players![0]).toMatchObject({
+      token_hash: 'aa',
+      seat: 0,
+      car_id: 'hatchback',
+    });
+    // A seat without a car picks one once; a second pick updates no row.
+    db.tables.session_players![1]!.car_id = null;
+    expect(await store.setCar('ABCD2345', 'p-guest', 'dakar')).toBe(true);
+    expect(await store.setCar('ABCD2345', 'p-guest', 'wrc')).toBe(false);
+    expect((await store.read('ABCD2345'))?.players[1]!.carId).toBe('dakar');
+    // A seat with no car_id reads back without one.
+    db.tables.session_players![1]!.car_id = null;
+    expect((await store.read('ABCD2345'))?.players[1]).toEqual({
+      id: guest.id,
+      name: guest.name,
+      seat: guest.seat,
+      tokenHash: guest.tokenHash,
+    });
   });
 
   it('throws on server errors', async () => {

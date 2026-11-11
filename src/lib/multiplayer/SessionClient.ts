@@ -1,4 +1,5 @@
 import type { CatalogCarId } from '@/game/economy/cars';
+import type { StageTypeId } from '@/game/stage/regions';
 import {
   parseSessionView,
   type ResultInput,
@@ -74,12 +75,17 @@ export class SessionClient {
     return { session: SessionClient.view(json), seat: { playerId, token } };
   }
 
-  async create(name: string, stageCount: SessionLength, carId: CatalogCarId) {
-    return SessionClient.seated(await this.call('', { name, stageCount, carId }));
+  async create(name: string, stageCount: SessionLength, stageTypes: readonly StageTypeId[]) {
+    return SessionClient.seated(await this.call('', { name, stageCount, stageTypes }));
   }
 
   async join(id: string, name: string): Promise<SeatedSession> {
     return SessionClient.seated(await this.call(`/${id}/join`, { name }));
+  }
+
+  /** Pick this seat's car for the whole session (once). */
+  async chooseCar(id: string, seat: SessionSeat, carId: CatalogCarId): Promise<SessionView> {
+    return SessionClient.view(await this.call(`/${id}/car`, { ...seat, carId }));
   }
 
   async get(id: string): Promise<SessionView> {

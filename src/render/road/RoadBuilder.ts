@@ -13,7 +13,7 @@ import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { STAGE_TYPES } from '@/game/stage/regions';
 import type { StageDef } from '@/game/stage/StageGenerator';
 import { controlBoardSkip, markerDistances, type MarkerSkip } from '@/game/stage/RoadMarkers';
-import { ROAD_LIFT, TRENCH_OUT, type TerrainField } from '@/game/stage/TerrainField';
+import { ROAD_LIFT, TRENCH_OUT, VERGE_WIDTH, type TerrainField } from '@/game/stage/TerrainField';
 import { halfWidthAt } from '@/game/stage/RoadWidth';
 import { roundaboutOpenings } from '@/game/stage/Roundabout';
 import { KERB_LIFT, townFade } from '@/game/stage/Town';
@@ -32,12 +32,12 @@ const PATCH_PERIOD = 14;
 const PATCH_FROM = 0.3;
 const PATCH_TO = 0.7;
 const SNOW_COVER = 0.45;
-/** Terrain-coloured verge strips either side of the ribbon, built from the
- * same samples, so road and verge share their edge vertices and meet flush;
- * the coarse terrain mesh only takes over beyond them, where it is the same
- * colour and any seam is invisible.
+/*
+ * Verge strips `VERGE_WIDTH` wide either side of the ribbon are built from
+ * the same samples, so road and verge share their edge vertices and meet
+ * flush. The terrain bed sinks under them on the open road and rises to meet
+ * their outer edge, so the coarse terrain mesh never shares their plane.
  */
-const VERGE_WIDTH = 3;
 const SAMPLES_PER_PIECE = 100;
 /** Snow poles on bank-lined roads stand this tall. */
 const SNOW_POLE_HEIGHT = 2.4;

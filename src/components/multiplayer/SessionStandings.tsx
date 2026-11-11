@@ -63,7 +63,9 @@ export function SessionStandings({ session, briefs, me, current }: SessionStandi
           {i === current && <span aria-hidden="true">▶ </span>}
           {i + 1}
         </span>
-        <span className="block text-xs text-ink/70">{b.name}</span>
+        <span className="block text-xs text-ink/70">
+          {b.name} · {m.stageTypes[b.stageType]}
+        </span>
       </th>
       {seats.map((p, seat) => (
         <td key={seat} className="py-1.5 pl-2 text-right align-top text-xs tabular-nums">
@@ -89,11 +91,14 @@ export function SessionStandings({ session, briefs, me, current }: SessionStandi
                 className="pb-1 pl-2 text-right text-xs font-semibold break-words"
               >
                 {p ? (
-                  p.id === me ? (
-                    fill(m.session.you, { name: p.name })
-                  ) : (
-                    p.name
-                  )
+                  <>
+                    <span className="block">
+                      {p.id === me ? fill(m.session.you, { name: p.name }) : p.name}
+                    </span>
+                    <span className="block font-normal text-ink/70">
+                      {p.carId ? m.cars[p.carId].name : m.session.choosingCar}
+                    </span>
+                  </>
                 ) : (
                   <span className="font-normal text-ink/50">{m.session.openSeat}</span>
                 )}

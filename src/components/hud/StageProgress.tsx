@@ -1,13 +1,37 @@
 'use client';
 
+import { fill } from '@/i18n/format';
 import { useMessages } from '@/i18n/useMessages';
+import { useOpponentStore } from '@/state/opponentStore';
+import { opponentOf, useSessionStore } from '@/state/sessionStore';
 import { useStageHudStore } from '@/state/stageHudStore';
 import { PixelIcon } from './PixelIcon';
 
+/** The other driver's place on the bar: a tag with their initial, outside the progressbar so it is announced. */
+function OpponentMarker() {
+  const m = useMessages();
+  const progress = useOpponentStore((s) => (s.present ? s.progress : null));
+  const name = useSessionStore((s) => opponentOf(s)?.name ?? null);
+  if (progress === null || !name) return null;
+  return (
+    <span
+      role="img"
+      aria-label={fill(m.session.opponentMarker, { name, pct: Math.round(progress * 100) })}
+      data-testid="opponent-marker"
+      className="absolute left-full ml-5 -translate-y-1/2 bg-ink px-1 py-0.5 font-pixel text-[8px] leading-none text-paper"
+      style={{ top: `${Math.min(1, Math.max(0, progress)) * 100}%` }}
+    >
+      {Array.from(name)[0]!.toUpperCase()}
+    </span>
+  );
+}
+
 /**
  * Stage progress down the left edge: start at the top, finish at the bottom,
- * a tick per checkpoint (paper once passed) and a pointer at the car.
- * Reads the 10 Hz HUD store; hidden on the free-roam test track.
+ * a tick per checkpoint (paper once passed) and a pointer at the car. In
+ * multiplayer the other driver's initial rides beside it while they're on
+ * the stage too. Reads the 10 Hz HUD store; hidden on the free-roam test
+ * track.
  */
 export function StageProgress() {
   const m = useMessages();
@@ -17,29 +41,32 @@ export function StageProgress() {
   if (gates.length === 0) return null;
   const top = `${progress * 100}%`;
   return (
-    <div
-      role="progressbar"
-      aria-label={m.stage.progress}
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-valuenow={Math.round(progress * 100)}
-      data-testid="stage-progress"
-      data-progress={progress.toFixed(4)}
-      className="pointer-events-none absolute top-4 bottom-20 left-4 w-3 coarse:bottom-40"
-    >
-      <div className="pixel-tag absolute inset-0 overflow-hidden">
-        <div className="absolute inset-x-0 top-0 bg-rally" style={{ height: top }} />
-        {gates.slice(0, -1).map((g, i) => (
-          <span
-            key={g}
-            className={`absolute inset-x-0 h-0.5 ${i < passed ? 'bg-paper' : 'bg-ink/50'}`}
-            style={{ top: `calc(${g * 100}% - 1px)` }}
-          />
-        ))}
+    <div className="pointer-events-none absolute top-4 bottom-20 left-4 w-3 coarse:bottom-40">
+      <div
+        role="progressbar"
+        aria-label={m.stage.progress}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(progress * 100)}
+        data-testid="stage-progress"
+        data-progress={progress.toFixed(4)}
+        className="absolute inset-0"
+      >
+        <div className="pixel-tag absolute inset-0 overflow-hidden">
+          <div className="absolute inset-x-0 top-0 bg-rally" style={{ height: top }} />
+          {gates.slice(0, -1).map((g, i) => (
+            <span
+              key={g}
+              className={`absolute inset-x-0 h-0.5 ${i < passed ? 'bg-paper' : 'bg-ink/50'}`}
+              style={{ top: `calc(${g * 100}% - 1px)` }}
+            />
+          ))}
+        </div>
+        <span className="absolute left-full ml-0.5 -translate-y-1/2 text-ink" style={{ top }}>
+          <PixelIcon name="pointer" />
+        </span>
       </div>
-      <span className="absolute left-full ml-0.5 -translate-y-1/2 text-ink" style={{ top }}>
-        <PixelIcon name="pointer" />
-      </span>
+      <OpponentMarker />
     </div>
   );
 }

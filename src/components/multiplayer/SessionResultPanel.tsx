@@ -121,7 +121,7 @@ export function SessionResultPanel({ result }: { result: StageResult }) {
             onClick={backToLobby}
             disabled={upload === 'sending'}
           >
-            {m.session.backToSession}
+            {m.session.backToLobby}
           </button>
         </div>
       </section>

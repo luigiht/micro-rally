@@ -5,7 +5,10 @@ import { getSessionStore, toView } from '../../sessionStore';
 
 type Ctx = { params: Promise<{ id: string }> };
 
-/** Take the free seat. 409 `full` when both are taken (or another driver took it a moment ago). */
+/**
+ * Take the free seat (the guest picks a car in the lobby). 409 `full` when
+ * both are taken (or another driver took it a moment ago).
+ */
 export async function POST(req: Request, { params }: Ctx): Promise<Response> {
   const id = normalizeGameId((await params).id);
   if (!isValidGameId(id)) return fail('invalid_id');

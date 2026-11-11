@@ -9,6 +9,25 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Added
 
+- **Choose the stage types, and your own car, in Multiplayer.** Creating a
+  session now asks only how many stages (3, 6 or 9) and which stage types
+  they cycle through (all ticked by default). Each driver then picks their
+  own car in the lobby before their first stage, and keeps it for the whole
+  session. The scoreboard shows each driver's car and each stage's type.
+  [212, 214]
+- **See the other driver live.** When both drivers are on the same stage,
+  each sees the other's car on the road with their name above it, about a
+  second behind real time, and their initial beside the progress bar. The
+  cars pass through each other, and the other car fades when close so it
+  never blocks the view. [212]
+- **Exit game.** The Game panel has an Exit game button above Close that
+  returns to the start screen. Single-player progress is saved first, so
+  Continue picks it up again; in Multiplayer it leaves the session, which
+  Continue rejoins. In Multiplayer, "Back to session" now reads **Back to
+  lobby**. [211]
+- **Clearer Single player description.** The start screen now describes
+  Single player as your own career at your own pace: endless stages, car
+  upgrades and a garage to expand.
 - **Multiplayer.** The start screen now opens on a choice of Single player
   (the career, unchanged) or Multiplayer. In Multiplayer one driver creates
   a session (3, 6 or 9 stages, one car for both) and shares its Session ID
@@ -34,9 +53,19 @@ hold the reasoning behind each change; the numbers in brackets point there.
 - **About page brought up to date.** The Gameplay tab covers the current
   stage types, surfaces and grip, the start and finish gates and the touch
   back-to-checkpoint button. The Changelog tab gains 11 November and a fuller
-  10 November, and a new FAQ explains how to get back on the road.
+  10 November, and a new FAQ explains how to get back on the road. It now
+  also covers Multiplayer with each driver's own car and the other driver
+  seen live, Exit game, the dirt-road verge fix and the removed Contact tab,
+  with a new FAQ on playing with a friend.
 
 ### Fixed
+
+- **No more flickering triangles at the road's edge.** On dirt stages,
+  pale terrain triangles showed through the verge beside the road and
+  shifted as the camera moved, most of all on the Autumnal mud and near
+  the crowds. The ground now sits just under the verge instead of in the
+  same plane, and the crowds' earth berms start a little further from the
+  road. [213]
 
 - **Faster climbs on Alpine and Autumnal stages.** Winter tyres on the
   Alpine and mud tyres on the Autumnal give the cars more grip, so they spin
@@ -45,6 +74,12 @@ hold the reasoning behind each change; the numbers in brackets point there.
   its loose grip and sliding character. [202]
 - **Autumnal edge tracks.** Removed overlapping road faces that hid the
   grooves, making their dark brown floors and recessed walls visible. [199]
+
+### Removed
+
+- **The About page's Contact tab.** The About page now has three tabs:
+  Gameplay, Changelog and FAQs. Feedback still goes through the Feedback
+  button in the Game panel.
 
 ## 2026-11-10
 

@@ -18,6 +18,18 @@ test('a new game gets an ID, saves online, and a reload offers Continue', async 
   await expect(page.getByLabel('Driver name')).toHaveValue('Ada');
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.locator(CANVAS)).toBeVisible();
+
+  // Exit game returns to the start screen, which still offers to continue this game.
+  await page.getByRole('button', { name: 'Game' }).click();
+  await page
+    .getByRole('dialog', { name: 'Game' })
+    .getByRole('button', { name: 'Exit game' })
+    .click();
+  await expect(page.locator(CANVAS)).toHaveCount(0);
+  await expect(page).not.toHaveURL(/game=/);
+  await chooseSinglePlayer(page);
+  await expect(page.getByLabel('Game ID', { exact: true })).toHaveValue(shownId);
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
 test('a save uploaded through the API resumes from the splash with its name and money', async ({

@@ -34,6 +34,7 @@ function manager() {
   const m = new TerrainChunkManager(
     1,
     0,
+    world.slot,
     world.field,
     terrainColors(region.palette, region.coast),
     region.terrain.amplitude,

@@ -68,10 +68,18 @@ cover the pure-TS core and anything else that can run without a browser:
   `gameStore.server`.
 - **Multiplayer**: `session` (the stage gate, whose turn it is, result
   checks, parsing), `sessionScore` (pace, stage and section wins,
-  retirements, ties, standings), `sessionStore.server` (file and Supabase
-  stores, simultaneous finishes, taken seats), `sessionRoutes.server`
-  (create, join, a full session, token-checked and gated results),
-  `sessionClient` (error codes, stored seats, links).
+  retirements, ties, standings, stage types), `sessionStore.server` (file
+  and Supabase stores, simultaneous finishes, taken seats, set-once cars),
+  `sessionRoutes.server` (create with ticked types or all, join, a car
+  picked once, a full session, token-checked and gated results that need a
+  car), `sessionClient` (error codes, stored seats, links), `stageSlot`
+  (the calendar unchanged, a session's types in turn with towns and dusk,
+  a city or circuit anywhere),
+  `liveTrack` (sampling, wire validation, playback lag, holds, new runs,
+  teleports), `liveRelay` (exchange cadence, other stages ignored, outages,
+  a session refresh when an unknown driver shows up live),
+  `liveStore.server` (memory freshness, the Supabase RPC) and
+  `liveRoute.server` (swapped windows, seat tokens).
 - **Rendering geometry built in pure TS**: `carHull` (lofted hulls, wells,
   decals, glow groups), `fenderShell` (the buggy's free-standing mudguards: mirrored, clear of the tyre, wound outward), `svgSilhouette` (the SVG path reader and the extruded bull), `houseGeometry`, `buildingGeometry`,
   `streetFurnitureGeometry`, `cityFurnitureGeometry` (the city's furniture
@@ -94,15 +102,15 @@ port outside CI. One worker, Chromium only, with software WebGL
 (`--use-angle=swiftshader`): rendering is CPU-bound, so parallel pages would
 starve each other's frame loops.
 
-| Spec                  | Covers                                                                                                                                                                                                                   |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `install.spec.ts`     | The install strip: Android shows Install once `beforeinstallprompt` fires and Not now hides it across a reload; iPhone gets the Share → Add to Home Screen text; nothing when standalone or on a desktop pointer         |
-| `smoke.spec.ts`       | The splash keeps its still backdrop under Playwright's software WebGL; start a game, drive, the progress bar moves                                                                                                       |
-| `camera.spec.ts`      | `C` cycles the four cameras and Settings shows and sets the same view                                                                                                                                                    |
-| `hud.spec.ts`         | `H` hides and shows the HUD chrome; Esc opens a dialog over it; the pace note shows from the start and Settings has no toggle for it                                                                                     |
-| `mobile.spec.ts`      | Phone-landscape profile: touch pads, pause menu, Garage in the toolbar; checkpoint and money icons in one row, the pace note below, the turbo pad over steer-left only when fitted                                       |
-| `save.spec.ts`        | Game IDs, the save API, continuing a game                                                                                                                                                                                |
-| `multiplayer.spec.ts` | Two browsers create and join a session; a third is turned away; runs sent through the API gate the next stage and score the win; a stage drives without money; Back to session and Leave session; the API refuses strays |
+| Spec                  | Covers                                                                                                                                                                                                                                                                                                                                                                                                               |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `install.spec.ts`     | The install strip: Android shows Install once `beforeinstallprompt` fires and Not now hides it across a reload; iPhone gets the Share → Add to Home Screen text; nothing when standalone or on a desktop pointer                                                                                                                                                                                                     |
+| `smoke.spec.ts`       | The splash keeps its still backdrop under Playwright's software WebGL; start a game, drive, the progress bar moves                                                                                                                                                                                                                                                                                                   |
+| `camera.spec.ts`      | `C` cycles the four cameras and Settings shows and sets the same view                                                                                                                                                                                                                                                                                                                                                |
+| `hud.spec.ts`         | `H` hides and shows the HUD chrome; Esc opens a dialog over it; the pace note shows from the start and Settings has no toggle for it                                                                                                                                                                                                                                                                                 |
+| `mobile.spec.ts`      | Phone-landscape profile: touch pads, pause menu, Garage in the toolbar; checkpoint and money icons in one row, the pace note below, the turbo pad over steer-left only when fitted                                                                                                                                                                                                                                   |
+| `save.spec.ts`        | Game IDs, the save API, continuing a game, Exit game back to the start screen                                                                                                                                                                                                                                                                                                                                        |
+| `multiplayer.spec.ts` | The host ticks two stage types and the lobby lists them; one driver picks a car in the lobby and driving locks it in, the other joins with only a name; a third is turned away; runs sent through the API gate the next stage and score the win; a stage drives without money; both on stage 2 see each other's progress marker, which goes once one leaves; Back to lobby and Leave session; the API refuses strays |
 
 Tips: run the suite on its own with nothing else on port 3100 and no heavy
 process alongside, because the camera spec is sensitive to load. Press keys

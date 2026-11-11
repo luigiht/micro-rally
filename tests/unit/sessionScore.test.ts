@@ -55,8 +55,8 @@ describe('sessionStandings', () => {
   const view: Pick<SessionView, 'players' | 'results' | 'stageCount'> = {
     stageCount: 3,
     players: [
-      { id: 'a', name: 'Ada', seat: 0 },
-      { id: 'b', name: 'Bo', seat: 1 },
+      { id: 'a', name: 'Ada', seat: 0, carId: 'hatchback' },
+      { id: 'b', name: 'Bo', seat: 1, carId: 'hatchback' },
     ],
     results: [r('a', 100, [], 0), r('b', 90, [], 0), r('a', 95, [], 1)],
   };

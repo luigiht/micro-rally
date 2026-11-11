@@ -4,7 +4,13 @@ import { useState } from 'react';
 import { formatGameId } from '@/game/save/GameId';
 import { fill, formatTime } from '@/i18n/format';
 import { useMessages } from '@/i18n/useMessages';
-import { backToLobby, driveSessionStage, retireStage, useSessionStore } from '@/state/sessionStore';
+import {
+  backToLobby,
+  driveSessionStage,
+  leaveSession,
+  retireStage,
+  useSessionStore,
+} from '@/state/sessionStore';
 import { useStageHudStore } from '@/state/stageHudStore';
 import { useUiStore } from '@/state/uiStore';
 import { HudDialog } from '@/components/hud/HudDialog';
@@ -26,7 +32,9 @@ function Rows({ rows }: { rows: [string, string][] }) {
 
 /**
  * Multiplayer's Game panel: this stage, then restart or retire while the
- * run hasn't finished, the way back to the session, and the Session ID.
+ * run hasn't finished, the way back to the lobby, and the Session ID. Exit
+ * game leaves the session for the start screen; its seat stays remembered
+ * on this device, so Continue rejoins it.
  */
 export function SessionGamePanel() {
   const m = useMessages();
@@ -65,6 +73,16 @@ export function SessionGamePanel() {
       title={m.game.title}
       closeLabel={m.game.close}
       onClose={() => useUiStore.getState().closePanel()}
+      footer={
+        <button
+          type="button"
+          onClick={leaveSession}
+          className="pixel-btn-ghost w-full"
+          disabled={upload === 'sending'}
+        >
+          {m.game.exitGame}
+        </button>
+      }
     >
       {stage && (
         <>
@@ -124,7 +142,7 @@ export function SessionGamePanel() {
         className="pixel-btn-ghost mt-3 w-full"
         disabled={upload === 'sending'}
       >
-        {m.session.backToSession}
+        {m.session.backToLobby}
       </button>
       {!finished && <p className="mt-2 text-xs text-ink/70">{m.session.leaveRunHint}</p>}
 

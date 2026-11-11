@@ -21,22 +21,37 @@ here as of 2 November 2026.
   Autosave runs on start, 2.5 s after progress changes, every minute, when
   the tab is hidden or closed, and on leaving. If the server is unreachable
   the save stays local and the Game panel says so; the next save retries.
+- **Exit game** in the Game panel returns to the start screen, saving
+  first; the start screen offers Continue for the same game.
 
 ## Multiplayer
 
-- Two drivers share a **session**: one seed, so identical stages, a fixed
-  run of 3, 6 or 9 stages, and one car the host picks for both. There is
-  no money, garage or saved career; the session is the save.
+- Two drivers share a **session**: one seed, so identical stages, and a
+  fixed run of 3, 6 or 9 stages. The host ticks the **stage types** the
+  session uses (all by default); its stages take them in turn, in the
+  picker's order (Pinewood, Alpine, Forest, Coastal, Arctic, Autumnal,
+  Desert, Urban, Circuit), with towns and dusk runs on every third as in the
+  career. **Each driver picks their own car** in the lobby, any in the
+  catalogue; driving their first stage locks it in for the session. The
+  scoreboard shows each driver's car under their name ("Choosing a car…"
+  until then) and each stage's type. There is no money, garage or saved
+  career; the session is the save.
 - The host creates the session and shares its Session ID (same format as
-  a Game ID) or link; the second driver joins with a name. A third is
-  turned away. Each device keeps a private seat key, so Continue on the
+  a Game ID) or link; the second driver joins with a name. A
+  third is turned away. Each device keeps a private seat key, so Continue on the
   join form, or the link, gets back into the session.
 - The lobby shows the scoreboard and the next step. A driver can run the
   current stage whenever they like, but **nobody moves on until both have
   finished or retired it**. The lobby checks for the other driver every
   4 seconds.
+- **Driving together.** While both drivers are on the same stage, each sees
+  the other's car on the road with their name above it, about a second
+  behind real time, and the other driver's initial beside the progress bar.
+  The cars pass through each other, and the other car fades when it gets
+  close so it never blocks the view. It disappears a few seconds after the
+  other driver leaves the stage, and during a replay.
 - The **first finished run counts**: the result panel has no Drive it again.
-  Before the finish, Restart stage and Back to session start the run
+  Before the finish, Restart stage and Back to lobby start the run
   over, and Retire from stage (after a confirmation) scores nothing for it.
 - **Points per stage.** Pace: 1000 × the prize curve against par (300 at
   double par, 1000 at par, 1250 at 20 % under). Once both have run the

@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import type { SessionView } from '@/game/multiplayer/Session';
-import { stageBrief, type StageBrief } from '@/game/stage/StageGenerator';
+import { sessionBrief, type SessionView } from '@/game/multiplayer/Session';
+import type { StageTypeId } from '@/game/stage/regions';
+import type { StageBrief } from '@/game/stage/StageGenerator';
 import { sessionLink } from '@/lib/multiplayer/SessionClient';
 import { refreshSession } from '@/state/sessionStore';
 
@@ -31,12 +32,17 @@ export function useSessionPolling(enabled = true): void {
 }
 
 /** Name, type, length and par of each of the session's stages, without building their roads. */
-export function useSessionBriefs(session: Pick<SessionView, 'seed' | 'stageCount'>): StageBrief[] {
-  const { seed, stageCount } = session;
-  return useMemo(
-    () => Array.from({ length: stageCount }, (_, i) => stageBrief(seed, i)),
-    [seed, stageCount],
-  );
+export function useSessionBriefs(
+  session: Pick<SessionView, 'seed' | 'stageCount' | 'stageTypes'>,
+): StageBrief[] {
+  const { seed, stageCount, stageTypes } = session;
+  // The polled session is a new object every few seconds: key the memo on its types' content.
+  const typesKey = stageTypes?.join(',') ?? '';
+  return useMemo(() => {
+    const types = typesKey ? (typesKey.split(',') as StageTypeId[]) : null;
+    const view = { seed, ...(types ? { stageTypes: types } : {}) };
+    return Array.from({ length: stageCount }, (_, i) => sessionBrief(view, i));
+  }, [seed, stageCount, typesKey]);
 }
 
 /** Copy the session's join link; `copied` stays true for a moment afterwards. */
