@@ -14,7 +14,7 @@ test.describe('install prompt on an Android browser', () => {
     page,
   }) => {
     await page.goto('/');
-    await expect(page.getByLabel('Driver name')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Single player' })).toBeVisible();
     await expect(page.getByTestId('install-prompt')).toHaveCount(0);
     // Headless Chromium never raises the event on its own; stand in for it.
     await page.evaluate(() => window.dispatchEvent(new Event('beforeinstallprompt')));
@@ -24,7 +24,7 @@ test.describe('install prompt on an Android browser', () => {
     await prompt.getByRole('button', { name: 'Not now' }).click();
     await expect(prompt).toHaveCount(0);
     await page.reload();
-    await expect(page.getByLabel('Driver name')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Single player' })).toBeVisible();
     await page.evaluate(() => window.dispatchEvent(new Event('beforeinstallprompt')));
     await expect(page.getByTestId('install-prompt')).toHaveCount(0);
   });
@@ -48,7 +48,7 @@ test.describe('install prompt on an iPhone', () => {
     });
     const page = await context.newPage();
     await page.goto('/');
-    await expect(page.getByLabel('Driver name')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Single player' })).toBeVisible();
     await expect(page.getByTestId('install-prompt')).toHaveCount(0);
     await context.close();
   });
@@ -56,7 +56,7 @@ test.describe('install prompt on an iPhone', () => {
 
 test('a desktop pointer is never asked to install', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByLabel('Driver name')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Single player' })).toBeVisible();
   await page.evaluate(() => window.dispatchEvent(new Event('beforeinstallprompt')));
   await expect(page.getByTestId('install-prompt')).toHaveCount(0);
 });

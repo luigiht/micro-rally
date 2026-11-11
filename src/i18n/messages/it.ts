@@ -40,6 +40,13 @@ export const it: Messages = {
     checking: 'Controllo…',
     notFound:
       'Nessuna partita salvata trovata per {id}. Controllalo o svuota il campo per iniziare una nuova partita.',
+    modeTitle: 'Scegli una modalità',
+    singlePlayer: 'Giocatore singolo',
+    singlePlayerHint: 'La tua carriera: premi in denaro, un garage e prove senza fine.',
+    multiplayer: 'Multigiocatore',
+    multiplayerHint:
+      'Due piloti, le stesse prove e una classifica. Nessuno va avanti finché entrambi non hanno finito.',
+    changeMode: 'Cambia modalità',
   },
   footer: {
     copyright: '© {year} Micro Rally',
@@ -57,7 +64,7 @@ export const it: Messages = {
   },
   privacy: {
     title: 'Privacy',
-    updated: 'Ultimo aggiornamento: 9 novembre 2026',
+    updated: 'Ultimo aggiornamento: 11 novembre 2026',
     intro:
       'Micro Rally è un gioco gratuito senza account, senza pubblicità e senza tracciamento. Questa pagina spiega il poco che salva.',
     sections: [
@@ -72,6 +79,10 @@ export const it: Messages = {
       {
         title: 'ID partita',
         body: 'L’ID partita è l’unica chiave di una partita. Chiunque lo abbia può caricarla, quindi condividilo solo con chi vuoi che giochi.',
+      },
+      {
+        title: 'Sessioni multigiocatore',
+        body: 'Una sessione multigiocatore conserva sul server del gioco il nome inserito da ciascun pilota, il seme e l’auto della sessione e i tempi di prova di ciascun pilota. Chiunque abbia l’ID sessione può vederli. Il tuo dispositivo conserva una chiave privata del tuo posto per poter tornare alla sessione.',
       },
       {
         title: 'Cookie e analisi',
@@ -139,6 +150,10 @@ export const it: Messages = {
           title: 'Scegli la visuale',
           body: 'Passa tra visuale inseguimento, abitacolo, isometrica e cinematografica con C o dalle Impostazioni. Usa la rotella per zoomare nelle visuali inseguimento, isometrica e cinematografica.',
         },
+        {
+          title: 'Multigiocatore',
+          body: 'Scegli Multigiocatore nella schermata iniziale per sfidare un amico. Uno di voi crea una sessione di 3, 6 o 9 prove con la stessa auto per entrambi e condivide l’ID sessione. Correte ogni prova quando volete; la successiva si apre quando avete finito entrambi. I punti vengono dal ritmo rispetto al tempo di riferimento, più bonus per la vittoria di prova e per ogni settore più veloce.',
+        },
       ],
       controlsTitle: 'Comandi',
       controls: [
@@ -161,8 +176,8 @@ export const it: Messages = {
       entries: [
         {
           date: '11 novembre 2026',
-          title: 'Partenza e arrivo, ritorno touch e più aderenza in salita',
-          body: 'Ogni partenza e ogni arrivo hanno ora un portale a scacchi; nelle prove rally, cartelli rossi segnano la partenza con un cronometro e l’arrivo con una bandiera a scacchi. Sui touchscreen arriva un pulsante per tornare all’ultimo checkpoint accanto a Pausa, e la barra touch, il cronometro e il tachimetro si allineano ai pedali. Le prove Alpino e Autunnale hanno più aderenza per salire più veloci, il fango frena un po’ meno e i bordi e i solchi dell’Autunnale sono stati rifiniti.',
+          title: 'Multigiocatore, partenza e arrivo, ritorno touch e più aderenza in salita',
+          body: 'Una nuova modalità Multigiocatore permette a due piloti di condividere una sessione di prove e una classifica; la prova successiva si apre quando entrambi hanno finito, e Giocatore singolo non cambia. Ogni partenza e ogni arrivo hanno ora un portale a scacchi; nelle prove rally, cartelli rossi segnano la partenza con un cronometro e l’arrivo con una bandiera a scacchi. Sui touchscreen arriva un pulsante per tornare all’ultimo checkpoint accanto a Pausa, e la barra touch, il cronometro e il tachimetro si allineano ai pedali. Le prove Alpino e Autunnale hanno più aderenza per salire più veloci, il fango frena un po’ meno e i bordi e i solchi dell’Autunnale sono stati rifiniti.',
         },
         {
           date: '10 novembre 2026',
@@ -472,6 +487,67 @@ export const it: Messages = {
     grass: 'Erba',
     sand: 'Sabbia',
     dune: 'Dune',
+  },
+  session: {
+    choiceLabel: 'Sessione',
+    newTab: 'Nuova sessione',
+    joinTab: 'Unisciti',
+    stagesLabel: 'Prove',
+    stagesOption: '{n} prove',
+    carLabel: 'Auto',
+    create: 'Crea sessione',
+    idLabel: 'ID sessione',
+    idPlaceholder: 'XXXX-XXXX',
+    join: 'Unisciti',
+    rejoin: 'Continua',
+    busy: 'Connessione…',
+    notFound: 'Nessuna sessione trovata per {id}. Controlla l’ID con l’altro pilota.',
+    full: 'La sessione {id} ha già due piloti.',
+    unavailable:
+      'Il multigiocatore non riesce a raggiungere il server in questo momento. Riprova tra poco.',
+    lobbyTitle: 'Sessione',
+    summary: '{n} prove · {car}',
+    shareHint: 'Invia l’ID sessione o il link all’altro pilota.',
+    copyLink: 'Copia link',
+    copied: 'Copiato!',
+    driversSection: 'Piloti',
+    you: '{name} (tu)',
+    openSeat: 'Posto libero',
+    standings: 'Classifica',
+    stageCol: 'Prova',
+    total: 'Totale',
+    points: '{n} pt',
+    retired: 'Ritirato',
+    notRun: '—',
+    stageWin: 'Vittoria di prova',
+    provisional: '* Provvisorio finché entrambi i piloti non hanno corso la prova.',
+    drive: 'Corri la prova {n}',
+    waitingJoin: 'In attesa che un secondo pilota si unisca e corra la prova {n}.',
+    waitingFor: 'In attesa che {name} finisca la prova {n}.',
+    offline: 'Impossibile raggiungere il server. Nuovo tentativo…',
+    finalTitle: 'Classifica finale',
+    winner: '{name} vince la sessione!',
+    draw: 'La sessione finisce in parità!',
+    leave: 'Esci dalla sessione',
+    backToSession: 'Torna alla sessione',
+    leaveRunHint:
+      'Se esci ora questo passaggio non conta; puoi correre di nuovo la prova dalla sessione.',
+    restart: 'Ricomincia la prova',
+    retire: 'Ritirati dalla prova',
+    retireConfirm:
+      'Ritirarti dalla prova {n}? Non ottieni punti, e la sessione va avanti quando l’altro pilota l’avrà corsa.',
+    retireYes: 'Ritirati',
+    cancel: 'Annulla',
+    uploadSending: 'Invio del tuo tempo…',
+    uploadSaved: 'Il tuo tempo conta.',
+    uploadFailed: 'Impossibile inviare il tuo tempo.',
+    uploadRetry: 'Riprova',
+    pace: 'Ritmo',
+    win: 'Vittoria di prova',
+    sectors: 'Settori vinti',
+    stagePoints: 'Punti della prova',
+    opponentPending: 'Deve ancora correre questa prova',
+    opponentMissing: 'Nessun secondo pilota per ora',
   },
   stage: {
     go: 'VIA!',

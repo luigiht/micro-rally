@@ -249,3 +249,38 @@ flowchart LR
   and `SUPABASE_SERVICE_ROLE_KEY` are set, the file store otherwise, and none
   on Vercel without Supabase (the API answers 503 and saves stay on the
   device). See `docs/DEPLOY.md`.
+
+## Multiplayer sessions
+
+```mermaid
+flowchart LR
+  Splash[SplashScreen → ModeSelect] --> Form[MultiplayerForm]
+  Form --> Client[SessionClient\nfetch]
+  Lobby[SessionLobby\npolls 4 s] --> Client
+  Client --> Routes[app/api/sessions…]
+  Routes --> SStore[SessionStore\nfile or Supabase]
+  Lobby -->|driveSessionStage| GameStore[gameStore\nseed, stage, car, no Game ID]
+  GameStore --> Drive[DrivingScene / DrivingSession\nunchanged]
+  Drive -->|result in HUD store| Upload[useSessionRunUpload] --> Client
+```
+
+- `src/game/multiplayer` is pure: `Session` (types, `sessionStage`,
+  `stageToDrive`, `checkResult`, parsers) and `SessionScore` (`scoreStage`,
+  `sessionStandings`, `sessionWinner`). The routes and the client share it.
+- `src/app/api/sessions`: `POST /` creates (host in seat 0), `GET /:id`,
+  `POST /:id/join` takes the free seat, `POST /:id/results` counts a run.
+  `sessionApi.ts` mints and checks seat tokens (stored as SHA-256 hashes).
+  `sessionStore.ts` chooses the store the same way saves do. The file store
+  queues changes per session, and `supabaseSessionStore.ts` uses three
+  tables whose primary keys make conflicts 409s.
+- `src/lib/multiplayer/SessionClient.ts`: the fetch client (errors as
+  `SessionApiError` codes), `SessionSeats` (seat tokens, last session and
+  name in Web Storage) and the `?session=` helpers.
+- `src/state/sessionStore.ts`: the session view, this device's seat, the
+  lobby/drive screen and the upload state, with the actions (`enterSession`,
+  `driveSessionStage`, `submitRun`, `retireStage`, `backToLobby`,
+  `leaveSession`).
+- `GameRoot` routes a solo game to `GameShell` (autosave) and a session to
+  `SessionLobby` or `SessionDriveShell`. Both shells render the same
+  `DriveView`, and its `session` flag reaches `StageHud` and `HudToolbar`.
+  The multiplayer screens live in `src/components/multiplayer`.

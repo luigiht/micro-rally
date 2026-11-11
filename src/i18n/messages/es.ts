@@ -40,6 +40,13 @@ export const es: Messages = {
     checking: 'Comprobando…',
     notFound:
       'No se encontró ninguna partida guardada para {id}. Revísalo o vacía el campo para empezar una partida nueva.',
+    modeTitle: 'Elige un modo',
+    singlePlayer: 'Un jugador',
+    singlePlayerHint: 'Tu propia carrera: premios en metálico, un garaje y tramos sin fin.',
+    multiplayer: 'Multijugador',
+    multiplayerHint:
+      'Dos pilotos, los mismos tramos y una clasificación. Nadie avanza hasta que ambos terminan.',
+    changeMode: 'Cambiar de modo',
   },
   footer: {
     copyright: '© {year} Micro Rally',
@@ -57,7 +64,7 @@ export const es: Messages = {
   },
   privacy: {
     title: 'Privacidad',
-    updated: 'Última actualización: 9 de noviembre de 2026',
+    updated: 'Última actualización: 11 de noviembre de 2026',
     intro:
       'Micro Rally es un juego gratuito sin cuentas, sin anuncios y sin rastreo. Esta página explica lo poco que guarda.',
     sections: [
@@ -72,6 +79,10 @@ export const es: Messages = {
       {
         title: 'IDs de partida',
         body: 'El ID de partida es la única llave de una partida. Cualquiera que lo tenga puede cargarla, así que compártelo solo con quien quieras que juegue.',
+      },
+      {
+        title: 'Sesiones multijugador',
+        body: 'Una sesión multijugador guarda en el servidor del juego el nombre que introduce cada piloto, la semilla y el coche de la sesión, y los tiempos de tramo de cada piloto. Cualquiera que tenga el ID de sesión puede verlos. Tu dispositivo guarda una clave privada de tu plaza para que puedas volver a la sesión.',
       },
       {
         title: 'Cookies y analítica',
@@ -139,6 +150,10 @@ export const es: Messages = {
           title: 'Elige la cámara',
           body: 'Cambia entre las cámaras de persecución, interior, isométrica y cinematográfica con C o desde Ajustes. Usa la rueda para acercar o alejar las cámaras de persecución, isométrica y cinematográfica.',
         },
+        {
+          title: 'Multijugador',
+          body: 'Elige Multijugador en la pantalla de inicio para competir con un amigo. Uno crea una sesión de 3, 6 o 9 tramos con un mismo coche para los dos y comparte su ID de sesión. Corred cada tramo cuando queráis; el siguiente se abre cuando ambos habéis terminado. Los puntos salen de vuestro ritmo frente al tiempo de referencia, más bonificaciones por ganar el tramo y por cada sector más rápido.',
+        },
       ],
       controlsTitle: 'Controles',
       controls: [
@@ -161,8 +176,8 @@ export const es: Messages = {
       entries: [
         {
           date: '11 de noviembre de 2026',
-          title: 'Salida y meta, reinicio táctil y más agarre en subida',
-          body: 'Cada salida y cada meta tienen ahora un pórtico a cuadros; en los tramos de rally, paneles rojos marcan la salida con un cronómetro y la meta con una bandera a cuadros. Las pantallas táctiles estrenan un botón para volver al último control junto a Pausa, y la barra táctil, el reloj y el velocímetro se alinean con los pedales. Los tramos Alpino y Otoñal tienen más agarre para subir más rápido, el barro frena un poco menos y se pulieron los arcenes y las rodadas del Otoñal.',
+          title: 'Multijugador, salida y meta, reinicio táctil y más agarre en subida',
+          body: 'Un nuevo modo Multijugador permite a dos pilotos compartir una sesión de tramos y una clasificación; el siguiente tramo se abre cuando ambos han terminado, y el modo Un jugador no cambia. Cada salida y cada meta tienen ahora un pórtico a cuadros; en los tramos de rally, paneles rojos marcan la salida con un cronómetro y la meta con una bandera a cuadros. Las pantallas táctiles estrenan un botón para volver al último control junto a Pausa, y la barra táctil, el reloj y el velocímetro se alinean con los pedales. Los tramos Alpino y Otoñal tienen más agarre para subir más rápido, el barro frena un poco menos y se pulieron los arcenes y las rodadas del Otoñal.',
         },
         {
           date: '10 de noviembre de 2026',
@@ -472,6 +487,67 @@ export const es: Messages = {
     grass: 'Hierba',
     sand: 'Arena',
     dune: 'Dunas',
+  },
+  session: {
+    choiceLabel: 'Sesión',
+    newTab: 'Nueva sesión',
+    joinTab: 'Unirse',
+    stagesLabel: 'Tramos',
+    stagesOption: '{n} tramos',
+    carLabel: 'Coche',
+    create: 'Crear sesión',
+    idLabel: 'ID de sesión',
+    idPlaceholder: 'XXXX-XXXX',
+    join: 'Unirse',
+    rejoin: 'Continuar',
+    busy: 'Conectando…',
+    notFound: 'No se encontró ninguna sesión para {id}. Comprueba el ID con el otro piloto.',
+    full: 'La sesión {id} ya tiene dos pilotos.',
+    unavailable:
+      'El multijugador no puede conectar con el servidor ahora mismo. Inténtalo de nuevo en un momento.',
+    lobbyTitle: 'Sesión',
+    summary: '{n} tramos · {car}',
+    shareHint: 'Envía el ID de sesión o el enlace al otro piloto.',
+    copyLink: 'Copiar enlace',
+    copied: '¡Copiado!',
+    driversSection: 'Pilotos',
+    you: '{name} (tú)',
+    openSeat: 'Plaza libre',
+    standings: 'Clasificación',
+    stageCol: 'Tramo',
+    total: 'Total',
+    points: '{n} pts',
+    retired: 'Abandono',
+    notRun: '—',
+    stageWin: 'Victoria de tramo',
+    provisional: '* Provisional hasta que ambos pilotos hayan corrido el tramo.',
+    drive: 'Correr el tramo {n}',
+    waitingJoin: 'Esperando a que un segundo piloto se una y corra el tramo {n}.',
+    waitingFor: 'Esperando a que {name} termine el tramo {n}.',
+    offline: 'No se puede conectar con el servidor. Reintentando…',
+    finalTitle: 'Clasificación final',
+    winner: '¡{name} gana la sesión!',
+    draw: '¡La sesión termina en empate!',
+    leave: 'Salir de la sesión',
+    backToSession: 'Volver a la sesión',
+    leaveRunHint:
+      'Si sales ahora, esta pasada no cuenta; puedes volver a correr el tramo desde la sesión.',
+    restart: 'Reiniciar tramo',
+    retire: 'Abandonar el tramo',
+    retireConfirm:
+      '¿Abandonar el tramo {n}? No sumas puntos en él, y la sesión avanza cuando el otro piloto lo haya corrido.',
+    retireYes: 'Abandonar',
+    cancel: 'Cancelar',
+    uploadSending: 'Enviando tu tiempo…',
+    uploadSaved: 'Tu tiempo cuenta.',
+    uploadFailed: 'No se pudo enviar tu tiempo.',
+    uploadRetry: 'Reintentar',
+    pace: 'Ritmo',
+    win: 'Victoria de tramo',
+    sectors: 'Sectores ganados',
+    stagePoints: 'Puntos del tramo',
+    opponentPending: 'Aún no ha corrido este tramo',
+    opponentMissing: 'Aún no hay segundo piloto',
   },
   stage: {
     go: '¡YA!',

@@ -2,19 +2,22 @@
 
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
-import { useState, useSyncExternalStore, type FormEvent } from 'react';
+import { useState, useSyncExternalStore, type FormEvent, type ReactNode } from 'react';
 import logo from '@assets/micro-rally-logo-dark.svg';
 import { createGameId, formatGameId, isValidGameId, normalizeGameId } from '@/game/save/GameId';
 import { DRIVER_NAME_MAX, sanitizeDriverName, type SaveFile } from '@/game/save/SaveFile';
 import { fill } from '@/i18n/format';
 import { useMessages } from '@/i18n/useMessages';
 import { canAnimateSplash } from '@/lib/gpu';
+import { readSessionParam } from '@/lib/multiplayer/SessionClient';
 import { readGameParam, writeGameParam } from '@/lib/save/gameUrl';
 import { useGameStore } from '@/state/gameStore';
 import { getSaveManager } from '@/state/saveStore';
 import { PixelIcon } from '@/components/hud/PixelIcon';
 import { InfoDialog } from './InfoDialog';
 import { InstallPrompt } from './InstallPrompt';
+import { ModeSelect, QUIET_LINK, type SplashMode } from './ModeSelect';
+import { MultiplayerForm } from './MultiplayerForm';
 import { SplashFooter } from './SplashFooter';
 
 const SplashScene = dynamic(() => import('./SplashScene').then((m) => m.SplashScene), {
@@ -195,10 +198,49 @@ function SplashForm() {
   );
 }
 
-/** Start screen over the attract-mode drive: driver name, optional Game ID to resume. */
-export function SplashScreen() {
+/**
+ * A link to a game (`?game=`) opens the single-player form and a link to a
+ * session (`?session=`) the multiplayer one, so bookmarks and shared links
+ * skip the mode choice. Client-only.
+ */
+function initialMode(): SplashMode | null {
+  const search = window.location.search;
+  if (readGameParam(search)) return 'solo';
+  if (readSessionParam(search)) return 'multi';
+  return null;
+}
+
+/** The mode choice, then that mode's form, with a way back to the choice. */
+function SplashBody() {
   const m = useMessages();
-  const hydrated = useHydrated();
+  const [mode, setMode] = useState<SplashMode | null>(initialMode);
+  if (!mode) return <ModeSelect onPick={setMode} />;
+  return (
+    <>
+      <div className="mt-6 flex items-baseline justify-between gap-4">
+        <p className="font-pixel text-xs">
+          {mode === 'solo' ? m.splash.singlePlayer : m.splash.multiplayer}
+        </p>
+        <button type="button" className={QUIET_LINK} onClick={() => setMode(null)}>
+          {m.splash.changeMode}
+        </button>
+      </div>
+      {mode === 'solo' ? <SplashForm /> : <MultiplayerForm />}
+    </>
+  );
+}
+
+interface SplashFrameProps {
+  children: ReactNode;
+  /** Under the card, e.g. the install prompt. */
+  after?: ReactNode;
+  /** Card width; the session lobby needs room for its scoreboard. */
+  width?: string;
+}
+
+/** The splash backdrop (attract-mode drive or still), the logo card and the footer. */
+export function SplashFrame({ children, after, width = 'max-w-md' }: SplashFrameProps) {
+  const m = useMessages();
   const backdrop = useBackdrop();
   return (
     <div className="absolute inset-0 overflow-hidden bg-ink">
@@ -214,7 +256,10 @@ export function SplashScreen() {
       <div className="absolute inset-0 bg-ink/45" aria-hidden="true" />
       <div className="absolute inset-0 overflow-y-auto">
         <div className="flex min-h-full flex-col items-center justify-center px-4 pt-4 pb-20">
-          <section aria-labelledby="splash-title" className="pixel-box w-full max-w-md p-6 md:p-8">
+          <section
+            aria-labelledby="splash-title"
+            className={`pixel-box w-full ${width} p-6 md:p-8`}
+          >
             <h1 id="splash-title">
               <Image
                 src={logo}
@@ -224,12 +269,20 @@ export function SplashScreen() {
                 className="mx-auto block h-auto w-60 md:w-72"
               />
             </h1>
-            {hydrated && <SplashForm />}
+            {children}
           </section>
-          {hydrated && <InstallPrompt />}
+          {after}
         </div>
       </div>
       <SplashFooter />
     </div>
+  );
+}
+
+/** Start screen over the attract-mode drive: pick a mode, then single player's name and optional Game ID, or a multiplayer session. */
+export function SplashScreen() {
+  const hydrated = useHydrated();
+  return (
+    <SplashFrame after={hydrated && <InstallPrompt />}>{hydrated && <SplashBody />}</SplashFrame>
   );
 }

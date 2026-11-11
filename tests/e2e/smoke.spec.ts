@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { CANVAS, startGame } from './helpers';
+import { CANVAS, chooseSinglePlayer, startGame } from './helpers';
 
 test('the splash screen boots, then Drive starts the game', async ({ page }) => {
   await page.goto('/');
@@ -121,6 +121,7 @@ test('the Game ID help is a small dialog, and the footer links and language work
   page,
 }) => {
   await page.goto('/');
+  await chooseSinglePlayer(page);
   await page.getByRole('button', { name: 'About the Game ID' }).click();
   const dialog = page.getByRole('dialog', { name: 'Game ID' });
   await expect(dialog).toContainText('Leave it empty');
@@ -139,5 +140,6 @@ test('the Game ID help is a small dialog, and the footer links and language work
   await footer.getByRole('link', { name: 'Privacidad' }).click();
   await expect(page.getByRole('heading', { name: 'Privacidad', level: 1 })).toBeVisible();
   await page.getByRole('link', { name: 'Volver al juego' }).click();
-  await expect(page.getByRole('button', { name: 'Conducir' })).toBeVisible();
+  // Back on a fresh splash: the mode choice, still in Spanish.
+  await expect(page.getByRole('button', { name: 'Un jugador' })).toBeVisible();
 });

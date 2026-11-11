@@ -9,7 +9,9 @@
  * two-pixel strokes: its round housing round a hub, the outlet and flange top
  * right and two speed lines behind; `checkpoint` is a small chequered flag and `money`
  * a dollar bill, the compact HUD's labels on touch devices; `respawn` is an
- * undo arrow (head left, tail hooking back under), the touch toolbar's R.
+ * undo arrow (head left, tail hooking back under), the touch toolbar's R;
+ * `player` (16×16) is one driver, head and shoulders, and `players` (16×16)
+ * two side by side, the splash's Single player and Multiplayer buttons.
  */
 export type PixelIconName =
   | 'respawn'
@@ -38,9 +40,47 @@ export type PixelIconName =
   | 'alpine'
   | 'turbo'
   | 'checkpoint'
-  | 'money';
+  | 'money'
+  | 'player'
+  | 'players';
 
 const GLYPHS: Record<PixelIconName, readonly string[]> = {
+  player: [
+    '................',
+    '................',
+    '......####......',
+    '.....######.....',
+    '.....######.....',
+    '.....######.....',
+    '......####......',
+    '................',
+    '....########....',
+    '...##########...',
+    '...##########...',
+    '...##########...',
+    '...##########...',
+    '................',
+    '................',
+    '................',
+  ],
+  players: [
+    '................',
+    '................',
+    '................',
+    '..###......###..',
+    '.#####....#####.',
+    '.#####....#####.',
+    '..###......###..',
+    '................',
+    '.#####....#####.',
+    '#######..#######',
+    '#######..#######',
+    '#######..#######',
+    '#######..#######',
+    '................',
+    '................',
+    '................',
+  ],
   turbo: [
     '................',
     '................',

@@ -9,6 +9,16 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Added
 
+- **Multiplayer.** The start screen now opens on a choice of Single player
+  (the career, unchanged) or Multiplayer. In Multiplayer one driver creates
+  a session (3, 6 or 9 stages, one car for both) and shares its Session ID
+  or link, and a second driver joins. Both drive the same stages whenever
+  they like, but the next stage only opens once both have finished or
+  retired the current one. The first finished run counts. Points come from
+  pace against par, plus bonuses for the stage win and for each faster
+  section between checkpoints. The lobby keeps a live scoreboard and names
+  the winner after the last stage. [210]
+
 - **Real rally start and finish lines.** Every start and finish now has a
   chequered gantry. On rally stages a red-disc board stands on each side of
   the road, with a stopwatch at the start and a chequered flag at the

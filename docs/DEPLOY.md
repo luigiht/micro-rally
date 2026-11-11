@@ -16,7 +16,11 @@ decision is where online saves live.
    `supabase db push` with the CLI). It creates `public.games`
    (`id text primary key, save jsonb, updated_at timestamptz`) with
    row-level security enabled and no policies: only the service role can
-   touch it.
+   touch it. Also run `supabase/migrations/20261111120000_sessions.sql` for
+   multiplayer: it creates `public.sessions`, `public.session_players` and
+   `public.session_results`, locked down the same way. Without it,
+   `/api/sessions/*` answers 500 and the multiplayer form says the server
+   can't be reached.
 4. **Credentials.** Either add the **Supabase** integration from the Vercel
    Marketplace, which injects `SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_URL` and
    `SUPABASE_SERVICE_ROLE_KEY`, or set `SUPABASE_URL` and
@@ -68,9 +72,10 @@ variables to use Postgres instead.
 | Variable                                       | Where                   | Purpose                                               |
 | ---------------------------------------------- | ----------------------- | ----------------------------------------------------- |
 | `SUPABASE_URL` (or `NEXT_PUBLIC_SUPABASE_URL`) | Vercel / server         | Supabase project URL.                                 |
-| `SUPABASE_SERVICE_ROLE_KEY`                    | Vercel / server, secret | Service-role key for the `games` table.               |
+| `SUPABASE_SERVICE_ROLE_KEY`                    | Vercel / server, secret | Service-role key for the saves and session tables.    |
 | `NEXT_PUBLIC_SITE_URL`                         | optional                | Public origin for absolute URLs.                      |
 | `MICRO_RALLY_SAVE_DIR`                         | self-hosting            | Directory for the file store (default `.data/games`). |
+| `MICRO_RALLY_SESSION_DIR`                      | self-hosting            | Multiplayer file store (default `.data/sessions`).    |
 | `ENABLE_EXPERIMENTAL_COREPACK`                 | Vercel, optional        | Use the pnpm version from `packageManager`.           |
 
 See `.env.example`.

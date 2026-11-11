@@ -6,6 +6,7 @@ import { useGameStore, type StageResult } from '@/state/gameStore';
 import { useSettingsStore } from '@/state/settingsStore';
 import { useStageHudStore } from '@/state/stageHudStore';
 import { useUiStore } from '@/state/uiStore';
+import { SessionResultPanel } from '@/components/multiplayer/SessionResultPanel';
 import { PaceNoteCallout } from './PaceNoteCallout';
 import { PixelIcon } from './PixelIcon';
 
@@ -155,7 +156,12 @@ function GarageButton() {
   );
 }
 
-export function StageHud() {
+interface StageHudProps {
+  /** Multiplayer: no money or garage, and the session's result panel. */
+  session?: boolean;
+}
+
+export function StageHud({ session = false }: StageHudProps) {
   const m = useMessages();
   const locale = useSettingsStore((s) => s.locale);
   const time = useStageHudStore((s) => s.time);
@@ -175,7 +181,9 @@ export function StageHud() {
     return (
       <>
         <Countdown />
-        {result && !replay && <ResultPanel result={result} />}
+        {result &&
+          !replay &&
+          (session ? <SessionResultPanel result={result} /> : <ResultPanel result={result} />)}
       </>
     );
   return (
@@ -209,17 +217,19 @@ export function StageHud() {
               </span>
             </p>
           )}
-          <div className="absolute bottom-6 left-6 flex items-center gap-2 coarse:static">
-            <p
-              className="pixel-box px-4 py-3 text-sm coarse:flex coarse:items-center coarse:gap-1.5 coarse:px-2 coarse:py-1 coarse:text-[10px]"
-              data-testid="money"
-            >
-              <span className="coarse:sr-only">{m.stage.money} </span>
-              <PixelIcon name="money" className="hidden size-4 coarse:block" />
-              {formatMoney(money, locale)}
-            </p>
-            <GarageButton />
-          </div>
+          {!session && (
+            <div className="absolute bottom-6 left-6 flex items-center gap-2 coarse:static">
+              <p
+                className="pixel-box px-4 py-3 text-sm coarse:flex coarse:items-center coarse:gap-1.5 coarse:px-2 coarse:py-1 coarse:text-[10px]"
+                data-testid="money"
+              >
+                <span className="coarse:sr-only">{m.stage.money} </span>
+                <PixelIcon name="money" className="hidden size-4 coarse:block" />
+                {formatMoney(money, locale)}
+              </p>
+              <GarageButton />
+            </div>
+          )}
         </div>
         {laps > 0 && bestLap !== null && (
           <p className="pixel-tag mt-3 px-2 py-1 text-[10px]">
@@ -235,7 +245,9 @@ export function StageHud() {
         {replay && <ReplayBar />}
       </div>
       <Countdown />
-      {result && !replay && <ResultPanel result={result} />}
+      {result &&
+        !replay &&
+        (session ? <SessionResultPanel result={result} /> : <ResultPanel result={result} />)}
     </>
   );
 }

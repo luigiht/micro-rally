@@ -2,6 +2,19 @@ import { expect, type Page } from '@playwright/test';
 
 export const CANVAS = '[data-testid="game-canvas"] canvas';
 
+/**
+ * Pick Single player on the splash's mode choice. A URL naming a game
+ * (`?game=`) opens the form directly, so this only clicks when asked.
+ */
+export async function chooseSinglePlayer(page: Page): Promise<void> {
+  const single = page.getByRole('button', { name: 'Single player' });
+  const name = page.getByLabel('Driver name');
+  // Both only mount after hydration, so once either exists our clicks and typing stick.
+  await expect(single.or(name)).toBeVisible();
+  if (await single.isVisible()) await single.click();
+  await expect(name).toBeVisible();
+}
+
 /** Get through the splash screen into a running game. */
 export async function startGame(
   page: Page,
@@ -9,7 +22,7 @@ export async function startGame(
   opts: { name?: string; gameId?: string } = {},
 ): Promise<void> {
   await page.goto(path);
-  // The form only mounts after hydration, so once it exists our typing sticks.
+  await chooseSinglePlayer(page);
   await page.getByLabel('Driver name').fill(opts.name ?? 'Tester');
   if (opts.gameId !== undefined)
     await page.getByLabel('Game ID', { exact: true }).fill(opts.gameId);

@@ -7,7 +7,11 @@ here as of 2 November 2026.
 
 ## Starting and continuing
 
-- The start screen asks for a driver name and, optionally, a Game ID. An
+- The start screen first asks for a mode: **Single player** (everything
+  below) or **Multiplayer** (see [Multiplayer](#multiplayer)). A `?game=`
+  link opens Single player directly and a `?session=` link opens
+  Multiplayer's join form.
+- Single player asks for a driver name and, optionally, a Game ID. An
   empty ID starts a new game with a fresh random seed; a pasted ID loads
   that game. Returning players on the same device get a Continue button.
 - A Game ID is eight characters of Crockford base32 (no I, L, O or U). It is
@@ -17,6 +21,30 @@ here as of 2 November 2026.
   Autosave runs on start, 2.5 s after progress changes, every minute, when
   the tab is hidden or closed, and on leaving. If the server is unreachable
   the save stays local and the Game panel says so; the next save retries.
+
+## Multiplayer
+
+- Two drivers share a **session**: one seed, so identical stages, a fixed
+  run of 3, 6 or 9 stages, and one car the host picks for both. There is
+  no money, garage or saved career; the session is the save.
+- The host creates the session and shares its Session ID (same format as
+  a Game ID) or link; the second driver joins with a name. A third is
+  turned away. Each device keeps a private seat key, so Continue on the
+  join form, or the link, gets back into the session.
+- The lobby shows the scoreboard and the next step. A driver can run the
+  current stage whenever they like, but **nobody moves on until both have
+  finished or retired it**. The lobby checks for the other driver every
+  4 seconds.
+- The **first finished run counts**: the result panel has no Drive it again.
+  Before the finish, Restart stage and Back to session start the run
+  over, and Retire from stage (after a confirmation) scores nothing for it.
+- **Points per stage.** Pace: 1000 × the prize curve against par (300 at
+  double par, 1000 at par, 1250 at 20 % under). Once both have run the
+  stage: +300 for the faster driver and +50 for each section between
+  checkpoints a driver was faster on. A retirement scores 0, and a tie
+  gives neither driver the win. Points shown before both have run a stage
+  are marked provisional. After the last stage, the higher total wins the
+  session, or it is a draw.
 
 ## A stage
 

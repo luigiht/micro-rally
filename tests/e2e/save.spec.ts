@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { CANVAS, randomGameId, startGame } from './helpers';
+import { CANVAS, chooseSinglePlayer, randomGameId, startGame } from './helpers';
 
 const ID_SHAPE = /^[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}$/;
 
@@ -59,6 +59,7 @@ test('the API rejects malformed saves and unknown IDs', async ({ request }) => {
 
 test('an unknown pasted ID is refused; clearing it starts a new game', async ({ page }) => {
   await page.goto('/');
+  await chooseSinglePlayer(page);
   await page.getByLabel('Driver name').fill('Ada');
   await page.getByLabel('Game ID', { exact: true }).fill(randomGameId());
   await page.getByRole('button', { name: 'Drive' }).click();

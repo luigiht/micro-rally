@@ -5,6 +5,7 @@ import { TOUCH_ACTIONS } from '@/components/game/input/touchInput';
 import { useMessages } from '@/i18n/useMessages';
 import { useStageHudStore } from '@/state/stageHudStore';
 import { useUiStore, type HudPanel } from '@/state/uiStore';
+import { SessionGamePanel } from '@/components/multiplayer/SessionGamePanel';
 import { GamePanel } from './GameMenu';
 import { GaragePanel } from './GaragePanel';
 import { HudDialog } from './HudDialog';
@@ -81,14 +82,15 @@ function ResetButton() {
   );
 }
 
-/** Touch-device pause menu: one tap opens it; each entry swaps in the matching panel. */
-function PauseMenu() {
+/** Touch-device pause menu: one tap opens it; each entry swaps in the matching panel. Multiplayer has no garage. */
+function PauseMenu({ session }: { session: boolean }) {
   const m = useMessages();
-  const entries: { icon: PixelIconName; label: string; panel: HudPanel }[] = [
+  const all: { icon: PixelIconName; label: string; panel: HudPanel }[] = [
     { icon: 'game', label: m.toolbar.game, panel: 'game' },
     { icon: 'garage', label: m.garage.button, panel: 'garage' },
     { icon: 'settings', label: m.toolbar.settings, panel: 'settings' },
   ];
+  const entries = session ? all.filter((e) => e.panel !== 'garage') : all;
   return (
     <HudDialog
       id="pause-menu"
@@ -120,7 +122,7 @@ function PauseMenu() {
  * collapses to a Pause button that opens a menu of all three, with a
  * back-to-checkpoint button (the keyboard's R) beside it.
  */
-export function HudToolbar() {
+export function HudToolbar({ session = false }: { session?: boolean }) {
   const m = useMessages();
   const panel = useUiStore((s) => s.panel);
   const hidden = useUiStore((s) => s.hudHidden);
@@ -170,10 +172,10 @@ export function HudToolbar() {
           />
         </nav>
       )}
-      {panel === 'menu' && <PauseMenu />}
-      {panel === 'game' && <GamePanel />}
+      {panel === 'menu' && <PauseMenu session={session} />}
+      {panel === 'game' && (session ? <SessionGamePanel /> : <GamePanel />)}
       {panel === 'settings' && <SettingsPanel />}
-      {panel === 'garage' && <GaragePanel />}
+      {panel === 'garage' && !session && <GaragePanel />}
     </>
   );
 }

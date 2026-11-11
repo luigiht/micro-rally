@@ -3864,3 +3864,41 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      unchanged, so par is easier to beat on both types.
      `tests/unit/climbGrip.test.ts` holds the gain at over 10 km/h for
      three cars on each type and checks no car climbs slower.
+210. **2026-11-11 — Multiplayer sessions.** By request, the splash now opens
+     on a mode choice: Single player is the existing career, untouched (the
+     same form, Game ID, saves and autosave; a `?game=` link still opens it
+     directly), and Multiplayer is a new mode keyed by a **Session ID**. A
+     session is two seats, one seed, a fixed run of 3, 6 or 9 stages and one
+     car the host picks for both drivers, with no money, garage or solo save
+     involved. Its current stage is derived, not stored: the first stage
+     without a result from both seats (`sessionStage`). So nobody moves on
+     until both have finished or retired, and there is no shared counter for
+     two browsers to race on. Play is asynchronous: each driver runs the
+     stage whenever they like and the lobby polls every 4 s. The first
+     finished run counts; Restart and Back to session are allowed before the
+     finish (a reload would allow it anyway), and Retire scores nothing but
+     lets the session move on. **Scoring** (`SessionScore`): pace points are
+     1000 × the prize curve's `paceFactor` (300 at double par, 1250 at 20 %
+     under), so every stage is worth about the same and the slower driver
+     still scores; once both have run it, +300 for the stage win and +50 for
+     each section between checkpoints a driver was faster on. Ties share
+     nothing. **Server**: `/api/sessions` (create), `/:id` (state), `/:id/join`
+     and `/:id/results`, over a `SessionStore` with a file store (dev, e2e)
+     and a Supabase one. Seats and results are insert-only rows whose
+     primary keys turn a taken seat or a second run into a 409, rather than
+     the saves' last-write-wins JSON. Joining hands the device a player ID
+     and a secret token, which the server keeps only as a SHA-256 hash and
+     checks in constant time. The results route recomputes par from the
+     stage brief and refuses runs under a quarter of par or with splits
+     that don't climb. **Client**: `sessionStore` holds the session view, the
+     seat and lobby/drive. Driving writes the session's seed, stage and car
+     into `gameStore` with no Game ID, so `DrivingScene`, `DrivingSession`
+     and the car rig run unchanged and nothing autosaves. A subscriber on
+     the HUD store sends the time when the run's result appears. `StageHud`
+     and `HudToolbar` take a `session` flag that hides money and the
+     garage and swaps in the session's result and Game panels; solo passes
+     nothing and renders as before. Session IDs reuse the Game ID format;
+     `?session=` opens the join form. Not built yet: seeing the other car
+     live and a shared start countdown. Migration
+     `20261111120000_sessions.sql` must run on the Supabase project before
+     multiplayer works in production.
