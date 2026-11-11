@@ -9,6 +9,11 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Added
 
+- **A reload prompt when a new version is out.** A page or installed app
+  that was already open when a new version went live now says "There's a
+  new version available, please reload." at the bottom of the screen, with
+  Reload and Later. It checks when the window comes back into view and
+  every few minutes, so an app left open for days catches up. [220]
 - **Choose the stage types, and your own car, in Multiplayer.** Creating a
   session now asks only how many stages (3, 6 or 9) and which stage types
   they cycle through (all ticked by default). Each driver then picks their
@@ -56,10 +61,50 @@ hold the reasoning behind each change; the numbers in brackets point there.
   10 November, and a new FAQ explains how to get back on the road. It now
   also covers Multiplayer with each driver's own car and the other driver
   seen live, Exit game, the dirt-road verge fix and the removed Contact tab,
-  with a new FAQ on playing with a friend.
+  with new FAQs on playing with a friend and getting the latest version.
+
+### Changed
+
+- **Pinewood is a dense pine wood.** The gravel road now runs through a
+  close-packed wood of pines only, right up to the verges, with small pines
+  along the verges themselves. Each pine is a stack of low-poly umbrella
+  tiers with irregular, hanging hems, shaded from dark at the trunk to light
+  green at the hem, in four builds: full, tall (as leafy, with its boughs
+  starting well above the car), sparse with a long bare trunk, or young
+  with its boughs low. Most pines are full or tall. Their reddish trunks
+  curve gently and end inside the top tier. Pines more than about 70 m
+  away are drawn simpler, keeping their exact shape, so they don't pop as
+  you drive. No two pines grow into each other and no bough reaches over
+  the road. The pines nearest the road are the tall build, their lower
+  trunks in plain sight, and the wood carries on evenly into the distance
+  instead of thinning out past the verges. Tall grass grows in loose,
+  wind-bent drifts along the verges and across the hills either side, with
+  bare ground between, never reaching over the road or into a crowd of
+  spectators. The round bushes are gone. The gravel road itself shows
+  faint wheel traces that come and go, packed a few shades darker than the
+  loose gravel between and beside them, with small stones strewn mostly
+  along its edges and down the middle.
+  [222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232]
+- **Built-up Autumnal roads.** The mud lane now sits on a low bank: past
+  each edge the ground falls about half a metre across the verge, and a
+  car that leaves the road drives down it. Villages keep their level
+  streets. [219]
+- **Narrower Autumnal roads.** The mud lane is now 6 m across instead of
+  8 m; the ruts, edge tracks, checkpoints and crowds move in with it. [216]
+- **Thicker autumn woods and fallen leaves.** Autumnal stages have more
+  trees, broadleaves and bushes, the trees stand about a third taller and
+  come in more shapes (cone pines, layered firs, tall spires, round, oval
+  and layered crowns) and colours (evergreen and olive through gold and
+  orange to rust and crimson), and
+  fallen leaves in orange, rust, ochre and gold lie on the verges, over the
+  grass and under the broadleaves. [217, 218]
 
 ### Fixed
 
+- **Start and finish gantries on solid ground, with a full shadow.** On the
+  built-up Autumnal lane the gantry posts stood on air above the bank; each
+  post now reaches down to the ground at its foot. The chequered banner now
+  casts its shadow across the road along with the posts. [221]
 - **No more flickering triangles at the road's edge.** On dirt stages,
   pale terrain triangles showed through the verge beside the road and
   shifted as the camera moved, most of all on the Autumnal mud and near
@@ -77,6 +122,9 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Removed
 
+- **Verge posts on Autumnal stages.** The white roadside posts with orange
+  caps no longer line the Autumnal mud lanes; their fading verges mark the
+  edge instead. Other stage types keep them. [215]
 - **The About page's Contact tab.** The About page now has three tabs:
   Gameplay, Changelog and FAQs. Feedback still goes through the Feedback
   button in the Game panel.

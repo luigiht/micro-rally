@@ -122,6 +122,11 @@ export const es: Messages = {
     privacy: 'Cómo se tratan los comentarios: consulta la página de privacidad.',
     back: 'Volver al juego',
   },
+  update: {
+    available: 'Hay una nueva versión disponible, recarga la página.',
+    reload: 'Recargar',
+    later: 'Más tarde',
+  },
   about: {
     title: 'Acerca de Micro Rally',
     intro:
@@ -178,7 +183,7 @@ export const es: Messages = {
         {
           date: '11 de noviembre de 2026',
           title: 'Multijugador, rivales en directo, salida y meta y más agarre en subida',
-          body: 'Un nuevo modo Multijugador permite a dos pilotos compartir una sesión de tramos y una clasificación, en los tipos de tramo que marque el anfitrión, cada uno con el coche que elija; el siguiente tramo se abre cuando ambos han terminado, y mientras los dos están en el mismo tramo cada uno ve el coche del otro en la carretera. El modo Un jugador no cambia, y Salir del juego, en el panel Juego, vuelve a la pantalla de inicio. Cada salida y cada meta tienen un pórtico a cuadros; en los tramos de rally, paneles rojos marcan la salida con un cronómetro y la meta con una bandera a cuadros. Las pantallas táctiles estrenan un botón para volver al último control junto a Pausa. Los tramos Alpino y Otoñal tienen más agarre para subir más rápido, el barro frena un poco menos y desaparecen los triángulos que parpadeaban en los bordes de las pistas de tierra. La página Acerca de pierde la pestaña Contacto; las opiniones se envían desde el panel Juego.',
+          body: 'Un nuevo modo Multijugador permite a dos pilotos compartir una sesión de tramos y una clasificación, en los tipos de tramo que marque el anfitrión, cada uno con el coche que elija; el siguiente tramo se abre cuando ambos han terminado, y mientras los dos están en el mismo tramo cada uno ve el coche del otro en la carretera. El modo Un jugador no cambia, y Salir del juego, en el panel Juego, vuelve a la pantalla de inicio. Cada salida y cada meta tienen un pórtico a cuadros; en los tramos de rally, paneles rojos marcan la salida con un cronómetro y la meta con una bandera a cuadros. Las pantallas táctiles estrenan un botón para volver al último control junto a Pausa. Los tramos Alpino y Otoñal tienen más agarre para subir más rápido, el barro frena un poco menos desaparecen los triángulos que parpadeaban en los bordes de las pistas de tierra y las pistas del Otoñal se estrechan, pierden sus postes de arcén y corren sobre un terraplén bajo entre bosques más altos y tupidos, de muchas formas y colores, con hojas caídas. Los tramos Pinar cruzan ahora un bosque denso de pinos altos que nunca se tocan ni invaden la pista, con troncos a la vista junto a los arcenes, hierba alta por las colinas, el bosque perdiéndose en la distancia y leves huellas de ruedas y piedras sueltas en la grava. Una ventana abierta cuando sale una versión nueva ahora propone recargar. La página Acerca de pierde la pestaña Contacto; las opiniones se envían desde el panel Juego.',
         },
         {
           date: '10 de noviembre de 2026',
@@ -277,6 +282,11 @@ export const es: Messages = {
         question: '¿Cómo cambio la cámara?',
         answer:
           'Pulsa C mientras conduces o elige una cámara en Ajustes. Hay vistas de persecución, interior, isométrica y cinematográfica.',
+      },
+      {
+        question: '¿Cómo consigo la última versión?',
+        answer:
+          'Solo abre el juego: siempre carga la versión más reciente, en el navegador o como app instalada, sin reinstalar nada. Si ya tenías una ventana abierta cuando salió una versión nueva, un aviso abajo te pide recargar.',
       },
       {
         question: '¿Cómo vuelvo a la carretera si me salgo o me atasco?',

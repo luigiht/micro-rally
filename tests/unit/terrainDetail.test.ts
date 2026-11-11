@@ -1,4 +1,4 @@
-import { Color, Mesh, Raycaster, Vector3 } from 'three';
+import { Color, InstancedMesh, Mesh, Raycaster, Vector3 } from 'three';
 import { createNoise2D } from 'simplex-noise';
 import { describe, expect, it } from 'vitest';
 import { mulberry32 } from '@/game/rng';
@@ -107,6 +107,23 @@ describe('terrain detail', () => {
     expect(edgeDarkness).toBeLessThan(0.75);
     expect(road.group.getObjectByName('mud-puddles')).toBeUndefined();
     road.dispose();
+  });
+
+  it('stands no verge posts beside an Autumnal mud lane, unlike the Forest road', () => {
+    const postsOn = (stageType: 'autumnal' | 'forest') => {
+      const stage = generateStage(17, stageIndexOf(stageType, 1));
+      const road = new RoadBuilder(
+        stage,
+        new TerrainField(stage),
+        dayTheme(STAGE_TYPES[stageType]).road,
+      );
+      const count = road.group.children.filter((c) => c instanceof InstancedMesh).length;
+      road.dispose();
+      return count;
+    };
+    expect(postsOn('autumnal')).toBe(0);
+    // Posts and caps.
+    expect(postsOn('forest')).toBe(2);
   });
 
   it('leaves dark edge groove floors visible from above, without road faces covering them', () => {

@@ -8,8 +8,13 @@ const SECURITY_HEADERS = [
   { key: 'X-DNS-Prefetch-Control', value: 'on' },
 ];
 
+/** Identifies this deploy, so open pages can tell a newer one has gone out (see `UpdatePrompt`). */
+const BUILD_ID =
+  process.env.VERCEL_DEPLOYMENT_ID ?? process.env.VERCEL_GIT_COMMIT_SHA ?? `local-${Date.now()}`;
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  env: { NEXT_PUBLIC_BUILD_ID: BUILD_ID },
   poweredByHeader: false,
   transpilePackages: ['three'],
   async headers() {

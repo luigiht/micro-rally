@@ -16,6 +16,11 @@ import type { BuildingStyle } from '@/game/stage/Town';
 import { buildingRoofGeometry, buildingWallsGeometry } from '../BuildingGeometry';
 import { houseRoofGeometry, houseWallsGeometry } from '../HouseGeometry';
 import { buildingPlantersGeometry } from '../PlanterGeometry';
+import { canopyGeometry, foliageGeometry } from '../TreeGeometry';
+import { autumnKits } from './AutumnKits';
+import { pineKits } from './PineKits';
+import { leafLitterGeometry, leafLitterMaterial } from '../LeafLitterGeometry';
+import { tallGrassKits } from './GrassKits';
 import type { KindKit } from '../SceneryChunkManager';
 import { spectatorKits } from './SpectatorKits';
 import {
@@ -33,27 +38,6 @@ import {
   parkedCarLightsGeometry,
 } from '../CityVehicleGeometry';
 import { arrowBoardGeometry, coneGeometry, lampPostGeometry } from '../StreetFurnitureGeometry';
-
-function foliageGeometry(): BufferGeometry {
-  // Foliage starts 1.3 m up so the trunk shows, in the tree and in its shadow.
-  const low = new ConeGeometry(1.35, 2.6, 7).translate(0, 2.6, 0);
-  const high = new ConeGeometry(0.95, 2.1, 7).translate(0, 3.8, 0);
-  const merged = mergeGeometries([low, high])!;
-  low.dispose();
-  high.dispose();
-  return merged;
-}
-
-function canopyGeometry(): BufferGeometry {
-  const parts = [
-    new IcosahedronGeometry(1.5, 0).translate(0, 3.1, 0),
-    new IcosahedronGeometry(1.05, 0).translate(0.9, 2.7, 0.3),
-    new IcosahedronGeometry(0.95, 0).translate(-0.7, 3.6, -0.4),
-  ];
-  const merged = mergeGeometries(parts)!;
-  for (const p of parts) p.dispose();
-  return merged;
-}
 
 /**
  * A tall Finnish spruce, after the low-poly snowy pine in `context/environment`
@@ -341,6 +325,9 @@ export const BUILDING_STYLES = [
 ] as const satisfies readonly BuildingStyle[];
 const CITY_STYLES: readonly BuildingStyle[] = ['block', 'tenement', 'arcade'];
 
+/** Per-cluster tints over the leaves' own colours, one per `LEAF_VARIANTS`. */
+const LEAF_TINTS = ['#ffffff', '#f3e1c6', '#ffe6cf', '#e2d2bf'].map((c) => new Color(c));
+
 function mat(color: string, vertexColors = false): MeshStandardMaterial {
   return new MeshStandardMaterial({ color, flatShading: true, roughness: 0.9, vertexColors });
 }
@@ -376,14 +363,35 @@ export function rallyKits(palette: StagePalette, shadows: boolean, snow: boolean
     style === 'office' ? officeWalls : CITY_STYLES.includes(style) ? cityWalls : townWalls;
   const roofsFor = (style: BuildingStyle) =>
     style === 'office' || CITY_STYLES.includes(style) ? cityRoofs : townRoofs;
+  const autumn = palette.autumn ? autumnKits(palette.autumn, shadows) : null;
   return [
-    {
-      sources: ['tree'],
-      geometry: foliageGeometry(),
-      material: mat('#ffffff'),
-      tint: pine,
-      castShadow: shadows,
-    },
+    ...(autumn ?? [
+      ...(palette.pines
+        ? pineKits(palette.pines, shadows)
+        : [
+            {
+              sources: ['tree'],
+              geometry: foliageGeometry(),
+              material: mat('#ffffff'),
+              tint: pine,
+              castShadow: shadows,
+            } satisfies KindKit,
+          ]),
+      {
+        sources: ['broadleaf'],
+        geometry: canopyGeometry(),
+        material: mat('#ffffff'),
+        tint: leaf,
+        castShadow: shadows,
+      } satisfies KindKit,
+      {
+        sources: ['bush'],
+        geometry: new IcosahedronGeometry(0.9, 0).translate(0, 0.45, 0),
+        material: mat('#ffffff'),
+        tint: pine,
+        castShadow: false,
+      } satisfies KindKit,
+    ]),
     {
       sources: ['spruce'],
       geometry: spruceFoliageGeometry(SPRUCE_SNOWY, true),
@@ -416,13 +424,6 @@ export function rallyKits(palette: StagePalette, shadows: boolean, snow: boolean
       accept: snowySpruce,
     },
     {
-      sources: ['broadleaf'],
-      geometry: canopyGeometry(),
-      material: mat('#ffffff'),
-      tint: leaf,
-      castShadow: shadows,
-    },
-    {
       sources: ['palm'],
       geometry: palmTrunkGeometry(),
       material: mat(palette.trunk),
@@ -449,18 +450,24 @@ export function rallyKits(palette: StagePalette, shadows: boolean, snow: boolean
       material: mat(palette.trunk),
       tint: null,
       castShadow: shadows,
+      // Pine woods give their pines their own long trunks.
+      ...(palette.pines ? { accept: (p: Prop) => p.kind !== 'tree' } : {}),
       // Broadleaf canopies sit higher, so stretch their trunks.
       place: (p, dummy) => {
         if (p.kind === 'broadleaf') dummy.scale.y *= 1.6;
       },
     },
     {
-      sources: ['bush'],
-      geometry: new IcosahedronGeometry(0.9, 0).translate(0, 0.45, 0),
-      material: mat('#ffffff'),
-      tint: pine,
+      // Fallen leaves (stage types with `leaves`): flat on the ground, warmer or paler cluster by cluster.
+      sources: ['leaves'],
+      geometry: leafLitterGeometry(),
+      material: leafLitterMaterial(),
+      tint: LEAF_TINTS,
+      vertexColors: true,
       castShadow: false,
+      receiveShadow: shadows,
     },
+    ...tallGrassKits(palette, shadows),
     {
       sources: ['rock'],
       geometry: new DodecahedronGeometry(0.9, 0).translate(0, 0.25, 0),

@@ -80,6 +80,24 @@ cover the pure-TS core and anything else that can run without a browser:
   a session refresh when an unknown driver shows up live),
   `liveStore.server` (memory freshness, the Supabase RPC) and
   `liveRoute.server` (swapped windows, seat tokens).
+- **Autumnal and updates**: `vergeBed` (the terrain mesh under the sloping
+  verge strips, the bank's fall for the wheels), `leafLitter` (fallen
+  leaves off the road, under broadleaves, in the slope; taller trees),
+  `autumnTrees` (six silhouettes, the colour mix, other regions unchanged),
+  `updateCheck` (a new build, errors and offline as no news),
+  `gravelRoad` (stones on the Pinewood road, mostly at the edges and the
+  hump between the tracks, the same every time),
+  `pineWoods` (Pinewood's pines only, full, sparse and young umbrella-tier pines, denser, bigger and nearer the road;
+  saplings on the verges; each pine one shape near, one stand-in far and
+  one trunk; trunks ending inside their crowns and curving; the
+  root-to-tip ramp; low boughs clear of the ground; no two pines' reach
+  overlapping and every bough off the road; tall bare-trunked pines along
+  the road, most pines full or tall, and a fifth of the wood past 60 m;
+  tall grass on the verges and over the hills, no blade reaching the road
+  or a spectator, clear of the trunks, in drifts and leaning with one wind,
+  each patch within its reach and its stand-in made of its own blades;
+  pine stand-ins made of the near hems' every other point; no bushes), `sceneryLod` (near and far kits by chunk distance, swapped as
+  the car moves).
 - **Rendering geometry built in pure TS**: `carHull` (lofted hulls, wells,
   decals, glow groups), `fenderShell` (the buggy's free-standing mudguards: mirrored, clear of the tyre, wound outward), `svgSilhouette` (the SVG path reader and the extruded bull), `houseGeometry`, `buildingGeometry`,
   `streetFurnitureGeometry`, `cityFurnitureGeometry` (the city's furniture

@@ -9,7 +9,7 @@ import type { Obstacle } from '../vehicle/Collisions';
 import { inOasis, oasisPads, oasisProps, planOases } from './Oases';
 import { parkedCars, parkingStretches } from './ParkingBays';
 import { streetFurniture } from './StreetFurniture';
-import { STAGE_TYPES, stageScenery } from './regions';
+import { STAGE_TYPES, stageScenery, type SceneryDensity } from './regions';
 import { createRoadHit, type RoadSample } from './RoadPath';
 import { ISLAND_PAD_BLEND } from './Roundabout';
 import { nearSpectator, scatterSpectators } from './Spectators';
@@ -54,7 +54,10 @@ export type PropKind =
   | 'treePit'
   | 'manhole'
   | 'spruce'
-  | 'spectator';
+  | 'spectator'
+  | 'leaves'
+  | 'sapling'
+  | 'grass';
 
 export interface Prop {
   kind: PropKind;
@@ -66,12 +69,38 @@ export interface Prop {
   variant: number;
   /** Tilt about the prop's own x axis after the heading, for things that lie along a slope (parked cars). */
   pitch?: number;
+  /** A vertical stretch on top of `scale` (taller trees); 1 when unset. Colliders and spacing go by `scale`. */
+  stretch?: number;
+  /** A pine wood's pine build (`SceneryDensity.pineWood`), chosen here so each pine is spaced by its own reach. */
+  pine?: PineForm;
 }
+
+/**
+ * The pine wood's builds: `full` (leafy to near the ground), `tall` (as
+ * full, its boughs starting well above a car), `sparse` (a long bare run of
+ * trunk between two low tiers and a small top) and `young` (low and small).
+ */
+export type PineForm = 'full' | 'tall' | 'sparse' | 'young';
 
 const STEP = 4;
 const MIN_CLEARANCE = 3;
 const MEAN_OFFSET = 28;
+/** Saplings (`SceneryDensity.saplings`) start this close to the road's edge and mostly stay within a few metres. */
+const SAPLING_CLEARANCE = 0.7;
+const SAPLING_OFFSET = 3.5;
 const MAX_OFFSET = 160;
+
+/** Pick a pine build from `mix` (shares summing to 1) with a draw `r` in [0, 1). */
+function pickForm(mix: Readonly<Partial<Record<PineForm, number>>>, r: number): PineForm {
+  let acc = 0;
+  for (const [form, share] of Object.entries(mix) as [PineForm, number][]) {
+    acc += share;
+    if (r < acc) return form;
+  }
+  return 'full';
+}
+/** The deep wood (`SceneryDensity.deepWood`) starts this far past the road's edge and spreads evenly out to `MAX_OFFSET`. */
+const DEEP_FROM = 12;
 
 /** Houses: never near the road, spread out, and only on fairly level ground. */
 const HOUSE_STEP = 10;
@@ -110,35 +139,62 @@ const CANOPY_CELL = 6;
 
 /** Spatial hash of placed canopies so each new tree checks only its neighbourhood. */
 class CanopyGrid {
-  private readonly cells = new Map<number, Prop[]>();
+  private readonly cells = new Map<number, { x: number; z: number; r: number }[]>();
+  /** The widest canopy placed so far: a search reaches as many cells as two of those could span. */
+  private widest = 0;
 
   private key(cx: number, cz: number): number {
     return (cx + 0x8000) * 0x10000 + (cz + 0x8000);
   }
 
-  add(p: Prop): void {
+  /** Record a canopy of radius `r` at the prop. */
+  add(p: Prop, r: number): void {
     const k = this.key(Math.floor(p.x / CANOPY_CELL), Math.floor(p.z / CANOPY_CELL));
+    const entry = { x: p.x, z: p.z, r };
+    this.widest = Math.max(this.widest, r);
     const list = this.cells.get(k);
-    if (list) list.push(p);
-    else this.cells.set(k, [p]);
+    if (list) list.push(entry);
+    else this.cells.set(k, [entry]);
   }
 
-  /** True when a canopy of `radius` at (x, z) would overlap one already placed. */
-  overlaps(x: number, z: number, radius: number): boolean {
+  /**
+   * True when a canopy of `radius` at (x, z) would overlap one already
+   * placed; `share` < 1 lets neighbours stand that much closer (a crowded wood).
+   */
+  overlaps(x: number, z: number, radius: number, share = 1): boolean {
     const cx = Math.floor(x / CANOPY_CELL);
     const cz = Math.floor(z / CANOPY_CELL);
-    for (let i = cx - 1; i <= cx + 1; i++) {
-      for (let j = cz - 1; j <= cz + 1; j++) {
+    const span = Math.max(1, Math.ceil(((radius + this.widest) * share) / CANOPY_CELL));
+    for (let i = cx - span; i <= cx + span; i++) {
+      for (let j = cz - span; j <= cz + span; j++) {
         const list = this.cells.get(this.key(i, j));
         if (!list) continue;
         for (const q of list) {
-          const r = radius + CANOPY_RADIUS[q.kind]! * q.scale;
+          const r = (radius + q.r) * share;
           if ((q.x - x) ** 2 + (q.z - z) ** 2 < r * r) return true;
         }
       }
     }
     return false;
   }
+}
+
+/** A pine wood's boughs stop this far short of the road's edge. */
+const ROAD_GAP = 0.3;
+
+/**
+ * A prop's canopy radius at scale 1, for keeping canopies apart: the stock
+ * table, or in a pine wood its build's real bough reach (saplings are the
+ * young build).
+ */
+export function canopyRadius(
+  p: Pick<Prop, 'kind' | 'pine'>,
+  density: SceneryDensity,
+): number | undefined {
+  const wood = density.pineWood;
+  if (wood && p.kind === 'sapling') return wood.reach.young;
+  if (wood && p.kind === 'tree') return wood.reach[p.pine ?? 'full'];
+  return CANOPY_RADIUS[p.kind];
 }
 
 /** Buildings and garden walls collide as oriented boxes (see `townObstacles`); cones only mark a closed street, so of the town's own props only lamp posts get a circle. */
@@ -171,6 +227,11 @@ const COLLIDER_RADIUS: Readonly<Record<PropKind, number>> = {
   manhole: 0,
   spruce: 0.5,
   spectator: 0,
+  leaves: 0,
+  // Waist-to-head-high pines by the road: brushed through like the bushes.
+  sapling: 0,
+  // Tall grass: the car brushes straight through.
+  grass: 0,
 };
 /** A parked car collides as two circles along its length (local z, nose at +z). */
 export const CAR_COLLIDER = { radius: 0.95, spread: 1.1 } as const;
@@ -217,38 +278,56 @@ export function scatterScenery(field: TerrainField): Prop[] {
   const coast = field.coast;
   // On a circuit nothing stands inside the fences: props start past the outermost barrier.
   const trackside = circuitTrackside(stage);
-  const clearance = trackside ? outermostBarrier(trackside) - stage.halfWidth + 4 : MIN_CLEARANCE;
+  const clearance = trackside
+    ? outermostBarrier(trackside) - stage.halfWidth + 4
+    : (density.clearance ?? MIN_CLEARANCE);
+  const meanOffset = density.meanOffset ?? MEAN_OFFSET;
   const stand = trackside ? grandstandSpot(stage, trackside) : null;
   const cornerStands = trackside ? cornerStandSpots(stage, trackside) : [];
-  const kinds: readonly [PropKind, number][] = [
+  const kinds: readonly [kind: PropKind, perHundred: number, deep?: boolean][] = [
     ['spruce', density.spruces ?? 0],
     ['tree', density.trees],
     ['broadleaf', density.broadleaf],
     ['bush', density.bushes],
     ['rock', density.rocks],
+    // Only where a region asks for them, so no other region's draws shift.
+    ...(density.saplings ? [['sapling', density.saplings] as [PropKind, number]] : []),
+    ...(density.deepWood ? [['tree', density.deepWood, true] as [PropKind, number, boolean]] : []),
   ];
 
   for (let d = 0; d < path.length; d += STEP) {
     // Slow wobble so trees clump into copses and clearings.
     const clump =
       0.35 + 1.3 * (0.5 + 0.5 * Math.sin(d * 0.011 + stage.seed * 1e-9) * Math.cos(d * 0.0047));
-    for (const [kind, perHundred] of kinds) {
+    for (const [kind, perHundred, deep] of kinds) {
       const expected = ((perHundred * STEP) / 100) * (kind === 'rock' ? 1 : clump);
       let n = Math.floor(expected) + (rand() < expected % 1 ? 1 : 0);
       while (n-- > 0) {
         path.sample(d + rand() * STEP, sample);
         const side = rand() < 0.5 ? -1 : 1;
-        const offset = Math.min(
-          MAX_OFFSET,
-          stage.halfWidth + clearance + -Math.log(1 - rand()) * MEAN_OFFSET,
-        );
+        // Saplings crowd the verge itself; everything else keeps the region's clearance.
+        const sapling = kind === 'sapling';
+        const clear = sapling ? SAPLING_CLEARANCE : clearance;
+        // The deep wood spreads evenly into the distance; everything else thins out from the road.
+        const offset = deep
+          ? stage.halfWidth + DEEP_FROM + rand() * (MAX_OFFSET - stage.halfWidth - DEEP_FROM)
+          : Math.min(
+              MAX_OFFSET,
+              stage.halfWidth +
+                clear +
+                -Math.log(1 - rand()) * (sapling ? SAPLING_OFFSET : meanOffset),
+            );
         const x = sample.x + Math.cos(sample.heading) * offset * side;
         const z = sample.z - Math.sin(sample.heading) * offset * side;
-        const scale = kind === 'rock' || kind === 'bush' ? 0.6 + rand() * 0.8 : 0.7 + rand() * 0.8;
+        const scale = sapling
+          ? 0.24 + rand() * 0.3
+          : kind === 'rock' || kind === 'bush'
+            ? 0.6 + rand() * 0.8
+            : (0.7 + rand() * 0.8) * (kind === 'tree' ? (density.treeScale ?? 1) : 1);
         const rotation = rand() * Math.PI * 2;
         const variant = rand() < 0.5 ? 0 : 1;
         // Keep every part of the road (including other bends) clear, and the town plateau.
-        if (path.nearest(x, z, stage.halfWidth + clearance, hit)) continue;
+        if (path.nearest(x, z, stage.halfWidth + clear, hit)) continue;
         if (stand && Math.hypot(x - stand.x, z - stand.z) < stand.radius) continue;
         if (cornerStands.some((s) => Math.hypot(x - s.x, z - s.z) < s.radius)) continue;
         if (stage.town && townBlocks(stage.town, x, z)) continue;
@@ -268,10 +347,30 @@ export function scatterScenery(field: TerrainField): Prop[] {
             continue;
         }
         // Trees keep their canopies apart; a rejected spot is simply skipped.
-        const canopy = CANOPY_RADIUS[kind];
-        if (canopy !== undefined && canopies.overlaps(x, z, canopy * scale)) continue;
+        // A pine wood's pines nearest any stretch of road are the tall build, boughs high over a
+        // bare trunk; further out the builds follow the wood's mix.
+        const wood = kind === 'tree' ? density.pineWood : undefined;
+        let pine: PineForm | undefined;
+        if (wood) {
+          const r = rand();
+          const roadside = path.nearest(x, z, stage.halfWidth + wood.roadside, hit);
+          pine = roadside ? 'tall' : pickForm(wood.mix, r);
+        }
+        const canopy = canopyRadius({ kind, pine }, density);
+        // A pine wood keeps every bough off the road, not just the trunk.
+        if (
+          canopy !== undefined &&
+          density.pineWood &&
+          path.nearest(x, z, stage.halfWidth + ROAD_GAP + canopy * scale, hit)
+        )
+          continue;
+        if (canopy !== undefined && canopies.overlaps(x, z, canopy * scale, density.crowding ?? 1))
+          continue;
         const prop: Prop = { kind, x, y: field.heightAt(x, z), z, scale, rotation, variant };
-        if (canopy !== undefined) canopies.add(prop);
+        if (density.treeStretch && (kind === 'tree' || kind === 'broadleaf'))
+          prop.stretch = density.treeStretch;
+        if (pine) prop.pine = pine;
+        if (canopy !== undefined) canopies.add(prop, canopy * scale);
         props.push(prop);
       }
     }

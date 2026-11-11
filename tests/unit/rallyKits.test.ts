@@ -1,3 +1,4 @@
+import { stagePalette } from '@/game/stage/regions';
 import { Color, MeshStandardMaterial, Object3D } from 'three';
 import { describe, expect, it } from 'vitest';
 import { STAGE_TYPES } from '@/game/stage/regions';
@@ -66,7 +67,7 @@ describe('rallyKits', () => {
     // City façades come in four renders; the village's in two.
     expect(kits.find((k) => k.sources.includes('tenement'))!.tint).toHaveLength(4);
     expect(kits.find((k) => k.sources.includes('townhouse'))!.tint).toHaveLength(2);
-    const trunk = kits.find((k) => k.sources.length === 2)!;
+    const trunk = kits.find((k) => k.sources.length === 2 && k.sources.includes('broadleaf'))!;
     const dummy = new Object3D();
     dummy.scale.setScalar(1);
     trunk.place!(prop('broadleaf'), dummy);
@@ -99,19 +100,25 @@ describe('rallyKits', () => {
     const autumn = sceneryKitsFor({ stageType: 'autumnal' }, true);
     const tint = (kits: KindKit[], kind: PropKind) =>
       kits.find((k) => k.sources.includes(kind) && k.tint)!.tint!.map((c) => c.getHexString());
-    expect(tint(autumn, 'broadleaf')).not.toEqual(tint(summer, 'broadleaf'));
-    expect(tint(autumn, 'tree')).not.toEqual(tint(summer, 'tree'));
-    // Warm: orange and rust canopies, a golden larch for every other pine.
-    for (const hex of [...tint(autumn, 'broadleaf'), tint(autumn, 'tree')[1]!]) {
-      const c = new Color('#' + hex);
+    // The trees colour themselves from the autumn mix, spot by spot, instead of the two-tone tint.
+    const foliage = autumn.filter(
+      (k) => k.sources.length === 1 && (k.sources[0] === 'tree' || k.sources[0] === 'broadleaf'),
+    );
+    expect(foliage).toHaveLength(6);
+    for (const k of foliage) expect(k.colorAt).toBeDefined();
+    expect(summer.find((k) => k.sources[0] === 'broadleaf')!.colorAt).toBeUndefined();
+    // Warm crowns: gold, orange, rust and crimson.
+    for (const hex of stagePalette('autumnal').autumn!.broadleaves) {
+      const c = new Color(hex);
       expect(c.r).toBeGreaterThan(c.g);
-      expect(c.g).toBeGreaterThan(c.b);
+      expect(c.g).toBeGreaterThanOrEqual(c.b);
     }
     // Houses, rocks and trunks keep the summer colours.
     expect(tint(autumn, 'house')).toEqual(tint(summer, 'house'));
     const trunk = (kits: KindKit[]) =>
       (
-        kits.find((k) => k.sources.length === 2)!.material as MeshStandardMaterial
+        kits.find((k) => k.sources.length === 2 && k.sources.includes('broadleaf'))!
+          .material as MeshStandardMaterial
       ).color.getHexString();
     expect(trunk(autumn)).toBe(trunk(summer));
     for (const k of [...summer, ...autumn]) {

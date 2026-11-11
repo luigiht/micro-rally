@@ -4013,3 +4013,318 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      `20261111200000_session_types_lobby_cars.sql` adds `sessions.stage_types`
      and drops `sessions.car_id`'s not-null; it and `20261111180000` must run
      on the Supabase project before this works in production.
+
+215. **2026-11-11 — No verge posts on Autumnal stages.** By request. The
+     posts every 20 m are render-only (no colliders), so dropping them is a
+     `RoadBuilder` condition beside the sand piste's and the circuit's; the
+     Autumnal lane already reads by its verge strips fading out from the mud,
+     its edge tracks and its crowds. Snow poles and every other type's posts
+     are unchanged.
+
+216. **2026-11-11 — A narrower Autumnal lane.** By request, twice. Regions
+     can set `roadHalfWidth`; the Autumnal sets 3 m (6 m across, down from
+     the loose-surface 4 m), a little under the narrow old-town streets'
+     3.2 m, so a village on an Autumnal stage doesn't narrow further. At
+     that width the edge wheel-tracks could reach into the centre pair at
+     their extremes, so `mudEdgeTrack` now keeps clear of the pair's full
+     reach (gauge, wander, stray and widest swell). Everything beside the road is
+     measured from the half width (ruts and edge tracks, verge strips and
+     the bed under them, checkpoint widths, crowds and berms, the terrain's
+     flat margin), so it all moves in with it. Par times are unchanged; the
+     autopilot test still drives an Autumnal stage 40 s without leaving the
+     narrower road. Existing Autumnal records were set on the wider road and
+     are kept.
+
+217. **2026-11-11 — Taller, thicker autumn woods and fallen leaves.** By
+     request. The Autumnal scenery raises its densities per 100 m (trees
+     110 → 135, broadleaves 26 → 55, bushes 16 → 24) and sets `treeStretch`
+     1.3: a prop's new `stretch` scales trees and broadleaves vertically on
+     top of their uniform scale, so they stand taller while their colliders
+     and canopy spacing, which go by `scale`, are unchanged. **Leaves**:
+     `scatterLeaves` (pure, `LeafLitter.ts`) lays clusters along the road
+     (`leaves` per 100 m, from 0.4 m past the edge, about 5 m out on average)
+     and three under every broadleaf, off every leg of the road and out of
+     town buildings. Each cluster is pitched and turned into the ground's
+     slope and lifted 2 cm. It draws from its own random stream, so the trees
+     and crowds stand where they would without leaves, and it runs in
+     `StageRenderer` rather than the world, so the leaves cost no colliders
+     and are skipped entirely when the new `leafLitter` render option is off.
+     A cluster is 14 flat, upward-facing diamonds in five autumn colours,
+     each stacked a few millimetres over the last, in a polygon-offset
+     material, so neither the ground nor each other fight them for depth.
+     They take shadows but cast none. At the reference spot the chase view draws 232k triangles in 247 draw calls, against 199k in 277 on a Forest stage.
+
+218. **2026-11-11 — Autumn trees in more shapes and colours.** By request,
+     after a stock low-poly autumn illustration the user shared, used only
+     as a reference for shapes and colours: nothing from it is in the
+     project. The Autumnal palette gains an `autumn` mix (six conifer, six
+     broadleaf and four bush colours, from evergreen and olive through gold
+     and orange to rust and crimson). Where a palette has one, `autumnKits`
+     replaces the two-tone pine, broadleaf and bush kits: conifers take one
+     of three silhouettes (the cone pine, a three-tier fir, a flame-shaped
+     lathe spire) and broadleaves one of three crowns (round, a tall oval,
+     two flattened domes), each tree's shape and colour picked by a hash of
+     its spot, so nothing in the scatter (and no tree's place) changes and a
+     tree keeps its look between visits. All silhouettes are sized like the
+     stock ones, so the shared trunk kit fits them. Six tree kits instead of
+     two add a few draw calls per chunk (259 against 247 at the reference
+     spot). The tree shapes moved to `TreeGeometry.ts`, the autumn kits to
+     `AutumnKits.ts`.
+
+219. **2026-11-11 — The Autumnal lane on a bank.** By request: the road
+     slightly raised, its edges falling away on both sides. A region can set
+     `terrain.embankment` (height, width); the Autumnal sets 0.55 m over
+     2.4 m. `TerrainField.bankDrop(beyond)` is the fall a given distance past
+     the carriageway's edge (a smoothstep from 0.3 m out), and it is applied
+     the same way in three places so they can't disagree: the terrain bed
+     (`sample`), the surface the wheels ride (`deckAt`, so leaving the road
+     goes down the bank), and the road mesh's verge strips, whose vertices
+     drop by it (`RoadBuilder`). It fades out as the ground blends into the
+     hills further out and, like the verges, through a town's fade, and is
+     absent beside side streets. Down a curving bank the 2 m terrain mesh
+     strays further from the strip's straight bands, so the verge bed (213)
+     sinks twice as deep there, 30 cm. `vergeBed.test.ts` now measures the
+     mesh against the sloping strip and checks the bank's fall for the
+     wheels.
+
+220. **2026-11-11 — A reload prompt for windows left open.** An installed
+     app or tab loads the current deploy each time it opens (the page is
+     `max-age=0, must-revalidate`, and there is no service worker), but a
+     window left open keeps running the version it loaded, which can also
+     fall out of step with the API. `next.config.ts` stamps each build with
+     `NEXT_PUBLIC_BUILD_ID` (Vercel's deployment ID, else the commit, else a
+     timestamp), inlined into both the client bundle and
+     `GET /api/version` (dynamic, `no-store`). `UpdatePrompt`, mounted in the
+     root layout so it covers every page, asks that route when the page
+     comes back into view or focus and every 5 minutes; when the IDs differ
+     it shows "There's a new version available, please reload." with Reload
+     (`location.reload()`; a solo game's autosave flushes on `pagehide`) and
+     Later. A failed or junk answer counts as no news. Chosen over a service
+     worker, which would add offline caching the game doesn't need and its
+     own update lifecycle to manage.
+
+221. **2026-11-11 — Gantry posts follow the ground; the banner casts a
+     shadow.** By report. A gantry was set at the road centre's height with
+     fixed 4.4 m posts 2.2 m past the road's edges, which on the Autumnal
+     bank (219) left their feet about half a metre above the falling ground.
+     Each post is now built to reach the ground under its own foot, 15 cm
+     into it, whatever the bank or cut beside the road. The chequered
+     banner meshes now cast shadows like the posts. The reload prompt (220)
+     is as wide as the splash's mode card (`max-w-md`), with more space
+     between Later and Reload.
+
+222. **2026-11-11 — Pinewood as a dense pine wood.** By request, after a
+     low-poly forest screenshot the user shared, used only as a reference
+     for the look (tall bare trunks under tiered, drooping boughs; a dense
+     wood up to the path): nothing from it is in the project. Pinewood gets
+     its own palette and scenery instead of sharing the Forest's. **Pines**
+     (`pineKits`, when a palette has `pines`): two bough pines in
+     `TreeGeometry` (six sparse tiers from 3.4 m, or seven fuller ones from
+     2.8 m, each a low hexagonal skirt turned and tipped a little out of
+     true, under a slim crown) on their own 9.6 m tapering trunk in a
+     reddish bark; the shared trunk kit turns pines away there. Shape and
+     green (five tones) are picked by the tree's spot. **Wood**: new density
+     options, all unset elsewhere: `clearance` 1.6 m from the road's edge
+     (3 m by default) and `meanOffset` 12 m (28) put the wood at the verges;
+     `treeScale` 1.25 and `treeStretch` 1.15 make the pines bigger and
+     taller; `crowding` 0.55 lets neighbours stand at that share of their
+     canopy spacing, since bigger canopies under the old spacing fit fewer
+     trees than before; pines 320 per 100 m (110), broadleaves 12 (26).
+     The canopy-overlap test honours a region's crowding. **Cost**: the
+     densest chase view measured about 358k triangles in 280 draw calls
+     (a Forest stage about 200k), at 60 fps on the dev machine; worth a
+     look on low-end phones, where `sceneryRadius` or the density could
+     come down.
+
+223. **2026-11-11 — Detailed Pinewood pines.** By request, the bough pines
+     (222) read as plain stacked cones; after two reference images (stock and
+     3D-model previews, used for the look only, nothing copied) they become
+     two hand-built silhouettes in `TreeGeometry`. A **frond pine**: six
+     tiers of separate blades (eight low, six high) round the trunk, each
+     folded along its middle and forked at its tip, over a small cone core
+     per tier and under a thin spike. A **plated pine**: six tiers whose hems
+     zigzag between full reach low down and 80 % tucked up, so each tier
+     reads as faceted plates overhanging the next. The blades are single
+     faces, so the pine foliage material is double-sided. `merge` now drops
+     UVs (the trees are flat-shaded and untextured) so hand-built triangles
+     merge with library cones. **Cost**: a frond pine is about 250
+     triangles, a plated one about 110; the densest chase view went from
+     about 358k to 509k triangles at the same ~255 draw calls, still 60 fps
+     on the dev machine. If phones struggle, the next step is a level of
+     detail: far chunks drawing the old plain pines. In the isometric view
+     the tall, dense wood can hide the car where trees overhang the road.
+
+224. **2026-11-11 — Pine fronds with volume, low boughs, saplings and a
+     level of detail.** By request, with two more reference images and the
+     `context/pines` GLB pack (a Sketchfab Standard-licence model pack,
+     read for structure only: about 500 faces a tree, flat double-sided
+     frond strips, a flat palette texture; nothing from it ships, and
+     `context/` stays untracked). `PineGeometry.ts` now builds the pines
+     face by face with a colour per corner: a ramp from dark at a bough's
+     root to light, slightly warm green at its tips, which the instance's
+     green multiplies, so each tier reads as a rounded mass. **Frond pine**:
+     seven tiers of eight outer blades (fewer up the tree) and an inner ring
+     of four shorter, steeper ones, each blade a folded four-face point
+     (first drafted as a six-face forked blade, simplified by request).
+     **Low-boughed pine**: the same blades from 1.75 m, drooping to about
+     half a metre off the ground, so a run of trunk always shows (a first
+     draft swept the ground and read as sinking into it). **Plated pine**:
+     the zigzag tiers with the same ramp. Shapes split 45/25/30 % by spot.
+     **Saplings**: a new `sapling` prop and density (`saplings`, 70 per
+     100 m in Pinewood), the low-boughed pine at a quarter to half size,
+     from 0.7 m past the road's edge and mostly within 4 m, brushed
+     through like bushes (no collider); drawn from the scatter's stream only
+     where a region asks, so other regions' placement is untouched.
+     **Level of detail**: `KindKit.lod` marks a kit `near` or `far`, and
+     `SceneryChunkManager` draws near kits only in chunks whose centre lies
+     within `sceneryDetailRadius` (110 m) of the car and far kits beyond,
+     rebuilding a chunk when it crosses (16 m of hysteresis). Pinewood's far
+     pines are four-cone stand-ins in the same outline and ramp (about a
+     tenth of the faces), and saplings are near-only. Cost at the busiest
+     chase view: about 0.6M triangles (1.4M before the level of detail and
+     the simpler blades), ~290 draw calls, 60 fps on the dev machine.
+
+225. **2026-11-11 — Pines only, trunks inside their crowns, curved.** By
+     report: one 9.6 m trunk served every pine shape, so it stuck out above
+     the shorter ones' crowns (and every sapling). `PineGeometry` now gives
+     each shape (`frond`, `low`, `plated`; `PINE_SHAPES`) its own foliage,
+     trunk and far stand-in through `pineFoliage`, `pineTrunk` and
+     `pineStandIn`. A trunk ends a metre or more below its crown's spike,
+     which was made taller to cover it, and `PineKits` pairs each shape with
+     its own trunk kit by the same spot pick. By request the trunks curve:
+     each shape carries a fixed sideways bend (0.3–0.55 m at the top,
+     growing with the square of the height) applied alike to its trunk (in
+     four segments), its foliage and its stand-in, so they stay together;
+     the instance heading turns the lean every way. Pinewood's broadleaf
+     density is now 0: the wood is pines only. A try at the references'
+     long square-ended hanging strips was turned down in favour of the
+     pointed folded blades of 224, which stay at four faces. Cost at the
+     busiest chase view: about 0.7M triangles, ~310 draw calls (three trunk
+     kits instead of one), 60 fps on the dev machine.
+
+226. **2026-11-11 — One pine for the whole wood.** By request, every
+     Pinewood pine is now the frond pine of pointed, folded blades (224),
+     in its two builds: tall, with its tiers high on a bare trunk (60 %),
+     and low-boughed (40 %, and every sapling). The plated pine is gone, so
+     `PINE_SHAPES` is `frond` and `low` and the kits are two foliage, two
+     stand-in and two trunk kits. Frond pines carry more faces than the
+     plated one, so the busiest chase view rose to about 0.77M triangles
+     (from 0.7M) at ~285 draw calls, still 60 fps on the dev machine.
+
+227. **2026-11-11 — Pines rebuilt after the reference pack's shape.** By
+     request (the pointed blades read too spiky), measured from
+     `context/pines` (Sketchfab Standard licence; analysed with a script for
+     proportions only, no vertex copied, nothing shipped). Its ten trees
+     carry 2–8 foliage tiers each, every tier one open cone: an apex on the
+     trunk and a 10- or 16-point hem about 45° below (drop ≈ 1–1.25 × reach),
+     reach varying a few per cent and a quarter of the points hanging
+     0.15–0.3 m lower; tiers overlap by about half, shrink from about 2.4 m
+     reach to 0.65 m, and the top tier is the tip. Foliage is only 12–32
+     faces a tier; the trunk carries the rest. `PineGeometry` now stacks
+     such umbrella tiers (`tier`, `stacked`) with the root-to-hem colour
+     ramp in three builds after the pack's: **full** (eight tiers from 4.6 m
+     to a 10.7 m tip, 14-point hems), **sparse** (two tiers low, bare trunk,
+     three small tiers at the top, 10 points) and **young** (four tiers, the
+     lowest hem about 0.7 m up, 12 points; also the saplings). Shapes split
+     40/25/35 % by spot; stand-ins are the same tiers with six-point hems;
+     trunks end inside the top tier and keep their bend. About 110 faces a
+     full pine: the busiest chase view fell from 0.77M to about 0.41M
+     triangles at ~300 draw calls.
+
+228. **2026-11-11 — Pines spaced by their reach, tall by the road, a deep
+     wood and tall grass.** By request, pines must not grow into each other
+     or over the road, the roadside ones must show their lower trunks, the
+     wood must run into the distance, and tall grass should line the road.
+     `SceneryDensity.treeReach` (2.6 m, the full pine's widest hem) now
+     sizes Pinewood pines and saplings in the canopy grid with `crowding` 1,
+     and every bough keeps `ROAD_GAP` (0.3 m) clear of the road edge. The
+     canopy grid stores each canopy's radius and searches as many cells as
+     the two widest canopies could span; its fixed one-cell search had
+     missed overlaps between wide canopies. Pines within
+     `tallByRoad.band` (6 m) of any stretch of road are marked `Prop.tall`,
+     spaced by the sparse build's 1.8 m reach, and drawn as that build, so
+     their trunks are bare to about 3 m. `deepWood` (140 per 100 m) adds
+     pines spread evenly from 12 m out to the scatter's 160 m limit; both
+     entries exist only for Pinewood, so other regions' draws do not shift.
+     With no overlap the wood holds fewer, larger pines (about 600 per km
+     against the Forest's 1,000), but their canopy covers about 2.5 times the
+     ground, which is what the density test now measures, along with pines
+     within 8 m of the road. Tall grass is a pure scatter (`TallGrass.ts`,
+     its own `grass` random stream, 420 clumps per 100 m from 0.5 m past
+     the edge and thinning out within a few metres, clear of trunks), drawn
+     by a near-only kit of 13 double-sided two-segment blades tinted from
+     the region's grass, with no cast shadows, behind a `tallGrass` render
+     option. The busiest chase view is about 0.32M triangles at 60 fps.
+
+229. **2026-11-11 — Pine builds chosen by the scatter; grass in drifts.**
+     By request, the wood should be denser and most pines fuller, and the
+     tall grass should look scattered rather than like round tufts. The
+     scatter now picks each pine's build (`Prop.pine`: full, tall, sparse
+     or young) from `SceneryDensity.pineWood`, so it can space each pine by
+     its own reach (2.6, 2.35, 1.8 and 2.0 m at scale 1) instead of the
+     widest build's. Before, the renderer picked the build from a spot hash
+     and the scatter had to assume the worst. A new **tall** build (eight
+     tiers like the full pine, the lowest hem about 3.5 m up) replaces the
+     sparse pine along the road, so the roadside trunks show and the
+     crowns stay leafy. Away from the road the mix is 60 % full, 15 % tall,
+     17 % young and 8 % sparse. Attempts rose to 720 per 100 m of road and
+     the deep wood to 220. A grass prop is now a loose patch: 20 blades
+     around three sub-tufts spread along the wind over about 1.5 m, a
+     quarter of them short. Every patch on a stage leans with one wind
+     (±0.5 rad) and varies in size and height (`stretch`). Two waves along
+     each side of the road thicken and thin the patches into drifts with
+     bare stretches between (`grass` 600 attempts, about 60 % kept). The
+     busiest chase view is about 0.38M triangles at 60 fps.
+
+230. **2026-11-11 — Pine stand-ins that keep their shape, detail by chunk
+     edge.** The user saw Pinewood pines popping as they drove. There were
+     two causes. The far stand-in was built with six-point hems from the
+     same seeded stream as the near pine, but it drew fewer random numbers
+     a tier, so every later tier came out turned, nudged and sagging
+     differently: a pine visibly changed shape at the swap. And the swap
+     went by chunk centre (110 m) with 96 m chunks, so pines only about
+     40 m away could swap. Now `tier` always draws the full hem and the
+     stand-in (`stride` 2) skips every other point of that same hem. The
+     stand-in has half the faces, with corners, lean, heights and colours
+     identical to the near pine, and a test checks every corner. The
+     detail radius now measures to the chunk's nearest edge
+     (`SceneryChunkManager.edgeDistance`) and is 70 m, so nothing within
+     70 m is ever a stand-in. That loads about the same number of detailed
+     chunks as before: the busiest chase view stays about 0.38M triangles
+     at 60 fps.
+
+231. **2026-11-11 — Tall grass over the hills, never over the road or a
+     crowd; no bushes in Pinewood.** The user saw grass blades leaning over
+     the road's edge line. Only a patch's centre had been kept off the road,
+     but its blades reach up to `GRASS_REACH` (1.5 m at scale 1; a test
+     holds the geometry to it). Now every patch keeps its whole reach plus
+     0.2 m clear of every stretch of road, and the verge layer starts from
+     that margin. A `BlockerGrid` keeps patch centres off tree trunks as
+     before, and keeps whole patches clear of spectators, rocks, houses and
+     the crowds' mounds. A second layer, `SceneryDensity.meadow` (900
+     patches per 100 m of road), spreads grass evenly from 4 m to 150 m out
+     over the hills. Both layers go through the same drift field, now
+     two-dimensional crossed waves, so the grass gathers in drifts with
+     bare ground between. Grass now draws far off too: a far kit made of
+     every third blade of the same patch (`tallGrassStandIn`), so it never
+     changes shape at the swap. Pinewood's round bushes are gone
+     (`bushes: 0`). The busiest chase view rose to about 0.48M triangles,
+     still at 60 fps.
+
+232. **2026-11-11 — Faint wheel traces and loose stones on gravel.** By
+     request, the Pinewood gravel road should show subtle tyre traces, much
+     fainter than the mud ruts, and some variation along it, after a
+     reference photo of a gravel track. Gravel (only Pinewood) now uses the
+     rut bands the snow and mud roads already had, with its own
+     `RutProfile`: 2 cm deep (visual only, like every rut; the car still
+     drives the deck), the packed tracks 6–14 % darker and the loose gravel
+     between and beside them 6 % lighter. A new `fade` scales those tones
+     along the road from a quarter to full over tens of metres, so the
+     traces come and go. `Strip.tone` may therefore be a function of the
+     station. `GravelStoneBuilder` strews about three stones a metre: flat
+     faceted octahedra 5–17 cm across in five greys, half of them along
+     the edges (a few over them onto the verge), a quarter on the hump
+     between the tracks and the rest anywhere. They are half sunk,
+     instanced in 100 m pieces so stretches out of view are culled, cast no
+     shadow, and are skipped in town. They sit behind the `roadStones`
+     render option and add about 8 draw calls and 10k triangles in view.

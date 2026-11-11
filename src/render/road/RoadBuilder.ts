@@ -144,10 +144,23 @@ const MUD_RUT_TONE = [1, 0.85, 0.68, 0.85] as const;
 interface RutProfile {
   depth: number;
   tone: readonly [number, number, number, number];
+  /** 0..1 along the road: how plainly the tracks show there (1 when unset): its tones ease to 1 as it falls. */
+  fade?: (k: number) => number;
 }
 
 const SNOW_RUTS: RutProfile = { depth: RUT_DEPTH, tone: SNOW_RUT_TONE };
 const MUD_RUTS: RutProfile = { depth: MUD_RUT_DEPTH, tone: MUD_RUT_TONE };
+/**
+ * Gravel keeps only faint tyre traces: a shallow pair a few shades darker
+ * where the wheels have packed the stones, and the loose gravel between and
+ * beside them a shade lighter. They come and go over tens of metres, plain
+ * in places and almost gone in others.
+ */
+const GRAVEL_RUTS: RutProfile = {
+  depth: 0.02,
+  tone: [1.06, 0.94, 0.86, 0.94],
+  fade: (k) => 0.25 + 0.75 * smoothstep(0.3, 0.7, driftNoise(k, 14, 97)),
+};
 
 function rutStrips(base: Strip, profile: RutProfile): Strip[] {
   const centre = (k: number) => (driftNoise(k, RUT_PERIOD, 31) - 0.5) * 2 * RUT_WANDER;
@@ -178,18 +191,30 @@ function rutStrips(base: Strip, profile: RutProfile): Strip[] {
   const out: Strip[] = [];
   for (let n = -1; n < 8; n++) {
     const band = (n + 1) % 4;
+    const tone = profile.tone[band]!;
+    const fade = profile.fade;
     out.push({
       ...base,
       a: cut(n),
       b: cut(n + 1),
       dip: dips[band]!,
-      tone: profile.tone[band]!,
+      tone: fade ? (k) => 1 + (tone - 1) * fade(k) : tone,
     });
   }
   return out;
 }
 
-/** One muddy tyre groove near a road edge, using the centre tracks' uneven width, wander and tread shade. */
+/**
+ * How far the centre pair's outer walls can ever reach from the centre line:
+ * the gauge, the pair's wander, a groove's own stray and half its widest swell.
+ */
+const CENTRE_RUT_REACH = RUT_GAUGE / 2 + RUT_WANDER + RUT_STRAY + (RUT_WIDTH * (1 + RUT_SWELL)) / 2;
+
+/**
+ * One muddy tyre groove near a road edge, using the centre tracks' uneven
+ * width, wander and tread shade. It keeps outside the centre pair's reach,
+ * so on a narrow lane the two never overlap.
+ */
 function mudEdgeTrack(base: Strip, profile: RutProfile, side: 1 | -1): Strip[] {
   const salt = side > 0 ? 307 : 419;
   const widthAt = (k: number) =>
@@ -199,7 +224,7 @@ function mudEdgeTrack(base: Strip, profile: RutProfile, side: 1 | -1): Strip[] {
     const wander = (driftNoise(k, RUT_PERIOD, salt + 17) - 0.5) * 2 * RUT_WANDER * 0.7;
     const distance = Math.min(
       hw - width / 2 - 0.12,
-      Math.max(RUT_GAUGE / 2 + width / 2, hw - width / 2 - 0.25 + wander),
+      Math.max(CENTRE_RUT_REACH + width / 2, hw - width / 2 - 0.25 + wander),
     );
     return side * distance;
   };
@@ -256,7 +281,8 @@ interface Strip {
   rise?: number;
   /** Heights of the `a` and `b` edges below the strip's lift (a rut's walls and floor), and a shade on its colour. */
   dip?: readonly [number, number];
-  tone?: number;
+  /** A shade on the strip's colour, fixed or varying along the road (by station sample index). */
+  tone?: number | ((k: number) => number);
   blendFromRoad?: boolean;
 }
 
@@ -306,8 +332,10 @@ export class RoadBuilder {
       mesh.receiveShadow = true;
       this.group.add(mesh);
     }
-    // A sand piste is marked by nothing but its own colour, and a circuit by its kerbs and barriers.
-    if (stage.surface !== 'sand' && !stage.circuit) this.buildMarkers(stage, field);
+    // A sand piste is marked by nothing but its own colour, a circuit by its kerbs and barriers, and
+    // an Autumnal mud lane by its fading verges and crowds: none of them has verge posts.
+    const posts = stage.surface !== 'sand' && !stage.circuit && stage.stageType !== 'autumnal';
+    if (posts) this.buildMarkers(stage, field);
   }
 
   dispose(): void {
@@ -514,14 +542,17 @@ export class RoadBuilder {
       strips.splice(stripIndex, 1, ...bands);
     }
     // Arctic snow and Autumnal mud keep the wheel ruts from cars before: two wandering grooves
-    // cut into the road, with the mud tracks deeper and darker than the packed-snow pair.
+    // cut into the road, with the mud tracks deeper and darker than the packed-snow pair; gravel
+    // keeps only faint, fading traces of them.
     const roadBase = strips[0]!;
     const ruts =
       stage.surface === 'mud'
         ? MUD_RUTS
         : drifts && road.getHex() === dust.getHex()
           ? SNOW_RUTS
-          : null;
+          : stage.surface === 'gravel'
+            ? GRAVEL_RUTS
+            : null;
     if (ruts) {
       const tracks = rutStrips(roadBase, ruts);
       if (stage.stageType === 'autumnal') {
@@ -537,13 +568,20 @@ export class RoadBuilder {
     const vertex = (st: Station, e: number, strip: Strip, raise = 0, dip = 0) => {
       const t = strip.town !== undefined && town !== undefined ? townFade(town, st.d) : 0;
       const rutBlend = 1 - t;
+      // A built-up road's verges slope down its bank with the ground (none in town).
+      const bank =
+        strip.side !== undefined && strip.rise === undefined
+          ? field.bankDrop(Math.abs(e) - st.hw) * (1 - t)
+          : 0;
       const y =
         st.y +
         strip.lift +
         (t > 0 ? (strip.town!.lift - strip.lift) * t : 0) +
         raise * t -
-        dip * rutBlend;
-      const shade = (strip.shaded ? st.shade : 1) * (1 + ((strip.tone ?? 1) - 1) * rutBlend);
+        dip * rutBlend -
+        bank;
+      const tone = typeof strip.tone === 'function' ? strip.tone(st.k) : (strip.tone ?? 1);
+      const shade = (strip.shaded ? st.shade : 1) * (1 + (tone - 1) * rutBlend);
       const c = strip.cover
         ? tint.copy(strip.color).lerp(dust, strip.cover(st.k) * (1 - t))
         : tint.copy(strip.color);

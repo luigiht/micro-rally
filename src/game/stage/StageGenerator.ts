@@ -406,15 +406,13 @@ export function generateStage(
   const { surface, length } = brief;
   const twist = def.twistiness * (1 + 0.15 * Math.min(loop, 4));
   // The corniche is a lane wider: dark tarmac between pale verges reads narrower than a gravel
-  // road whose shoulders blend into it. A city's base width is its widest boulevard; every
-  // narrower street is a narrowing of it (see `buildWidths`).
+  // road whose shoulders blend into it, and the Autumnal mud lane narrower still. A city's base
+  // width is its widest boulevard; every narrower street is a narrowing of it (see `buildWidths`).
   const halfWidth = def.urban
     ? def.urban.lanes.four
     : def.coast
       ? 5.5
-      : surface === 'tarmac'
-        ? 4.5
-        : 4;
+      : (def.roadHalfWidth ?? (surface === 'tarmac' ? 4.5 : 4));
   const total = START_DISTANCE + length + RUNOUT;
   // The town draws from its own seed so the brief and the walk keep their streams. The walk is
   // rebuilt with the plan mirrored if the town fouls the open road around it, and without a town

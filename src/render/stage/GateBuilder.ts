@@ -16,6 +16,8 @@ import type { GateTheme, ThemeColor } from '../theme/WorldTheme';
 
 const HEIGHT = 4.4;
 const POST = 0.35;
+/** Gantry posts sink this far into the ground at their feet, so a slope never shows a gap. */
+const POST_SINK = 0.15;
 /** The gantry's banner: a chequer two squares tall, this tall and deep. */
 const BANNER = { height: 0.9, depth: 0.3 } as const;
 
@@ -254,13 +256,18 @@ export class GateBuilder {
   ) {
     const s = { x: 0, z: 0, heading: 0 };
     stage.path.sample(along, s);
+    const base = field.heightAt(s.x, s.z);
     const arch = new Group();
-    arch.position.set(s.x, field.heightAt(s.x, s.z), s.z);
+    arch.position.set(s.x, base, s.z);
     arch.rotation.y = s.heading;
-    const postGeo = this.box(POST, HEIGHT, POST);
     for (const side of [-1, 1]) {
-      const post = new Mesh(postGeo, this.material(this.theme.post));
-      post.position.set(side * half, HEIGHT / 2, 0);
+      // Each post reaches down to the ground at its own foot (lower down a built-up road's bank,
+      // higher on a cut), sunk a little into it, so the gantry never stands on air.
+      const fx = s.x + Math.cos(s.heading) * side * half;
+      const fz = s.z - Math.sin(s.heading) * side * half;
+      const foot = field.heightAt(fx, fz) - base - POST_SINK;
+      const post = new Mesh(this.box(POST, HEIGHT - foot, POST), this.material(this.theme.post));
+      post.position.set(side * half, (HEIGHT + foot) / 2, 0);
       post.castShadow = true;
       arch.add(post);
     }
@@ -289,9 +296,12 @@ export class GateBuilder {
             0,
           ),
         );
-    this.theme.chequer.forEach((color, i) =>
-      arch.add(new Mesh(this.merged(squares[i]!), this.material(color))),
-    );
+    // The banner throws its shadow across the road with the posts'.
+    this.theme.chequer.forEach((color, i) => {
+      const mesh = new Mesh(this.merged(squares[i]!), this.material(color));
+      mesh.castShadow = true;
+      arch.add(mesh);
+    });
   }
 
   /** Static from here on: bake the matrices once and add the group. */

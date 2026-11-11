@@ -10,6 +10,8 @@ export interface KindKit {
   /** Per-instance colours, one per variant (`variant % length`); null = material colour. */
   tint: readonly Color[] | null;
   castShadow: boolean;
+  /** Takes the trees' shadows (ground cover); off unless set. */
+  receiveShadow?: boolean;
   /** Geometry carries its own colours (multiplied by the tint). */
   vertexColors?: boolean;
   /** Take only some of the source props (flower boxes on some houses, one tower in three trees). */
@@ -18,13 +20,30 @@ export interface KindKit {
   place?: (p: Prop, dummy: Object3D) => void;
   /** Per-instance colour computed from the prop, in place of `tint`. */
   colorAt?: (p: Prop, out: Color) => void;
+  /**
+   * Level of detail: a `near` kit draws only in chunks near the camera
+   * target, a `far` one only beyond them (a cheap stand-in); unset, both.
+   */
+  lod?: 'near' | 'far';
+}
+
+/** A chunk switches back to `near` inside the radius and to `far` this far beyond it, so it never flickers. */
+const LOD_MARGIN = 16;
+
+interface LiveChunk {
+  meshes: InstancedMesh[];
+  cx: number;
+  cz: number;
+  near: boolean;
 }
 
 /** Instanced, chunked roadside props, drawn with whichever kits the theme supplies; owns and disposes the kits. */
 export class SceneryChunkManager {
   readonly group = new Group();
   private readonly buckets = new Map<number, Prop[]>();
-  private readonly live = new Map<number, InstancedMesh[]>();
+  private readonly live = new Map<number, LiveChunk>();
+  private x = Number.NaN;
+  private z = Number.NaN;
   private readonly streamer: ChunkStreamer;
   private readonly dummy = new Object3D();
   private readonly color = new Color();
@@ -32,8 +51,13 @@ export class SceneryChunkManager {
   constructor(
     props: readonly Prop[],
     private readonly kits: readonly KindKit[],
-    size: number,
+    private readonly size: number,
     radius: number,
+    /**
+     * Chunks any part of which lies within this of the target draw their
+     * `near` kits, so nothing closer than this ever shows a stand-in.
+     */
+    private readonly nearRadius = Infinity,
   ) {
     this.group.name = 'scenery';
     for (const p of props) {
@@ -46,7 +70,26 @@ export class SceneryChunkManager {
   }
 
   update(x: number, z: number): void {
+    this.x = x;
+    this.z = z;
     this.streamer.update(x, z);
+    if (this.nearRadius === Infinity) return;
+    // A chunk crossing the detail radius is rebuilt with the other kits (rare: a few a second at speed).
+    for (const [key, chunk] of this.live) {
+      const d = this.edgeDistance(chunk.cx, chunk.cz);
+      const near = chunk.near ? d < this.nearRadius + LOD_MARGIN : d < this.nearRadius;
+      if (near === chunk.near) continue;
+      this.unload(key);
+      this.load(chunk.cx, chunk.cz, key);
+    }
+  }
+
+  /** Distance from the target to the nearest point of a chunk's square (0 inside it). */
+  private edgeDistance(cx: number, cz: number): number {
+    if (Number.isNaN(this.x)) return 0;
+    const dx = Math.max(cx * this.size - this.x, 0, this.x - (cx + 1) * this.size);
+    const dz = Math.max(cz * this.size - this.z, 0, this.z - (cz + 1) * this.size);
+    return Math.hypot(dx, dz);
   }
 
   dispose(): void {
@@ -57,11 +100,13 @@ export class SceneryChunkManager {
     }
   }
 
-  private readonly load = (_cx: number, _cz: number, key: number): void => {
+  private readonly load = (cx: number, cz: number, key: number): void => {
     const props = this.buckets.get(key);
     if (!props) return;
+    const near = this.edgeDistance(cx, cz) < this.nearRadius;
     const meshes: InstancedMesh[] = [];
     for (const kit of this.kits) {
+      if (kit.lod && (kit.lod === 'near') !== near) continue;
       const items = props.filter((p) => kit.sources.includes(p.kind) && (kit.accept?.(p) ?? true));
       if (items.length === 0) continue;
       const mesh = new InstancedMesh(kit.geometry, kit.material, items.length);
@@ -70,6 +115,7 @@ export class SceneryChunkManager {
         // Heading first, then any pitch about the prop's own x axis.
         this.dummy.rotation.set(p.pitch ?? 0, p.rotation, 0, 'YXZ');
         this.dummy.scale.setScalar(p.scale);
+        if (p.stretch) this.dummy.scale.y *= p.stretch;
         kit.place?.(p, this.dummy);
         this.dummy.updateMatrix();
         mesh.setMatrixAt(i, this.dummy.matrix);
@@ -85,18 +131,18 @@ export class SceneryChunkManager {
         }
       });
       mesh.castShadow = kit.castShadow;
-      mesh.receiveShadow = false;
+      mesh.receiveShadow = kit.receiveShadow ?? false;
       mesh.computeBoundingSphere();
       meshes.push(mesh);
       this.group.add(mesh);
     }
-    this.live.set(key, meshes);
+    this.live.set(key, { meshes, cx, cz, near });
   };
 
   private readonly unload = (key: number): void => {
-    const meshes = this.live.get(key);
-    if (!meshes) return;
-    for (const m of meshes) {
+    const chunk = this.live.get(key);
+    if (!chunk) return;
+    for (const m of chunk.meshes) {
       this.group.remove(m);
       m.dispose();
     }

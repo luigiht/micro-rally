@@ -3,6 +3,7 @@ import { Analytics } from '@vercel/analytics/next';
 import localFont from 'next/font/local';
 import { en } from '@/i18n/messages/en';
 import { AUTHOR, SITE_URL } from '@/lib/site';
+import { UpdatePrompt } from '@/components/update/UpdatePrompt';
 import './globals.css';
 
 /**
@@ -136,6 +137,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en" className={pixelFont.variable}>
       <body className="font-sans antialiased">
         {children}
+        <UpdatePrompt />
         <Analytics />
         <script
           type="application/ld+json"

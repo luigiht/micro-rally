@@ -109,6 +109,11 @@ flowchart LR
   draws it (`render/road/KerbBuilder.ts`, `BarrierBuilder.ts`,
   `CircuitDressingBuilder.ts` over `TrackMesh.ts`), each behind its own
   `StageRenderOptions` flag.
+- Road surface dressing (`render/road/RoadBuilder.ts`): snow, mud and
+  gravel roads cut the carriageway into wheel-track bands (`rutStrips`,
+  a `RutProfile` per surface: depth, tones, and for gravel a fade that lets
+  the traces come and go). `GravelStones.ts` strews instanced pebbles on a
+  gravel road in 100 m pieces, behind `StageRenderOptions.roadStones`.
 - Desert (`game/stage/Oases.ts`): `TerrainField.duneHeight` is the dune sea;
   `planOases` picks level hollows off the road from the stage seed,
   `scatterScenery` sinks them as pads and rings them with palms, and the
@@ -144,6 +149,12 @@ flowchart LR
   merges the garden walls, and `SceneryChunkManager` instances the building,
   flower-box and street-furniture kits (`render/scenery/BuildingGeometry.ts`,
   `CivicGeometry.ts`, `PlanterGeometry.ts`, `StreetFurnitureGeometry.ts`).
+  Kits can carry a level of detail (`lod: 'near' | 'far'`): chunks with any
+  part within `sceneryDetailRadius` (70 m) of the car draw the near kits (Pinewood's detailed
+  pines and saplings, `PineGeometry.ts`, `kits/PineKits.ts`, and its tall
+  grass, `game/stage/TallGrass.ts`, `TallGrassGeometry.ts`,
+  `kits/GrassKits.ts`), the rest the far stand-ins. The scatter picks each
+  Pinewood pine's build (`Prop.pine`), so it can space each by its reach.
 
 - Urban (`game/stage/UrbanPlan.ts`, `UrbanGenerator.ts`, `UrbanField.ts`,
   `Roundabout.ts`, `Tram.ts`): the city is a town that spans the stage.
@@ -249,6 +260,14 @@ flowchart LR
   and `SUPABASE_SERVICE_ROLE_KEY` are set, the file store otherwise, and none
   on Vercel without Supabase (the API answers 503 and saves stay on the
   device). See `docs/DEPLOY.md`.
+
+## Updates for open windows
+
+- Each build is stamped with `NEXT_PUBLIC_BUILD_ID` in `next.config.ts`
+  (Vercel deployment ID, else commit, else a timestamp); `GET /api/version`
+  answers the deployed one. `src/lib/updateCheck.ts` compares the two, and
+  `UpdatePrompt` (root layout) checks on focus, on becoming visible and
+  every 5 minutes, then offers Reload or Later.
 
 ## Multiplayer sessions
 

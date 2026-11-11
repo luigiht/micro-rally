@@ -23,7 +23,9 @@ stage of a dusk-running type, as the calendar does (`StageSlot`).
   a heading clamped to a main axis, so the road never self-crosses; checked
   against a self-approach rule (points 196 m apart along the road stay 50 m
   apart in space). The ribbon is 4 m half width on loose surfaces and 4.5 m
-  on tarmac, narrowing through old-town streets. 30 m of run-in before the
+  on tarmac (3 m on the Autumnal mud lane, a region's `roadHalfWidth`, which
+  also runs on a 0.55 m bank: its verges slope down to the ground on both sides),
+  narrowing through old-town streets. 30 m of run-in before the
   start gantry and 140 m of run-out after the finish.
 - **Gates.** `min(6, max(2, round(length / 450)))` checkpoints evenly spaced,
   kept out of towns and in order, plus the finish. Start and finish are
@@ -77,17 +79,17 @@ Each stage type has one fixed surface. The type selects the world, palette,
 scenery and handling; the surface remains the vehicle and road-rendering
 input.
 
-| Stage type | Surface | Character                                                |
-| ---------- | ------- | -------------------------------------------------------- |
-| Arctic     | snow    | near-white snow, spruce walls, bare birches, dusk stages |
-| Circuit    | track   | parkland racing, kerbs and gravel traps                  |
-| Autumnal   | mud     | autumn trees, roadside crowds, mud ruts and jumps        |
-| Pinewood   | gravel  | wooded gravel rally                                      |
-| Alpine     | snow    | frosted pines and sharper mountain bends                 |
-| Forest     | tarmac  | green woodland on asphalt                                |
-| Urban      | tarmac  | a city from start to finish                              |
-| Coastal    | tarmac  | limestone cliffs, beach and sea                          |
-| Desert     | sand    | dunes, palms and oases                                   |
+| Stage type | Surface | Character                                                                                                                                                                                                                            |
+| ---------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Arctic     | snow    | near-white snow, spruce walls, bare birches, dusk stages                                                                                                                                                                             |
+| Circuit    | track   | parkland racing, kerbs and gravel traps                                                                                                                                                                                              |
+| Autumnal   | mud     | tall mixed autumn woods, fallen leaves, crowds, ruts                                                                                                                                                                                 |
+| Pinewood   | gravel  | faint wheel traces and loose stones on the gravel, a dense pine wood, curved trunks, tall bare-trunked pines and saplings on the verges, tall grass on the verges and the hills, no round bushes, the wood running into the distance |
+| Alpine     | snow    | frosted pines and sharper mountain bends                                                                                                                                                                                             |
+| Forest     | tarmac  | green woodland on asphalt                                                                                                                                                                                                            |
+| Urban      | tarmac  | a city from start to finish                                                                                                                                                                                                          |
+| Coastal    | tarmac  | limestone cliffs, beach and sea                                                                                                                                                                                                      |
+| Desert     | sand    | dunes, palms and oases                                                                                                                                                                                                               |
 
 Three types grip harder than their surface alone (`handling.grip`, read
 into the sim's `gripScale`): the Arctic's studded tyres 1.45×, the

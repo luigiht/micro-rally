@@ -1,4 +1,4 @@
-import { Mesh, type MeshStandardMaterial, type Object3D } from 'three';
+import { Box3, Mesh, Vector3, type MeshStandardMaterial, type Object3D } from 'three';
 import { describe, expect, it } from 'vitest';
 import {
   CONTROL_BOARD_LEAD,
@@ -32,6 +32,38 @@ describe('the start and finish gates', () => {
       meshesOf(gates.group, themeHex(c).slice(1).toLowerCase());
     return { gates, theme, find };
   };
+
+  it('stand the gantry posts on the ground down a built-up road’s bank, and shadow the banner too', () => {
+    const stage = generateStage(1, stageIndexOf('autumnal'));
+    const field = new TerrainField(stage);
+    const theme = dayTheme(STAGE_TYPES.autumnal).gates;
+    const gates = new GateBuilder(stage, field, theme);
+    gates.group.updateMatrixWorld(true);
+    const posts = meshesOf(gates.group, themeHex(theme.post).slice(1).toLowerCase()).filter(
+      (m) =>
+        m.geometry.type === 'BoxGeometry' &&
+        (m.geometry as never as { parameters: { height: number } }).parameters.height > 3,
+    );
+    expect(posts.length).toBeGreaterThanOrEqual(4);
+    const box = new Box3();
+    for (const post of posts) {
+      box.setFromObject(post);
+      const centre = box.getCenter(new Vector3());
+      // The foot is at or below the ground under it, never above.
+      expect(box.min.y).toBeLessThanOrEqual(field.heightAt(centre.x, centre.z) + 1e-6);
+      expect(box.min.y).toBeGreaterThan(field.heightAt(centre.x, centre.z) - 0.3);
+    }
+    // The banner: the chequer-coloured meshes up at the top of a gantry (the finish boards' flag signs stay flat and unshadowed).
+    const banners = theme.chequer
+      .flatMap((c) => meshesOf(gates.group, themeHex(c).slice(1).toLowerCase()))
+      .filter((m) => {
+        box.setFromObject(m);
+        const centre = box.getCenter(new Vector3());
+        return box.min.y > field.heightAt(centre.x, centre.z) + 3;
+      });
+    expect(banners.length).toBeGreaterThanOrEqual(4);
+    for (const m of banners) expect(m.castShadow).toBe(true);
+  });
 
   it('give an open stage’s start and finish each a pair of red-disc boards', () => {
     const { gates, theme, find } = build(stageIndexOf('pinewood'));

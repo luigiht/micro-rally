@@ -1,4 +1,5 @@
 import type { Surface } from '../vehicle/surfaces';
+import type { PineForm } from './SceneryScatter';
 import type { BuildingStyle } from './Town';
 
 export type StageTypeId =
@@ -26,6 +27,17 @@ export interface StagePalette {
   canopyAlt: string;
   trunk: string;
   boulder: string;
+  /**
+   * Autumn woods: each conifer, broadleaf and bush takes one of these colours
+   * (and the trees one of several silhouettes) instead of the two-tone tints.
+   */
+  autumn?: {
+    conifers: readonly string[];
+    broadleaves: readonly string[];
+    bushes: readonly string[];
+  };
+  /** Pine woods: each pine takes one of these greens and one of the detailed pine silhouettes. */
+  pines?: readonly string[];
 }
 
 export interface SceneryDensity {
@@ -44,6 +56,38 @@ export interface SceneryDensity {
   spectatorEventsOnly?: boolean;
   /** The crowds stand behind low earth berms. */
   berms?: boolean;
+  /** Trees and broadleaves stand this much taller (a vertical stretch on their scale): the Autumnal's tall woods. */
+  treeStretch?: number;
+  /** Pines (`tree` props) grow this much bigger all round, colliders included; 1 when unset. */
+  treeScale?: number;
+  /** Nearest any wild prop stands to the carriageway's edge, metres (3 when unset). */
+  clearance?: number;
+  /** Mean distance out from that clearance, metres (28 when unset): lower crowds the road. */
+  meanOffset?: number;
+  /** Trees may stand this share of their canopies' spacing apart (1 when unset): a crowded wood's foliage brushes. */
+  crowding?: number;
+  /** Small pines along the verges per 100 m of road, both sides (none when unset). */
+  saplings?: number;
+  /**
+   * A pine wood: each pine is one of the pine builds, spaced by that build's
+   * real bough reach (scale 1, metres; times `crowding`) and with every
+   * bough clear of the road. Within `roadside` metres of the road's edge
+   * every pine is the `tall` build, its trunk bare to above a car; further
+   * out the builds follow `mix` (shares summing to 1). Saplings are `young`.
+   */
+  pineWood?: {
+    reach: Readonly<Record<PineForm, number>>;
+    mix: Readonly<Partial<Record<PineForm, number>>>;
+    roadside: number;
+  };
+  /** More trees per 100 m of road, both sides, spread evenly from a dozen metres out into the distance (none when unset). */
+  deepWood?: number;
+  /** Patches of tall grass along the verges and nearby ground per 100 m of road, both sides (none when unset). */
+  grass?: number;
+  /** Patches of tall grass spread evenly over the hills either side, out to 150 m, per 100 m of road (none when unset). */
+  meadow?: number;
+  /** Clusters of fallen leaves on the ground per 100 m of road, both sides, plus a few under each broadleaf. */
+  leaves?: number;
 }
 
 /** A stage type with oases (see `Oases`): how often along the road, how wide the pool, how many palms. */
@@ -114,12 +158,16 @@ export interface StageTypeDef {
     frequency: number;
     dunes?: boolean;
     banks?: { height: number; width: number };
+    /** The road is built up on a bank: the ground falls this far over this width past its edges. */
+    embankment?: { height: number; width: number };
     crests?: { every: number; height: number; length: number };
   };
   /** How the car handles here, as multipliers on the sim's grip, steering rate and steering lock; 1 each when unset. */
   handling?: { grip: number; steer: number; lock: number };
   /** Road curviness 0..1. */
   twistiness: number;
+  /** The open road's half width (m), where it differs from its surface's (4.5 on tarmac, 4 elsewhere). */
+  roadHalfWidth?: number;
   baseLength: number;
   scenery: SceneryDensity;
   /** Average speed (m/s) a decent run should hold. */
@@ -154,6 +202,13 @@ const FOREST_AUTUMN: StagePalette = {
   foliageAlt: '#c48a2f',
   canopy: '#d8862c',
   canopyAlt: '#b7432a',
+  autumn: {
+    // Evergreen and olive firs among larches turning ochre, orange and rust.
+    conifers: ['#3d6e46', '#5f8a3c', '#a3a83a', '#c48a2f', '#d9772b', '#b8402e'],
+    // Gold, amber, orange, rust and crimson crowns.
+    broadleaves: ['#f0c64a', '#e8a32e', '#e07b26', '#c95a28', '#b23a2a', '#962d2d'],
+    bushes: ['#6d8f3e', '#a3a83a', '#d9952f', '#c4602a'],
+  },
 };
 
 const FOREST: StageTypeDef = {
@@ -175,6 +230,36 @@ const PINEWOOD: StageTypeDef = {
   ...FOREST,
   id: 'pinewood',
   surface: 'gravel',
+  // Detailed pines in five greens, from deep to sunlit.
+  palette: { ...FOREST_PALETTE, pines: ['#28543a', '#2f5e3c', '#3d6e46', '#4a7a45', '#5b8a4c'] },
+  // A dense pine wood the road cuts through: many tall pines standing close together right up to
+  // the verges, fewer broadleaves among them.
+  scenery: {
+    ...FOREST.scenery,
+    trees: 720,
+    // Pines only: no broadleaves or round bushes in the wood.
+    broadleaf: 0,
+    bushes: 0,
+    treeScale: 1.35,
+    treeStretch: 1.15,
+    clearance: 1.6,
+    meanOffset: 9,
+    // Each pine spaced by its build's real reach, so no two grow into each other and no bough
+    // hangs over the road; tall leafy pines line the road, trunks bare to well above the car;
+    // further out mostly full pines.
+    pineWood: {
+      reach: { full: 2.6, tall: 2.35, sparse: 1.8, young: 2 },
+      mix: { full: 0.6, tall: 0.15, young: 0.17, sparse: 0.08 },
+      roadside: 6,
+    },
+    // And the wood carries on out of sight, not just along the verges.
+    deepWood: 220,
+    crowding: 1,
+    saplings: 150,
+    grass: 600,
+    // Tall grass over the hills too, not only by the road.
+    meadow: 900,
+  },
 };
 
 const AUTUMNAL: StageTypeDef = {
@@ -182,11 +267,28 @@ const AUTUMNAL: StageTypeDef = {
   id: 'autumnal',
   surface: 'mud',
   palette: FOREST_AUTUMN,
-  terrain: { ...FOREST.terrain, crests: { every: 220, height: 0.75, length: 30 } },
+  // A built-up lane: the ground falls away 0.55 m across the verges on either side.
+  terrain: {
+    ...FOREST.terrain,
+    crests: { every: 220, height: 0.75, length: 30 },
+    embankment: { height: 0.55, width: 2.4 },
+  },
   // Mud tyres: 30 % more grip (just under gravel's), so the drive bites on the climbs instead of
   // spinning. Mud's own drag still holds the weakest cars back; steering is unchanged.
   handling: { grip: 1.3, steer: 1, lock: 1 },
-  scenery: { ...FOREST.scenery, spectators: 2.2, berms: true },
+  // A single-track mud lane, 6 m across: narrower than a village's old-town streets.
+  roadHalfWidth: 3,
+  // Taller, thicker autumn woods than the Forest's, with fallen leaves on the grass.
+  scenery: {
+    ...FOREST.scenery,
+    trees: 135,
+    broadleaf: 55,
+    bushes: 24,
+    treeStretch: 1.3,
+    leaves: 200,
+    spectators: 2.2,
+    berms: true,
+  },
 };
 
 /**

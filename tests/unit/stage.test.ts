@@ -1,8 +1,9 @@
+import { stageScenery } from '@/game/stage/regions';
 import { describe, expect, it } from 'vitest';
 import { CheckpointTracker, crossesGate, type Gate } from '@/game/stage/Checkpoints';
 import { createRoadHit, RoadPath } from '@/game/stage/RoadPath';
 import {
-  CANOPY_RADIUS,
+  canopyRadius,
   HOUSE_SLAB_TOP,
   propObstacles,
   scatterScenery,
@@ -179,6 +180,12 @@ describe('StageGenerator', () => {
     }
   });
 
+  it('narrows the Autumnal mud lane to 6 m, against 8 m of Pinewood gravel and 9 m of Forest tarmac', () => {
+    expect(generateStage(1, stageIndexOf('autumnal')).halfWidth).toBe(3);
+    expect(generateStage(1, stageIndexOf('pinewood')).halfWidth).toBe(4);
+    expect(generateStage(1, stageIndexOf('forest')).halfWidth).toBe(4.5);
+  });
+
   it('alpine roads bend more sharply than forest roads', () => {
     const curvature = (index: number) => {
       let total = 0;
@@ -215,16 +222,21 @@ describe('StageGenerator', () => {
 
 describe('stagePalette', () => {
   it('Autumnal wears its autumn palette in the trees only', () => {
-    const summer = STAGE_TYPES.pinewood.palette;
+    const summer = STAGE_TYPES.forest.palette;
     const autumn = stagePalette('autumnal');
     expect(autumn).not.toBe(summer);
     expect(stagePalette('autumnal')).toBe(autumn);
-    const treeKeys = ['foliage', 'foliageAlt', 'canopy', 'canopyAlt'];
+    const treeKeys = ['foliage', 'foliageAlt', 'canopy', 'canopyAlt', 'autumn'];
     for (const key of Object.keys(summer) as (keyof typeof summer)[]) {
       expect(autumn[key] === summer[key]).toBe(!treeKeys.includes(key));
     }
-    expect(stagePalette('pinewood')).toBe(summer);
-    expect(stagePalette('forest')).toBe(STAGE_TYPES.forest.palette);
+    expect(stagePalette('pinewood')).toBe(STAGE_TYPES.pinewood.palette);
+    // Pinewood is the Forest's summer palette with its own pine greens.
+    expect({ ...stagePalette('pinewood'), pines: undefined }).toEqual({
+      ...summer,
+      pines: undefined,
+    });
+    expect(stagePalette('forest')).toBe(summer);
     expect(stagePalette('alpine')).toBe(STAGE_TYPES.alpine.palette);
     expect(stageBrief(1, stageIndexOf('autumnal')).surface).toBe('mud');
   });
@@ -313,22 +325,28 @@ describe('TerrainField', () => {
     expect(props.length).toBeGreaterThan(200);
     expect(scatterScenery(field)).toEqual(props);
     const hit = createRoadHit();
+    // Pinewood's pines crowd the road from 1.6 m past its edge, its saplings from 0.7 m.
     for (const p of props)
-      expect(stage.path.nearest(p.x, p.z, stage.halfWidth + 2, hit)).toBe(false);
+      expect(
+        stage.path.nearest(p.x, p.z, stage.halfWidth + (p.kind === 'sapling' ? 0.6 : 1.5), hit),
+      ).toBe(false);
   });
 
   it('keeps tree canopies from overlapping while staying dense', () => {
     const trees = scatterScenery(field).filter((p) => p.kind === 'tree' || p.kind === 'broadleaf');
     expect(trees.length).toBeGreaterThan(400);
+    // A crowded wood (Pinewood) lets neighbours stand that share of their spacing apart.
+    const density = stageScenery(stage.stageType);
+    const share = density.crowding ?? 1;
     // Plain arithmetic over every pair, one assertion at the end: an expect per
     // pair is ~150k assertions and times out on slow CI runners.
     const overlaps: string[] = [];
     for (let i = 0; i < trees.length; i++) {
       const a = trees[i]!;
-      const ra = CANOPY_RADIUS[a.kind]! * a.scale;
+      const ra = canopyRadius(a, density)! * a.scale;
       for (let j = i + 1; j < trees.length; j++) {
         const b = trees[j]!;
-        const r = ra + CANOPY_RADIUS[b.kind]! * b.scale;
+        const r = (ra + canopyRadius(b, density)! * b.scale) * share;
         if ((a.x - b.x) ** 2 + (a.z - b.z) ** 2 < r * r - 1e-6) overlaps.push(`${i}-${j}`);
       }
     }

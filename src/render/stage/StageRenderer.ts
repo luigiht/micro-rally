@@ -5,6 +5,7 @@ import { STAGE_TYPES } from '@/game/stage/regions';
 import type { StageWorld } from '@/game/stage/StageWorld';
 import type { TownDef } from '@/game/stage/Town';
 import { BarrierBuilder } from '../road/BarrierBuilder';
+import { GravelStoneBuilder } from '../road/GravelStones';
 import { CircuitDressingBuilder } from '../road/CircuitDressingBuilder';
 import { KerbBuilder } from '../road/KerbBuilder';
 import { LaneMarkings } from '../road/LaneMarkings';
@@ -27,11 +28,15 @@ import { TownWallBuilder } from '../town/TownWallBuilder';
 import { TramFleet } from '../town/TramFleet';
 import { TramTrackBuilder } from '../town/TramTrackBuilder';
 import { GateBuilder } from './GateBuilder';
+import { scatterLeaves } from '@/game/stage/LeafLitter';
+import { scatterGrass } from '@/game/stage/TallGrass';
 
 export interface StageRenderOptions {
   terrainRadius: number;
   terrainResolution: number;
   sceneryRadius: number;
+  /** Scenery chunks whose centre is within this of the car draw their detailed kits (the pine wood's pines). */
+  sceneryDetailRadius: number;
   shadows: boolean;
   /** Circuits: the striped kerbs and gravel traps. */
   kerbs: boolean;
@@ -57,12 +62,19 @@ export interface StageRenderOptions {
   hedges: boolean;
   /** Cities: the trams that run the lines now and then (visual only). */
   tramService: boolean;
+  /** Fallen leaves on the ground where the stage type sheds them (the Autumnal); visual only. */
+  leafLitter: boolean;
+  /** Tall grass along the road where the stage type grows it (the Pinewood); visual only, near the car only. */
+  tallGrass: boolean;
+  /** Loose stones strewn on a gravel road (the Pinewood); visual only. */
+  roadStones: boolean;
 }
 
 export const DEFAULT_STAGE_RENDER: StageRenderOptions = {
   terrainRadius: 300,
   terrainResolution: 32,
   sceneryRadius: 220,
+  sceneryDetailRadius: 70,
   shadows: true,
   kerbs: true,
   barriers: true,
@@ -76,6 +88,9 @@ export const DEFAULT_STAGE_RENDER: StageRenderOptions = {
   pavementDetail: true,
   hedges: true,
   tramService: true,
+  leafLitter: true,
+  tallGrass: true,
+  roadStones: true,
 };
 
 /**
@@ -106,6 +121,7 @@ interface Surfaces {
   crossings: CrossingBuilder | null;
   parking: ParkingBayBuilder | null;
   fleet: TramFleet | null;
+  stones: GravelStoneBuilder | null;
 }
 
 /**
@@ -158,11 +174,15 @@ export class StageRenderer {
   }
 
   private buildScenery(): SceneryChunkManager {
+    const { field, props } = this.world;
+    const leaves = this.opts.leafLitter ? scatterLeaves(field, props) : [];
+    const grass = this.opts.tallGrass ? scatterGrass(field, props) : [];
     const scenery = new SceneryChunkManager(
-      this.world.props,
+      leaves.length + grass.length > 0 ? [...props, ...leaves, ...grass] : props,
       sceneryKitsFor(this.world.stage, this.opts.shadows, this.opts.streetFurniture),
       96,
       this.opts.sceneryRadius,
+      this.opts.sceneryDetailRadius,
     );
     this.group.add(scenery.group);
     return scenery;
@@ -194,6 +214,10 @@ export class StageRenderer {
       crossings: null,
       parking: null,
       fleet: null,
+      stones:
+        this.opts.roadStones && stage.surface === 'gravel'
+          ? new GravelStoneBuilder(stage, field)
+          : null,
     };
     const track = circuitTrackside(stage);
     if (track) {
@@ -292,6 +316,7 @@ export class StageRenderer {
       s.crossings,
       s.parking,
       s.fleet,
+      s.stones,
     ].filter((b) => b !== null);
   }
 

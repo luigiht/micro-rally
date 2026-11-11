@@ -122,6 +122,11 @@ export const it: Messages = {
     privacy: 'Come vengono trattati i commenti: vedi la pagina sulla privacy.',
     back: 'Torna al gioco',
   },
+  update: {
+    available: 'È disponibile una nuova versione, ricarica la pagina.',
+    reload: 'Ricarica',
+    later: 'Più tardi',
+  },
   about: {
     title: 'Informazioni su Micro Rally',
     intro:
@@ -178,7 +183,7 @@ export const it: Messages = {
         {
           date: '11 novembre 2026',
           title: 'Multigiocatore, rivali in diretta, partenza e arrivo e più aderenza in salita',
-          body: 'Una nuova modalità Multigiocatore permette a due piloti di condividere una sessione di prove e una classifica, sui tipi di prova scelti da chi la crea, ognuno con l’auto che preferisce; la prova successiva si apre quando entrambi hanno finito, e mentre sono sulla stessa prova ciascuno vede l’auto dell’altro sulla strada. Giocatore singolo non cambia, ed Esci dal gioco, nel pannello Gioco, riporta alla schermata iniziale. Ogni partenza e ogni arrivo hanno un portale a scacchi; nelle prove rally, cartelli rossi segnano la partenza con un cronometro e l’arrivo con una bandiera a scacchi. Sui touchscreen arriva un pulsante per tornare all’ultimo checkpoint accanto a Pausa. Le prove Alpino e Autunnale hanno più aderenza per salire più veloci, il fango frena un po’ meno e spariscono i triangoli che sfarfallavano ai bordi delle strade sterrate. La pagina Informazioni perde la scheda Contatti; il feedback si invia dal pannello Gioco.',
+          body: 'Una nuova modalità Multigiocatore permette a due piloti di condividere una sessione di prove e una classifica, sui tipi di prova scelti da chi la crea, ognuno con l’auto che preferisce; la prova successiva si apre quando entrambi hanno finito, e mentre sono sulla stessa prova ciascuno vede l’auto dell’altro sulla strada. Giocatore singolo non cambia, ed Esci dal gioco, nel pannello Gioco, riporta alla schermata iniziale. Ogni partenza e ogni arrivo hanno un portale a scacchi; nelle prove rally, cartelli rossi segnano la partenza con un cronometro e l’arrivo con una bandiera a scacchi. Sui touchscreen arriva un pulsante per tornare all’ultimo checkpoint accanto a Pausa. Le prove Alpino e Autunnale hanno più aderenza per salire più veloci, il fango frena un po’ meno spariscono i triangoli che sfarfallavano ai bordi delle strade sterrate e le strade dell’Autunnale si restringono, perdono i paletti a bordo strada e corrono su un basso terrapieno tra boschi più alti e fitti, di tante forme e colori, con foglie cadute. Le prove Pineta attraversano ora un fitto bosco di pini alti che non si toccano mai né invadono la strada, con i tronchi in vista lungo i bordi, erba alta sulle colline, il bosco che prosegue in lontananza e leggere tracce di ruote e sassi sparsi sulla ghiaia. Una finestra aperta quando esce una nuova versione ora propone di ricaricare. La pagina Informazioni perde la scheda Contatti; il feedback si invia dal pannello Gioco.',
         },
         {
           date: '10 novembre 2026',
@@ -277,6 +282,11 @@ export const it: Messages = {
         question: 'Come cambio visuale?',
         answer:
           'Premi C mentre guidi o scegli una visuale nelle Impostazioni. Ci sono visuali inseguimento, abitacolo, isometrica e cinematografica.',
+      },
+      {
+        question: 'Come ottengo l’ultima versione?',
+        answer:
+          'Apri il gioco e basta: carica sempre la versione più recente, nel browser o come app installata, senza reinstallare. Se avevi già una finestra aperta quando è uscita una nuova versione, un avviso in basso ti chiede di ricaricare.',
       },
       {
         question: 'Come torno in strada se esco o resto bloccato?',

@@ -45,7 +45,9 @@ decision is where online saves live.
    `503 mail_unconfigured` and the form shows "could not be sent".
 7. **Deploy.** Every push to `main` is a production deployment; pull requests
    get preview URLs. CI (`.github/workflows/ci.yml`) runs the same
-   `pnpm check` and the Playwright suite.
+   `pnpm check` and the Playwright suite. Each build is stamped with
+   Vercel's deployment ID; pages and installed apps left open from an older
+   deploy see it change at `/api/version` and offer a reload.
 
 ### Smoke test after deploying
 
@@ -53,6 +55,7 @@ decision is where online saves live.
 curl -i https://<domain>/api/games/ZZZZ2345        # 404 not_found (or 503 without Supabase)
 curl -i https://<domain>/robots.txt                # Sitemap: https://<domain>/sitemap.xml
 curl -s https://<domain>/ | grep -o 'og:image[^>]*' # absolute image URL
+curl -s https://<domain>/api/version               # {"buildId":"dpl_…"}: changes with every deploy
 ```
 
 ## Self-hosting

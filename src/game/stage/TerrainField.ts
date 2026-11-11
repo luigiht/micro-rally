@@ -89,6 +89,8 @@ export const TRENCH_OUT = 0.4;
 export const VERGE_WIDTH = 3;
 export const VERGE_BED_DROP = 0.15;
 const VERGE_BED_RAMP = 0.5;
+/** A built-up road's bank starts falling this far past the carriageway's edge (see `bankDrop`). */
+const EMBANK_FROM = 0.3;
 const VERGE_BED_PAST = 0.3;
 /**
  * The same for a circuit's gravel traps, drawn barely over the flat runoff:
@@ -229,6 +231,7 @@ export class TerrainField implements TerrainQuery {
   private readonly dunes: boolean;
   /** A ridge of snow heaped along both verges (the Arctic), as height and width; null elsewhere. */
   private readonly banks: { height: number; width: number } | null;
+  private readonly embankment: { height: number; width: number } | null;
   /** Road distances of the crests `addCrests` raised on the straights, for the tests and the probes. */
   readonly crestsAt: number[] = [];
   /** The oases, on dune stages: set by `scatterScenery` with their pads, read by the renderer for the pools. */
@@ -308,6 +311,7 @@ export class TerrainField implements TerrainQuery {
     this.frequency = region.terrain.frequency;
     this.dunes = region.terrain.dunes === true;
     this.banks = region.terrain.banks ?? null;
+    this.embankment = region.terrain.embankment ?? null;
     this.coast = region.coast
       ? new Coastline(
           stage,
@@ -767,13 +771,41 @@ export class TerrainField implements TerrainQuery {
           GRAVEL_BED_RAMP,
           gravelDepth(this.trackside, this.stage.path, hw, st.along, this.hit.lateral),
         );
-    const raw = deck + (base - deck) * t - trench + this.bankLift(st) + this.detailAt(x, z, t);
+    const raw =
+      deck +
+      (base - deck) * t -
+      trench +
+      this.bankLift(st) -
+      this.embankDrop(st, t) +
+      this.detailAt(x, z, t);
     // Under a city's pavements the terraces' pads do not reach: a pad vertex there would tilt the
     // coarse terrain face up through the pavement as a green wedge along the building.
     out.height = out.paved ? raw : this.applyPads(x, z, raw);
     out.roadBlend = 1 - t;
     out.roadDistance = st.distance;
     return out;
+  }
+
+  /**
+   * How far the ground has fallen `beyond` metres past the carriageway's edge
+   * where the region builds its road up on a bank (`terrain.embankment`): from
+   * `EMBANK_FROM` out over the bank's width, so the road mesh's verge strips
+   * slope down with it. 0 elsewhere.
+   */
+  bankDrop(beyond: number): number {
+    const e = this.embankment;
+    if (!e) return 0;
+    return e.height * smoothstep(EMBANK_FROM, EMBANK_FROM + e.width, beyond);
+  }
+
+  /**
+   * The bank's fall here, fading out as the ground blends into the hills
+   * (`t`) and, like the road mesh's verges, into a town; none beside a side street.
+   */
+  private embankDrop(st: StreetHit, t: number): number {
+    if (!this.embankment || st.stub) return 0;
+    const inTown = this.town ? townFade(this.town, st.along) : 0;
+    return this.bankDrop(st.distance - st.hw) * (1 - t) * (1 - inTown);
   }
 
   /**
@@ -786,9 +818,10 @@ export class TerrainField implements TerrainQuery {
     if (this.banks || this.trackside || st.stub) return 0;
     if (this.town && townFade(this.town, st.along) > 0) return 0;
     const beyond = st.distance - st.hw;
+    // Down a built-up road's curving bank the coarse mesh strays further from the strip: twice the margin.
+    const drop = this.embankment ? 2 * VERGE_BED_DROP : VERGE_BED_DROP;
     return (
-      VERGE_BED_DROP *
-      (1 - smoothstep(VERGE_WIDTH - VERGE_BED_RAMP, VERGE_WIDTH + VERGE_BED_PAST, beyond))
+      drop * (1 - smoothstep(VERGE_WIDTH - VERGE_BED_RAMP, VERGE_WIDTH + VERGE_BED_PAST, beyond))
     );
   }
 
@@ -818,7 +851,11 @@ export class TerrainField implements TerrainQuery {
     const flat = this.flatMarginFor(st);
     const t = smoothstep(st.hw + flat, st.hw + flat + this.blendWidth(st), st.distance);
     return (
-      this.applyPads(x, z, deck + (base - deck) * t + this.detailAt(x, z, t)) + this.bankLift(st)
+      this.applyPads(
+        x,
+        z,
+        deck + (base - deck) * t - this.embankDrop(st, t) + this.detailAt(x, z, t),
+      ) + this.bankLift(st)
     );
   }
 
