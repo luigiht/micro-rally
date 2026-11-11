@@ -12,7 +12,7 @@ import {
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { STAGE_TYPES } from '@/game/stage/regions';
 import type { StageDef } from '@/game/stage/StageGenerator';
-import { markerDistances } from '@/game/stage/RoadMarkers';
+import { controlBoardSkip, markerDistances, type MarkerSkip } from '@/game/stage/RoadMarkers';
 import { ROAD_LIFT, TRENCH_OUT, type TerrainField } from '@/game/stage/TerrainField';
 import { halfWidthAt } from '@/game/stage/RoadWidth';
 import { roundaboutOpenings } from '@/game/stage/Roundabout';
@@ -615,14 +615,15 @@ export class RoadBuilder {
     return geo;
   }
 
-  /** Verge posts every 20 m, except where a checkpoint board stands. */
+  /** Verge posts every 20 m, except where a checkpoint, start or finish board stands. */
   private buildMarkers(stage: StageDef, field: TerrainField): void {
     const path = stage.path;
-    const distances = markerDistances(
-      path.length,
-      stage.gates,
-      stage.town ? [[stage.town.from, stage.town.to]] : [],
-    );
+    const skip: MarkerSkip[] = stage.town ? [[stage.town.from, stage.town.to]] : [];
+    if (!stage.circuit) {
+      skip.push(controlBoardSkip(stage.startDistance));
+      for (const g of stage.gates) if (g.kind === 'finish') skip.push(controlBoardSkip(g.distance));
+    }
+    const distances = markerDistances(path.length, stage.gates, skip);
     const count = distances.length * 2;
     // Where snow banks line the road the posts are snow poles: a tall thin orange rod with a white
     // band near the top, standing clear of the drifts; elsewhere a short white post with an orange cap.

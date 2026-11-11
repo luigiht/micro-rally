@@ -8,6 +8,7 @@ import { CAR_SPECS } from '@/game/vehicle/CarSpec';
 import { useMessages } from '@/i18n/useMessages';
 import { useGameStore } from '@/state/gameStore';
 import { PixelIcon, type PixelIconName } from './PixelIcon';
+import { PAD_BUTTON } from './touchPad';
 
 interface PadButtonProps {
   icon: PixelIconName;
@@ -34,7 +35,7 @@ function PadButton({ icon, label, onPress, iconSize = 'size-6' }: PadButtonProps
       onPointerCancel={end}
       onLostPointerCapture={end}
       onContextMenu={(e) => e.preventDefault()}
-      className="pixel-btn-ghost pointer-events-auto grid size-14 touch-none place-items-center p-0 select-none"
+      className={`${PAD_BUTTON} pointer-events-auto grid`}
     >
       <PixelIcon name={icon} className={iconSize} />
     </button>

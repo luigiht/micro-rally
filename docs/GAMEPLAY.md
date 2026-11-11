@@ -21,14 +21,20 @@ here as of 2 November 2026.
 ## A stage
 
 1. **Countdown.** Three seconds, then GO. The car cannot move before GO.
+   It waits just short of the start line, under a chequered gantry. On a
+   rally stage a pair of red-disc boards with a stopwatch stands just
+   before the line.
 2. **Checkpoints.** Two to six gates, evenly spaced, plus the finish; they
    must be crossed in order and inside their width. Each is marked by a pair
-   of rally time-control boards and a tick on the progress bar.
+   of rally time-control boards and a tick on the progress bar. The finish
+   is another chequered gantry, with red-disc boards carrying a chequered
+   flag (the "flying finish") on a rally stage.
 3. **Penalties.** Hitting a tree, rock, house or wall at 3 m/s or more costs
    2 s and a $25 repair fee, at most once a second. Off the road the car
    drags through grass (or snow in the Alps).
-4. **Reset.** `R` respawns 6 m past the last checkpoint passed (or at the
-   start), facing down the road.
+4. **Reset.** `R`, or the back-to-checkpoint button beside Pause on touch
+   devices, respawns 6 m past the last checkpoint passed (or at the start),
+   facing down the road. The stage clock keeps running.
 5. **Finish.** The result panel shows the time, par, previous best, prize
    money and repairs, with Drive it again, Watch replay and Next stage.
 6. **Replay.** The run is recorded every physics step from GO until three
@@ -101,6 +107,12 @@ the last sector board or lap line passed.
 | Coastal    | tarmac  | grass               | limestone cliffs and sea                 | 1600 m      | 15 m/s    |
 | Desert     | sand    | dune                | dunes and oases                          | 1900 m      | 16 m/s    |
 
+Three stage types grip harder than their surface alone: the Arctic's
+studded tyres ×1.45 (with quicker, deeper steering), the Alpine's winter
+tyres ×1.35 and the Autumnal's mud tyres ×1.3. The cars climb the snow and
+mud hills instead of spinning their wheels, though mud's drag still holds
+the slowest cars back.
+
 On a Coastal stage the road follows the shore a few metres back from a
 terraced cliff, the sea below to seaward, a scrub hillside above, and once or
 twice climbs that hillside in a stack of two hairpins before coming back
@@ -143,7 +155,8 @@ lens, grounds the helicopter and holds shots longer.
 The HUD shows the stage clock, checkpoints passed, the pace note, penalties,
 money, a progress bar down the left edge with checkpoint ticks and a finish
 flag, and speed and gear bottom right. The toolbar carries Settings and Game (on touch
-devices a single Pause button opens a menu of Game, Garage and Settings).
+devices a Pause button opens a menu of Game, Garage and Settings, and a
+back-to-checkpoint button beside it does what `R` does).
 `H` hides all of that for a clean view; dialogs, the countdown and the touch
 controls stay. The backtick opens a debug overlay (fps, draw calls, physics
 state).
@@ -163,8 +176,10 @@ state).
 
 Touch devices get steer pads bottom left, with a turbo pad (a pixel-art
 turbocharger) over steer-left once the car has a turbo, brake and gas pads
-bottom right (hold brake to reverse), a pedal-shaped handbrake button and the
-Pause button. Keyboard and touch input merge, so a laptop with a touchscreen
+bottom right (hold brake to reverse), a pedal-shaped handbrake button, the
+Pause button and, left of it, an undo-arrow button that puts the car back at
+the last checkpoint (greyed out until the countdown ends, like `R`).
+Keyboard and touch input merge, so a laptop with a touchscreen
 can use both. On touch devices the HUD stack hugs the top-left: the clock,
 then a row of a flag and the checkpoints passed beside a dollar bill and the money
 (the words stay for screen readers), then any penalties, then the pace note,

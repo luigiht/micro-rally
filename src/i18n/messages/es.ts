@@ -121,11 +121,15 @@ export const es: Messages = {
       highlights: [
         {
           title: 'Tramos y progresión',
-          body: 'Las rutas de rally pasan por bosques, Alpes, costa, Ártico y desierto. Cada noveno tramo es una ciudad y cada décimo es un circuito de tres vueltas; si coinciden, primero va la ciudad y después el circuito. El ciclo de rally continúa con carreteras más largas y curvas más cerradas.',
+          body: 'Los tramos de rally recorren siete tipos, cada uno con su propia superficie: Pinar de grava, Alpino nevado, Bosque y Costero de asfalto, Ártico nevado, Otoñal de barro y Desierto de arena. Cada noveno tramo es una ciudad y cada décimo es un circuito de tres vueltas; si coinciden, primero va la ciudad y después el circuito. El ciclo de rally continúa con carreteras más largas y curvas más cerradas.',
         },
         {
           title: 'Conduce, reinicia y repite',
-          body: 'Pasa los controles en orden y llega a la meta. Las superficies fuera de la carretera te frenan; los golpes fuertes añaden tiempo y reparaciones. Pulsa R para volver al último control. Puedes repetir las carreras terminadas.',
+          body: 'Cada tramo empieza y termina bajo un pórtico a cuadros, con paneles rojos que marcan la salida (un cronómetro) y la meta (una bandera a cuadros). Pasa los controles en orden y llega a la meta. Las superficies fuera de la carretera te frenan; los golpes fuertes añaden tiempo y reparaciones. Pulsa R, o el botón de volver al control junto a Pausa en pantallas táctiles, para volver al último control. Puedes repetir las carreras terminadas.',
+        },
+        {
+          title: 'Superficies y agarre',
+          body: 'El asfalto es lo que más agarra y la grava es la referencia; la nieve y el barro son lo más resbaladizo. En el Ártico los coches llevan neumáticos con clavos, y en los tramos Alpino y Otoñal, neumáticos de invierno y de barro, para subir las cuestas sin perder ritmo.',
         },
         {
           title: 'Prepara tu coche',
@@ -150,15 +154,20 @@ export const es: Messages = {
         { keys: 'Esc', action: 'Cerrar un panel o abrir el panel Juego' },
       ],
       touch:
-        'En pantallas táctiles, los controles de dirección, pedales y el menú Pausa ofrecen lo esencial.',
+        'En pantallas táctiles, los controles de dirección, los pedales, el botón de volver al control y el menú Pausa ofrecen lo esencial.',
     },
     changelog: {
       intro: 'Todas las versiones desde la primera entrega jugable, de más reciente a más antigua.',
       entries: [
         {
+          date: '11 de noviembre de 2026',
+          title: 'Salida y meta, reinicio táctil y más agarre en subida',
+          body: 'Cada salida y cada meta tienen ahora un pórtico a cuadros; en los tramos de rally, paneles rojos marcan la salida con un cronómetro y la meta con una bandera a cuadros. Las pantallas táctiles estrenan un botón para volver al último control junto a Pausa, y la barra táctil, el reloj y el velocímetro se alinean con los pedales. Los tramos Alpino y Otoñal tienen más agarre para subir más rápido, el barro frena un poco menos y se pulieron los arcenes y las rodadas del Otoñal.',
+        },
+        {
           date: '10 de noviembre de 2026',
-          title: 'Página Acerca de',
-          body: 'La página Acerca de reúne información de juego, cambios recientes, respuestas a preguntas habituales y datos de contacto.',
+          title: 'Tipos de tramo, público y página Acerca de',
+          body: 'Los tramos se dividen ahora en nueve tipos fijos, cada uno con su propia superficie, y el tipo embarrado pasó a llamarse Otoñal, con rodadas y líneas laterales desgastadas. El público se coloca tras pequeños montículos de protección, en el desierto se reúne en la salida, los controles y la meta, y los circuitos estrenan gradas vacías en las curvas cerradas. La página Acerca de reúne información de juego, novedades, preguntas habituales y contacto, y se retiró el modo nocturno urbano oculto.',
         },
         {
           date: '9 de noviembre de 2026',
@@ -247,6 +256,11 @@ export const es: Messages = {
         question: '¿Cómo cambio la cámara?',
         answer:
           'Pulsa C mientras conduces o elige una cámara en Ajustes. Hay vistas de persecución, interior, isométrica y cinematográfica.',
+      },
+      {
+        question: '¿Cómo vuelvo a la carretera si me salgo o me atasco?',
+        answer:
+          'Pulsa R o, en pantallas táctiles, el botón de volver al control junto a Pausa. El coche vuelve a la carretera justo después del último control superado (o a la salida), mirando hacia delante; el cronómetro del tramo sigue corriendo.',
       },
     ],
     contact: {
@@ -353,6 +367,7 @@ export const es: Messages = {
     settings: 'Ajustes',
     game: 'Juego',
     pause: 'Pausa',
+    reset: 'Volver al último control',
     pauseTitle: 'En pausa',
     resume: 'Continuar',
   },

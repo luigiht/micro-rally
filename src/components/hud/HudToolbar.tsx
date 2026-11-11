@@ -1,13 +1,16 @@
 'use client';
 
 import { useEffect, type MouseEvent } from 'react';
+import { TOUCH_ACTIONS } from '@/components/game/input/touchInput';
 import { useMessages } from '@/i18n/useMessages';
+import { useStageHudStore } from '@/state/stageHudStore';
 import { useUiStore, type HudPanel } from '@/state/uiStore';
 import { GamePanel } from './GameMenu';
 import { GaragePanel } from './GaragePanel';
 import { HudDialog } from './HudDialog';
 import { PixelIcon, type PixelIconName } from './PixelIcon';
 import { SettingsPanel } from './SettingsPanel';
+import { PAD_BUTTON } from './touchPad';
 
 interface ToolbarButtonProps {
   icon: PixelIconName;
@@ -16,7 +19,7 @@ interface ToolbarButtonProps {
   open: boolean;
   /** Display classes; lets a button show only on some devices. */
   display?: string;
-  /** Square pad the size of the touch pedals, icon only (label for assistive tech). */
+  /** A touch pad like the pedals (`PAD_BUTTON`), icon only (label for assistive tech). */
   pad?: boolean;
 }
 
@@ -42,12 +45,38 @@ function ToolbarButton({
       title={label}
       className={
         pad
-          ? `pixel-btn-ghost size-14 place-items-center p-0 ${display}`
+          ? `${PAD_BUTTON} ${display}`
           : `pixel-btn-ghost items-center gap-2 p-3 md:px-4 md:py-3 ${display}`
       }
     >
       <PixelIcon name={icon} className={pad ? 'size-6' : undefined} />
       <span className={pad ? 'sr-only' : 'max-md:sr-only'}>{label}</span>
+    </button>
+  );
+}
+
+/**
+ * Touch-device R: puts the car back on the road at the last checkpoint passed.
+ * Live only while R is, i.e. while the stage clock runs (or on a free drive).
+ */
+function ResetButton() {
+  const m = useMessages();
+  const live = useStageHudStore((s) => s.stage === null || s.phase === 'running');
+  const handle = (e: MouseEvent<HTMLButtonElement>) => {
+    // Drop focus so Space (handbrake) can't re-trigger the button.
+    e.currentTarget.blur();
+    TOUCH_ACTIONS.reset = true;
+  };
+  return (
+    <button
+      type="button"
+      onClick={handle}
+      disabled={!live}
+      title={m.toolbar.reset}
+      className={`${PAD_BUTTON} hidden coarse:grid`}
+    >
+      <PixelIcon name="respawn" className="size-6" />
+      <span className="sr-only">{m.toolbar.reset}</span>
     </button>
   );
 }
@@ -88,7 +117,8 @@ function PauseMenu() {
 /**
  * Top-right toolbar and the panels it opens. On desktop it carries Settings
  * and Game (the Garage button sits next to Money); on touch devices it
- * collapses to a single Pause button that opens a menu of all three.
+ * collapses to a Pause button that opens a menu of all three, with a
+ * back-to-checkpoint button (the keyboard's R) beside it.
  */
 export function HudToolbar() {
   const m = useMessages();
@@ -113,8 +143,9 @@ export function HudToolbar() {
       {!hidden && (
         <nav
           aria-label={m.toolbar.label}
-          className="pointer-events-auto absolute top-4 right-4 flex gap-2 md:top-6 md:right-6 md:gap-3"
+          className="pointer-events-auto absolute top-4 right-4 flex gap-2 md:top-6 md:right-6 md:gap-3 coarse:top-4 coarse:right-4 coarse:gap-3"
         >
+          <ResetButton />
           <ToolbarButton
             icon="pause"
             label={m.toolbar.pause}

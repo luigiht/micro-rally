@@ -3759,3 +3759,108 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      boosts. Catalogue-wide fixed-gear comparisons verify the pace benefit
      independently of automatic gearbox shift thresholds; mud remains slower
      than grass in the existing full-throttle surface test.
+
+203. **2026-11-11 — A touch R beside Pause.** Touch devices had no way back
+     to the last checkpoint. A pad-sized button with a new 8×8 undo-arrow
+     glyph (`respawn`; the circular `restart` already means "restart stage")
+     now sits left of Pause, so Pause keeps the corner. It sets a one-shot
+     flag, `TOUCH_ACTIONS.reset`, next to `TOUCH_INPUT`; the DrivingSession
+     clears it at the top of `tick` and routes it through the same
+     `handleAction('reset')` as the R key. That means one code path and one
+     guard (only while the stage clock runs), and no React state or store
+     command on the hot path. The button mirrors that guard and greys out
+     during the countdown, after the finish and in the replay. A shared flag
+     was chosen over a callback registry because the session already polls
+     the shared touch input each frame. The touch toolbar and the driving
+     pads take one class string (`PAD_BUTTON` in `hud/touchPad.ts`). On
+     coarse pointers the toolbar also takes the pads' 16 px inset and 12 px
+     gap; before this, it inherited the desktop `md:` inset (24 px) and the
+     narrow-screen gap (8 px), so the top pair looked bigger and packed
+     closer than the pedals.
+
+204. **2026-11-11 — Touch HUD boxes line up with the pads' faces.** On
+     coarse pointers the clock and the speed/gear readout are `h-14` and
+     16 px from the edge, the same as the pads' cream faces; the pads' 4 px
+     ink rings stand outside that line. The clock already matched once the
+     toolbar dropped its desktop inset (203). The readout was 60 px tall,
+     sizing to its padding; it now has a fixed height with its two lines
+     centred in a flex column. Matching the outer edge of the rings instead
+     (64 px, 12 px in) was tried first and dropped by request. The rule is
+     written down in `hud/touchPad.ts`, and the mobile e2e spec checks it.
+
+205. **2026-11-11 — A rally start for open stages.** The green-and-white
+     start gantry gives way to one modelled on a real stage start, by
+     request. The banner is a two-row black-and-white chequer, built as two
+     merged meshes, one per colour, rather than one mesh per tile. A
+     stopwatch board stands on each verge 1 m before the line. It is the
+     checkpoint board's white plate with the same rimmed disc in red
+     (`startDisc`), carrying a stopwatch pictogram: an ink case rim round a
+     red face, crown, side button, ticks and a hand. Ink parts at one depth
+     are merged. A seven-segment start clock (`StartClockGeometry`) is
+     bolted to the gantry's left post 2.3 m up. It hangs toward the road
+     with its outer edge flush with the post, which keeps it over the verge
+     and clear of city facades and street trees. A clock on its own legs
+     beside the waiting car was tried first; it fell outside the chase
+     camera's frame. The clock reads a time of day (08:00:00–17:59:59)
+     seeded from the stage seed, so it is random per stage but stable.
+     Lit segments are glowing amber, and unlit ones are faint, as on a real
+     LED display. Both are merged meshes, with seams so they never overlap.
+     The verge marker pair at the start line would have stood behind the
+     boards, so `startBoardSkip` drops it, as `MARKER_CLEARANCE` already
+     does at checkpoints. Circuits keep their plain gantry, with no boards
+     and no clock.
+
+206. **2026-11-11 — One chequered gantry for every start and finish line.**
+     By request, the finish and the circuit's start/finish line take the
+     new gantry too. `GateBuilder.addLine` draws any line: the chequered
+     banner, the clock on the left post, and the stopwatch boards when
+     given a sign. The finish's single-row tiles and the theme's `finish`
+     pair are gone; `start` is renamed `chequer`. On a circuit the line is
+     crossed every lap, so it gets no stopwatch boards, which would mark a
+     one-off control. Its clock reads the start time. The finish clock
+     reads the start time plus the stage's par time, wrapping at midnight
+     (`stageClockTime(seed, laterBy)`). It stays a stable per-stage reading
+     and reads later than the start, as a real finish would. The verge
+     marker skip is now `controlBoardSkip`. It covers the boards before an
+     open stage's finish as well as its start, and none on a circuit.
+
+207. **2026-11-11 — A chequered flag on the finish boards.** By request,
+     modelled on the rally "flying finish" sign. The finish boards keep the
+     start boards' plate and red disc with its ink rim, but carry a
+     chequered flag instead of the stopwatch. The flag is four columns of
+     three 7 cm squares, each column stepped up or down so it waves, flying
+     left of a pole on its right, with the whole pictogram leaning 18°
+     clockwise. Light squares are one merged geometry, and dark squares
+     plus the pole are another, both at one layer depth. They touch without
+     overlapping, so nothing z-fights. Everything stays within 0.27 m of
+     the disc centre, clear of the rim at 0.3 m. A first, smaller cut (6 cm
+     squares) sat high and right on the disc and was enlarged and centred.
+
+208. **2026-11-11 — Remove the gantries' digital clock.** By request, the
+     static seven-segment clock on the gantry's left post is gone from
+     every start and finish line, the circuit's included. It showed a fixed
+     time that never ticked. `StartClockGeometry`, `stageClockTime` and the
+     theme's `clockCase`, `clockLit` and `clockUnlit` are deleted with it,
+     and `GateBuilder.addLine` no longer takes a time. The chequered banner,
+     the start's stopwatch boards and the finish's flag boards stay, and so
+     does the marker skip round them. Decisions 205 and 206 describe the
+     clock as it was.
+
+209. **2026-11-11 — More grip on the Alpine and Autumnal stages.** By
+     request, so the cars climb faster. A sim probe ran every car up a
+     steady 10 % grade from a standstill for 8 s at full throttle. On snow
+     (grip 0.42) every car was traction-bound, spinning its wheels 36–85 %
+     of the time; on mud (grip 0.55) most were. Both stage types now set
+     `handling.grip`, the per-type `gripScale` the Arctic already uses
+     (1.45). The Alpine gets 1.35, still short of the Arctic's studs, and
+     the Autumnal 1.3, still just under gravel's traction. Steering and
+     lock stay at 1, and the surfaces' own values are untouched, since snow
+     is shared with the Arctic. On the probe grade the WRC climbs from 90
+     to 109 km/h on Alpine snow and from 80 to 91 on Autumnal mud. The
+     Group B goes from 88 to 119 and from 79 to 95, the coupé from 38 to 60
+     and from 36 to 52. The extra grip also helps cornering and braking.
+     Mud's speed drag (0.18) still caps the weakest cars: the hatchback
+     climbs 57 → 58 km/h on mud against 73 → 82 on snow. Par speeds are
+     unchanged, so par is easier to beat on both types.
+     `tests/unit/climbGrip.test.ts` holds the gain at over 10 km/h for
+     three cars on each type and checks no car climbs slower.

@@ -116,11 +116,15 @@ export const en = {
       highlights: [
         {
           title: 'Stages and progression',
-          body: 'Rally routes move through Forest, Alpine, Coast, Arctic and Desert landscapes. Every ninth stage is a city and every tenth is a three-lap circuit; when they coincide, the city comes first and the circuit follows. The rally mix then loops with longer, tighter roads.',
+          body: 'Rally stages cycle through seven stage types, each with its own road surface: Pinewood gravel, Alpine snow, Forest and Coastal tarmac, Arctic snow, Autumnal mud and Desert sand. Every ninth stage is a city and every tenth is a three-lap circuit; when they coincide, the city comes first and the circuit follows. The rally mix then loops with longer, tighter roads.',
         },
         {
           title: 'Drive, reset and replay',
-          body: 'Pass checkpoints in order and reach the finish. Off-road surfaces slow you down, while hard impacts add time and repair costs. R returns you to the last checkpoint. Finished runs can be replayed.',
+          body: 'Each stage starts and finishes under a chequered gantry, with red boards marking the start (a stopwatch) and the finish (a chequered flag). Pass the checkpoints in order and reach the finish. Off-road surfaces slow you down, while hard impacts add time and repair costs. R, or the back-to-checkpoint button next to Pause on touchscreens, returns you to the last checkpoint. Finished runs can be replayed.',
+        },
+        {
+          title: 'Surfaces and grip',
+          body: 'Tarmac grips best and gravel is the reference; snow and mud are the most slippery. Arctic cars run studded tyres, and Alpine and Autumnal cars run winter and mud tyres, so they can still climb the hills at pace.',
         },
         {
           title: 'Make the car yours',
@@ -142,15 +146,20 @@ export const en = {
         { keys: 'Esc', action: 'Close a panel or open the Game panel' },
       ],
       touch:
-        'On touchscreens, steering pads, pedals and the Pause menu provide the same essentials.',
+        'On touchscreens, steering pads, pedals, a back-to-checkpoint button and the Pause menu provide the same essentials.',
     },
     changelog: {
       intro: 'Every release since the first playable build, newest first.',
       entries: [
         {
+          date: '11 November 2026',
+          title: 'Start and finish gates, touch reset and grippier climbs',
+          body: 'Every start and finish now has a chequered gantry; on rally stages red boards mark the start with a stopwatch and the finish with a chequered flag. Touchscreens gained a back-to-checkpoint button next to Pause, and the touch toolbar, clock and speed readout now line up with the pedals. Alpine and Autumnal stages grip harder so cars climb faster, mud drives a little quicker, and Autumnal verges and edge tracks were refined.',
+        },
+        {
           date: '10 November 2026',
-          title: 'About page',
-          body: 'Gameplay notes, recent changes, common questions and contact details now live together on the About page.',
+          title: 'Stage types, crowds and the About page',
+          body: 'Stages now come in nine fixed types, each with its own road surface, and the muddy type became Autumnal, with tyre ruts and faded edge lines. Spectators stand behind small protective mounds, desert crowds gather at the start, checkpoints and finish, and circuits gained empty grandstands at tight corners. The About page brings gameplay notes, recent changes, FAQs and contact details together, and the hidden night city mode was removed.',
         },
         {
           date: '9 November 2026',
@@ -239,6 +248,11 @@ export const en = {
         question: 'How do I change the camera?',
         answer:
           'Press C while driving or choose a camera in Settings. The game has chase, interior, isometric and cinematic views.',
+      },
+      {
+        question: 'How do I get back on the road if I am stuck or lost?',
+        answer:
+          'Press R, or tap the back-to-checkpoint button next to Pause on a touchscreen. The car returns to the road just past the last checkpoint you passed (or to the start), facing down the road; the stage clock keeps running.',
       },
     ],
     contact: {
@@ -342,6 +356,7 @@ export const en = {
     settings: 'Settings',
     game: 'Game',
     pause: 'Pause',
+    reset: 'Back to checkpoint',
     pauseTitle: 'Paused',
     resume: 'Resume',
   },

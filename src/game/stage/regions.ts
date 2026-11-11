@@ -183,6 +183,9 @@ const AUTUMNAL: StageTypeDef = {
   surface: 'mud',
   palette: FOREST_AUTUMN,
   terrain: { ...FOREST.terrain, crests: { every: 220, height: 0.75, length: 30 } },
+  // Mud tyres: 30 % more grip (just under gravel's), so the drive bites on the climbs instead of
+  // spinning. Mud's own drag still holds the weakest cars back; steering is unchanged.
+  handling: { grip: 1.3, steer: 1, lock: 1 },
   scenery: { ...FOREST.scenery, spectators: 2.2, berms: true },
 };
 
@@ -216,6 +219,9 @@ const ALPINE: StageTypeDef = {
     boulder: '#8b9098',
   },
   terrain: { amplitude: 34, frequency: 1 / 230 },
+  // Winter tyres: 35 % more grip on the snow-dusted tarmac, so the cars climb the passes instead of
+  // spinning their wheels; still short of the Arctic's studs. Steering is unchanged.
+  handling: { grip: 1.35, steer: 1, lock: 1 },
   twistiness: 1.4,
   baseLength: 1500,
   // The Arctic's crowd too: groups in winter clothes on the verges, the start and the checkpoints.

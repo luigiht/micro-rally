@@ -214,7 +214,9 @@ flowchart LR
   `SceneryScatter` also dots houses (kind `house`, three-circle colliders)
   well back from the road; `HouseGeometry` builds the two vertex-coloured
   instanced parts. `GateBuilder` draws start/finish gantries and, at
-  checkpoints, a pair of rally time-control boards.
+  checkpoints, a pair of rally time-control boards. Every gantry has a
+  chequered banner, and on an open stage red-disc boards stand before the
+  start (stopwatch) and finish (chequered flag) lines.
 - `stageBrief` draws a stage's name, surface, length and par from the same
   RNG stream `generateStage` uses, without building the road; `StageHistory`
   derives the frontier (first unfinished stage) from `records` and picks the

@@ -121,11 +121,15 @@ export const it: Messages = {
       highlights: [
         {
           title: 'Prove e progressione',
-          body: 'I rally attraversano foreste, Alpi, costa, Artico e deserto. Ogni nona prova è una città e ogni decima è un circuito di tre giri; quando coincidono, la città viene prima e il circuito subito dopo. Il ciclo rally riprende con strade più lunghe e curve più strette.',
+          body: 'Le prove rally ruotano tra sette tipi, ognuno con il proprio fondo: Pineta su ghiaia, Alpino su neve, Foresta e Costiero su asfalto, Artico su neve, Autunnale su fango e Deserto su sabbia. Ogni nona prova è una città e ogni decima è un circuito di tre giri; quando coincidono, la città viene prima e il circuito subito dopo. Il ciclo rally riprende con strade più lunghe e curve più strette.',
         },
         {
           title: 'Guida, riparti e rivedi',
-          body: 'Supera i checkpoint in ordine e raggiungi il traguardo. Fuori strada perdi velocità; gli urti forti aggiungono tempo e costi di riparazione. Premi R per tornare all’ultimo checkpoint. Le gare concluse si possono rivedere.',
+          body: 'Ogni prova parte e arriva sotto un portale a scacchi, con cartelli rossi che segnano la partenza (un cronometro) e l’arrivo (una bandiera a scacchi). Supera i checkpoint in ordine e raggiungi il traguardo. Fuori strada perdi velocità; gli urti forti aggiungono tempo e costi di riparazione. Premi R, o il pulsante per tornare al checkpoint accanto a Pausa sui touchscreen, per tornare all’ultimo checkpoint. Le gare concluse si possono rivedere.',
+        },
+        {
+          title: 'Fondi e aderenza',
+          body: 'L’asfalto offre più aderenza e la ghiaia è il riferimento; neve e fango sono i fondi più scivolosi. Nell’Artico le auto montano gomme chiodate, e nelle prove Alpino e Autunnale gomme invernali e da fango, così affrontano le salite senza perdere ritmo.',
         },
         {
           title: 'Personalizza l’auto',
@@ -150,15 +154,20 @@ export const it: Messages = {
         { keys: 'Esc', action: 'Chiudi un pannello o apri il pannello Gioco' },
       ],
       touch:
-        'Sui touchscreen, i comandi di sterzo, i pedali e il menu Pausa offrono le funzioni essenziali.',
+        'Sui touchscreen, i comandi di sterzo, i pedali, il pulsante per tornare al checkpoint e il menu Pausa offrono le funzioni essenziali.',
     },
     changelog: {
       intro: 'Tutte le versioni dal primo rilascio giocabile, dalla più recente alla più vecchia.',
       entries: [
         {
+          date: '11 novembre 2026',
+          title: 'Partenza e arrivo, ritorno touch e più aderenza in salita',
+          body: 'Ogni partenza e ogni arrivo hanno ora un portale a scacchi; nelle prove rally, cartelli rossi segnano la partenza con un cronometro e l’arrivo con una bandiera a scacchi. Sui touchscreen arriva un pulsante per tornare all’ultimo checkpoint accanto a Pausa, e la barra touch, il cronometro e il tachimetro si allineano ai pedali. Le prove Alpino e Autunnale hanno più aderenza per salire più veloci, il fango frena un po’ meno e i bordi e i solchi dell’Autunnale sono stati rifiniti.',
+        },
+        {
           date: '10 novembre 2026',
-          title: 'Pagina Informazioni',
-          body: 'La pagina Informazioni raccoglie dettagli sul gioco, aggiornamenti recenti, risposte alle domande frequenti e contatti.',
+          title: 'Tipi di prova, pubblico e pagina Informazioni',
+          body: 'Le prove sono ora divise in nove tipi fissi, ciascuno con il proprio fondo, e il tipo fangoso è diventato Autunnale, con solchi delle gomme e linee laterali sbiadite. Il pubblico sta dietro piccoli terrapieni di protezione, nel deserto si raduna alla partenza, ai checkpoint e all’arrivo, e i circuiti hanno tribune vuote nelle curve strette. La pagina Informazioni raccoglie dettagli sul gioco, novità, domande frequenti e contatti, ed è stata rimossa la modalità notturna in città nascosta.',
         },
         {
           date: '9 novembre 2026',
@@ -247,6 +256,11 @@ export const it: Messages = {
         question: 'Come cambio visuale?',
         answer:
           'Premi C mentre guidi o scegli una visuale nelle Impostazioni. Ci sono visuali inseguimento, abitacolo, isometrica e cinematografica.',
+      },
+      {
+        question: 'Come torno in strada se esco o resto bloccato?',
+        answer:
+          'Premi R oppure, sui touchscreen, il pulsante per tornare al checkpoint accanto a Pausa. L’auto torna in strada subito dopo l’ultimo checkpoint superato (o alla partenza), rivolta in avanti; il cronometro della prova continua a correre.',
       },
     ],
     contact: {
@@ -350,6 +364,7 @@ export const it: Messages = {
     settings: 'Impostazioni',
     game: 'Gioco',
     pause: 'Pausa',
+    reset: 'Torna all’ultimo controllo',
     pauseTitle: 'In pausa',
     resume: 'Riprendi',
   },

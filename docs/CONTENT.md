@@ -24,7 +24,11 @@ identical every time it is driven and records are fair.
   start gantry and 140 m of run-out after the finish.
 - **Gates.** `min(6, max(2, round(length / 450)))` checkpoints evenly spaced,
   kept out of towns and in order, plus the finish. Start and finish are
-  gantries; checkpoints are pairs of time-control boards.
+  gantries; checkpoints are pairs of time-control boards. Every gantry
+  carries a two-row chequer. On an open stage a board with a black pictogram on a red disc stands on each verge
+  1 m before the start and finish lines: a stopwatch at the start and a
+  chequered flag at the finish. A circuit's start/finish gantry, crossed
+  every lap, has none.
 - **Terrain.** Simplex fBm per stage type, the road bed smoothed and
   grade-limited to 12 %, sunk under the carriageway, the corridor blended
   flat; a level plateau under each town. Chunks of 64 m are meshed in a Web
@@ -81,6 +85,12 @@ input.
 | Urban      | tarmac  | a city from start to finish                              |
 | Coastal    | tarmac  | limestone cliffs, beach and sea                          |
 | Desert     | sand    | dunes, palms and oases                                   |
+
+Three types grip harder than their surface alone (`handling.grip`, read
+into the sim's `gripScale`): the Arctic's studded tyres 1.45×, the
+Alpine's winter tyres 1.35× and the Autumnal's mud tyres 1.3×. That lets
+the cars climb the snow and mud hills instead of spinning their wheels.
+Only the Arctic also quickens the steering.
 
 All open ground (not the coast, the dunes, circuits or cities, which shape
 their own) carries small bumps and hollows over the broad hills: two

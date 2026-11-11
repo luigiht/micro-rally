@@ -73,6 +73,9 @@ describe('Arctic stages', () => {
     expect(h.grip).toBeGreaterThan(1.2);
     expect(h.steer).toBeGreaterThan(1);
     expect(h.lock).toBeGreaterThan(1);
-    expect(STAGE_TYPES.alpine.handling).toBeUndefined();
+    // The Alpine's winter tyres grip less than the studs and keep the default steering.
+    const alpine = STAGE_TYPES.alpine.handling!;
+    expect(alpine.grip).toBeLessThan(h.grip);
+    expect([alpine.steer, alpine.lock]).toEqual([1, 1]);
   });
 });

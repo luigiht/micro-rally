@@ -8,9 +8,11 @@
  * on a pole, for circuit stages; `turbo` (16×16) is a turbocharger in
  * two-pixel strokes: its round housing round a hub, the outlet and flange top
  * right and two speed lines behind; `checkpoint` is a small chequered flag and `money`
- * a dollar bill, the compact HUD's labels on touch devices.
+ * a dollar bill, the compact HUD's labels on touch devices; `respawn` is an
+ * undo arrow (head left, tail hooking back under), the touch toolbar's R.
  */
 export type PixelIconName =
+  | 'respawn'
   | 'restart'
   | 'settings'
   | 'game'
@@ -76,6 +78,16 @@ const GLYPHS: Record<PixelIconName, readonly string[]> = {
     '#..##..#',
     '########',
     '........',
+  ],
+  respawn: [
+    '..#.....',
+    '.##.....',
+    '######..',
+    '.##...#.',
+    '..#....#',
+    '.......#',
+    '......#.',
+    '..####..',
   ],
   restart: [
     '..###...',

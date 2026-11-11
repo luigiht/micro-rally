@@ -56,8 +56,7 @@ describe('WorldTheme', () => {
       expect(t.road.kerb).toBe(KERB_COLOR);
       expect(t.road.post).toBe(POST_COLOR);
       expect(t.road.cap).toBe(CAP_COLOR);
-      expect(t.gates.start.map(themeGlow)).toEqual([0.25, 0.25]);
-      expect(t.gates.finish.map(themeGlow)).toEqual([0, 0]);
+      expect(t.gates.chequer.map(themeGlow)).toEqual([0.25, 0.25]);
       expect(t.walls).toEqual({ body: '#c9c0b0', cap: '#e3dccf' });
       expect(t.skidInk).toBeNull();
       // Memoised, so the renderer can compare themes by identity.

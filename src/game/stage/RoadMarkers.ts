@@ -7,6 +7,15 @@ export const MARKER_CLEARANCE = 1.2;
 /** A stretch of road [from, to] along which no posts stand (a town, where kerbs and buildings take over). */
 export type MarkerSkip = readonly [number, number];
 
+/** An open stage's start and finish controls: their stopwatch boards stand this far before the line. */
+export const CONTROL_BOARD_LEAD = 1;
+
+/** The stretch round a start or finish line's boards where no marker post stands, as at a checkpoint's boards. */
+export function controlBoardSkip(lineDistance: number): MarkerSkip {
+  const at = lineDistance - CONTROL_BOARD_LEAD;
+  return [at - MARKER_CLEARANCE, at + MARKER_CLEARANCE];
+}
+
 /**
  * Distances along the road for the paired verge marker posts: one pair every
  * `MARKER_SPACING` metres, skipping any that would stand where a checkpoint's

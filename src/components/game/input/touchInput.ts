@@ -6,3 +6,10 @@ import { createControlInput } from '@/game/vehicle/ControlInput';
  * the hot path, and the HUD (outside the canvas) can reach it without props.
  */
 export const TOUCH_INPUT = createControlInput();
+
+/**
+ * One-shot requests from on-screen buttons, consumed (and cleared) by the
+ * DrivingSession on its next frame. `reset` is the touch R: back to the last
+ * checkpoint.
+ */
+export const TOUCH_ACTIONS = { reset: false };

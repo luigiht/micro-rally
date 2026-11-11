@@ -67,11 +67,12 @@ export interface RoadTheme {
 
 export interface GateTheme {
   post: string;
-  /** Alternating gantry tiles. */
-  start: readonly [ThemeColor, ThemeColor];
-  finish: readonly [ThemeColor, ThemeColor];
+  /** The start and finish gantries' chequer squares. */
+  chequer: readonly [ThemeColor, ThemeColor];
   board: ThemeColor;
   clock: ThemeColor;
+  /** The start and finish boards' disc, behind the stopwatch or the chequered flag. */
+  startDisc: ThemeColor;
   ink: string;
 }
 
@@ -155,13 +156,13 @@ export const DUSK_SKID_INK: SkidInk = { color: '#2b2a44', opacity: 0.3 };
 
 const DAY_GATES: GateTheme = {
   post: '#d9d4c7',
-  start: [
-    { hex: '#4f9d69', glow: 0.25 },
+  chequer: [
+    { hex: '#2b2a33', glow: 0.25 },
     { hex: '#f4f1e8', glow: 0.25 },
   ],
-  finish: ['#2b2a33', '#f4f1e8'],
   board: '#f4f1e8',
   clock: '#f2c14e',
+  startDisc: '#f25a2b',
   ink: '#2b2a33',
 };
 

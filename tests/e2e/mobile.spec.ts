@@ -32,8 +32,21 @@ test('phone landscape: HUD pieces do not overlap and touch pads are shown', asyn
   expect(overlaps(bar, handbrake)).toBe(false);
   // Desktop toolbar buttons are hidden on touch; the Pause button carries its label for assistive tech.
   await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
-  // On touch devices the toolbar is a single Pause button whose menu opens Game, Garage and Settings.
-  await expect(page.getByRole('navigation').getByRole('button')).toHaveCount(1);
+  // On touch devices the toolbar is a Pause button whose menu opens Game, Garage and Settings,
+  // with the touch R (back to checkpoint) beside it.
+  await expect(page.getByRole('navigation').getByRole('button')).toHaveCount(2);
+  await expect(page.getByRole('button', { name: 'Back to checkpoint' })).toBeVisible();
+  // The top pair mirrors the pedals below: same squares, same gap, same inset from the corner.
+  const back = await box(page.getByRole('button', { name: 'Back to checkpoint' }));
+  const pause = await box(page.getByRole('button', { name: 'Pause' }));
+  const brake = await box(page.getByRole('button', { name: 'Brake', exact: true }));
+  expect([back.x, back.width, back.height]).toEqual([brake.x, brake.width, brake.height]);
+  expect([pause.x, pause.width, pause.height]).toEqual([gas.x, gas.width, gas.height]);
+  expect(pause.y).toBe(page.viewportSize()!.height - (gas.y + gas.height));
+  // Borderless boxes beside a pad row line up with the pads' faces (inside their ink rings):
+  // the clock with the toolbar pads, the speed readout with the pedals.
+  expect([timer.y, timer.height]).toEqual([pause.y, pause.height]);
+  expect([speed.y, speed.height]).toEqual([gas.y, gas.height]);
   await page.getByRole('button', { name: 'Pause' }).click();
   const menu = page.getByRole('dialog', { name: 'Paused' });
   for (const name of ['Game', 'Garage', 'Settings'])
@@ -55,6 +68,25 @@ test('holding the on-screen gas pedal drives the car', async ({ page }) => {
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   const speed = Number((await readout.innerText()).match(/\d+/)?.[0]);
   expect(speed).toBeGreaterThan(20);
+});
+
+test('the toolbar’s back-to-checkpoint button puts the car back at rest, like R', async ({
+  page,
+}) => {
+  await startGame(page, '/?track=test');
+  const readout = page.getByTestId('speed-readout');
+  const speedNow = async () => Number((await readout.innerText()).match(/\d+/)?.[0]);
+  await page.waitForTimeout(500);
+  const gas = await box(page.getByRole('button', { name: 'Gas' }));
+  const cdp = await page.context().newCDPSession(page);
+  const touchPoints = [{ x: gas.x + gas.width / 2, y: gas.y + gas.height / 2 }];
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints });
+  await page.waitForTimeout(2500);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  expect(await speedNow()).toBeGreaterThan(20);
+  await page.getByRole('button', { name: 'Back to checkpoint' }).tap();
+  // Within a second: far too soon to have coasted down from 20+ km/h.
+  await expect.poll(speedNow, { timeout: 1000 }).toBeLessThan(3);
 });
 
 test('phone landscape: checkpoints and money share a row of icons, the pace note below; turbo only when fitted', async ({

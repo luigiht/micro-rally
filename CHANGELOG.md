@@ -9,11 +9,28 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Added
 
+- **Real rally start and finish lines.** Every start and finish now has a
+  chequered gantry. On rally stages a red-disc board stands on each side of
+  the road, with a stopwatch at the start and a chequered flag at the
+  finish. A circuit's start/finish line has no boards, as it is crossed
+  every lap. [205, 206, 207, 208]
+- **Back-to-checkpoint button on touch devices.** An undo-arrow button next
+  to Pause returns the car to the last checkpoint, like `R` on a keyboard.
+  The touch toolbar now matches the pedals' size and spacing, and the clock
+  and the speed/gear readout match the height of the pad faces beside them.
+  [203, 204]
 - **Low-poly Autumnal verges.** Irregular flat-coloured patches join the mud
   road to its grassy shoulder, replacing the soft gradient. [201]
+- **About page brought up to date.** The Gameplay tab covers the current
+  stage types, surfaces and grip, the start and finish gates and the touch
+  back-to-checkpoint button. The Changelog tab gains 11 November and a fuller
+  10 November, and a new FAQ explains how to get back on the road.
 
 ### Fixed
 
+- **Faster climbs on Alpine and Autumnal stages.** Winter tyres on the
+  Alpine and mud tyres on the Autumnal give the cars more grip, so they spin
+  their wheels far less and climb hills faster. [209]
 - **Faster mud driving.** Reduced rolling resistance on mud while keeping
   its loose grip and sliding character. [202]
 - **Autumnal edge tracks.** Removed overlapping road faces that hid the

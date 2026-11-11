@@ -28,7 +28,7 @@ import { useUiStore } from '@/state/uiStore';
 import type { CameraMode, CameraRig, CameraRigFrame } from './cameras/CameraRig';
 import { createCameraRig } from './cameras/createCameraRig';
 import { KeyboardControls, type KeyAction } from './input/KeyboardControls';
-import { TOUCH_INPUT } from './input/touchInput';
+import { TOUCH_ACTIONS, TOUCH_INPUT } from './input/touchInput';
 
 const HUD_INTERVAL = 0.1;
 /** The replay keeps rolling this long past the finish line. */
@@ -249,6 +249,10 @@ export class DrivingSession {
   }
 
   tick(dt: number, reducedMotion: boolean, info: RenderInfo): void {
+    if (TOUCH_ACTIONS.reset) {
+      TOUCH_ACTIONS.reset = false;
+      this.handleAction('reset');
+    }
     this.syncCameraRig();
     this.syncReplay();
     // An open HUD panel pauses the sim (and a replay); the camera keeps rendering the frozen pose.
