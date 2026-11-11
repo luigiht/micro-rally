@@ -1,4 +1,4 @@
-import type { RegionDef } from '@/game/stage/regions';
+import type { StageTypeDef } from '@/game/stage/regions';
 import type { Surface } from '@/game/vehicle/surfaces';
 import {
   CAP_COLOR,
@@ -11,7 +11,7 @@ import {
 
 /**
  * Everything the stage renderer needs to know about colour and light, as plain
- * data. `dayTheme` reproduces a region's daytime look, including its dusk
+ * data. `dayTheme` reproduces a stage type's daytime look, including its dusk
  * variant. Pure TS: the builders turn these into three.js colours and materials.
  */
 
@@ -207,29 +207,31 @@ export function dayRoad(shoulder: string): RoadTheme {
 const DAY = new Map<string, WorldTheme>();
 
 /**
- * A region's look by day, as the game has always drawn it, or after sunset on
+ * A stage type's look by day, as the game has always drawn it, or after sunset on
  * a stage that runs at dusk (`StageBrief.dusk`). Memoised, so a theme can be
  * compared by identity.
  */
-export function dayTheme(region: RegionDef, dusk = false): WorldTheme {
-  const key = `${region.id}${dusk ? ':dusk' : ''}`;
+export function dayTheme(stageType: StageTypeDef, dusk = false): WorldTheme {
+  const key = `${stageType.id}${dusk ? ':dusk' : ''}`;
   let theme = DAY.get(key);
   if (!theme) {
+    const road = dayRoad(stageType.palette.shoulder);
+    if (stageType.id === 'autumnal') road.line = '#c0a682';
     theme = {
       lighting: dusk
         ? DUSK_LIGHTING
         : {
-            background: region.palette.sky,
-            fog: region.palette.fog,
+            background: stageType.palette.sky,
+            fog: stageType.palette.fog,
             ...DAY_LIGHTING,
-            ...(region.coast ? COAST_HEMI : {}),
+            ...(stageType.coast ? COAST_HEMI : {}),
           },
-      road: dayRoad(region.palette.shoulder),
+      road,
       gates: DAY_GATES,
       walls: DAY_WALLS,
       hedges: DAY_HEDGES,
       seawall: DAY_SEAWALL,
-      sea: region.coast?.sea ?? DAY_SEA,
+      sea: stageType.coast?.sea ?? DAY_SEA,
       skidInk: dusk ? DUSK_SKID_INK : null,
       circuit: DAY_CIRCUIT,
       carLamps: dusk,
@@ -239,7 +241,7 @@ export function dayTheme(region: RegionDef, dusk = false): WorldTheme {
   return theme;
 }
 
-/** Daytime theme for a world without a region (the test track): only sky and fog differ. */
+/** Daytime theme for a world without a stage type (the test track): only sky and fog differ. */
 export function flatTheme(sky: string, fog: string, shoulder = '#8fbf6a'): WorldTheme {
   return {
     lighting: { background: sky, fog, ...DAY_LIGHTING },

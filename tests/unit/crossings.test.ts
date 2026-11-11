@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { junctionCrossings, ZEBRA_DEPTH } from '@/game/stage/Crossings';
 import { onMedian } from '@/game/stage/Median';
 import { BAY_WIDTH, parkedCars, parkingStretches } from '@/game/stage/ParkingBays';
-import { REGIONS } from '@/game/stage/regions';
+import { STAGE_TYPES } from '@/game/stage/regions';
 import { halfWidthAt } from '@/game/stage/RoadWidth';
 import { onRoundabout } from '@/game/stage/Roundabout';
 import { generateStage } from '@/game/stage/StageGenerator';
@@ -13,7 +13,7 @@ import { stageIndexOf } from './stageIndex';
 
 const URBAN_INDEX = stageIndexOf('urban');
 const SEEDS = [1, 2, 3];
-const URBAN = REGIONS.urban.urban!;
+const URBAN = STAGE_TYPES.urban.urban!;
 
 function segmentDistance(x0: number, z0: number, x1: number, z1: number, x: number, z: number) {
   const dx = x1 - x0;

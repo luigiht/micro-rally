@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { RegionId } from '@/game/stage/regions';
+import type { StageTypeId } from '@/game/stage/regions';
 import type { PaceNote } from '@/game/stage/PaceNotes';
 import type { RunPhase } from '@/game/stage/StageRun';
 import type { Surface } from '@/game/vehicle/surfaces';
@@ -8,7 +8,7 @@ import type { StageResult } from './gameStore';
 export interface StageInfo {
   index: number;
   name: string;
-  region: RegionId;
+  stageType: StageTypeId;
   surface: Surface;
   length: number;
   parTime: number;

@@ -56,7 +56,7 @@ the last sector board or lap line passed.
 
 ## Par and prize money
 
-- **Par time** is the stage length divided by the region's par speed (15 m/s
+- **Par time** is the stage length divided by the stage type's par speed (15 m/s
   Forest, 14 m/s Alpine) times a surface factor (tarmac 1.12, gravel 1,
   mud 0.85, snow 0.82, sand 0.9), plus 12 s when the stage has a town.
 - **Prize** = $800 per kilometre × surface difficulty (tarmac 1, grass 1.1,
@@ -73,33 +73,35 @@ the last sector board or lap line passed.
 - Every ninth stage (9, 18, 27…) is a city, and every tenth (10, 20,
   30…) a circuit race; where the two would meet (stage 90, 180…) the city
   keeps the stage and the circuit is the next one. The stages between run
-  through a seven-stage rally mix in turn: Forest on gravel, Alpine, Forest
-  on tarmac, Coast, Arctic, Forest on mud (the autumn rally, with its crowds
-  behind berms) and Desert, so the same region never runs twice in a row.
+  through a seven-type rally mix in turn: Pinewood, Alpine, Forest, Coastal,
+  Arctic, Autumnal and Desert, so a type never runs twice in a row. Each type
+  has one fixed road surface.
   Every six stages the roads lengthen by 25 % and the bends tighten a
   little, so there is always a next stage.
 - Every third rally stage carries a town: the route leaves the open road,
   threads a village of right-angle corners, narrow streets and blocked side
   streets, and rejoins the stage. Counted along the mix, villages come round
-  every Forest surface and the Alpine; the Coast road, the Arctic and the Desert
-  build none, so a town slot that falls there stays open road, and cities
-  and circuits are never counted.
+  Pinewood, Autumnal, Forest and Alpine; Coastal, Arctic and Desert build
+  none, so a town slot that falls there stays open road, and cities and
+  circuits are never counted.
 - Any stage up to the first unfinished one can be driven again from the
   Game panel's stage list.
 
-## Regions
+## Stage types
 
-| Region  | Surfaces (weight)                 | Off road            | Terrain                                                  | Base length | Par speed |
-| ------- | --------------------------------- | ------------------- | -------------------------------------------------------- | ----------- | --------- |
-| Forest  | gravel 3, tarmac 1, mud 1         | grass               | amplitude 22, soft                                       | 1800 m      | 15 m/s    |
-| Alpine  | snow 3 (dusted asphalt), tarmac 1 | snow                | amplitude 34, sharper bends                              | 1500 m      | 14 m/s    |
-| Coast   | tarmac, 11 m wide                 | grass               | cliff road 5–35 m over the sea, hairpin stacks           | 1600 m      | 15 m/s    |
-| Desert  | sand                              | dune                | dunes of 11 m relief, oases                              | 1900 m      | 16 m/s    |
-| Urban   | tarmac, 6–14 m wide               | grass               | a city keeping 16 m of relief, roundabouts               | 1700 m      | 13 m/s    |
-| Arctic  | snow 1 (snowed over)              | snow                | flat (amplitude 9), snow banks either side, spruce walls | 1900 m      | 16 m/s    |
-| Circuit | race asphalt, 12 m wide, kerbs    | grass, gravel traps | gentle hills; three laps of a 1.7–2.4 km lap             | 3 laps      | 20 m/s    |
+| Stage type | Surface | Off road            | Terrain                                  | Base length | Par speed |
+| ---------- | ------- | ------------------- | ---------------------------------------- | ----------- | --------- |
+| Arctic     | snow    | snow                | snow banks and spruce walls              | 1900 m      | 16 m/s    |
+| Circuit    | track   | grass, gravel traps | parkland racing, kerbs                   | 3 laps      | 20 m/s    |
+| Autumnal   | mud     | grass               | autumn trees, crowds, mud ruts and jumps | 1800 m      | 15 m/s    |
+| Pinewood   | gravel  | grass               | soft, wooded hills                       | 1800 m      | 15 m/s    |
+| Alpine     | snow    | snow                | sharper bends and frosted pines          | 1500 m      | 14 m/s    |
+| Forest     | tarmac  | grass               | soft, wooded hills                       | 1800 m      | 15 m/s    |
+| Urban      | tarmac  | grass               | city streets and roundabouts             | 1700 m      | 13 m/s    |
+| Coastal    | tarmac  | grass               | limestone cliffs and sea                 | 1600 m      | 15 m/s    |
+| Desert     | sand    | dune                | dunes and oases                          | 1900 m      | 16 m/s    |
 
-On a Coast stage the road follows the shore a few metres back from a
+On a Coastal stage the road follows the shore a few metres back from a
 terraced cliff, the sea below to seaward, a scrub hillside above, and once or
 twice climbs that hillside in a stack of two hairpins before coming back
 down. Each coast is its own: the sea lies on the left of travel on about half

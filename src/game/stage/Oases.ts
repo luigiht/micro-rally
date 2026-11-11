@@ -1,5 +1,5 @@
 import { hashSeed, mulberry32 } from '../rng';
-import { REGIONS } from './regions';
+import { STAGE_TYPES } from './regions';
 import { createRoadHit, type RoadSample } from './RoadPath';
 import type { Prop } from './SceneryScatter';
 import type { TerrainField, TerrainPad } from './TerrainField';
@@ -38,7 +38,7 @@ const TRIES = 5;
 
 export function planOases(field: TerrainField): Oasis[] {
   const stage = field.stage;
-  const def = REGIONS[stage.region].oases;
+  const def = STAGE_TYPES[stage.stageType].oases;
   if (!def) return [];
   const rand = mulberry32(hashSeed(stage.seed, 'oases'));
   const path = stage.path;
@@ -88,7 +88,7 @@ export function oasisPads(oases: readonly Oasis[]): TerrainPad[] {
 /** Date palms round each pool's rim and scrub at the water's edge; placed once the pads are set, so they stand on the hollow's slope. */
 export function oasisProps(oases: readonly Oasis[], field: TerrainField): Prop[] {
   const stage = field.stage;
-  const def = REGIONS[stage.region].oases;
+  const def = STAGE_TYPES[stage.stageType].oases;
   if (!def) return [];
   const rand = mulberry32(hashSeed(stage.seed, 'palms'));
   const out: Prop[] = [];

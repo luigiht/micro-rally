@@ -1,10 +1,11 @@
 import { hashSeed, mulberry32 } from '../rng';
-import { REGIONS } from './regions';
+import { barrierAt, circuitTrackside, grandstandSpot } from './CircuitTrackside';
+import { STAGE_TYPES } from './regions';
 import { createRoadHit, type RoadSample } from './RoadPath';
 import type { Prop } from './SceneryScatter';
 import type { TerrainMound } from './TerrainDetail';
 import type { TerrainField } from './TerrainField';
-import { townBlocks, townFade } from './Town';
+import { townBlocks } from './Town';
 
 /** Jacket colours and poses a spectator's variant picks from: `variant % jackets`, then the pose. */
 export const SPECTATOR_JACKETS = 6;
@@ -27,15 +28,13 @@ const DEAL_APART = 6;
 /** Groups keep this far from a crowd's ends, so the two never pile up. */
 const CROWD_MARGIN = 10;
 /**
- * Berms (mud and Alpine stages): earth heaped from this far past the carriageway's edge
- * (clear of the verge strip), this deep and high, in runs this long; the
- * crowd stands just behind, its eyes well above the crest.
+ * Small protective berms: earth heaped beyond the verge, between the road
+ * and spectators, in runs this long.
  */
 const BERM_FROM = 3.4;
-const BERM_DEPTH = 3.6;
-const BERM_HEIGHT = 0.7;
+const BERM_DEPTH = 2.2;
+const BERM_HEIGHT = 0.35;
 const BERM_RUN = 8;
-const BERM_BACK = BERM_FROM + BERM_DEPTH + 0.4;
 
 /**
  * A stretch of road lined on both sides: front-row places `spacing` strides
@@ -47,8 +46,13 @@ interface Crowd {
   rows: number;
   spacing: number;
   gap?: number;
-  /** The start, checkpoint and finish crowds stand behind a berm where the stage has them. */
+  /** Event and crest crowds stand behind a berm where the stage has them. */
   berm?: boolean;
+}
+
+interface SpectatorOptions {
+  berms?: boolean;
+  eventsOnly?: boolean;
 }
 
 /**
@@ -56,7 +60,7 @@ interface Crowd {
  * run-up and landing of every crest the car can jump, and down the run-in
  * to the finish, in road order, trimmed so none overlaps the one before.
  */
-function crowds(field: TerrainField): Crowd[] {
+function crowds(field: TerrainField, eventsOnly: boolean): Crowd[] {
   const stage = field.stage;
   const start = stage.startDistance;
   // The finish draws the biggest crowd; the start, the checkpoints and the jumps half as thick.
@@ -69,7 +73,9 @@ function crowds(field: TerrainField): Crowd[] {
       list.push({ from: d - 45, to: d + 25, rows: 0.8, spacing: 1, gap: d, berm: true });
     else list.push({ from: d - 22, to: d + 18, rows: 0.4, spacing: 2, gap: d, berm: true });
   }
-  for (const c of field.crestsAt) list.push({ from: c - 26, to: c + 10, rows: 0.25, spacing: 2 });
+  if (!eventsOnly)
+    for (const c of field.crestsAt)
+      list.push({ from: c - 26, to: c + 10, rows: 0.25, spacing: 2, berm: true });
   list.sort((a, b) => a.from - b.from);
   let end = 2;
   const out: Crowd[] = [];
@@ -87,32 +93,59 @@ function crowds(field: TerrainField): Crowd[] {
  * The spectators down a stage: crowds at the start, the checkpoints, the
  * jumps and the finish (`crowds`), and between them `perHundred` groups
  * per 100 m, five or six people a stride apart, on either side, no two in a
- * group striking the same pose or wearing the same jacket. With `berms` (mud
- * and Alpine stages) the groups and the start, checkpoint and finish crowds stand a few metres
- * further back, behind a low berm of earth heaped between them and the road
- * (returned as `mounds` for the terrain). All
- * stand just behind the snow banks (or the verge) facing the road, never
- * inside a town's buildings nor where another stretch of road passes close.
+ * group striking the same pose or wearing the same jacket. When `berms` is
+ * enabled, crowds stand behind a small mound between them and the road
+ * (returned as `mounds` for the terrain). All stand just behind the snow
+ * banks (or the verge) facing the road, never inside a town's buildings nor
+ * where another stretch of road passes close.
  */
 export function scatterSpectators(
   field: TerrainField,
   perHundred: number,
-  berms = false,
+  options: SpectatorOptions = {},
 ): { people: Prop[]; mounds: TerrainMound[] } {
   const stage = field.stage;
+  const { berms = false, eventsOnly = false } = options;
   const rand = mulberry32(hashSeed(stage.seed, 'spectators'));
   const path = stage.path;
   const sample: RoadSample = { x: 0, z: 0, heading: 0 };
+  const coastSample: RoadSample = { x: 0, z: 0, heading: 0 };
   const hit = createRoadHit();
-  const banks = REGIONS[stage.region].terrain.banks;
+  const banks = STAGE_TYPES[stage.stageType].terrain.banks;
   const verge = stage.halfWidth + 0.6 + (banks ? banks.width : 2);
   const back = verge + BACK;
   const out: Prop[] = [];
   const mounds: TerrainMound[] = [];
   const hw = stage.halfWidth;
-  // Berms where the stage has them, but not along a village's pavements.
-  const bermAt = (d: number) => berms && (!stage.town || townFade(stage.town, d) <= 0);
-  const spine = hw + BERM_FROM + BERM_DEPTH / 2;
+  const trackside = circuitTrackside(stage);
+  const grandstand = trackside ? grandstandSpot(stage, trackside) : null;
+  const bermAt = () => berms;
+  const landwardSide = (d: number): 1 | -1 => {
+    path.sample(d, coastSample);
+    const lx = Math.cos(coastSample.heading) * 8;
+    const lz = -Math.sin(coastSample.heading) * 8;
+    return field.coast!.shoreDistance(coastSample.x + lx, coastSample.z + lz) >
+      field.coast!.shoreDistance(coastSample.x - lx, coastSample.z - lz)
+      ? 1
+      : -1;
+  };
+  const sideAllowed = (d: number, side: 1 | -1) => !field.coast || side === landwardSide(d);
+  const landwardPoint = (x: number, z: number): boolean => {
+    if (!field.coast) return true;
+    return path.nearest(x, z, 100, hit) && Math.sign(hit.lateral) === landwardSide(hit.along);
+  };
+  const spine = (d: number, side: 1 | -1) =>
+    (trackside ? barrierAt(trackside, path, d, side) : hw) + BERM_FROM + BERM_DEPTH / 2;
+  const hasBerm = (d: number, side: 1 | -1): boolean => {
+    const [x, z] = at(d, side, spine(d, side));
+    return mounds.some((m) => {
+      const dx = m.x1 - m.x0;
+      const dz = m.z1 - m.z0;
+      const len2 = dx * dx + dz * dz;
+      const t = len2 > 0 ? Math.max(0, Math.min(1, ((x - m.x0) * dx + (z - m.z0) * dz) / len2)) : 0;
+      return Math.hypot(x - (m.x0 + dx * t), z - (m.z0 + dz * t)) < m.radius * 0.5;
+    });
+  };
   const at = (d: number, side: 1 | -1, off: number): [number, number] => {
     path.sample(d, sample);
     return [
@@ -122,13 +155,17 @@ export function scatterSpectators(
   };
   /** A berm along the road from `d0` to `d1` on `side`, unless another stretch of road runs under it. */
   const berm = (d0: number, d1: number, side: 1 | -1): void => {
-    const [x0, z0] = at(d0, side, spine);
-    const [x1, z1] = at(d1, side, spine);
+    const [x0, z0] = at(d0, side, spine(d0, side));
+    const [x1, z1] = at(d1, side, spine(d1, side));
+    if (!landwardPoint(x0, z0) || !landwardPoint(x1, z1)) return;
     for (const [x, z, d] of [
       [x0, z0, d0],
       [x1, z1, d1],
     ] as const) {
-      if (path.nearest(x, z, spine + BERM_DEPTH, hit) && Math.abs(hit.along - d) > BERM_RUN * 2)
+      if (
+        path.nearest(x, z, spine(d, side) + BERM_DEPTH, hit) &&
+        Math.abs(hit.along - d) > BERM_RUN * 2
+      )
         return;
       if (stage.town && townBlocks(stage.town, x, z)) return;
     }
@@ -137,11 +174,23 @@ export function scatterSpectators(
 
   const stand = (d: number, side: 1 | -1, off: number, variant: number): void => {
     path.sample(d, sample);
-    const x = sample.x + Math.cos(sample.heading) * off * side;
-    const z = sample.z - Math.sin(sample.heading) * off * side;
+    const distance = trackside ? Math.max(off, barrierAt(trackside, path, d, side) + 3) : off;
+    const x = sample.x + Math.cos(sample.heading) * distance * side;
+    const z = sample.z - Math.sin(sample.heading) * distance * side;
+    if (field.coast) {
+      if (!path.nearest(x, z, 100, hit)) return;
+      path.sample(hit.along, coastSample);
+      const lx = Math.cos(coastSample.heading) * 8;
+      const lz = -Math.sin(coastSample.heading) * 8;
+      const left = field.coast.shoreDistance(coastSample.x + lx, coastSample.z + lz);
+      const right = field.coast.shoreDistance(coastSample.x - lx, coastSample.z - lz);
+      if (Math.sign(hit.lateral) !== (left > right ? 1 : -1)) return;
+    }
     if (stage.town && townBlocks(stage.town, x, z)) return;
+    if (grandstand && Math.hypot(x - grandstand.x, z - grandstand.z) < grandstand.radius) return;
     // Another stretch of road (a hairpin's other leg) inside the banks: nobody stands on it.
     if (path.nearest(x, z, verge, hit)) return;
+    if (bermAt() && sideAllowed(d, side) && !hasBerm(d, side)) return;
     // Facing the road: from the left of travel the road lies to the right, so the front (−z)
     // turns by heading + π/2; from the right, heading − π/2; a little head-turn either way.
     out.push({
@@ -169,16 +218,17 @@ export function scatterSpectators(
     return card;
   };
 
-  const lined = crowds(field);
+  const lined = crowds(field, eventsOnly);
   for (const c of lined) {
     for (const side of [1, -1] as const) {
       const step = STRIDE * c.spacing;
       if (c.berm)
         for (let a = c.from; a < c.to; a += BERM_RUN)
-          if (bermAt(a)) berm(a, Math.min(a + BERM_RUN, c.to), side);
+          if (bermAt()) berm(a, Math.min(a + BERM_RUN, c.to), side);
       for (let d = c.from + rand() * step * 0.5; d < c.to; d += step * (0.8 + 0.4 * rand())) {
         if (c.gap !== undefined && Math.abs(d - c.gap) < GATE_GAP) continue;
-        const front = c.berm && bermAt(d) ? hw + BERM_BACK : back;
+        const behind = c.berm && bermAt() && sideAllowed(d, side);
+        const front = behind ? spine(d, side) + BERM_DEPTH / 2 + 0.4 : back;
         stand(d, side, front + rand() * 0.5, deal());
         if (rand() < c.rows)
           stand(d + step * (rand() - 0.5), side, front + ROW_GAP + rand() * 0.5, deal());
@@ -186,30 +236,33 @@ export function scatterSpectators(
     }
   }
 
-  let side: 1 | -1 = rand() < 0.5 ? 1 : -1;
-  for (
-    let d = FIRST + rand() * 40;
-    d < path.length - 60;
-    d += (100 / perHundred) * (0.6 + 0.8 * rand())
-  ) {
-    if (rand() < 0.6) side = -side as 1 | -1;
-    if (lined.some((c) => d > c.from - CROWD_MARGIN && d < c.to + CROWD_MARGIN)) continue;
-    const n = GROUP_MIN + Math.floor(rand() * (GROUP_MAX - GROUP_MIN + 1));
-    // Each member a different pose and a different jacket.
-    const poses = shuffled(SPECTATOR_POSES, rand);
-    const jackets = shuffled(SPECTATOR_JACKETS, rand);
-    // Behind a berm of their own where the stage has them, a metre past either end of the group.
-    const behind = bermAt(d);
-    const half = ((n - 1) / 2) * 0.9;
-    if (behind) berm(d - half - 1, d + half + 1, side);
-    // Along the road a stride apart, a little in and out of line.
-    for (let i = 0; i < n; i++)
-      stand(
-        d + (i - (n - 1) / 2) * 0.9 + (rand() - 0.5) * 0.3,
-        side,
-        behind ? hw + BERM_BACK + rand() * 0.6 : back + rand() * 1.4,
-        jackets[i]! + SPECTATOR_JACKETS * poses[i]!,
-      );
+  if (!eventsOnly) {
+    let side: 1 | -1 = rand() < 0.5 ? 1 : -1;
+    for (
+      let d = FIRST + rand() * 40;
+      d < path.length - 60;
+      d += (100 / perHundred) * (0.6 + 0.8 * rand())
+    ) {
+      if (field.coast) side = landwardSide(d);
+      else if (rand() < 0.6) side = -side as 1 | -1;
+      if (lined.some((c) => d > c.from - CROWD_MARGIN && d < c.to + CROWD_MARGIN)) continue;
+      const n = GROUP_MIN + Math.floor(rand() * (GROUP_MAX - GROUP_MIN + 1));
+      // Each member a different pose and a different jacket.
+      const poses = shuffled(SPECTATOR_POSES, rand);
+      const jackets = shuffled(SPECTATOR_JACKETS, rand);
+      // Behind a berm of their own where the stage has them, a metre past either end of the group.
+      const behind = bermAt() && sideAllowed(d, side);
+      const half = ((n - 1) / 2) * 0.9;
+      if (behind) berm(d - half - 1, d + half + 1, side);
+      // Along the road a stride apart, a little in and out of line.
+      for (let i = 0; i < n; i++)
+        stand(
+          d + (i - (n - 1) / 2) * 0.9 + (rand() - 0.5) * 0.3,
+          side,
+          behind ? spine(d, side) + BERM_DEPTH / 2 + 0.4 + rand() * 0.6 : back + rand() * 1.4,
+          jackets[i]! + SPECTATOR_JACKETS * poses[i]!,
+        );
+    }
   }
   return { people: out, mounds };
 }

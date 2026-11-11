@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { REGIONS } from '@/game/stage/regions';
+import { STAGE_TYPES } from '@/game/stage/regions';
 import { createStageWorld } from '@/game/stage/StageWorld';
 import { TerrainChunkManager } from '@/render/terrain/TerrainChunkManager';
 import { terrainColors } from '@/render/terrain/meshTerrainChunk';
@@ -30,7 +30,7 @@ afterEach(() => {
 
 function manager() {
   const world = createStageWorld(1, 0);
-  const region = REGIONS[world.stage.region];
+  const region = STAGE_TYPES[world.stage.stageType];
   const m = new TerrainChunkManager(
     1,
     0,

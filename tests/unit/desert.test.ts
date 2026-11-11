@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { inOasis, OASIS_WATER_ABOVE } from '@/game/stage/Oases';
-import { REGIONS } from '@/game/stage/regions';
+import { STAGE_TYPES } from '@/game/stage/regions';
 import { hasTown } from '@/game/stage/TownPlan';
 import { stageIndexOf } from './stageIndex';
 import { createRoadHit } from '@/game/stage/RoadPath';
 import { scatterScenery } from '@/game/stage/SceneryScatter';
-import { generateStage, stageBrief, stageHasTown, stageRegion } from '@/game/stage/StageGenerator';
+import { generateStage, stageBrief, stageHasTown, stageTypeAt } from '@/game/stage/StageGenerator';
 import { TerrainField } from '@/game/stage/TerrainField';
 import { SURFACES } from '@/game/vehicle/surfaces';
 import { OasisBuilder } from '@/render/terrain/OasisBuilder';
@@ -14,7 +14,7 @@ import { OasisBuilder } from '@/render/terrain/OasisBuilder';
 const DESERT_INDEX = stageIndexOf('desert');
 /** A Desert stage on a town index. */
 const DESERT_TOWN_INDEX = Array.from({ length: 200 }, (_, i) => i).find(
-  (i) => stageRegion(i).region === 'desert' && hasTown(i),
+  (i) => stageTypeAt(i).stageType === 'desert' && hasTown(i),
 )!;
 const SEEDS = [1, 2, 3, 4, 5, 6];
 
@@ -30,11 +30,38 @@ function fieldFor(seed: number): TerrainField {
 }
 
 describe('Desert stages', () => {
+  it('keep spectators at the start, checkpoints and finish only', () => {
+    for (const seed of SEEDS) {
+      const field = fieldFor(seed);
+      const { stage } = field;
+      const people = scatterScenery(field).filter((p) => p.kind === 'spectator');
+      const hit = createRoadHit();
+      const eventRanges = [
+        [stage.startDistance - 25, stage.startDistance + 35],
+        ...stage.gates.map((gate) =>
+          gate.kind === 'finish'
+            ? [gate.distance - 45, gate.distance + 25]
+            : [gate.distance - 22, gate.distance + 18],
+        ),
+      ];
+
+      expect(people.length, `seed ${seed}`).toBeGreaterThan(0);
+      expect(people.length, `seed ${seed}`).toBeLessThan(600);
+      for (const person of people) {
+        expect(stage.path.nearest(person.x, person.z, 100, hit)).toBe(true);
+        expect(
+          eventRanges.some(([from, to]) => hit.along >= from! - 3 && hit.along <= to! + 3),
+          `seed ${seed}, spectator at ${hit.along.toFixed(1)} m`,
+        ).toBe(true);
+      }
+    }
+  });
+
   it('never carry a town, even on a town index', () => {
     // A desert stage on a town index: no village, and the brief charges no town time.
     expect(stageHasTown(DESERT_TOWN_INDEX)).toBe(false);
     for (let i = 0; i < 48; i++)
-      if (stageRegion(i).region === 'desert') expect(stageHasTown(i)).toBe(false);
+      if (stageTypeAt(i).stageType === 'desert') expect(stageHasTown(i)).toBe(false);
     for (const seed of [1, 2, 3]) {
       const stage = generateStage(seed, DESERT_TOWN_INDEX);
       expect(stage.town).toBeUndefined();
@@ -43,14 +70,14 @@ describe('Desert stages', () => {
   });
 
   it('sit in the cycle on a packed-sand piste through soft sand', () => {
-    expect(stageRegion(DESERT_INDEX).region).toBe('desert');
+    expect(stageTypeAt(DESERT_INDEX).stageType).toBe('desert');
     expect(SURFACES.sand.grip).toBeLessThan(SURFACES.gravel.grip);
     expect(SURFACES.sand.grip).toBeGreaterThan(SURFACES.dune.grip);
     expect(SURFACES.dune.drag).toBeGreaterThan(SURFACES.sand.drag);
     for (const seed of SEEDS) {
       const field = fieldFor(seed);
       const stage = field.stage;
-      expect(stage.region).toBe('desert');
+      expect(stage.stageType).toBe('desert');
       expect(stage.surface).toBe('sand');
       const g = stage.gates[1]!;
       expect(field.surfaceAt(g.x, g.z)).toBe('sand');
@@ -113,7 +140,7 @@ describe('Desert stages', () => {
 
   it('builds the pools as one mesh', () => {
     const field = fieldFor(1);
-    const pools = new OasisBuilder(field.oases, REGIONS.coast.coast!.sea);
+    const pools = new OasisBuilder(field.oases, STAGE_TYPES.coastal.coast!.sea);
     expect(pools.group.children).toHaveLength(1);
     pools.dispose();
   });

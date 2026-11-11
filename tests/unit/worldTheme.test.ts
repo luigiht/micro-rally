@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { REGIONS } from '@/game/stage/regions';
-import { stageAtDusk, stageBrief, stageRegion } from '@/game/stage/StageGenerator';
+import { STAGE_TYPES } from '@/game/stage/regions';
+import { stageAtDusk, stageBrief, stageTypeAt } from '@/game/stage/StageGenerator';
 import {
   CAP_COLOR,
   KERB_COLOR,
@@ -33,7 +33,7 @@ function colours(value: unknown, out: ThemeColor[] = []): ThemeColor[] {
 
 describe('WorldTheme', () => {
   it('the day theme reproduces the daytime constants for every region', () => {
-    for (const region of Object.values(REGIONS)) {
+    for (const region of Object.values(STAGE_TYPES)) {
       const t = dayTheme(region);
       expect(t.lighting).toEqual({
         background: region.palette.sky,
@@ -51,7 +51,7 @@ describe('WorldTheme', () => {
       expect(t.road.surface).toBeNull();
       expect(t.road.snowPatches).toBe(true);
       expect(t.road.verge).toBe(region.palette.shoulder);
-      expect(t.road.line).toBe(LINE_COLOR);
+      expect(t.road.line).toBe(region.id === 'autumnal' ? '#c0a682' : LINE_COLOR);
       expect(t.road.pavement).toBe(PAVEMENT_COLOR);
       expect(t.road.kerb).toBe(KERB_COLOR);
       expect(t.road.post).toBe(POST_COLOR);
@@ -66,8 +66,8 @@ describe('WorldTheme', () => {
   });
 
   it('a stage at dusk gets a twilight sky, little light, the car lamps lit, the day kits', () => {
-    const arctic = dayTheme(REGIONS.arctic, true);
-    expect(REGIONS.arctic.dusk).toBe(true);
+    const arctic = dayTheme(STAGE_TYPES.arctic, true);
+    expect(STAGE_TYPES.arctic.dusk).toBe(true);
     expect(arctic.lighting).toBe(DUSK_LIGHTING);
     expect(arctic.carLamps).toBe(true);
     // Unlit marks: dark and faint after dark, never the snow's pale ink.
@@ -77,16 +77,16 @@ describe('WorldTheme', () => {
     expect(l.sky?.horizon).toBe(l.fog);
     expect(l.hemiIntensity).toBeLessThan(1.9 / 2);
     expect(l.sunIntensity).toBeLessThan(2.6 / 4);
-    expect(dayTheme(REGIONS.arctic, true)).toBe(arctic);
-    expect(dayTheme(REGIONS.arctic)).not.toBe(arctic);
-    for (const region of Object.values(REGIONS)) expect(dayTheme(region).carLamps).toBe(false);
+    expect(dayTheme(STAGE_TYPES.arctic, true)).toBe(arctic);
+    expect(dayTheme(STAGE_TYPES.arctic)).not.toBe(arctic);
+    for (const region of Object.values(STAGE_TYPES)) expect(dayTheme(region).carLamps).toBe(false);
   });
 
   it('runs every third Arctic stage at dusk and every other stage by day', () => {
     const arctic: boolean[] = [];
     for (let i = 0; i < 200; i++) {
-      const { region } = stageRegion(i);
-      if (region === 'arctic') arctic.push(stageAtDusk(i));
+      const { stageType } = stageTypeAt(i);
+      if (stageType === 'arctic') arctic.push(stageAtDusk(i));
       else expect(stageAtDusk(i)).toBe(false);
     }
     expect(arctic.length).toBeGreaterThan(9);
@@ -105,8 +105,8 @@ describe('WorldTheme', () => {
 
   it('every colour in every theme is a six-digit hex', () => {
     const themes = [
-      ...Object.values(REGIONS).map((r) => dayTheme(r)),
-      dayTheme(REGIONS.arctic, true),
+      ...Object.values(STAGE_TYPES).map((r) => dayTheme(r)),
+      dayTheme(STAGE_TYPES.arctic, true),
     ];
     for (const t of themes) {
       const list = colours(t);

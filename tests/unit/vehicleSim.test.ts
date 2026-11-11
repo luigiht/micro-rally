@@ -5,7 +5,7 @@ import { autoShift, torqueAt } from '@/game/vehicle/Drivetrain';
 import { SURFACES } from '@/game/vehicle/surfaces';
 import { flatTerrain } from '@/game/vehicle/Terrain';
 import { testTrackTerrain, TEST_TRACK } from '@/game/stage/TestTrack';
-import { GRAVITY, VehicleSim } from '@/game/vehicle/VehicleSim';
+import { DEFAULT_ENV, GRAVITY, VehicleSim } from '@/game/vehicle/VehicleSim';
 import { input, makeSim, run } from './vehicleHarness';
 
 const tarmac = flatTerrain('tarmac');
@@ -141,6 +141,38 @@ describe('VehicleSim', () => {
     };
     expect(speedOn('grass')).toBeLessThan(speedOn('tarmac') * 0.85);
     expect(speedOn('mud')).toBeLessThan(speedOn('grass'));
+  });
+
+  it('lets every car carry more speed on mud without changing its loose grip', () => {
+    expect(SURFACES.mud.grip).toBe(0.55);
+    const ground = flatTerrain('mud');
+    for (const id of CATALOG_IDS) {
+      const current = makeSim(CAR_SPECS[id], ground, 15);
+      const spec = CAR_SPECS[id];
+      const previous = makeSim(
+        {
+          ...spec,
+          rollingResistance: spec.rollingResistance + spec.mass * (0.22 - SURFACES.mud.drag),
+        },
+        ground,
+        15,
+      );
+      current.state.gear = 3;
+      previous.state.gear = 3;
+      const env = { ...DEFAULT_ENV, manualGearbox: true };
+      const controls = input({ throttle: 1 });
+      const dt = 1 / 120;
+      const currentStart = current.state.z;
+      const previousStart = previous.state.z;
+      for (let step = 0; step < 120 * 10; step++) {
+        current.step(dt, controls, ground, env);
+        previous.step(dt, controls, ground, env);
+      }
+      const distance = current.state.z - currentStart;
+      const previousDistance = previous.state.z - previousStart;
+      expect(distance, id).toBeGreaterThan(previousDistance * 1.005);
+      expect(distance, id).toBeLessThan(previousDistance * 1.2);
+    }
   });
 
   it('every car stays composed through a fast corner under power on tarmac', () => {

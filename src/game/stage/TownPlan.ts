@@ -15,11 +15,11 @@ export function tangentLength(turn: number, radius?: number): number {
 /**
  * Every third rally stage carries a town (counted along the rally mix,
  * `rallyIndex`, so the cities and circuits never shift them: rally stages
- * 2, 5, 8, …), the same in every game and in whichever region the mix puts
- * there; against the mix's seven slots that comes round every Forest
- * surface, Alpine and Arctic. Never the first stage (the splash demo and
- * the smoke tests drive it), never two in a row. Regions that build no
- * villages (the coast, the desert) skip theirs: see `stageHasTown`.
+ * 2, 5, 8, …), the same in every game and in whichever type the mix puts
+ * there; against the mix's seven slots that comes round every Pinewood,
+ * Autumnal, Forest, Alpine and Arctic type. Never the first stage (the splash demo and
+ * the smoke tests drive it), never two in a row. Stage types that build no
+ * villages (Coastal and Desert) skip theirs: see `stageHasTown`.
  */
 const TOWN_EVERY = 3;
 export function hasTown(index: number): boolean {

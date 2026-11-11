@@ -74,6 +74,28 @@ describe('SaveFile', () => {
     expect(newestSave(older, null, newer)).toBe(newer);
     expect(newestSave(null, null)).toBeNull();
   });
+
+  it('migrates v7 records after Alpine becomes fixed to snow', () => {
+    const records = {
+      0: { best: 90, splits: [] },
+      1: { best: 91, splits: [] },
+      2: { best: 92, splits: [] },
+      3: { best: 93, splits: [] },
+    };
+    const migrated = parseSaveFile({ ...VALID, version: 7, records })!;
+    expect(migrated.version).toBe(SAVE_VERSION);
+    expect(migrated.records).toEqual({
+      0: records[0],
+      2: records[2],
+      3: records[3],
+    });
+  });
+
+  it('migrates v6 saves through the fixed-surface and stage-type changes', () => {
+    const migrated = parseSaveFile({ ...VALID, version: 6, records: {} })!;
+    expect(migrated.version).toBe(SAVE_VERSION);
+    expect(migrated.records).toEqual({});
+  });
 });
 
 describe('gameStore persistence', () => {

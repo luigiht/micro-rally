@@ -1,4 +1,4 @@
-import type { CoastDef, RegionPalette } from '@/game/stage/regions';
+import type { CoastDef, StagePalette } from '@/game/stage/regions';
 import type { TerrainField, TerrainSample } from '@/game/stage/TerrainField';
 import { PAVEMENT_COLOR, ROAD_COLORS } from '../road/roadColors';
 import { coastFaceColor, type CoastFace, type CoastTones } from './coastFaceColor';
@@ -55,7 +55,7 @@ function scaleRgb(c: Rgb, k: number): Rgb {
   return [c[0] * k, c[1] * k, c[2] * k];
 }
 
-export function terrainColors(p: RegionPalette, coast?: CoastDef): TerrainColors {
+export function terrainColors(p: StagePalette, coast?: CoastDef): TerrainColors {
   const out: TerrainColors = {
     grassLow: hexToLinear(p.grassLow),
     grassHigh: hexToLinear(p.grassHigh),

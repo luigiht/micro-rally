@@ -3691,3 +3691,71 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      swaps. Ordinary dusk lighting remains. The original implementation
      decision stays in this log as historical context; current gameplay,
      architecture and testing docs describe only the supported game.
+
+194. **2026-11-10 — Spectators on open-road stages, none on the coast or
+     circuits.** `stageScenery` supplies a modest spectator density to the
+     Forest, Alpine, Desert, Urban and Arctic stages. Desert crowds are
+     event-only (start, checkpoints and finish); other crowds also gather at
+     crests and along the road. Small terrain mounds sit between roadside
+     crowds and the road, except where a building blocks a segment or another
+     road passes beneath. Coast and circuit densities are zero, per follow-up
+     request. Circuit corner grandstands remain as empty structures; seated
+     spectator props were removed with the circuit crowd.
+
+195. **2026-11-10 — Nine explicit stage types, one fixed surface each.** The
+     region/surface pair model made Pinewood, Autumnal and tarmac Forest
+     stages look like one type with weighted surfaces, and let Alpine draw
+     between snow and tarmac. The catalog is now nine stage types with one
+     fixed surface each; Pinewood and Autumnal name the former Forest gravel
+     and mud variants. The seven rally slots reference type IDs directly;
+     cities and circuits keep their existing cadence. `seedKey` preserves
+     procedural world seeds, while a reserved RNG draw preserves the other
+     brief draws. Save version 8 drops v7 Alpine records because some were
+     made on tarmac; legacy cycle IDs remain local to the save migrator.
+
+196. **2026-11-10 — Autumnal inherits the Arctic's wheel ruts, recoloured for
+     mud.** The Arctic's `RoadBuilder` bands already form two wandering,
+     irregular grooves. Reuse that geometry on `mud`, but make the grooves
+     deeper (7.5 cm) and shade the packed track darker than the `#6b4d33`
+     road base. Both rut depth and tint fade with the town's tarmac transition.
+     The existing per-surface skid ink remains responsible for live tyre marks.
+
+197. **2026-11-10 — Faded lines and puddles on Autumnal.** Its edge line uses
+     a light-brown theme colour instead of white. Mud puddles are deterministic
+     glossy road meshes: scattered along open road and clustered after each
+     jump crest. Autumnal gets low 0.75 m crests (30 m long, about every 220 m)
+     so those landing puddles exist in the type. The puddle meshes are owned
+     and disposed by `RoadBuilder`, as part of the road.
+
+198. **2026-11-10 — Remove Autumnal puddles; fade the edge lines further.** By
+     request, the procedural puddle meshes and ripple textures are removed;
+     the Autumnal jumps and mud ruts remain. Its edge line changes to a paler
+     tan (`#c0a682`) and uses the road's per-sample shade variation so it reads
+     worn into the muddy surface instead of freshly painted.
+
+199. **2026-11-11 — Cut Autumnal edge tracks into the road ribbon.** Appending
+     recessed edge grooves underneath full-width road bands hid their dark
+     floors and sloped walls. The edge and centre tracks now share boundaries
+     in a single non-overlapping ribbon. Edge floors use the same 0.68 mud
+     tone and 7.5 cm recess as the centre tracks. A downward-ray test checks
+     that both dark edge floors are exposed, not merely present in the mesh.
+
+200. **2026-11-11 — Blend Autumnal mud into the grassy verge.** Subdivide
+     the existing verge ribbon and blend its vertex colours from the road's
+     mud colour to the usual verge colour over 1.3 m. The outer verge keeps
+     its terrain-matching colour, and the existing town fade still turns it
+     into pavement. No overlay, texture allocation or physics change is needed.
+
+201. **2026-11-11 — Faceted Autumnal verges replace the soft blend.** By
+     request, the shoulder now uses irregular triangular patches in three
+     earthy tones rather than interpolating mud and grass colours across
+     vertices. Each triangle has one flat colour, with slight seeded shade
+     variation; the outer band keeps the existing verge palette and town
+     transitions still meet the pavement. The tyre grooves are unchanged.
+
+202. **2026-11-11 — Slightly faster mud driving.** Lower mud's extra
+     speed-proportional drag from 0.22 to 0.18 while retaining its 0.55 grip.
+     This reduces resistance without changing cornering or adding engine
+     boosts. Catalogue-wide fixed-gear comparisons verify the pace benefit
+     independently of automatic gearbox shift thresholds; mud remains slower
+     than grass in the existing full-throttle surface test.

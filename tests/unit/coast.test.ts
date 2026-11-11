@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { RALLY_CYCLE, REGIONS } from '@/game/stage/regions';
+import { RALLY_CYCLE, STAGE_TYPES } from '@/game/stage/regions';
 import { stageIndexOf } from './stageIndex';
 import { createRoadHit } from '@/game/stage/RoadPath';
 import { scatterScenery } from '@/game/stage/SceneryScatter';
-import { generateStage, stageHasTown, stageRegion } from '@/game/stage/StageGenerator';
+import { generateStage, stageHasTown, stageTypeAt } from '@/game/stage/StageGenerator';
 import { createStageWorld } from '@/game/stage/StageWorld';
 import { TerrainField } from '@/game/stage/TerrainField';
 import { SeaWallBuilder } from '@/render/road/SeaWallBuilder';
@@ -12,9 +12,9 @@ import { SeaPlane } from '@/render/terrain/SeaPlane';
 import { dayTheme } from '@/render/theme/WorldTheme';
 
 /** The first Coast stage of the cycle, and one on the hardest difficulty loop. */
-const COAST_INDEX = stageIndexOf('coast');
+const COAST_INDEX = stageIndexOf('coastal');
 /** A Coast stage of a later difficulty loop. */
-const LATE_COAST_INDEX = stageIndexOf('coast', undefined, 0, 42);
+const LATE_COAST_INDEX = stageIndexOf('coastal', 0, 42);
 const SEEDS = [1, 2, 3, 4, 5, 6];
 const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
 
@@ -61,21 +61,21 @@ function fieldFor(seed: number): TerrainField {
   return f;
 }
 
-describe('region cycle', () => {
-  it('never shows a region twice running, mixes every rally region, and keeps villages to forest and alpine', () => {
+describe('stage-type cycle', () => {
+  it('never repeats a stage type in sequence and keeps villages to forest types and Alpine', () => {
     for (let i = 1; i < 200; i++)
-      expect(stageRegion(i).region, `stage ${i + 1}`).not.toBe(stageRegion(i - 1).region);
-    for (const id of ['forest', 'alpine', 'coast', 'desert', 'arctic'])
-      expect(RALLY_CYCLE.some((s) => s.region === id)).toBe(true);
-    expect(stageRegion(0).region).toBe('forest');
-    expect(stageRegion(1).region).toBe('alpine');
-    expect(stageRegion(COAST_INDEX).region).toBe('coast');
-    const townRegions = new Set<string>();
+      expect(stageTypeAt(i).stageType, `stage ${i + 1}`).not.toBe(stageTypeAt(i - 1).stageType);
+    for (const id of ['pinewood', 'alpine', 'forest', 'coastal', 'arctic', 'autumnal', 'desert'])
+      expect(RALLY_CYCLE).toContain(id);
+    expect(stageTypeAt(0).stageType).toBe('pinewood');
+    expect(stageTypeAt(1).stageType).toBe('alpine');
+    expect(stageTypeAt(COAST_INDEX).stageType).toBe('coastal');
+    const townTypes = new Set<string>();
     for (let i = 0; i < 48; i++) {
       if (!stageHasTown(i)) continue;
-      townRegions.add(stageRegion(i).region);
+      townTypes.add(stageTypeAt(i).stageType);
     }
-    expect([...townRegions].sort()).toEqual(['alpine', 'forest']);
+    expect([...townTypes].sort()).toEqual(['alpine', 'autumnal', 'forest', 'pinewood']);
   });
 });
 
@@ -84,7 +84,7 @@ describe('Coast stages', () => {
     for (const seed of SEEDS) {
       const field = fieldFor(seed);
       const stage = field.stage;
-      expect(stage.region).toBe('coast');
+      expect(stage.stageType).toBe('coastal');
       expect(stage.surface).toBe('tarmac');
       expect(stage.town).toBeUndefined();
       expect(stage.path.length).toBeGreaterThan(stage.startDistance + stage.length);
@@ -185,7 +185,7 @@ describe('Coast stages', () => {
   });
 
   it('paints the cliff band rock whatever its tilt, the beach sand and the water line wet sand', () => {
-    const region = REGIONS.coast;
+    const region = STAGE_TYPES.coastal;
     const colors = terrainColors(region.palette, region.coast);
     expect(colors.sand).toBeDefined();
     const field = fieldFor(1);
@@ -227,7 +227,7 @@ describe('Coast stages', () => {
   });
 
   it('dresses the hillside mostly in grass, with rock and gravel patches, and the cliff band in rock', () => {
-    const region = REGIONS.coast;
+    const region = STAGE_TYPES.coastal;
     const colors = terrainColors(region.palette, region.coast);
     const scree = colors.coast!.scree;
     const ax = { u: 0, v: 0 };
@@ -278,8 +278,8 @@ describe('Coast stages', () => {
   });
 
   it('uses the region sea and a default sea for inland themes', () => {
-    expect(dayTheme(REGIONS.coast).sea).toBe(REGIONS.coast.coast!.sea);
-    expect(dayTheme(REGIONS.forest).sea).toMatch(/^#[0-9a-f]{6}$/i);
+    expect(dayTheme(STAGE_TYPES.coastal).sea).toBe(STAGE_TYPES.coastal.coast!.sea);
+    expect(dayTheme(STAGE_TYPES.forest).sea).toMatch(/^#[0-9a-f]{6}$/i);
   });
 
   it('lays the wall line along its side of the road at the wall offset, hairpins included', () => {
@@ -328,7 +328,7 @@ describe('Coast stages', () => {
       generateStage(1101485805, 38),
     ];
     for (const stage of stages) {
-      expect(stage.region).toBe('coast');
+      expect(stage.stageType).toBe('coastal');
       const field = new TerrainField(stage);
       const { path, halfWidth } = stage;
       const s = { x: 0, z: 0, heading: 0 };
@@ -361,7 +361,7 @@ describe('Coast stages', () => {
   it('keeps late-loop roads grade-limited with their hairpin stacks', () => {
     for (const seed of SEEDS.slice(0, 3)) {
       const field = new TerrainField(generateStage(seed, LATE_COAST_INDEX));
-      expect(field.stage.region).toBe('coast');
+      expect(field.stage.stageType).toBe('coastal');
       expect(field.stage.loop).toBeGreaterThanOrEqual(4);
       const { path } = field.stage;
       for (let d = 0; d < path.length - 2; d += 2)
@@ -419,7 +419,7 @@ describe('Coast stages', () => {
 
   it('builds the wall mesh and a sea plane that follows the car', () => {
     const field = fieldFor(2);
-    const wall = new SeaWallBuilder(field.coast!, field, dayTheme(REGIONS.coast).seawall);
+    const wall = new SeaWallBuilder(field.coast!, field, dayTheme(STAGE_TYPES.coastal).seawall);
     expect(wall.group.children).toHaveLength(1);
     wall.dispose();
     const sea = new SeaPlane(0, '#3b8fb5');

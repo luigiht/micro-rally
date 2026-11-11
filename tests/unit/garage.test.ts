@@ -223,7 +223,7 @@ describe('garage in the store', () => {
     ).toEqual([9]);
   });
 
-  it('drops v6 records where the fixed schedule moved the region or fixed a Forest surface', () => {
+  it('drops v6 records where the fixed schedule changed the type or surface', () => {
     const rec = { best: 90, splits: [30, 60, 90] };
     const save = parseSaveFile({
       version: 6,
@@ -233,7 +233,7 @@ describe('garage in the store', () => {
       money: 10,
       stageIndex: 20,
       // 0 Forest (surface now fixed), 4 Coast → Arctic, 8 Alpine → city, 9 and 19 circuits,
-      // 13 and 27 Arctic and Alpine in both.
+      // 13 Arctic stays comparable, 27 Alpine is dropped now its surface is fixed to snow.
       records: { 0: rec, 4: rec, 8: rec, 9: rec, 13: rec, 19: rec, 27: rec },
       carId: 'hatchback',
       ownedCars: ['hatchback'],
@@ -245,7 +245,7 @@ describe('garage in the store', () => {
       Object.keys(save.records)
         .map(Number)
         .sort((a, b) => a - b),
-    ).toEqual([9, 13, 19, 27]);
+    ).toEqual([9, 13, 19]);
   });
 
   it('shares one grip setup across the dealership', () => {

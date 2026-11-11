@@ -1,7 +1,7 @@
 import { Group } from 'three';
 import { circuitTrackside } from '@/game/stage/CircuitTrackside';
 import { parkingStretches } from '@/game/stage/ParkingBays';
-import { REGIONS } from '@/game/stage/regions';
+import { STAGE_TYPES } from '@/game/stage/regions';
 import type { StageWorld } from '@/game/stage/StageWorld';
 import type { TownDef } from '@/game/stage/Town';
 import { BarrierBuilder } from '../road/BarrierBuilder';
@@ -123,9 +123,9 @@ export class StageRenderer {
   constructor(
     private readonly world: StageWorld,
     private readonly opts: StageRenderOptions = DEFAULT_STAGE_RENDER,
-    theme: WorldTheme = dayTheme(REGIONS[world.stage.region], world.stage.dusk === true),
+    theme: WorldTheme = dayTheme(STAGE_TYPES[world.stage.stageType], world.stage.dusk === true),
   ) {
-    const region = REGIONS[world.stage.region];
+    const region = STAGE_TYPES[world.stage.stageType];
     this.terrain = new TerrainChunkManager(
       world.gameSeed,
       world.stage.index,
@@ -226,8 +226,8 @@ export class StageRenderer {
    */
   private townSteps(s: Surfaces, town: TownDef, theme: WorldTheme): (() => void)[] {
     const { stage, field } = this.world;
-    const grass = REGIONS[stage.region].palette.grassLow;
-    const urban = REGIONS[stage.region].urban;
+    const grass = STAGE_TYPES[stage.stageType].palette.grassLow;
+    const urban = STAGE_TYPES[stage.stageType].urban;
     const parking =
       town.city && urban && this.opts.parkingBays ? parkingStretches(town, stage, urban) : [];
     const add = <K extends keyof Surfaces>(key: K, make: () => Surfaces[K]) => {

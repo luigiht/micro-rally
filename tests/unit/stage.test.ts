@@ -9,14 +9,14 @@ import {
 } from '@/game/stage/SceneryScatter';
 import { MARKER_CLEARANCE, MARKER_SPACING, markerDistances } from '@/game/stage/RoadMarkers';
 import {
-  REGIONS,
+  STAGE_TYPES,
   isCircuitStage,
   isCityStage,
   stagePalette,
   stageSlot,
 } from '@/game/stage/regions';
 import { stageIndexOf } from './stageIndex';
-import { generateStage, stageBrief, stageHasTown, stageRegion } from '@/game/stage/StageGenerator';
+import { generateStage, stageBrief, stageHasTown, stageTypeAt } from '@/game/stage/StageGenerator';
 import { StageRun, TREE_PENALTY_SECONDS } from '@/game/stage/StageRun';
 import { ROAD_BED_DROP, ROAD_LIFT, TRENCH_OUT, TerrainField } from '@/game/stage/TerrainField';
 import { ObstacleGrid, resolveObstacleCollisions } from '@/game/vehicle/Collisions';
@@ -63,6 +63,27 @@ describe('Checkpoints', () => {
 });
 
 describe('StageGenerator', () => {
+  it('defines exactly nine named stage types with fixed surfaces', () => {
+    expect(Object.keys(STAGE_TYPES).sort()).toEqual(
+      [
+        'arctic',
+        'circuit',
+        'autumnal',
+        'pinewood',
+        'alpine',
+        'forest',
+        'urban',
+        'coastal',
+        'desert',
+      ].sort(),
+    );
+    expect(STAGE_TYPES.pinewood.surface).toBe('gravel');
+    expect(STAGE_TYPES.autumnal.surface).toBe('mud');
+    expect(STAGE_TYPES.alpine.surface).toBe('snow');
+    expect(STAGE_TYPES.forest.surface).toBe('tarmac');
+    expect(STAGE_TYPES.coastal.surface).toBe('tarmac');
+  });
+
   it('is deterministic for the same seed and index', () => {
     const a = generateStage(42, 0);
     const b = generateStage(42, 0);
@@ -103,18 +124,18 @@ describe('StageGenerator', () => {
   });
 
   it('runs a city every ninth stage, a circuit every tenth, and the rally mix between', () => {
-    const regions = Array.from({ length: 200 }, (_, i) => stageRegion(i).region);
+    const stageTypes = Array.from({ length: 200 }, (_, i) => stageTypeAt(i).stageType);
     // Cities at stage 9, 18, 27…; circuits at 10, 20, 30…, except stage 90 (a city), whose circuit is stage 91.
-    expect(regions.flatMap((r, i) => (r === 'urban' ? [i] : [])).slice(0, 4)).toEqual([
+    expect(stageTypes.flatMap((type, i) => (type === 'urban' ? [i] : [])).slice(0, 4)).toEqual([
       8, 17, 26, 35,
     ]);
-    expect(regions.flatMap((r, i) => (r === 'circuit' ? [i] : [])).slice(0, 11)).toEqual([
+    expect(stageTypes.flatMap((type, i) => (type === 'circuit' ? [i] : [])).slice(0, 11)).toEqual([
       9, 19, 29, 39, 49, 59, 69, 79, 90, 99, 109,
     ]);
-    expect(regions[89]).toBe('urban');
+    expect(stageTypes[89]).toBe('urban');
     for (let i = 0; i < 200; i++) {
-      expect(regions[i] === 'urban').toBe(isCityStage(i));
-      expect(regions[i] === 'circuit').toBe(isCircuitStage(i));
+      expect(stageTypes[i] === 'urban').toBe(isCityStage(i));
+      expect(stageTypes[i] === 'circuit').toBe(isCircuitStage(i));
     }
     // Every ten stages hold one circuit, never two in a row, never with a town.
     for (let start = 0; start + 10 <= 200; start += 10) {
@@ -123,34 +144,31 @@ describe('StageGenerator', () => {
       ).length;
       expect(n).toBeLessThanOrEqual(2);
     }
-    expect(regions.filter((r) => r === 'circuit')).toHaveLength(20);
+    expect(stageTypes.filter((type) => type === 'circuit')).toHaveLength(20);
     for (let i = 1; i < 200; i++) expect(isCircuitStage(i) && isCircuitStage(i - 1)).toBe(false);
     for (let i = 0; i < 200; i++) if (isCircuitStage(i)) expect(stageHasTown(i)).toBe(false);
-    // The rally stages cycle through every slot in turn, Forest's surface fixed per slot.
+    // The rally stages cycle through seven explicit stage types.
     const rally = Array.from({ length: 200 }, (_, i) => i).filter(
       (i) => !isCityStage(i) && !isCircuitStage(i),
     );
-    const slots = rally
-      .slice(0, 7)
-      .map((i) => `${stageSlot(i).region}/${stageSlot(i).surface ?? '*'}`);
+    const slots = rally.slice(0, 7).map((i) => stageSlot(i));
     expect(slots).toEqual([
-      'forest/gravel',
-      'alpine/*',
-      'forest/tarmac',
-      'coast/*',
-      'arctic/*',
-      'forest/mud',
-      'desert/*',
+      'pinewood',
+      'alpine',
+      'forest',
+      'coastal',
+      'arctic',
+      'autumnal',
+      'desert',
     ]);
     rally.forEach((i, k) => expect(stageSlot(i)).toEqual(stageSlot(rally[k % 7]!)));
     for (let seed = 1; seed <= 6; seed++) {
-      for (const surface of ['gravel', 'tarmac', 'mud'] as const) {
-        const forest = generateStage(seed, stageIndexOf('forest', surface));
-        expect(forest.surface).toBe(surface);
-      }
+      expect(generateStage(seed, stageIndexOf('pinewood')).surface).toBe('gravel');
+      expect(generateStage(seed, stageIndexOf('forest')).surface).toBe('tarmac');
+      expect(generateStage(seed, stageIndexOf('autumnal')).surface).toBe('mud');
       const alpine = generateStage(seed, 27);
-      expect(['snow', 'tarmac']).toContain(alpine.surface);
-      expect(alpine.region).toBe('alpine');
+      expect(alpine.surface).toBe('snow');
+      expect(alpine.stageType).toBe('alpine');
     }
   });
 
@@ -181,28 +199,27 @@ describe('StageGenerator', () => {
   });
 
   it('steps the difficulty loop every six stages, apart from the region cycle', () => {
-    expect(stageRegion(0)).toEqual({ region: 'forest', surface: 'gravel', loop: 0 });
-    expect(stageRegion(5).loop).toBe(0);
-    expect(stageRegion(6).loop).toBe(1);
-    expect(stageRegion(30).loop).toBe(5);
+    expect(stageTypeAt(0)).toEqual({ stageType: 'pinewood', loop: 0 });
+    expect(stageTypeAt(5).loop).toBe(0);
+    expect(stageTypeAt(6).loop).toBe(1);
+    expect(stageTypeAt(30).loop).toBe(5);
   });
 });
 
 describe('stagePalette', () => {
-  it('forest mud stages wear autumn in the trees only; every other stage keeps its region palette', () => {
-    const summer = REGIONS.forest.palette;
-    const autumn = stagePalette({ region: 'forest', surface: 'mud' });
+  it('Autumnal wears its autumn palette in the trees only', () => {
+    const summer = STAGE_TYPES.pinewood.palette;
+    const autumn = stagePalette('autumnal');
     expect(autumn).not.toBe(summer);
-    expect(stagePalette({ region: 'forest', surface: 'mud' })).toBe(autumn);
+    expect(stagePalette('autumnal')).toBe(autumn);
     const treeKeys = ['foliage', 'foliageAlt', 'canopy', 'canopyAlt'];
     for (const key of Object.keys(summer) as (keyof typeof summer)[]) {
       expect(autumn[key] === summer[key]).toBe(!treeKeys.includes(key));
     }
-    expect(stagePalette({ region: 'forest', surface: 'gravel' })).toBe(summer);
-    expect(stagePalette({ region: 'forest', surface: 'tarmac' })).toBe(summer);
-    expect(stagePalette({ region: 'alpine', surface: 'snow' })).toBe(REGIONS.alpine.palette);
-    // Mud is a forest surface the generator actually draws, so autumn is reachable.
-    expect(stageBrief(1, stageIndexOf('forest', 'mud')).surface).toBe('mud');
+    expect(stagePalette('pinewood')).toBe(summer);
+    expect(stagePalette('forest')).toBe(STAGE_TYPES.forest.palette);
+    expect(stagePalette('alpine')).toBe(STAGE_TYPES.alpine.palette);
+    expect(stageBrief(1, stageIndexOf('autumnal')).surface).toBe('mud');
   });
 });
 

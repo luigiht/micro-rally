@@ -5,8 +5,10 @@ import {
   KERB_HEIGHT,
   KERB_OUT,
   KERB_RADIUS,
+  barrierAt,
   barrierObstacles,
   circuitTrackside,
+  cornerStandSpots,
   grandstandSpot,
   gravelDepth,
   outermostBarrier,
@@ -149,8 +151,25 @@ describe('circuit trackside', () => {
     const stand = grandstandSpot(stage, t);
     const hit = { index: 0, along: 0, lateral: 0, distance: 0 };
     for (const p of props) {
-      expect(stage.path.nearest(p.x, p.z, reach, hit)).toBe(false);
+      if (stage.path.nearest(p.x, p.z, reach, hit)) {
+        const side = hit.lateral >= 0 ? 1 : -1;
+        expect(Math.abs(hit.lateral)).toBeGreaterThan(barrierAt(t, stage.path, hit.along, side));
+      }
       expect(Math.hypot(p.x - stand.x, p.z - stand.z)).toBeGreaterThanOrEqual(stand.radius);
+    }
+  });
+
+  it('places compact stands beyond the outside barrier at several tight corners', () => {
+    const stands = cornerStandSpots(stage, t);
+    expect(stands.length).toBeGreaterThanOrEqual(3);
+    for (const stand of stands) {
+      expect(
+        Math.abs(t.curvature[Math.round(stand.distance / stage.path.spacing)]!),
+      ).toBeGreaterThan(1 / 120);
+      expect(stand.back).toBeCloseTo(barrierAt(t, stage.path, stand.distance, stand.side) + 3);
+      expect(
+        Math.hypot(stand.x - grandstandSpot(stage, t).x, stand.z - grandstandSpot(stage, t).z),
+      ).toBeGreaterThan(30);
     }
   });
 });

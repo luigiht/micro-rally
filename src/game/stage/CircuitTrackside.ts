@@ -305,6 +305,16 @@ export function outermostBarrier(t: CircuitTrackside): number {
 
 /** The grandstand beside the start/finish line: 64 m long, about 7 m deep, this far behind the barrier. */
 export const STAND = { length: 64, depth: 6.6, gap: 4 } as const;
+/** Smaller open grandstands at the outside of the circuit's tighter corners. */
+export const CORNER_STAND = {
+  length: 26,
+  depth: 5.2,
+  rows: 4,
+  rowRise: 0.4,
+  gap: 3,
+  spacing: 110,
+  max: 6,
+} as const;
 
 export interface StandSpot {
   /** Side of the track it stands on (+1 left). */
@@ -335,6 +345,64 @@ export function grandstandSpot(stage: StageDef, t: CircuitTrackside): StandSpot 
     z: sample.z - Math.sin(sample.heading) * mid * side,
     radius: Math.hypot(STAND.length / 2, STAND.depth / 2) + 6,
   };
+}
+
+export interface CornerStandSpot extends StandSpot {
+  /** Lap distance of the corner apex. */
+  distance: number;
+}
+
+/** Spaced outside-of-corner stands, at up to six of the circuit's tightest turns. */
+export function cornerStandSpots(stage: StageDef, t: CircuitTrackside): CornerStandSpot[] {
+  const path = stage.path;
+  const n = path.count - 1;
+  const candidates: { index: number; strength: number; distance: number }[] = [];
+  for (let i = 0; i < n; i++) {
+    const strength = Math.abs(t.curvature[i]!);
+    if (strength < 1 / 120) continue;
+    let peak = true;
+    for (let offset = -8; offset <= 8 && peak; offset++)
+      if (Math.abs(t.curvature[(i + offset + n) % n]!) > strength + 1e-8) peak = false;
+    if (!peak) continue;
+    const distance = i * path.spacing;
+    const fromStart = path.wrap(distance - stage.startDistance);
+    const startGap = Math.min(fromStart, path.length - fromStart);
+    if (startGap < (STAND.length + CORNER_STAND.length) / 2 + 16) continue;
+    candidates.push({ index: i, strength, distance });
+  }
+  candidates.sort((a, b) => b.strength - a.strength);
+
+  const selected: typeof candidates = [];
+  for (const candidate of candidates) {
+    if (
+      selected.some((s) => {
+        const delta = path.wrap(candidate.distance - s.distance);
+        return Math.min(delta, path.length - delta) < CORNER_STAND.spacing;
+      })
+    )
+      continue;
+    selected.push(candidate);
+    if (selected.length === CORNER_STAND.max) break;
+  }
+
+  const sample = { x: 0, z: 0, heading: 0 };
+  return selected
+    .sort((a, b) => a.distance - b.distance)
+    .map(({ index, distance }) => {
+      const side: 1 | -1 = t.curvature[index]! > 0 ? -1 : 1;
+      const back = barrierAt(t, path, distance, side) + CORNER_STAND.gap;
+      path.sample(distance, sample);
+      const mid = back + CORNER_STAND.depth / 2;
+      return {
+        distance,
+        side,
+        back,
+        heading: sample.heading,
+        x: sample.x + Math.cos(sample.heading) * mid * side,
+        z: sample.z - Math.sin(sample.heading) * mid * side,
+        radius: Math.hypot(CORNER_STAND.length / 2, CORNER_STAND.depth / 2) + 4,
+      };
+    });
 }
 
 function smoothstep(e0: number, e1: number, x: number): number {

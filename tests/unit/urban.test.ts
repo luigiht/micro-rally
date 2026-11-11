@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { selfApproachOk, START_DISTANCE } from '@/game/stage/Centreline';
 import { parseSaveFile, SAVE_VERSION } from '@/game/save/SaveFile';
-import { isCircuitStage, isCityStage, REGIONS } from '@/game/stage/regions';
+import { isCircuitStage, isCityStage, STAGE_TYPES } from '@/game/stage/regions';
 import { createRoadHit } from '@/game/stage/RoadPath';
 import { halfWidthAt } from '@/game/stage/RoadWidth';
 import { ringLaneRadius, ringOuterRadius, ringSweep } from '@/game/stage/Roundabout';
 import { scatterScenery } from '@/game/stage/SceneryScatter';
-import { generateStage, stageHasTown, stageRegion } from '@/game/stage/StageGenerator';
+import { generateStage, stageHasTown, stageTypeAt } from '@/game/stage/StageGenerator';
 import { createStageWorld } from '@/game/stage/StageWorld';
 import { TerrainField } from '@/game/stage/TerrainField';
 import { KERB_LIFT, townObstacles, townProps } from '@/game/stage/Town';
@@ -20,7 +20,7 @@ import { planUrban } from '@/game/stage/UrbanPlan';
 const URBAN_INDEX = 8;
 const LATE_URBAN_INDEX = 26;
 const SEEDS = [1, 2, 3, 4, 5, 6];
-const URBAN = REGIONS.urban.urban!;
+const URBAN = STAGE_TYPES.urban.urban!;
 
 const fields = new Map<number, TerrainField>();
 function fieldFor(seed: number, index = URBAN_INDEX): TerrainField {
@@ -37,13 +37,13 @@ function fieldFor(seed: number, index = URBAN_INDEX): TerrainField {
 describe('the cycle', () => {
   it('puts a city on every ninth stage and nowhere else, none with a village of its own', () => {
     for (let i = 0; i < 200; i++) {
-      expect(stageRegion(i).region === 'urban', `stage ${i + 1}`).toBe(i % 9 === 8);
+      expect(stageTypeAt(i).stageType === 'urban', `stage ${i + 1}`).toBe(i % 9 === 8);
       expect(isCityStage(i) && isCircuitStage(i)).toBe(false);
     }
-    expect(stageRegion(URBAN_INDEX).region).toBe('urban');
-    expect(stageRegion(LATE_URBAN_INDEX).region).toBe('urban');
+    expect(stageTypeAt(URBAN_INDEX).stageType).toBe('urban');
+    expect(stageTypeAt(LATE_URBAN_INDEX).stageType).toBe('urban');
     for (let i = 0; i < 60; i++)
-      if (stageRegion(i).region === 'urban') expect(stageHasTown(i)).toBe(false);
+      if (stageTypeAt(i).stageType === 'urban') expect(stageHasTown(i)).toBe(false);
   });
 
   it('is deterministic', () => {
@@ -60,7 +60,7 @@ describe('Urban stages', () => {
     for (const seed of SEEDS) {
       const stage = fieldFor(seed).stage;
       const town = stage.town!;
-      expect(stage.region).toBe('urban');
+      expect(stage.stageType).toBe('urban');
       expect(stage.surface).toBe('tarmac');
       expect(stage.halfWidth).toBe(URBAN.lanes.four);
       expect(town.from).toBeLessThanOrEqual(START_DISTANCE);

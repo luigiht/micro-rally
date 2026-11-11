@@ -4,7 +4,7 @@ Status legend: [x] done · [~] in progress · [ ] not started
 
 **Where things stand (3 November 2026).** Milestones 1–4 are done. Of 5–8,
 the Garage, car models, economy, saves and Game IDs, i18n, Settings (language
-and camera), the touch HUD, the Alpine, Coast and Desert regions, towns on every third stage,
+and camera), the touch HUD, the Alpine, Coastal and Desert stage types, towns on every third stage,
 the cinematic camera, replays and Vercel deployment are in; sound,
 post-processing and quality tiers, weather and night, pace
 notes and live splits, and the service-park hub are not. Milestone 9

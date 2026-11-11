@@ -29,12 +29,12 @@ cover the pure-TS core and anything else that can run without a browser:
   ordering, off-road drag, reverse, handbrake, ramp airtime, turbo,
   determinism, every car composed under power), `controlInput`,
   `fixedStepper`, `collisions`, `wheelContacts`, `skidMarks`.
-- **Stages and towns**: `stage` (generation invariants, regions, curvature),
+- **Stages and towns**: `stage` (generation invariants, stage types, curvature),
   `paceNotes` (grades from radius and turn on built roads, named corners,
   long, links, the next call through and past a corner and round a lap,
   every grade across generated stages), `paceNotePixels` (cards inside
   their frame, right-handers mirrored, digits only on the scale),
-  `coast` (the region cycle, hairpins and grade, water and beach, the fall
+  `coast` (the stage-type cycle, hairpins and grade, water and beach, the fall
   and climb either side of the road, the retainers and their colliders, the
   rock mask and shore colours), `desert` (the cycle, the two sand surfaces,
   dunes, oases and their palms, the pools), `circuit` (closed paths, the
@@ -58,12 +58,12 @@ cover the pure-TS core and anything else that can run without a browser:
   pavement off the doors and buildings, manholes on the carriageway, every
   kind present), `tramService` (the timetable's headway, direction and
   fades, the tram body's size and lights).
-  `fixtures/openRoad.json` pins four open-road stages (Forest gravel at
+  `fixtures/openRoad.json` pins four open-road stages (Pinewood gravel at
   index 0, Alpine at index 27) byte-for-byte so town work can never move a
   road that has no town (keys are `gameSeed/index`; the two later-loop
   entries `5/16` and `13/18` were dropped on 2026-11-08 when the fixed
-  schedule gave those indices other regions). Tests find stages by region
-  and surface with `tests/unit/stageIndex.ts` rather than fixed indices.
+  schedule gave those indices other stage types). Tests find stages by type
+  with `tests/unit/stageIndex.ts` rather than fixed indices.
 - **Economy and saves**: `prize`, `garage`, `save`, `saveManager`,
   `gameStore.server`.
 - **Rendering geometry built in pure TS**: `carHull` (lofted hulls, wells,
@@ -126,8 +126,8 @@ pattern used throughout the project:
    to hide the HUD, and take `page.screenshot()`.
 
 Useful stages (any game seed): index 2 is Forest on tarmac with a village
-(`?spawn=town` for its entry), index 3 Coast, index 4 Arctic, index 5
-Forest on mud with a village and the crowds behind berms, index 6 Desert,
+(`?spawn=town` for its entry), index 3 Coastal, index 4 Arctic, index 5
+Autumnal with a village and crowds behind berms, index 6 Desert,
 index 8 the first city, index 9 the first circuit and index 10 an Alpine
 village. Launch Chromium with
 `--use-angle=swiftshader --enable-unsafe-swiftshader` where there is no GPU.

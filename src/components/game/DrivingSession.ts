@@ -18,7 +18,7 @@ import { createVehiclePose, interpolatePose } from '@/game/vehicle/interpolatePo
 import type { TerrainQuery } from '@/game/vehicle/Terrain';
 import { axleMarkIntensities } from '@/game/vehicle/wheelContacts';
 import { DEFAULT_ENV, type SimEnv, VehicleSim, type SpawnPose } from '@/game/vehicle/VehicleSim';
-import { REGIONS } from '@/game/stage/regions';
+import { STAGE_TYPES } from '@/game/stage/regions';
 import { useGameStore } from '@/state/gameStore';
 import { useSettingsStore } from '@/state/settingsStore';
 import { stagePaceNotes } from '@/game/stage/PaceNotes';
@@ -146,7 +146,7 @@ export class DrivingSession {
     this.bodyScale = spec.bodyScale;
     this.sim.reset(world.spawn, world.terrain);
     this.run = world.stage ? new StageRun(world.stage) : null;
-    const handling = world.stage ? REGIONS[world.stage.region].handling : undefined;
+    const handling = world.stage ? STAGE_TYPES[world.stage.stageType].handling : undefined;
     this.env = handling
       ? {
           ...DEFAULT_ENV,
@@ -172,7 +172,7 @@ export class DrivingSession {
         ? {
             index: world.stage.index,
             name: world.stage.name,
-            region: world.stage.region,
+            stageType: world.stage.stageType,
             surface: world.stage.surface,
             length: world.stage.length,
             parTime: world.stage.parTime,

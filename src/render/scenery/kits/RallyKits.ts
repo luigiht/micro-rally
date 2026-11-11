@@ -10,7 +10,7 @@ import {
   MeshStandardMaterial,
 } from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import type { RegionPalette } from '@/game/stage/regions';
+import type { StagePalette } from '@/game/stage/regions';
 import type { Prop, PropKind } from '@/game/stage/SceneryScatter';
 import type { BuildingStyle } from '@/game/stage/Town';
 import { buildingRoofGeometry, buildingWallsGeometry } from '../BuildingGeometry';
@@ -350,7 +350,7 @@ function mat(color: string, vertexColors = false): MeshStandardMaterial {
  * rocks, farmhouses, the four town building styles with their flower boxes,
  * and the town's street furniture. `snow` (alpine) puts the houses under snow.
  */
-export function rallyKits(palette: RegionPalette, shadows: boolean, snow: boolean): KindKit[] {
+export function rallyKits(palette: StagePalette, shadows: boolean, snow: boolean): KindKit[] {
   const pine = [new Color(palette.foliage), new Color(palette.foliageAlt)] as const;
   const leaf = [new Color(palette.canopy), new Color(palette.canopyAlt)] as const;
   const walls = snow
@@ -549,7 +549,7 @@ export function rallyKits(palette: RegionPalette, shadows: boolean, snow: boolea
       vertexColors: true,
     })),
     ...cityFurnitureKits(shadows),
-    // Snow regions dress the crowd in padded jackets; elsewhere in T-shirts and long sleeves.
+    // Snow stage types dress the crowd in padded jackets; elsewhere in T-shirts and long sleeves.
     ...(snow
       ? spectatorKits(() => mat('#ffffff', true), JACKETS, shadows)
       : spectatorKits(() => mat('#ffffff', true), SHIRTS, shadows, null, 'casual')),

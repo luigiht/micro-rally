@@ -3,7 +3,7 @@
 import { forceShotKind, SHOT_KINDS, type ShotKind } from './cameras/CinematicShots';
 import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import type { Group } from 'three';
-import { REGIONS } from '@/game/stage/regions';
+import { STAGE_TYPES } from '@/game/stage/regions';
 import { createStageWorld } from '@/game/stage/StageWorld';
 import { TEST_TRACK, testTrackTerrain } from '@/game/stage/TestTrack';
 import type { VehiclePose } from '@/game/vehicle/interpolatePose';
@@ -72,7 +72,7 @@ function StageDrive({ gameSeed, stageIndex }: { gameSeed: number; stageIndex: nu
   }, [world]);
   const group = useRef<Group>(null);
   const renderer = useRef<StageRenderer | null>(null);
-  const theme = dayTheme(REGIONS[world.stage.region], world.stage.dusk === true);
+  const theme = dayTheme(STAGE_TYPES[world.stage.stageType], world.stage.dusk === true);
 
   useEffect(() => {
     const r = new StageRenderer(world, DEFAULT_STAGE_RENDER, theme);

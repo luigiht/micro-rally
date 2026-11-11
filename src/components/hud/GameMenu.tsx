@@ -41,8 +41,7 @@ export function GamePanel() {
   const stageRows: [string, string][] = stage
     ? [
         [m.game.stageName, stage.name],
-        [m.game.region, m.regions[stage.region]],
-        [m.game.surface, m.surfaces[stage.surface]],
+        [m.game.stageType, m.stageTypes[stage.stageType]],
         [
           m.game.length,
           stage.laps > 0

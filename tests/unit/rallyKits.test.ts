@@ -1,6 +1,6 @@
 import { Color, MeshStandardMaterial, Object3D } from 'three';
 import { describe, expect, it } from 'vitest';
-import { REGIONS } from '@/game/stage/regions';
+import { STAGE_TYPES } from '@/game/stage/regions';
 import type { Prop, PropKind } from '@/game/stage/SceneryScatter';
 import { rallyKits } from '@/render/scenery/kits/RallyKits';
 import type { KindKit } from '@/render/scenery/SceneryChunkManager';
@@ -49,7 +49,7 @@ const prop = (kind: PropKind, variant = 0): Prop => ({
 
 describe('rallyKits', () => {
   it('dresses every prop kind, with the pre-refactor special cases as placement hooks', () => {
-    const kits = rallyKits(REGIONS.forest.palette, true, false);
+    const kits = rallyKits(STAGE_TYPES.forest.palette, true, false);
     for (const kind of KINDS) {
       expect(kits.some((k) => k.sources.includes(kind) && (k.accept?.(prop(kind)) ?? true))).toBe(
         true,
@@ -84,8 +84,8 @@ describe('rallyKits', () => {
   });
 
   it('snow regions swap the house tints only', () => {
-    const forest = rallyKits(REGIONS.forest.palette, true, false);
-    const alpine = rallyKits(REGIONS.alpine.palette, true, true);
+    const forest = rallyKits(STAGE_TYPES.forest.palette, true, false);
+    const alpine = rallyKits(STAGE_TYPES.alpine.palette, true, true);
     const roof = (kits: typeof forest) => kits.filter((k) => k.sources.includes('house'))[1]!;
     expect(roof(forest).tint![0]!.getHexString()).not.toBe(roof(alpine).tint![0]!.getHexString());
     for (const k of [...forest, ...alpine]) {
@@ -94,9 +94,9 @@ describe('rallyKits', () => {
     }
   });
 
-  it('forest mud stages dress the trees in autumn and nothing else', () => {
-    const summer = sceneryKitsFor({ region: 'forest', surface: 'gravel' }, true);
-    const autumn = sceneryKitsFor({ region: 'forest', surface: 'mud' }, true);
+  it('Autumnal dresses the trees in autumn and nothing else', () => {
+    const summer = sceneryKitsFor({ stageType: 'pinewood' }, true);
+    const autumn = sceneryKitsFor({ stageType: 'autumnal' }, true);
     const tint = (kits: KindKit[], kind: PropKind) =>
       kits.find((k) => k.sources.includes(kind) && k.tint)!.tint!.map((c) => c.getHexString());
     expect(tint(autumn, 'broadleaf')).not.toEqual(tint(summer, 'broadleaf'));
@@ -120,8 +120,8 @@ describe('rallyKits', () => {
     }
   });
 
-  it('sceneryKitsFor returns the region and surface rally kits', () => {
-    const kits = sceneryKitsFor({ region: 'forest', surface: 'gravel' }, true);
+  it('sceneryKitsFor returns the stage type kits', () => {
+    const kits = sceneryKitsFor({ stageType: 'pinewood' }, true);
     for (const kind of KINDS) expect(kits.some((k) => k.sources.includes(kind))).toBe(true);
     for (const k of kits) {
       k.geometry.dispose();

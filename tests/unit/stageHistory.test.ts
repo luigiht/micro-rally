@@ -13,7 +13,7 @@ describe('stageBrief', () => {
       expect(brief).toEqual({
         seed: full.seed,
         index: full.index,
-        region: full.region,
+        stageType: full.stageType,
         loop: full.loop,
         name: full.name,
         surface: full.surface,

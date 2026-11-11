@@ -1,5 +1,5 @@
 /// <reference lib="webworker" />
-import { REGIONS } from '@/game/stage/regions';
+import { STAGE_TYPES } from '@/game/stage/regions';
 import { scatterScenery } from '@/game/stage/SceneryScatter';
 import { generateStage } from '@/game/stage/StageGenerator';
 import { TerrainField } from '@/game/stage/TerrainField';
@@ -26,7 +26,7 @@ self.onmessage = (e: MessageEvent<TerrainWorkerRequest>) => {
   if (msg.type === 'init') {
     // Regenerating from the seed is cheaper than serialising the stage, and identical by construction.
     const stage = generateStage(msg.gameSeed, msg.stageIndex);
-    const region = REGIONS[stage.region];
+    const region = STAGE_TYPES[stage.stageType];
     field = new TerrainField(stage);
     // Scenery placement registers the level pads under houses on the field; the props themselves are not needed here.
     scatterScenery(field);

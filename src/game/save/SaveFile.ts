@@ -1,6 +1,6 @@
 import { sanitizeUpgrades, type UpgradeLevels } from '../economy/upgrades';
 import { isCatalogCar, type CatalogCarId } from '../economy/cars';
-import { stageSlot, type RegionId } from '../stage/regions';
+import { stageSlot, type StageTypeId } from '../stage/regions';
 import { isValidGameId } from './GameId';
 
 export interface StageRecord {
@@ -8,7 +8,7 @@ export interface StageRecord {
   splits: number[];
 }
 
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
 export const DRIVER_NAME_MAX = 24;
 
 /** Everything needed to resume a game. Nothing personal beyond the driver name. */
@@ -75,8 +75,11 @@ function migrateV2(raw: Record<string, unknown>): Record<string, unknown> {
   return { ...raw, version: 3, records: kept };
 }
 
+type LegacyRegionId = 'forest' | 'coast' | 'desert' | 'alpine' | 'urban' | 'arctic';
+type LegacyStageId = LegacyRegionId | 'circuit';
+
 /** The twelve-stage region cycle of v2–v4 saves, which v5's fifteen-stage cycle with the cities replaced. */
-const CYCLE_V4: readonly RegionId[] = [
+const CYCLE_V4: readonly LegacyRegionId[] = [
   'forest',
   'forest',
   'alpine',
@@ -97,7 +100,7 @@ function isCoastStage(index: number): boolean {
 }
 
 /** The fifteen-stage cycle of v5 saves, which v6's eighteen-stage cycle with the Arctic replaced. */
-const CYCLE_V5: readonly RegionId[] = [
+const CYCLE_V5: readonly LegacyRegionId[] = [
   'forest',
   'forest',
   'alpine',
@@ -116,7 +119,7 @@ const CYCLE_V5: readonly RegionId[] = [
 ];
 
 /** The eighteen-stage cycle of v6 saves, which v7's fixed city and circuit slots and rally mix replaced. */
-const CYCLE_V6: readonly RegionId[] = [
+const CYCLE_V6: readonly LegacyRegionId[] = [
   'forest',
   'forest',
   'alpine',
@@ -138,7 +141,11 @@ const CYCLE_V6: readonly RegionId[] = [
 ];
 
 /** A stage whose region differs between two cycles (never a circuit, which sits outside both). */
-function regionChanged(index: number, from: readonly RegionId[], to: readonly RegionId[]): boolean {
+function regionChanged(
+  index: number,
+  from: readonly LegacyRegionId[],
+  to: readonly LegacyRegionId[],
+): boolean {
   return !isCircuitStage(index) && from[index % from.length] !== to[index % to.length];
 }
 
@@ -197,10 +204,31 @@ function migrateV6(raw: Record<string, unknown>): Record<string, unknown> {
       const index = Number(key);
       const before = isCircuitStage(index) ? 'circuit' : CYCLE_V6[index % CYCLE_V6.length];
       const now = stageSlot(index);
-      return now.region === before && now.surface === undefined;
+      const previousRegion: Readonly<Record<StageTypeId, LegacyStageId>> = {
+        arctic: 'arctic',
+        circuit: 'circuit',
+        autumnal: 'forest',
+        pinewood: 'forest',
+        alpine: 'alpine',
+        forest: 'forest',
+        urban: 'urban',
+        coastal: 'coast',
+        desert: 'desert',
+      };
+      const oldSurfaceWasFixed = now === 'autumnal' || now === 'pinewood' || now === 'forest';
+      return previousRegion[now] === before && !oldSurfaceWasFixed;
     }),
   );
   return { ...raw, version: 7, records: kept };
+}
+
+/** v8 fixes Alpine stages to snow; prior Alpine records may be for tarmac. */
+function migrateV7(raw: Record<string, unknown>): Record<string, unknown> {
+  const records = isRecord(raw.records) ? raw.records : {};
+  const kept = Object.fromEntries(
+    Object.entries(records).filter(([key]) => stageSlot(Number(key)) !== 'alpine'),
+  );
+  return { ...raw, version: 8, records: kept };
 }
 
 function parseCurrent(raw: Record<string, unknown>): SaveFile | null {
@@ -248,6 +276,7 @@ export function parseSaveFile(data: unknown): SaveFile | null {
   if (raw.version === 4) raw = migrateV4(raw);
   if (raw.version === 5) raw = migrateV5(raw);
   if (raw.version === 6) raw = migrateV6(raw);
+  if (raw.version === 7) raw = migrateV7(raw);
   if (raw.version === SAVE_VERSION) return parseCurrent(raw);
   return null;
 }

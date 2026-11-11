@@ -81,11 +81,11 @@ and the Capacitor app names; package name `micro-rally`.
      (free, balanced), Classic Coupé (fast, twitchy), 4×4 Pickup (grippy,
      slow), Group-B-style Monster (expensive, everything up). Each car is a
      distinct procedural low-poly model built from primitives.
-5. **Progression.** Stages unlock in a loop of regions (Forest, Coast,
-   Desert, Alpine, Night), each with its own palette, surface mix
-   (gravel/tarmac/snow/mud), scenery set and par times. After the last stage
-   the loop continues with harder, longer variants, so there's always a next
-   stage.
+5. **Progression.** Stages unlock through nine explicit types: Arctic,
+   Circuit, Autumnal, Pinewood, Alpine, Forest, Urban, Coastal and Desert.
+   Each type has its own palette, fixed road surface, scenery and par times.
+   After the schedule's final stage, harder, longer variants continue so
+   there's always a next stage.
 
 ## Three camera views (V cycles; also a toggle on the HUD)
 

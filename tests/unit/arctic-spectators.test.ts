@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { scatterScenery, type Prop } from '@/game/stage/SceneryScatter';
 import { SPECTATOR_JACKETS, SPECTATOR_POSES } from '@/game/stage/Spectators';
-import { REGIONS, spectatorOutfit } from '@/game/stage/regions';
+import { STAGE_TYPES, spectatorOutfit } from '@/game/stage/regions';
 import { createRoadHit } from '@/game/stage/RoadPath';
 import { createStageWorld } from '@/game/stage/StageWorld';
 import { stageIndexOf } from './stageIndex';
@@ -40,7 +40,7 @@ describe('Arctic spectators', () => {
         expect(stage.path.nearest(p.x, p.z, 40, hit)).toBe(true);
         // Behind the banks, clear of the carriageway and the snow heaped beside it.
         expect(hit.distance).toBeGreaterThan(
-          stage.halfWidth + 0.6 + REGIONS.arctic.terrain.banks!.width,
+          stage.halfWidth + 0.6 + STAGE_TYPES.arctic.terrain.banks!.width,
         );
         return hit.along;
       });
@@ -158,11 +158,11 @@ describe('Arctic spectators', () => {
     expect(glove(spectatorBodyGeometry(0, 'casual'))).toBeLessThan(glove(spectatorBodyGeometry(0)));
   });
 
-  it('come to Forest stages only on mud, dressed for a mild day', () => {
+  it('come to every Forest surface, dressed for a mild day', () => {
     const picks: [number, number][] = [
-      [1, stageIndexOf('forest', 'mud')],
-      [1, stageIndexOf('forest', 'gravel')],
-      [2, stageIndexOf('forest', 'tarmac')],
+      [1, stageIndexOf('autumnal')],
+      [1, stageIndexOf('pinewood')],
+      [2, stageIndexOf('forest')],
     ];
     let mud = 0;
     for (const [seed, index] of picks) {
@@ -171,15 +171,79 @@ describe('Arctic spectators', () => {
       if (stage.surface === 'mud') {
         mud++;
         expect(n, `seed ${seed}`).toBeGreaterThan(100);
-      } else expect(n, `seed ${seed} ${stage.surface}`).toBe(0);
+      } else expect(n, `seed ${seed} ${stage.surface}`).toBeGreaterThan(0);
     }
     expect(mud).toBeGreaterThan(0);
-    expect(spectatorOutfit({ region: 'forest' })).toBe('casual');
-    expect(spectatorOutfit({ region: 'arctic' })).toBe('winter');
+    expect(spectatorOutfit('forest')).toBe('casual');
+    expect(spectatorOutfit('arctic')).toBe('winter');
+  }, 30_000);
+
+  it('adds spectators across stage types and keeps desert, coast and circuit placement in bounds', () => {
+    const stageTypes = [
+      'forest',
+      'pinewood',
+      'autumnal',
+      'alpine',
+      'coastal',
+      'desert',
+      'circuit',
+      'urban',
+      'arctic',
+    ] as const;
+    for (const region of stageTypes) {
+      const index = stageIndexOf(region);
+      const { field, stage } = createStageWorld(37, index);
+      const spectators = scatterScenery(field).filter((p) => p.kind === 'spectator');
+      if (region === 'coastal' || region === 'circuit') {
+        expect(spectators, region).toHaveLength(0);
+        continue;
+      }
+      expect(spectators.length, region).toBeGreaterThan(0);
+      const hit = createRoadHit();
+      const sample = { x: 0, z: 0, heading: 0 };
+      const allowedDesertRanges = [
+        [stage.startDistance - 25, stage.startDistance + 35],
+        ...stage.gates.map((gate) =>
+          gate.kind === 'finish'
+            ? [gate.distance - 45, gate.distance + 25]
+            : [gate.distance - 22, gate.distance + 18],
+        ),
+      ];
+      let eligibleForMound = 0;
+      let protectedMounds = 0;
+
+      for (const person of spectators) {
+        expect(stage.path.nearest(person.x, person.z, 100, hit)).toBe(true);
+        eligibleForMound++;
+        stage.path.sample(hit.along, sample);
+        const side = Math.sign(hit.lateral);
+        let hasMound = false;
+        for (let offset = stage.halfWidth + 2.5; offset < Math.abs(hit.lateral); offset += 0.5) {
+          const x = sample.x + Math.cos(sample.heading) * offset * side;
+          const z = sample.z - Math.sin(sample.heading) * offset * side;
+          if (field.onMound(x, z)) {
+            hasMound = true;
+            break;
+          }
+        }
+        if (hasMound) protectedMounds++;
+        if (region === 'desert')
+          expect(
+            allowedDesertRanges.some(
+              ([from, to]) => hit.along >= from! - 3 && hit.along <= to! + 3,
+            ),
+            `spectator at ${hit.along.toFixed(1)} outside ${JSON.stringify(allowedDesertRanges)}`,
+          ).toBe(true);
+      }
+      if (eligibleForMound > 0)
+        expect(protectedMounds / eligibleForMound, `${region} mound coverage`).toBeGreaterThan(
+          0.85,
+        );
+    }
   }, 30_000);
 
   it('draw each spectator with exactly one body kit and one jacket kit', () => {
-    const kits = rallyKits(REGIONS.arctic.palette, false, true);
+    const kits = rallyKits(STAGE_TYPES.arctic.palette, false, true);
     for (let variant = 0; variant < SPECTATOR_JACKETS * SPECTATOR_POSES; variant++) {
       const p: Prop = { kind: 'spectator', x: 0, y: 0, z: 0, scale: 1, rotation: 0, variant };
       const drawn = kits.filter((k) => k.sources.includes('spectator') && (k.accept?.(p) ?? true));

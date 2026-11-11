@@ -5,15 +5,45 @@ tags yet: `main` is deployed continuously, so entries are grouped by the day
 they landed. The numbered entries in [docs/DECISIONS.md](docs/DECISIONS.md)
 hold the reasoning behind each change; the numbers in brackets point there.
 
+## 2026-11-11
+
+### Added
+
+- **Low-poly Autumnal verges.** Irregular flat-coloured patches join the mud
+  road to its grassy shoulder, replacing the soft gradient. [201]
+
+### Fixed
+
+- **Faster mud driving.** Reduced rolling resistance on mud while keeping
+  its loose grip and sliding character. [202]
+- **Autumnal edge tracks.** Removed overlapping road faces that hid the
+  grooves, making their dark brown floors and recessed walls visible. [199]
+
 ## 2026-11-10
 
 ### Added
 
+- **Crowds and corner stands.** Small protective mounds now line spectator
+  groups across stages; deserts gather fans only at the start,
+  checkpoints and finish. Coastal and circuit stages remain spectator-free.
+  Circuits gain empty grandstands at their tight corners. [194]
+- **Nine fixed stage types.** Pinewood, Mirewood, Forest, Alpine, Arctic,
+  Coastal, Desert, Urban and Circuit each have one fixed road surface instead
+  of sharing region definitions with weighted surface variants. [195]
+- **Autumnal replaces Mirewood.** The muddy stage type now has a name that
+  reflects its autumn palette.
+- **Mud tyre ruts.** Autumnal roads now carry two wandering tracks like the
+  Arctic's snow ruts, pressed deeper into the mud and shaded in dark umber.
+  [196]
+- **Faded Autumnal edge lines.** Edge stripes are lighter brown and shaded to
+  blend with the muddy tyre tracks.
 - **About page.** Gameplay notes, recent changes, common questions and contact
   details now live together behind four tabs.
 
 ### Removed
 
+- **Autumnal puddles.** Removed the temporary puddle meshes and water maps;
+  Autumnal's jumps and mud ruts remain.
 - **Nightcity mode.** Removed the hidden `N` toggle, alternate stage and car
   styling, scenery kits, neon effects and HUD indicator. Day and dusk stages
   remain unchanged.

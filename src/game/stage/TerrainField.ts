@@ -14,7 +14,7 @@ import {
 import { Coastline } from './Coastline';
 import { type AxisPoint, CoastShape, type CoastSurface } from './CoastShape';
 import type { Oasis } from './Oases';
-import { REGIONS, reliefAmplitude } from './regions';
+import { STAGE_TYPES, reliefAmplitude } from './regions';
 import { createRoadHit } from './RoadPath';
 import { smoothRoadProfile } from './RoadProfile';
 import { halfWidthAt } from './RoadWidth';
@@ -288,7 +288,7 @@ export class TerrainField implements TerrainQuery {
   private urban: UrbanField | null = null;
 
   constructor(readonly stage: StageDef) {
-    const region = REGIONS[stage.region];
+    const region = STAGE_TYPES[stage.stageType];
     this.noise = createNoise2D(mulberry32(hashSeed(stage.seed, 'terrain')));
     this.amplitude = reliefAmplitude(region, stage.loop) * (stage.circuit?.relief ?? 1);
     this.frequency = region.terrain.frequency;
@@ -882,7 +882,7 @@ export class TerrainField implements TerrainQuery {
       raw[i] = this.groundHeight(xs[i]!, zs[i]!);
     const smooth = smoothRoadProfile(raw, spacing, closed);
     if (this.urban) return this.urban.levelProfile(smooth, spacing, this.stage.path);
-    const crests = REGIONS[this.stage.region].terrain.crests;
+    const crests = STAGE_TYPES[this.stage.stageType].terrain.crests;
     if (crests && !closed) this.addCrests(smooth, crests);
     return smooth;
   }

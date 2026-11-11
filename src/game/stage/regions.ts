@@ -1,11 +1,19 @@
 import type { Surface } from '../vehicle/surfaces';
 import type { BuildingStyle } from './Town';
 
-export type RegionId =
-  'forest' | 'coast' | 'desert' | 'alpine' | 'night' | 'circuit' | 'urban' | 'arctic';
+export type StageTypeId =
+  | 'arctic'
+  | 'circuit'
+  | 'autumnal'
+  | 'pinewood'
+  | 'alpine'
+  | 'forest'
+  | 'urban'
+  | 'coastal'
+  | 'desert';
 export type Weather = 'clear' | 'overcast' | 'rain' | 'night';
 
-export interface RegionPalette {
+export interface StagePalette {
   sky: string;
   fog: string;
   grassLow: string;
@@ -32,18 +40,20 @@ export interface SceneryDensity {
   spruces?: number;
   /** Small groups of roadside spectators per 100 m of road; none when unset. */
   spectators?: number;
+  /** Desert crowds gather only at the start, checkpoints and finish. */
+  spectatorEventsOnly?: boolean;
   /** The crowds stand behind low earth berms. */
   berms?: boolean;
 }
 
-/** A region whose stages have oases (see `Oases`): how often along the road, how wide the pool, how many palms. */
+/** A stage type with oases (see `Oases`): how often along the road, how wide the pool, how many palms. */
 export interface OasisDef {
   every: number;
   radius: number;
   palms: number;
 }
 
-/** A region whose stages run along the sea (see `Coastline`): where the water stands and what the shore wears. */
+/** A stage type that runs along the sea (see `Coastline`): where the water stands and what the shore wears. */
 export interface CoastDef {
   seaLevel: number;
   sand: string;
@@ -61,7 +71,7 @@ export interface CoastDef {
 }
 
 /**
- * A region whose stages run through a big city (see `UrbanPlan`,
+ * A stage type that runs through a big city (see `UrbanPlan`,
  * `UrbanGenerator`): the whole stage is one town. Half widths of the street
  * classes the plan draws from, the roundabout islands, how much hill relief
  * the city keeps, and the mix of buildings along its streets.
@@ -77,23 +87,22 @@ export interface UrbanDef {
   styles: readonly (readonly [BuildingStyle, number])[];
 }
 
-export interface RegionDef {
-  id: RegionId;
-  surfaces: readonly (readonly [Surface, number])[];
+export interface StageTypeDef {
+  id: StageTypeId;
+  /** Previous region key, retained so existing game seeds keep their layouts. */
+  seedKey: string;
+  /** The fixed driving surface for this stage type. */
+  surface: Surface;
   offroad: Surface;
   weathers: readonly (readonly [Weather, number])[];
-  palette: RegionPalette;
-  /** Palettes some surfaces swap in for `palette` (Forest mud stages wear autumn); the rest keep it. */
-  surfacePalettes?: Partial<Record<Surface, RegionPalette>>;
-  /** Scenery on some surfaces, over the region's own (the mud rally's spectators in the Forest). */
-  surfaceScenery?: Partial<Record<Surface, Partial<SceneryDensity>>>;
-  /** Set when the region's stages run along the sea. */
+  palette: StagePalette;
+  /** Set when this stage type runs along the sea. */
   coast?: CoastDef;
-  /** Set when the region's stages have oases. */
+  /** Set when this stage type has oases. */
   oases?: OasisDef;
-  /** Set when the region's stages are a city from start to finish. */
+  /** Set when this stage type is a city from start to finish. */
   urban?: UrbanDef;
-  /** Whether the town stages (every third, see `stageHasTown`) build a village here: the cliff road and the dunes have none. */
+  /** Whether town stages (every third, see `stageHasTown`) build a village here. */
   towns: boolean;
   /**
    * Hills by default; `dunes` makes them a dune sea (see `TerrainField.duneHeight`); `banks` heaps a
@@ -119,7 +128,7 @@ export interface RegionDef {
   dusk?: boolean;
 }
 
-const FOREST_PALETTE: RegionPalette = {
+const FOREST_PALETTE: StagePalette = {
   sky: '#cfe3e8',
   fog: '#cfe3e8',
   grassLow: '#7fae5c',
@@ -139,7 +148,7 @@ const FOREST_PALETTE: RegionPalette = {
  * ones, every other pine is a golden larch, the broadleaves turn orange and
  * rust, and the bushes follow the pines.
  */
-const FOREST_AUTUMN: RegionPalette = {
+const FOREST_AUTUMN: StagePalette = {
   ...FOREST_PALETTE,
   foliage: '#3d6e46',
   foliageAlt: '#c48a2f',
@@ -147,19 +156,13 @@ const FOREST_AUTUMN: RegionPalette = {
   canopyAlt: '#b7432a',
 };
 
-const FOREST: RegionDef = {
+const FOREST: StageTypeDef = {
   id: 'forest',
-  surfaces: [
-    ['gravel', 3],
-    ['tarmac', 1],
-    ['mud', 1],
-  ],
+  seedKey: 'forest',
+  surface: 'tarmac',
   offroad: 'grass',
   weathers: [['clear', 1]],
   palette: FOREST_PALETTE,
-  surfacePalettes: { mud: FOREST_AUTUMN },
-  // The autumn mud rally draws a crowd, in everyday clothes.
-  surfaceScenery: { mud: { spectators: 2.2, berms: true } },
   terrain: { amplitude: 22, frequency: 1 / 260 },
   twistiness: 0.9,
   baseLength: 1800,
@@ -168,18 +171,31 @@ const FOREST: RegionDef = {
   towns: true,
 };
 
+const PINEWOOD: StageTypeDef = {
+  ...FOREST,
+  id: 'pinewood',
+  surface: 'gravel',
+};
+
+const AUTUMNAL: StageTypeDef = {
+  ...FOREST,
+  id: 'autumnal',
+  surface: 'mud',
+  palette: FOREST_AUTUMN,
+  terrain: { ...FOREST.terrain, crests: { every: 220, height: 0.75, length: 30 } },
+  scenery: { ...FOREST.scenery, spectators: 2.2, berms: true },
+};
+
 /**
  * Mountain passes: asphalt under patchy snow (the `snow` surface, drawn as
  * dusted tarmac by the road builder) or cleared tarmac, snowfields either
  * side, frosted pines and bare broadleaves, bigger hills and sharper,
  * closer bends.
  */
-const ALPINE: RegionDef = {
+const ALPINE: StageTypeDef = {
   id: 'alpine',
-  surfaces: [
-    ['snow', 3],
-    ['tarmac', 1],
-  ],
+  seedKey: 'alpine',
+  surface: 'snow',
   offroad: 'snow',
   weathers: [
     ['overcast', 2],
@@ -223,9 +239,10 @@ const ALPINE: RegionDef = {
  * stacks climbing it. No farms; the sea, the sand and the cliff take few
  * props, hence the generous numbers.
  */
-const COAST: RegionDef = {
-  id: 'coast',
-  surfaces: [['tarmac', 1]],
+const COAST: StageTypeDef = {
+  id: 'coastal',
+  seedKey: 'coast',
+  surface: 'tarmac',
   offroad: 'grass',
   weathers: [['clear', 1]],
   palette: {
@@ -245,7 +262,7 @@ const COAST: RegionDef = {
   terrain: { amplitude: 16, frequency: 1 / 200 },
   twistiness: 1.25,
   baseLength: 1600,
-  scenery: { trees: 80, broadleaf: 24, bushes: 90, rocks: 24, houses: 0 },
+  scenery: { trees: 80, broadleaf: 24, bushes: 90, rocks: 24, houses: 0, spectators: 0 },
   parSpeed: 15,
   towns: false,
   coast: {
@@ -267,9 +284,10 @@ const COAST: RegionDef = {
  * off it, date palms and dry scrub round pools of water in the hollows.
  * Villages where the cycle puts them.
  */
-const DESERT: RegionDef = {
+const DESERT: StageTypeDef = {
   id: 'desert',
-  surfaces: [['sand', 1]],
+  seedKey: 'desert',
+  surface: 'sand',
   offroad: 'dune',
   weathers: [['clear', 1]],
   palette: {
@@ -289,7 +307,14 @@ const DESERT: RegionDef = {
   terrain: { amplitude: 11, frequency: 1 / 300, dunes: true },
   twistiness: 0.75,
   baseLength: 1900,
-  scenery: { trees: 0, broadleaf: 0, bushes: 10, rocks: 8, houses: 0 },
+  scenery: {
+    trees: 0,
+    broadleaf: 0,
+    bushes: 10,
+    rocks: 8,
+    houses: 0,
+    spectatorEventsOnly: true,
+  },
   parSpeed: 16,
   towns: false,
   oases: { every: 260, radius: 11, palms: 8 },
@@ -302,9 +327,10 @@ const DESERT: RegionDef = {
  * fences, gentle hills the Ring-style laps climb. Not in `REGION_CYCLE`:
  * `stageRegion` puts a circuit on every tenth stage.
  */
-const CIRCUIT: RegionDef = {
+const CIRCUIT: StageTypeDef = {
   id: 'circuit',
-  surfaces: [['track', 1]],
+  seedKey: 'circuit',
+  surface: 'track',
   offroad: 'grass',
   weathers: [
     ['clear', 2],
@@ -327,7 +353,7 @@ const CIRCUIT: RegionDef = {
   terrain: { amplitude: 14, frequency: 1 / 300 },
   twistiness: 0,
   baseLength: 2000,
-  scenery: { trees: 36, broadleaf: 30, bushes: 8, rocks: 0, houses: 0 },
+  scenery: { trees: 36, broadleaf: 30, bushes: 8, rocks: 0, houses: 0, spectators: 0 },
   parSpeed: 20,
   towns: false,
 };
@@ -341,9 +367,10 @@ const CIRCUIT: RegionDef = {
  * `towns` is false because the city is its own town; the wild scatter is
  * the parks' trees.
  */
-const URBAN: RegionDef = {
+const URBAN: StageTypeDef = {
   id: 'urban',
-  surfaces: [['tarmac', 1]],
+  seedKey: 'urban',
+  surface: 'tarmac',
   offroad: 'grass',
   weathers: [
     ['clear', 2],
@@ -391,11 +418,11 @@ const URBAN: RegionDef = {
  * right behind them and the odd bare birch, long flowing bends rather than
  * the Alpine's switchbacks. No villages: open country only.
  */
-const ARCTIC: RegionDef = {
+const ARCTIC: StageTypeDef = {
   id: 'arctic',
+  seedKey: 'arctic',
+  surface: 'snow',
   dusk: true,
-  // Snow only: the road is snowed over end to end (a single entry still makes the brief's draw).
-  surfaces: [['snow', 1]],
   offroad: 'snow',
   weathers: [
     ['overcast', 2],
@@ -440,16 +467,16 @@ const ARCTIC: RegionDef = {
   towns: false,
 };
 
-export const REGIONS: Readonly<Record<RegionId, RegionDef>> = {
-  forest: FOREST,
-  alpine: ALPINE,
-  coast: COAST,
-  desert: DESERT,
-  // A Forest clone until it gets a look of its own; not in the cycle.
-  night: { ...FOREST, id: 'night' },
-  circuit: CIRCUIT,
-  urban: URBAN,
+export const STAGE_TYPES: Readonly<Record<StageTypeId, StageTypeDef>> = {
   arctic: ARCTIC,
+  circuit: CIRCUIT,
+  autumnal: AUTUMNAL,
+  pinewood: PINEWOOD,
+  alpine: ALPINE,
+  forest: FOREST,
+  urban: URBAN,
+  coastal: COAST,
+  desert: DESERT,
 };
 
 /**
@@ -477,27 +504,19 @@ export function isCircuitStage(index: number): boolean {
   return index > 0 && circuitSlot(index - 1) && isCityStage(index - 1);
 }
 
-/** A stage of the rally mix: its region, and the surface it is driven on where that is fixed. */
-export interface RallySlot {
-  region: RegionId;
-  surface?: Surface;
-}
-
 /**
- * The rally stages between the cities and circuits, in turn: Forest on
- * gravel, Alpine, Forest on tarmac, Coast, Arctic, Forest on mud (the autumn
- * rally with its crowds behind their berms), Desert. No region runs twice in
- * a row, round the wrap too, and stage 1 is Forest as it always was. Alpine,
- * Arctic, Coast and Desert still draw their surface.
+ * The rally stages between the cities and circuits, in turn: Pinewood,
+ * Alpine, Forest, Coastal, Arctic, Autumnal, Desert. No type runs twice in a
+ * row, round the wrap too, and stage 1 remains Pinewood as before.
  */
-export const RALLY_CYCLE: readonly RallySlot[] = [
-  { region: 'forest', surface: 'gravel' },
-  { region: 'alpine' },
-  { region: 'forest', surface: 'tarmac' },
-  { region: 'coast' },
-  { region: 'arctic' },
-  { region: 'forest', surface: 'mud' },
-  { region: 'desert' },
+export const RALLY_CYCLE: readonly StageTypeId[] = [
+  'pinewood',
+  'alpine',
+  'forest',
+  'coastal',
+  'arctic',
+  'autumnal',
+  'desert',
 ];
 
 /** How many cities and circuits come before `index`. */
@@ -519,9 +538,9 @@ export function rallyIndex(index: number): number | null {
 }
 
 /** What stage `index` is: a city, a circuit, or the next slot of the rally mix. */
-export function stageSlot(index: number): RallySlot {
+export function stageSlot(index: number): StageTypeId {
   const rally = rallyIndex(index);
-  if (rally === null) return { region: isCityStage(index) ? 'urban' : 'circuit' };
+  if (rally === null) return isCityStage(index) ? 'urban' : 'circuit';
   return RALLY_CYCLE[rally % RALLY_CYCLE.length]!;
 }
 
@@ -529,23 +548,26 @@ export function stageSlot(index: number): RallySlot {
 export const STAGES_PER_LOOP = 6;
 
 /** The hills' relief on a stage: the region's amplitude, 15 % more per difficulty loop up to four. */
-export function reliefAmplitude(def: RegionDef, loop: number): number {
+export function reliefAmplitude(def: StageTypeDef, loop: number): number {
   return def.terrain.amplitude * (1 + 0.15 * Math.min(loop, 4));
 }
 
 /** The scenery density a stage wears: its region's, with any override for its surface. */
-export function stageScenery(stage: { region: RegionId; surface: Surface }): SceneryDensity {
-  const def = REGIONS[stage.region];
-  return { ...def.scenery, ...def.surfaceScenery?.[stage.surface] };
+export function stageScenery(stageType: StageTypeId): SceneryDensity {
+  const scenery = { ...STAGE_TYPES[stageType].scenery };
+  return {
+    ...scenery,
+    spectators: scenery.spectators ?? 2.2,
+    berms: scenery.berms ?? true,
+  };
 }
 
-/** Whether a stage's spectators dress for the snow (where the region's ground is snow) or for a mild day. */
-export function spectatorOutfit(stage: { region: RegionId }): 'winter' | 'casual' {
-  return REGIONS[stage.region].offroad === 'snow' ? 'winter' : 'casual';
+/** Whether spectators dress for snow or a mild day. */
+export function spectatorOutfit(stageType: StageTypeId): 'winter' | 'casual' {
+  return STAGE_TYPES[stageType].offroad === 'snow' ? 'winter' : 'casual';
 }
 
-/** The palette a stage is drawn in: its region's, or the one its surface swaps in. Stable per (region, surface). */
-export function stagePalette(stage: { region: RegionId; surface: Surface }): RegionPalette {
-  const def = REGIONS[stage.region];
-  return def.surfacePalettes?.[stage.surface] ?? def.palette;
+/** The palette for a stage type. */
+export function stagePalette(stageType: StageTypeId): StagePalette {
+  return STAGE_TYPES[stageType].palette;
 }

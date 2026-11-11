@@ -24,13 +24,13 @@ const SURFACE_ICON: Readonly<Record<Surface, PixelIconName>> = {
   dune: 'sand',
 };
 
-/** Coast stages show a sun and a palm, circuits a chequered flag, cities a skyline, the Arctic two spruces and the Alpine two snow-capped mountains, rather than the tarmac glyph they would all share. */
+/** Coastal stages show a sun and a palm, circuits a chequered flag, cities a skyline, the Arctic two spruces and the Alpine two snow-capped mountains, rather than the tarmac glyph they would all share. */
 function stageIcon(b: StageBrief): PixelIconName {
-  if (b.region === 'circuit') return 'circuit';
-  if (b.region === 'urban') return 'urban';
-  if (b.region === 'arctic') return 'arctic';
-  if (b.region === 'alpine') return 'alpine';
-  return b.region === 'coast' ? 'coast' : SURFACE_ICON[b.surface];
+  if (b.stageType === 'circuit') return 'circuit';
+  if (b.stageType === 'urban') return 'urban';
+  if (b.stageType === 'arctic') return 'arctic';
+  if (b.stageType === 'alpine') return 'alpine';
+  return b.stageType === 'coastal' ? 'coast' : SURFACE_ICON[b.surface];
 }
 
 /**
@@ -102,7 +102,7 @@ export function StageList() {
         {briefs.map((b) => {
           const driving = b.index === stageIndex;
           const best = records[b.index]?.best;
-          const surface = m.surfaces[b.surface];
+          const stageType = m.stageTypes[b.stageType];
           const left = leftIndex === b.index;
           const aim = (el: HTMLElement) => setLeftIndex(opensLeft(el) ? b.index : null);
           return (
@@ -115,14 +115,14 @@ export function StageList() {
               <button
                 type="button"
                 aria-current={driving ? 'true' : undefined}
-                title={`${b.name} · ${surface} · ${best !== undefined ? formatTime(best) : m.game.none}`}
+                title={`${b.name} · ${stageType} · ${best !== undefined ? formatTime(best) : m.game.none}`}
                 onClick={() => drive(b.index)}
                 className={`${driving ? 'pixel-btn' : 'pixel-btn-ghost'} ${BUTTON} ${left ? 'right-0' : 'left-0'}`}
               >
                 <span className="mr-2 tabular-nums">{b.index + 1}</span>
                 <PixelIcon name={stageIcon(b)} />
                 <span className={`${DETAIL} ${left ? DETAIL_LEFT : DETAIL_RIGHT}`}>{b.name}</span>
-                <span className="sr-only">, {surface}</span>
+                <span className="sr-only">, {stageType}</span>
                 {b.index === frontier && <span className="sr-only">, {m.game.currentStage}</span>}
               </button>
             </li>

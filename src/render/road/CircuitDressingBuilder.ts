@@ -1,6 +1,12 @@
 import { type BufferGeometry, Group, Mesh, MeshStandardMaterial } from 'three';
 import { GRID } from '@/game/stage/CircuitStage';
-import { STAND, grandstandSpot, type CircuitTrackside } from '@/game/stage/CircuitTrackside';
+import {
+  CORNER_STAND,
+  STAND,
+  cornerStandSpots,
+  grandstandSpot,
+  type CircuitTrackside,
+} from '@/game/stage/CircuitTrackside';
 import type { RoadSample } from '@/game/stage/RoadPath';
 import type { StageDef } from '@/game/stage/StageGenerator';
 import { ROAD_LIFT, type TerrainField } from '@/game/stage/TerrainField';
@@ -136,6 +142,53 @@ export class CircuitDressingBuilder {
     }
     const [rx, rz] = centre(spot.back + STAND.depth / 2);
     mesh.box(rx, roofY, rz, STAND.depth + 1.5, 0.25, STAND.length + 2, yaw, roof);
+
+    for (const corner of cornerStandSpots(stage, trackside)) {
+      path.sample(corner.distance, s);
+      const cornerCentre = (lat: number, along = 0): [number, number] => [
+        s.x + Math.cos(s.heading) * lat * corner.side + Math.sin(s.heading) * along,
+        s.z - Math.sin(s.heading) * lat * corner.side + Math.cos(s.heading) * along,
+      ];
+      let cornerBase = -Infinity;
+      for (const along of [-CORNER_STAND.length / 2, 0, CORNER_STAND.length / 2])
+        for (const lat of [corner.back, corner.back + CORNER_STAND.depth]) {
+          const [x, z] = cornerCentre(lat, along);
+          cornerBase = Math.max(cornerBase, field.heightAt(x, z));
+        }
+      const rowDepth = CORNER_STAND.depth / CORNER_STAND.rows;
+      for (let row = 0; row < CORNER_STAND.rows; row++) {
+        const top = CORNER_STAND.rowRise * (row + 1);
+        const [x, z] = cornerCentre(corner.back + rowDepth * (row + 0.5));
+        const h = top + SINK;
+        mesh.box(
+          x,
+          cornerBase - SINK + h / 2,
+          z,
+          rowDepth,
+          h,
+          CORNER_STAND.length,
+          s.heading,
+          row % 2 ? frame : seats,
+        );
+      }
+      const cornerRoofY = cornerBase + CORNER_STAND.rowRise * CORNER_STAND.rows + 2.2;
+      for (const along of [-CORNER_STAND.length / 2, 0, CORNER_STAND.length / 2]) {
+        const [x, z] = cornerCentre(corner.back + CORNER_STAND.depth, along);
+        const h = cornerRoofY - cornerBase + SINK;
+        mesh.box(x, cornerRoofY - h / 2, z, 0.3, h, 0.3, s.heading, frame);
+      }
+      const [cx, cz] = cornerCentre(corner.back + CORNER_STAND.depth / 2);
+      mesh.box(
+        cx,
+        cornerRoofY,
+        cz,
+        CORNER_STAND.depth + 1.2,
+        0.25,
+        CORNER_STAND.length + 2,
+        s.heading,
+        roof,
+      );
+    }
     this.geometry = mesh.empty ? null : mesh.build();
     if (this.geometry) {
       const m = new Mesh(this.geometry, this.material);

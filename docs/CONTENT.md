@@ -8,7 +8,7 @@ how they play is in [GAMEPLAY.md](GAMEPLAY.md).
 
 ## Stages
 
-A stage is deterministic from `(game seed, region, stage index)`, so it is
+A stage is deterministic from `(game seed, stage type, stage index)`, so it is
 identical every time it is driven and records are fair.
 
 - **Brief.** `stageBrief` draws the name, surface, weather, length and par
@@ -25,7 +25,7 @@ identical every time it is driven and records are fair.
 - **Gates.** `min(6, max(2, round(length / 450)))` checkpoints evenly spaced,
   kept out of towns and in order, plus the finish. Start and finish are
   gantries; checkpoints are pairs of time-control boards.
-- **Terrain.** Simplex fBm per region, the road bed smoothed and
+- **Terrain.** Simplex fBm per stage type, the road bed smoothed and
   grade-limited to 12 %, sunk under the carriageway, the corridor blended
   flat; a level plateau under each town. Chunks of 64 m are meshed in a Web
   Worker from the seed alone and streamed around the car.
@@ -37,8 +37,8 @@ identical every time it is driven and records are fair.
 
 ## Towns
 
-Every third stage (stages 3, 6, 9, …, in whichever region falls there,
-except the Coast, the Desert and the Urban region, which build none: a city
+Every third stage (stages 3, 6, 9, …, in whichever stage type falls there,
+except Coastal, Desert and Urban, which build none: a city
 is a town from start to finish, see below)
 carries a town between 30 % and 55 % of the way along.
 
@@ -64,25 +64,29 @@ carries a town between 30 % and 55 % of the way along.
   pavements over 40 m either side of the town; the wild scenery keeps off the
   streets, buildings and walls but the yards stay green.
 
-## Regions
+## Stage types
 
-| Region | Palette                                                                                                                                                              | Surfaces                      | Weather         |
-| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- | --------------- |
-| Forest | pale sky, two greens, brown trunks; on mud the trees turn autumn (golden larches, orange and rust canopies) and the Arctic's spectators come out in everyday clothes | gravel, tarmac, mud           | clear           |
-| Alpine | pale grey sky, near-white ground, frosted pines                                                                                                                      | snow (dusted asphalt), tarmac | overcast, clear |
-| Coast  | pale blue sky, dry scrub and limestone, maritime pines, sand and a teal sea                                                                                          | tarmac                        | clear           |
-| Desert | pale sky, warm haze, pale to golden sand, sandstone, coconut palms and dry scrub, teal pools                                                                         | sand                          | clear           |
-| Urban  | pale grey-blue sky, concrete pavements, lawn verges and park greens, render and glass                                                                                | tarmac                        | clear, overcast |
-| Arctic | pale sky and near-white snow, dark spruce walls, bare birches, dark trunks                                                                                           | snow, edge to edge            | overcast, clear |
+Each stage type has one fixed surface. The type selects the world, palette,
+scenery and handling; the surface remains the vehicle and road-rendering
+input.
+
+| Stage type | Surface | Character                                                |
+| ---------- | ------- | -------------------------------------------------------- |
+| Arctic     | snow    | near-white snow, spruce walls, bare birches, dusk stages |
+| Circuit    | track   | parkland racing, kerbs and gravel traps                  |
+| Autumnal   | mud     | autumn trees, roadside crowds, mud ruts and jumps        |
+| Pinewood   | gravel  | wooded gravel rally                                      |
+| Alpine     | snow    | frosted pines and sharper mountain bends                 |
+| Forest     | tarmac  | green woodland on asphalt                                |
+| Urban      | tarmac  | a city from start to finish                              |
+| Coastal    | tarmac  | limestone cliffs, beach and sea                          |
+| Desert     | sand    | dunes, palms and oases                                   |
 
 All open ground (not the coast, the dunes, circuits or cities, which shape
 their own) carries small bumps and hollows over the broad hills: two
 octaves of noise about 10 m and 5 m across, up to about 35 cm, faded in
 with the road blend so the carriageway, the verge strip and the flat
 margin beside it stay level (`TerrainDetail`).
-
-Night is a placeholder cloned from Forest and not yet in the progression
-loop.
 
 ## Arctic
 
@@ -143,13 +147,13 @@ nearly flat country (relief 9 m, long waves) with long flowing bends.
   sitting on the ground with knees up and hands on them, and one sitting and
   one standing taking a picture with a camera up to the eye. Each has its
   own headwear, skin, trousers and boots, in one of six jacket colours. On
-  Forest mud stages (`surfaceScenery`) the same crowd comes out in
+  Autumnal stages the same crowd comes out in
   everyday clothes (`SpectatorWardrobe`): T-shirts or long sleeves in six
   colours, jeans, chinos or shorts, trainers, caps, bare heads and
-  ponytails, bare hands; snow regions keep the padded jackets. On mud the
-  groups and the start, checkpoint and finish crowds stand about 7.4 m
-  past the carriageway's edge, behind a grassy berm (0.7 m high, 3.6 m deep,
-  its foot 3.4 m out, clear of the verge) heaped in 8 m runs along the
+  ponytails, bare hands; snow stage types keep the padded jackets. On
+  Autumnal, groups and the start, checkpoint and finish crowds stand about
+  6 m past the carriageway's edge, behind a grassy berm (0.35 m high, 2.2 m
+  deep, its foot 3.4 m out, clear of the verge) heaped in 8 m runs along the
   crowd and a metre past each end of a group, grassed in a lusher shade
   of the field's green; jump crowds keep the open line. Wild scenery keeps off the berms, and the car rides
   over them like any ground. The finish draws
@@ -161,19 +165,19 @@ nearly flat country (relief 9 m, long waves) with long flowing bends.
   so no pairing repeats within six people. Between them stand about two
   groups per 100 m (`scenery.spectators`) of five or six people, no two in
   a group sharing a pose or a jacket. All stand just behind the snow banks
-  facing the road, never in a village's buildings nor where another
-  stretch of road passes; the wild scatter keeps 2.2 m clear of them.
+  facing the road, never in a building nor where another stretch of road
+  passes; the wild scatter keeps 2.2 m clear of them.
   Decoration only, no colliders.
 - **Look.** Pale sky and fog, near-white ground, dark blue-green spruce,
   dark trunks; houses under snow like the Alpine's.
 
-## Coast
+## Coastal
 
-A Coast stage is a cliff road with the sea to seaward and a hairpin stack or
+A Coastal stage is a cliff road with the sea to seaward and a hairpin stack or
 two. The lie of the land comes first (`CoastShape.ts`): along the stage axis
 the water line meanders in bays and headlands, and from it the ground climbs
 across a beach, a terraced rock band (the cliff) and a scrub hillside with
-outcrops, with the region's relief further in. The road is then drawn on that
+outcrops, with the stage type's relief further in. The road is then drawn on that
 ground (`CoastRoad.ts`): it follows the shore a shelf back from the cliff
 top, and once a stage (twice on a long one) turns inland and climbs the
 hillside in a stack of two hairpins, toward the land then away so it keeps

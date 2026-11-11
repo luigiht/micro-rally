@@ -83,7 +83,7 @@ flowchart LR
   colliders, the mesher paints the mask rock and the shore sand, and the
   renderer draws the walls (`render/road/SeaWallBuilder.ts` over
   `StoneWallGeometry.ts`) and the sea (`render/terrain/SeaPlane.ts`).
-- Arctic: no modules of its own. The region's `terrain.banks` heaps the
+- Arctic: no modules of its own. The stage type's `terrain.banks` heaps the
   snow ridges in `TerrainField.bankLift` (both the mesh sample and the
   wheels' deck), `SceneryDensity.spruces` feeds the `spruce` prop kind
   through the ordinary scatter, and `RallyKits` dresses it in three parts
@@ -181,11 +181,11 @@ flowchart LR
   lays out in well under a second. `StageRenderer` builds a new city's
   town meshes a few per frame from `update` during the countdown, roads,
   gates, terrain and scenery first.
-- **Themes.** `render/theme/WorldTheme.ts` holds the region's sky, fog, light,
-  road, gate and wall colours as data. `dayTheme(region, dusk)` selects the
+- **Themes.** `render/theme/WorldTheme.ts` holds each stage type's sky, fog, light,
+  road, gate and wall colours as data. `dayTheme(stageType, dusk)` selects the
   normal daytime or dusk palette; `StageRenderer` builds the stage with that
-  theme once. `sceneryKits.ts` uses `stagePalette(stage)` to tint the rally
-  props for the region and surface, including autumn on Forest mud. `DriveRig`
+  theme once. `sceneryKits.ts` uses `stagePalette(stageType)` to tint the rally
+  props, including autumn on Autumnal. `DriveRig`
   passes the theme to `SceneLights`, tyre marks and car lamps for dusk.
 - `DrivingSession` (components/game) is a plain class held in a ref. It owns
   the sim, the stepper, input, the camera rig and the `StageRun`, and

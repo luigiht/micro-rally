@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { REGIONS } from '@/game/stage/regions';
+import { STAGE_TYPES } from '@/game/stage/regions';
 import { createRoadHit } from '@/game/stage/RoadPath';
 import { halfWidthAt } from '@/game/stage/RoadWidth';
 import { createStageWorld } from '@/game/stage/StageWorld';
@@ -15,7 +15,7 @@ const DT = 1 / 120;
 function drive(seed: number, index: number, carId: keyof typeof CAR_SPECS, seconds: number) {
   const { stage, field } = createStageWorld(seed, index);
   const spec = CAR_SPECS[carId];
-  const handling = REGIONS[stage.region].handling;
+  const handling = STAGE_TYPES[stage.stageType].handling;
   const env = handling
     ? {
         ...DEFAULT_ENV,
@@ -47,18 +47,18 @@ function drive(seed: number, index: number, carId: keyof typeof CAR_SPECS, secon
 }
 
 describe('autopilot', () => {
-  it('drives every rally region a long way down the road without leaving it', () => {
-    for (const [region, surface] of [
-      ['forest', 'gravel'],
-      ['forest', 'mud'],
-      ['alpine', undefined],
-      ['arctic', undefined],
-      ['coast', undefined],
-      ['desert', undefined],
+  it('drives every rally stage type a long way down the road without leaving it', () => {
+    for (const stageType of [
+      'pinewood',
+      'autumnal',
+      'alpine',
+      'arctic',
+      'coastal',
+      'desert',
     ] as const) {
-      const r = drive(1, stageIndexOf(region, surface), 'hatchback', 40);
-      expect(r.travelled, `${region} ${surface ?? ''}`).toBeGreaterThan(350);
-      expect(r.off, `${region} ${surface ?? ''}`).toBeLessThan(1.5);
+      const r = drive(1, stageIndexOf(stageType), 'hatchback', 40);
+      expect(r.travelled, stageType).toBeGreaterThan(350);
+      expect(r.off, stageType).toBeLessThan(1.5);
     }
   }, 60_000);
 

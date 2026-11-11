@@ -1,24 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import { REGIONS } from '@/game/stage/regions';
-import { stageHasTown, stageRegion } from '@/game/stage/StageGenerator';
+import { STAGE_TYPES } from '@/game/stage/regions';
+import { stageHasTown, stageTypeAt } from '@/game/stage/StageGenerator';
 import { createStageWorld } from '@/game/stage/StageWorld';
 import { DEFAULT_ENV } from '@/game/vehicle/VehicleSim';
 import { stageIndexOf } from './stageIndex';
 
 const ARCTIC_INDEX = stageIndexOf('arctic');
 const SEEDS = [1, 2, 3];
-const ARCTIC = REGIONS.arctic;
+const ARCTIC = STAGE_TYPES.arctic;
 
 describe('Arctic stages', () => {
   it('sit in the rally mix, never through a village, on snow', () => {
     expect(ARCTIC_INDEX).toBe(4);
-    expect(stageRegion(ARCTIC_INDEX).region).toBe('arctic');
+    expect(stageTypeAt(ARCTIC_INDEX).stageType).toBe('arctic');
     expect(ARCTIC.towns).toBe(false);
     for (let i = 0; i < 200; i++)
-      if (stageRegion(i).region === 'arctic') expect(stageHasTown(i), `stage ${i}`).toBe(false);
+      if (stageTypeAt(i).stageType === 'arctic') expect(stageHasTown(i), `stage ${i}`).toBe(false);
     for (const seed of SEEDS) {
       const stage = createStageWorld(seed, ARCTIC_INDEX).stage;
-      expect(stage.region).toBe('arctic');
+      expect(stage.stageType).toBe('arctic');
       expect(stage.surface).toBe('snow');
       expect(stage.town).toBeUndefined();
     }
@@ -73,6 +73,6 @@ describe('Arctic stages', () => {
     expect(h.grip).toBeGreaterThan(1.2);
     expect(h.steer).toBeGreaterThan(1);
     expect(h.lock).toBeGreaterThan(1);
-    expect(REGIONS.alpine.handling).toBeUndefined();
+    expect(STAGE_TYPES.alpine.handling).toBeUndefined();
   });
 });

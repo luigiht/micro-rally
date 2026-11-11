@@ -23,7 +23,7 @@ export const SURFACES: Readonly<Record<Surface, SurfaceProps>> = {
   track: { grip: 1.25, drag: 0.0, rearGrip: 1.5 },
   gravel: { grip: 0.74, drag: 0.03 },
   grass: { grip: 0.62, drag: 0.12 },
-  mud: { grip: 0.55, drag: 0.22 },
+  mud: { grip: 0.55, drag: 0.18 },
   snow: { grip: 0.42, drag: 0.05 },
   /** A packed-sand piste: a little looser than gravel. */
   sand: { grip: 0.66, drag: 0.06 },

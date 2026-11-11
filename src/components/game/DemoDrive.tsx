@@ -4,7 +4,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { DirectionalLight, Group, PerspectiveCamera } from 'three';
 import { CATALOG_IDS } from '@/game/economy/cars';
-import { REGIONS } from '@/game/stage/regions';
+import { STAGE_TYPES } from '@/game/stage/regions';
 import { RoadFollower } from '@/game/stage/RoadFollower';
 import { createStageWorld } from '@/game/stage/StageWorld';
 import { CAR_SPECS } from '@/game/vehicle/CarSpec';
@@ -119,7 +119,7 @@ export function DemoDrive({ paused }: { paused: boolean }) {
   return (
     <>
       <SceneLights
-        lighting={dayTheme(REGIONS[world.stage.region], world.stage.dusk === true).lighting}
+        lighting={dayTheme(STAGE_TYPES[world.stage.stageType], world.stage.dusk === true).lighting}
         sunRef={sun}
       />
       <group ref={group} />

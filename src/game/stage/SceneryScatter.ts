@@ -1,10 +1,15 @@
-import { circuitTrackside, grandstandSpot, outermostBarrier } from './CircuitTrackside';
+import {
+  circuitTrackside,
+  cornerStandSpots,
+  grandstandSpot,
+  outermostBarrier,
+} from './CircuitTrackside';
 import { hashSeed, mulberry32 } from '../rng';
 import type { Obstacle } from '../vehicle/Collisions';
 import { inOasis, oasisPads, oasisProps, planOases } from './Oases';
 import { parkedCars, parkingStretches } from './ParkingBays';
 import { streetFurniture } from './StreetFurniture';
-import { REGIONS, stageScenery } from './regions';
+import { STAGE_TYPES, stageScenery } from './regions';
 import { createRoadHit, type RoadSample } from './RoadPath';
 import { ISLAND_PAD_BLEND } from './Roundabout';
 import { nearSpectator, scatterSpectators } from './Spectators';
@@ -173,7 +178,7 @@ export const CAR_COLLIDER = { radius: 0.95, spread: 1.1 } as const;
 /** The cars parked in a city's bays, each on the deck of its street, as props. */
 function cityCars(stage: TerrainField['stage'], field: TerrainField): Prop[] {
   const town = stage.town;
-  const def = REGIONS[stage.region].urban;
+  const def = STAGE_TYPES[stage.stageType].urban;
   if (!town?.city || !def) return [];
   return parkedCars(parkingStretches(town, stage, def), stage.seed).map((c) => {
     // The car lies along the street's slope: pitched by the deck's rise from its tail to its nose.
@@ -202,7 +207,7 @@ export function scatterScenery(field: TerrainField): Prop[] {
   field.setPads([]);
   field.setMounds([]);
   const stage = field.stage;
-  const density = stageScenery(stage);
+  const density = stageScenery(stage.stageType);
   const rand = mulberry32(hashSeed(stage.seed, 'scenery'));
   const path = stage.path;
   const hit = createRoadHit();
@@ -214,6 +219,7 @@ export function scatterScenery(field: TerrainField): Prop[] {
   const trackside = circuitTrackside(stage);
   const clearance = trackside ? outermostBarrier(trackside) - stage.halfWidth + 4 : MIN_CLEARANCE;
   const stand = trackside ? grandstandSpot(stage, trackside) : null;
+  const cornerStands = trackside ? cornerStandSpots(stage, trackside) : [];
   const kinds: readonly [PropKind, number][] = [
     ['spruce', density.spruces ?? 0],
     ['tree', density.trees],
@@ -244,6 +250,7 @@ export function scatterScenery(field: TerrainField): Prop[] {
         // Keep every part of the road (including other bends) clear, and the town plateau.
         if (path.nearest(x, z, stage.halfWidth + clearance, hit)) continue;
         if (stand && Math.hypot(x - stand.x, z - stand.z) < stand.radius) continue;
+        if (cornerStands.some((s) => Math.hypot(x - s.x, z - s.z) < s.radius)) continue;
         if (stage.town && townBlocks(stage.town, x, z)) continue;
         if (coast) {
           // Rocks anywhere above the water; scrub from the dry sand inland on anything but a cliff face;
@@ -272,7 +279,10 @@ export function scatterScenery(field: TerrainField): Prop[] {
   const houses = scatterHouses(field);
   // Berms are heaped into the terrain before anything stands on it.
   const crowd = density.spectators
-    ? scatterSpectators(field, density.spectators, density.berms === true)
+    ? scatterSpectators(field, density.spectators, {
+        berms: density.berms === true,
+        eventsOnly: density.spectatorEventsOnly === true,
+      })
     : { people: [], mounds: [] };
   const spectators = crowd.people;
   field.setMounds(crowd.mounds);
@@ -368,7 +378,7 @@ function houseCornerHeights(
  */
 function scatterHouses(field: TerrainField): Prop[] {
   const stage = field.stage;
-  const perHundred = REGIONS[stage.region].scenery.houses;
+  const perHundred = STAGE_TYPES[stage.stageType].scenery.houses;
   const rand = mulberry32(hashSeed(stage.seed, 'houses'));
   const path = stage.path;
   const hit = createRoadHit();
