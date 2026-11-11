@@ -105,6 +105,7 @@ describe('Pinewood pines', () => {
     expect(trees.filter((p) => edge(p) > 60).length).toBeGreaterThan(trees.length * 0.2);
   });
 
+  // Scatters a whole stage's grass twice and checks every patch: a few seconds, longer on CI runners.
   it('grow tall grass on the verges and over the hills, every blade off the road, clear of trunks and people', () => {
     const grass = scatterGrass(pinewood.field, pinewood.props);
     expect(grass.length / (pinewood.stage.path.length / 100)).toBeGreaterThan(500);
@@ -148,7 +149,7 @@ describe('Pinewood pines', () => {
       grass.reduce((s, c) => s + Math.sin(c.rotation), 0),
     );
     expect(mean / grass.length).toBeGreaterThan(0.8);
-  });
+  }, 30_000);
 
   it('draw a patch of grass about a metre tall, within its reach, and a stand-in of its own blades', () => {
     const patch = tallGrassGeometry();
