@@ -13,13 +13,14 @@ import {
 } from './Town';
 import { BUILDING_SIZE, pickStyle, VILLAGE_VARIANTS } from './BuildingCatalog';
 import { buildingIndex } from './BuildingIndex';
+import { joinedRow } from './TownJoinedRows';
 
 export { BUILDING_SIZE } from './BuildingCatalog';
 
 /** Terraced houses stand a party wall apart; terrace pads blend over less, so neighbours never tilt each other. */
 export const PARTY_GAP = 0.4;
 /** On a bend a house front is a chord of the facade; its middle may stand over the pavement by at most this. */
-const MAX_BULGE = 0.8;
+export const MAX_BULGE = 0.8;
 /** Facade polylines drop vertices within this of the line between their neighbours. */
 const SIMPLIFY = 0.05;
 /** When a house will not fit, the row moves on by this much and tries again. */
@@ -53,6 +54,10 @@ export interface Site {
   stubLength?: number;
   /** How many render variants (tints) the terraces draw from; 2 when unset. */
   variants?: number;
+  /** A city: terraces stand wall to wall, gaps closed by their buildings (`joinedRow`), not by garden walls. */
+  joined?: boolean;
+  /** A city's roundabout islands, which no building stands on. */
+  islands?: { x: number; z: number; r: number }[];
 }
 
 /** True when a circle of radius `r` at (x, z) is clear of every carriageway's pavement and every building. */
@@ -369,6 +374,10 @@ export function pushWall(site: Site, p: Pt, q: Pt): void {
  * so the pavement is backed from end to end.
  */
 export function row(site: Site, facade: Facade, from: number, to: number): void {
+  if (site.joined) {
+    joinedRow(site, facade, from, to);
+    return;
+  }
   const smallest = 2 * BUILDING_SIZE.tower.hx;
   let lastEdge = from;
   let cursor = from;

@@ -4342,3 +4342,50 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      is the first step of the Auto quality tier, ahead of the Settings
      tiers planned for milestone 7. Locally under SwiftShader the clock now
      starts about 3 s after the canvas.
+
+234. **2026-11-12 — Cities built wall to wall, street trees their only
+     greenery.** By request, city streets should be continuous built
+     frontage with no hedge or wall between buildings, corners joined
+     without one building passing through another, no parks or other
+     greenery, and small pavement trees everywhere. A city site
+     (`Site.joined`) lays rows with `joinedRow`: no party gap, fronts tried
+     at 100/85/70/60 % on tight curves, and stepping 0.25 m when a building
+     does not fit. Every gap is closed by fitting a building of 0.6–1.5× a
+     catalog front, or by stretching a neighbour as far as it stands (up to
+     `MAX_WIDEN` 1.5, found by halving). Buildings carry their own
+     `hx`/`hz`; props carry `widen`/`deepen`, which the scenery applies as
+     x/z scale, and colliders, pads and the building index use the real
+     size (`MAX_BUILDING_REACH` allows for it). Neighbours in one row may
+     overlap 1.5 m, which on a bend only happens behind both fronts.
+     Buildings of different rows may only touch, after the user saw a
+     corner building's front through its neighbour. A test checks that no
+     front runs inside another building. Stretched fronts are checked along
+     every edge every 2 m, because a 21 m block's corners alone missed a
+     side street it straddled. Edge midpoints keep the 0.8 m curve bulge
+     allowance. Side-street rows start where their frontage leaves the
+     junction's paving (a ring's centre is its island, so islands are
+     reserved). Corner squares take a corner building (`TownCorners.ts`),
+     apron edges and blocked street ends take terraces, and the remaining
+     wall runs become terraces (`wallsToTerraces`). What is still left
+     takes a building fitted to its plot (`TownInfill.ts`), one simple
+     outline each. The user first saw these built of one quad per piece of
+     a curved run, which overlapped at odd angles. Where the run's two end
+     normals meet behind it (a curved corner, or an L round a block corner)
+     the building is a cake slice: the curved front, then the sides running
+     in to that apex, cut off square if the apex lies over 14 m back or a
+     street is in the way. Otherwise the front is offset straight back,
+     mitred, as deep as stays clear. They are extruded as one merged mesh,
+     the roof triangulated, with windows spaced along the whole front and a
+     cornice (`TownInfillBuilder`). A test checks that no outline crosses
+     itself. Their walls stay only as colliders, and the
+     hedge option and theme are gone. A city wall run that takes no
+     building is dropped. Parks were tried and then removed at the user's
+     request. A city now plants nothing: no corner gardens, island or
+     median bushes, roof gardens (removed from the arcade, office and
+     tenement roofs) or wild scatter. Street trees stand every 7.5 m a side
+     (four per lamp span, never on a lamp mark). Trams draw from their own
+     random stream, and always include the crossroads that crosses the
+     route most squarely, so other layout changes cannot move them. On the
+     first city stage, total wall length fell from about 2,600 m (1,580
+     pieces, mostly hedges) to about 365 m, now invisible and fronting
+     fitted buildings; buildings rose from 1,188 to about 1,220.

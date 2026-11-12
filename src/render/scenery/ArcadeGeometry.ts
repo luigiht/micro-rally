@@ -11,7 +11,7 @@ import {
   type Face,
 } from './FacadeGeometry';
 import { box } from './HouseGeometry';
-import { parapet, pergola, roofGarden, stairBulkhead } from './RooftopGeometry';
+import { parapet, pergola, stairBulkhead } from './RooftopGeometry';
 
 /**
  * The city's arcaded mansion block: three storeys on a 10 × 10 footprint.
@@ -123,7 +123,6 @@ export function arcadeRoofParts(): BufferGeometry[] {
   const { w, d } = ARCADE;
   return [
     ...parapet(w, d, top),
-    ...roofGarden(0, 0, top, 6, 2),
     ...pergola(2.5, 3.0, top),
     ...stairBulkhead(-3, -2.8, top, 2.6, 2.0),
   ];

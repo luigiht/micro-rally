@@ -116,6 +116,7 @@ export class SceneryChunkManager {
         this.dummy.rotation.set(p.pitch ?? 0, p.rotation, 0, 'YXZ');
         this.dummy.scale.setScalar(p.scale);
         if (p.stretch) this.dummy.scale.y *= p.stretch;
+        if (p.widen) this.dummy.scale.x *= p.widen;
         kit.place?.(p, this.dummy);
         this.dummy.updateMatrix();
         mesh.setMatrixAt(i, this.dummy.matrix);

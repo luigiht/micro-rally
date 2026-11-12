@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { mulberry32 } from '@/game/rng';
-import { BuildingIndex, MAX_BUILDING_REACH } from '@/game/stage/BuildingIndex';
+import { BuildingIndex, buildingIndex, MAX_BUILDING_REACH } from '@/game/stage/BuildingIndex';
 import { SpatialHash } from '@/game/stage/SpatialHash';
 import { generateStage } from '@/game/stage/StageGenerator';
 import { type Building } from '@/game/stage/Town';
@@ -99,10 +99,12 @@ describe('BuildingIndex', () => {
     expect(MAX_BUILDING_REACH).toBeGreaterThanOrEqual(Math.hypot(7, 5.5));
   });
 
-  it('a city stands no two buildings closer than a party gap', () => {
-    const town = generateStage(1, 8).town!;
+  it('a village stands no two buildings closer than a party gap', () => {
+    let index = 0;
+    let town = generateStage(1, index).town;
+    while (!town || town.city) town = generateStage(1, ++index).town;
     const bs = town.buildings;
-    expect(bs.length).toBeGreaterThan(500);
+    expect(bs.length).toBeGreaterThan(10);
     for (let i = 0; i < bs.length; i++)
       for (let j = i + 1; j < bs.length; j++) {
         const a = bs[i]!;
@@ -110,5 +112,39 @@ describe('BuildingIndex', () => {
         if (Math.hypot(a.x - b.x, a.z - b.z) > 2 * MAX_BUILDING_REACH + PARTY_GAP) continue;
         expect(apart(a, b, PARTY_GAP - 1e-6)).toBe(true);
       }
+  });
+
+  it('a city joins its buildings wall to wall, never one front into another', () => {
+    const town = generateStage(1, 8).town!;
+    const bs = town.buildings;
+    expect(bs.length).toBeGreaterThan(500);
+    const idx = buildingIndex(bs);
+    const deep: string[] = [];
+    const poking: string[] = [];
+    for (let i = 0; i < bs.length; i++) {
+      const b = bs[i]!;
+      // Overlaps only where row neighbours meet on a bend, behind their fronts, and never deep.
+      idx.near(b.x, b.z, Math.hypot(b.hx, b.hz), ({ b: o }) => {
+        if (o !== b && !apart(o, b, -1.5 - 1e-6)) deep.push(`${i}`);
+      });
+      // The street front (local -z) runs inside no other building, corners included.
+      const c = Math.cos(b.yaw);
+      const s = Math.sin(b.yaw);
+      for (let k = 0; k <= 8; k++) {
+        const u = -b.hx + (2 * b.hx * k) / 8;
+        const x = b.x + u * c - b.hz * s;
+        const z = b.z - u * s - b.hz * c;
+        idx.near(x, z, 0, ({ b: o }) => {
+          if (o === b) return;
+          const dx = x - o.x;
+          const dz = z - o.z;
+          const ou = dx * Math.cos(o.yaw) - dz * Math.sin(o.yaw);
+          const ov = dx * Math.sin(o.yaw) + dz * Math.cos(o.yaw);
+          if (Math.abs(ou) < o.hx - 0.1 && Math.abs(ov) < o.hz - 0.1) poking.push(`${i}`);
+        });
+      }
+    }
+    expect(deep).toEqual([]);
+    expect(poking).toEqual([]);
   });
 });

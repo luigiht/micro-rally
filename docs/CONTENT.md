@@ -323,7 +323,7 @@ width`, so a boulevard turns on a 15 m arc and a lane on an 11 m one. The
   after, so no line runs under a zebra or into the pavement's flare), lane
   drops and roundabouts. Every boulevard carries a kerbed green median down its middle
   (1.8 m: a 35 cm sidewalk strip each side of a grass strip, a kerb high, rounded at both ends, the
-  wheels feel it; small bushes every 7 m along the grass) from 6 m after its start to 6 m before its end, broken
+  wheels feel it; nothing planted on it) from 6 m after its start to 6 m before its end, broken
   round every crossroads and never before the first 70 m of road, where the
   start gantry stands.
 - **Junctions.** Every corner of 45° or more is a junction with two blocked
@@ -348,8 +348,17 @@ width`, so a boulevard turns on a 15 m arc and a lane on an 11 m one. The
   and the route's terraces run on past it. The garden walls round the junction greens are closed: any
   wall end that meets neither another wall nor a building is joined to the
   nearest such end within 6 m (`TownWallGaps.ts`), the ring walls run
-  exactly up to each road's facade lines, and every walled corner takes up
-  to two trees and five bushes.
+  exactly up to each road's facade lines, and in a village every walled corner takes up
+  to two trees and five bushes. A city has no garden walls or greens: its terraces stand
+  wall to wall (no party gap; a gap is closed by stretching a neighbour up to 1.5× its front
+  or fitting a building 0.6–1.5× a catalog front, narrower fronts on tight curves), every
+  corner square takes a corner building, side-street rows start where their frontage leaves
+  the junction's paving, the apron edges and blocked street ends carry terraces, and any plot
+  no catalog building fits takes a building fitted to it (`TownInfill.ts`), one simple outline
+  each: round a curved or square corner a slice (its front along the pavement, its sides
+  running in to the apex where the ends' normals meet, cut off square past 14 m or at a
+  street), elsewhere the front offset 2–9 m straight back; 7–12 m tall, windows spaced along the
+  whole front and a cornice. Its wall stays only as that front's collider.
 - **Roundabouts.** One a stage, two from the third difficulty loop, three
   from the fifth: the route deflects right through 28° on a 20 m arc onto a
   ring round an island of 8–11 m radius, circulates left through 56° (straight
@@ -358,7 +367,7 @@ width`, so a boulevard turns on a 15 m arc and a lane on an 11 m one. The
   the route does not drive is laid as short chord streets, so it is tarmac at
   deck level, and the hills are levelled to the island's height for 18 m
   beyond the ring, blending back over 40 m, so the ring lies flat. The
-  island stands a kerb above the ring with a tree and a few bushes; blocked
+  island stands a kerb above the ring (grass in a city, nothing planted, no building on it); blocked
   exits leave the ring every quarter turn from the entry where they clear
   the route's own arms, closed by cones like any side street. The ring's
   tarmac is one full annulus under the route and the exits, and its outer
@@ -422,14 +431,15 @@ width`, so a boulevard turns on a 15 m arc and a lane on an 11 m one. The
   wheels, pitched to the street's slope, which the car hits like any
   obstacle. Every street, route and side street alike, carries the same
   rhythm on both pavements (`StreetFurniture.ts`): a street tree in a
-  kerbed pit every 15 m a side (shifted up to 3.5 m where a door or a mouth
+  kerbed pit every 7.5 m a side, never on a lamp mark (shifted up to 3.5 m where a door or a mouth
   is in the way, so the rows stay unbroken), a lamp every 30 m alternating
   sides between the trees, and a bench, a litter bin, a hydrant or a
   bollard on the pavement opposite each lamp; nothing but a lamp or
   bollard stands within 2 m of a door, and nothing in a junction's mouth,
   beside another street or inside a ring's hand-off; benches and bins face
   the road. Every junction gets a traffic light on each corner, and manhole covers dot the carriageway every
-  40 m. The garden walls are hedges. The ground under a city's streets is
+  40 m. Those street trees are the city's only greenery: no hedges, bushes,
+  corner gardens, roof gardens or wild trees. The ground under a city's streets is
   coloured tarmac under the carriageways and paving under the pavements, and
   the terraces' pads stop short of the pavements, so no grass shows through
   a seam or along a building on a slope.
@@ -444,8 +454,8 @@ width`, so a boulevard turns on a 15 m arc and a lane on an 11 m one. The
   junctions, at least 25 m along the road from any junction or roundabout
   ring, each as wide as the street it stands on; the start and finish
   gantries span the boulevard.
-- **Scenery.** The wild scatter is the parks': a few trees and bushes off
-  the streets, no farms, no rocks. Par speed is 13 m/s on tarmac.
+- **Scenery.** No wild scatter: no trees, bushes, farms or rocks beyond the
+  street trees. Par speed is 13 m/s on tarmac.
 
 ## Circuits
 

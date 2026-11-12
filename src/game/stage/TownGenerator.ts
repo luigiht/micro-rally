@@ -14,11 +14,12 @@ import {
   cityRoundabout,
   cityTrams,
   islandGap,
-  islandPlantings,
   traceWidths,
 } from './UrbanGenerator';
 import { MIN_JUNCTION_TURN } from './UrbanPlan';
 import { clipStubsToRoads, joinStubs } from './UrbanStreets';
+import { fitInfills } from './TownInfill';
+import { trimWallsUnderBuildings, wallsToTerraces } from './TownJoinedRows';
 import { closeWallGaps } from './TownWallGaps';
 import {
   junctionWalls,
@@ -212,7 +213,9 @@ export function layoutTown(
     arrows: [],
     junctions: [],
     plantings: [],
-    ...(city ? { styles: city.styles, stubLength: CITY_STUB_LENGTH, variants: CITY_VARIANTS } : {}),
+    ...(city
+      ? { styles: city.styles, stubLength: CITY_STUB_LENGTH, variants: CITY_VARIANTS, joined: true }
+      : {}),
   };
   const stubs: StubSite[] = [];
   const roundabouts: Roundabout[] = [];
@@ -293,6 +296,8 @@ export function layoutTown(
     const side = r.sense > 0 ? 'left' : 'right';
     gaps[side].push(islandGap(r, facades[side]));
   }
+  // A city keeps buildings off its roundabouts' islands.
+  if (city) site.islands = roundabouts.map((r) => ({ x: r.x, z: r.z, r: r.islandRadius }));
   for (const side of ['left', 'right'] as const) {
     const facade = facades[side];
     let s0 = EDGE_SETBACK;
@@ -304,9 +309,18 @@ export function layoutTown(
   }
   for (const s of stubs) stubRows(site, s);
   closeWallGaps(site);
-  plantCorners(site, greens);
-  site.plantings.push(...islandPlantings(roundabouts, site.rand));
-  const trams = city ? cityTrams(site, roundabouts) : [];
+  // A city's corners are built up: its walls give way to the buildings, and no garden is planted.
+  if (city) {
+    // Trim the walls to the terraces, turn the straight runs left into terraces too, and trim
+    // again; the corners are left for one fitted building each.
+    trimWallsUnderBuildings(site);
+    wallsToTerraces(site);
+    trimWallsUnderBuildings(site);
+  } else plantCorners(site, greens);
+  // Whatever gap is left in a city takes a building fitted to its plot.
+  const infills = city ? fitInfills(site) : [];
+  // Trams draw from their own stream, so nothing else laid out above moves them.
+  const trams = city ? cityTrams(site, roundabouts, mulberry32(hashSeed(seed, 'trams'))) : [];
   const medians = city ? cityMedians(site, legs, citySource, city) : [];
 
   // Footprint: the bounding box of everything in the town frame, with ramp room along the route.
@@ -354,7 +368,7 @@ export function layoutTown(
     walls: site.walls,
     plantings: site.plantings,
     ...(city && widths
-      ? { relief: city.relief, roundabouts, trams, medians, widths, city: true as const }
+      ? { relief: city.relief, roundabouts, trams, medians, widths, city: true as const, infills }
       : {}),
   };
 }

@@ -71,6 +71,8 @@ export interface Prop {
   pitch?: number;
   /** A vertical stretch on top of `scale` (taller trees); 1 when unset. Colliders and spacing go by `scale`. */
   stretch?: number;
+  /** A widening across the prop's own x axis on top of `scale` (a city building stretched to close its terrace); 1 when unset. */
+  widen?: number;
   /** A pine wood's pine build (`SceneryDensity.pineWood`), chosen here so each pine is spaced by its own reach. */
   pine?: PineForm;
 }

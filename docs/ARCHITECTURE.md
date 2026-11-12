@@ -131,7 +131,14 @@ flowchart LR
   facade polylines a pavement beyond the route's real edge and along every
   side street, walked by `TownTerraces.row` to stand houses a party wall
   apart with garden walls over every gap, L-walls round each junction wedge
-  with a tree and bushes planted behind them, and the footprint.
+  with a tree and bushes planted behind them, and the footprint. A city
+  (`Site.joined`) lays its rows with `TownJoinedRows.joinedRow` instead
+  (wall to wall, gaps closed by stretching or fitting buildings, which carry
+  their own `hx`/`hz` and render widened or deepened), then fills corner
+  squares (`TownCorners.ts`), turns remaining wall runs into terraces
+  (`wallsToTerraces`) and fits a building to whatever plot is left
+  (`TownInfill.ts`, drawn by `render/town/TownInfillBuilder.ts` in place of
+  the wall builder).
   `TownKerbs.ts` traces each junction's kerbs exactly (kerb returns between
   side streets and the route's curved edge, with normals) and the stretches
   where the ribbon hands its verge and line over. `TerrainField` tames the hills inside the

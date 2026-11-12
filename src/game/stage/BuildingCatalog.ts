@@ -18,6 +18,17 @@ export const BUILDING_SIZE: Readonly<Record<BuildingStyle, { hx: number; hz: num
   arcade: { hx: 5, hz: 5 },
 };
 
+/** A city building may be drawn up to this much wider than its catalog front, to close a gap in its terrace. */
+export const MAX_WIDEN = 1.5;
+
+/** Each city style's eaves height above its floor (the render kits' storeys), for fitted buildings to match. */
+export const CITY_EAVES: Readonly<Partial<Record<BuildingStyle, number>>> = {
+  arcade: 9.6,
+  tenement: 15,
+  block: 15,
+  office: 28.8,
+};
+
 /** Where each style's door stands along its front (local x), so street furniture keeps clear of it. */
 export const DOOR_OFFSET: Readonly<Record<BuildingStyle, number>> = {
   townhouse: 1.8,

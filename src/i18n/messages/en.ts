@@ -173,6 +173,11 @@ export const en = {
       intro: 'Every release since the first playable build, newest first.',
       entries: [
         {
+          date: '12 November 2026',
+          title: 'Cities built wall to wall',
+          body: 'City streets are now continuous rows of buildings: no hedges or garden walls between them, corner buildings that meet their neighbours cleanly, and buildings shaped to fit the odd corners. The only greenery left in a city is the small trees in kerbed pits along every pavement.',
+        },
+        {
           date: '11 November 2026',
           title: 'Multiplayer, live rivals, start and finish gates and grippier climbs',
           body: 'A new Multiplayer mode lets two drivers share a session of stages and a scoreboard, on the stage types the host ticks, each in a car of their choice, with the next stage opening once both have finished; while both are on the same stage, each sees the other’s car on the road. Single player is unchanged, and Exit game in the Game panel now returns to the start screen. Every start and finish has a chequered gantry; on rally stages red boards mark the start with a stopwatch and the finish with a chequered flag. Touchscreens gained a back-to-checkpoint button next to Pause. Alpine and Autumnal stages grip harder so cars climb faster, mud drives a little quicker, the flickering triangles at the edges of dirt roads are gone, and Autumnal roads are narrower, lose their verge posts and run on a low bank through taller, thicker woods of many shapes and colours, with fallen leaves. Pinewood stages now run through a dense wood of tall pines that never touch each other or reach over the road, with bare trunks along the verges, tall grass over the hills, the wood carrying on into the distance, and faint wheel traces and loose stones on the gravel. A window left open when a new version goes out now offers to reload. The About page dropped its Contact tab; send feedback from the Game panel.',

@@ -104,8 +104,6 @@ export interface WorldTheme {
   road: RoadTheme;
   gates: GateTheme;
   walls: WallTheme;
-  /** A city's garden hedges in place of its walls: the leaf body and the lighter clipped top. */
-  hedges: WallTheme;
   /** The coast's block walls: concrete, between `body` and `cap` block by block. */
   seawall: WallTheme;
   /** The sea plane on Coast stages. */
@@ -167,7 +165,6 @@ const DAY_GATES: GateTheme = {
 };
 
 const DAY_WALLS: WallTheme = { body: '#c9c0b0', cap: '#e3dccf' };
-const DAY_HEDGES: WallTheme = { body: '#4f7a3a', cap: '#6b9a48' };
 
 /** Red-and-white kerbs, galvanised Armco on grey posts, dark mesh fencing, pale gravel, a blue-and-white grandstand. */
 const DAY_CIRCUIT: CircuitTheme = {
@@ -230,7 +227,6 @@ export function dayTheme(stageType: StageTypeDef, dusk = false): WorldTheme {
       road,
       gates: DAY_GATES,
       walls: DAY_WALLS,
-      hedges: DAY_HEDGES,
       seawall: DAY_SEAWALL,
       sea: stageType.coast?.sea ?? DAY_SEA,
       skidInk: dusk ? DUSK_SKID_INK : null,
@@ -249,7 +245,6 @@ export function flatTheme(sky: string, fog: string, shoulder = '#8fbf6a'): World
     road: dayRoad(shoulder),
     gates: DAY_GATES,
     walls: DAY_WALLS,
-    hedges: DAY_HEDGES,
     seawall: DAY_SEAWALL,
     sea: DAY_SEA,
     skidInk: null,

@@ -15,14 +15,7 @@ import {
   type Face,
 } from './FacadeGeometry';
 import { box } from './HouseGeometry';
-import {
-  acUnits,
-  antenna,
-  parapet,
-  roofGarden,
-  stairBulkhead,
-  waterTower,
-} from './RooftopGeometry';
+import { acUnits, antenna, parapet, stairBulkhead, waterTower } from './RooftopGeometry';
 
 /**
  * Two city kits, as part lists that BuildingGeometry merges (and puts a
@@ -91,7 +84,6 @@ export function blockRoofParts(): BufferGeometry[] {
     ...stairBulkhead(3.5, 1.5, top, 3.2, 2.4),
     ...waterTower(-3.5, -2, top),
     ...acUnits(-1.6, 3.4, top, 2),
-    ...roofGarden(3, -3.2, top, 5, 1),
   ];
 }
 

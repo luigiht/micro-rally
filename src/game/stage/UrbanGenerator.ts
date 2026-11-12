@@ -2,7 +2,7 @@ import type { UrbanDef } from './regions';
 import type { Median } from './Median';
 import { createRoadHit, type RoadPath } from './RoadPath';
 import { ringChords, ringOuterRadius, ringPoint, ringSweep, type Roundabout } from './Roundabout';
-import type { Junction, Planting, Street } from './Town';
+import type { Junction, Street } from './Town';
 import { junctionKerbs } from './TownKerbs';
 import { junctionReach } from './TownJunctions';
 import { applyPlan, planStub, stubSite, type StubSite } from './TownSideStreets';
@@ -27,9 +27,6 @@ const MEDIAN_END = 6;
 const MEDIAN_JUNCTION_MARGIN = 8;
 const MEDIAN_FIRST = 45;
 const MEDIAN_MIN = 8;
-/** Bushes along a median's grass, this far apart, this far in from its ends, small enough for the strip. */
-const MEDIAN_BUSH_SPACING = 7;
-const MEDIAN_BUSH_END = 3;
 /** Crossroads along a city block at least this long, about every `CROSSROADS_SPACING`. */
 const CROSSROADS_MIN = 110;
 const CROSSROADS_SPACING = 75;
@@ -115,12 +112,12 @@ export function cityRoundabout(
 }
 
 /**
- * Garden walls behind a ring's outer pavement, as a junction's wedges have:
- * along the ring's facade in chords, broken for every exit and wherever the
- * route's own pavement runs beside it, and down each exit's facades from the
- * ring to where its terrace rows begin, with a bush in every corner. Without
- * them the ground between two pavements lies open and reads as a bare patch
- * beside the road.
+ * The lines behind a ring's outer pavement, laid as walls: along the ring's
+ * facade in chords, broken for every exit and wherever the route's own
+ * pavement runs beside it, and down each exit's facades from the ring to
+ * where its terrace rows begin. The city turns them into terraces once its
+ * streets are all known (`wallsToTerraces`); what cannot take a building
+ * keeps its wall.
  */
 function ringWalls(site: Site, r: Roundabout, stage: RoadWidthSource): void {
   const outer = ringOuterRadius(r);
@@ -169,17 +166,6 @@ function ringWalls(site: Site, r: Roundabout, stage: RoadWidthSource): void {
         z: o.z + u.z * ROW_SETBACK + l.z * lat,
       };
       site.walls.push({ x0: a.x, z0: a.z, x1: b.x, z1: b.z });
-      // A bush just inside the corner.
-      const bx = a.x + u.x * 2.2 + l.x * side * 1.8;
-      const bz = a.z + u.z * 2.2 + l.z * side * 1.8;
-      site.plantings.push({
-        kind: 'bush',
-        x: bx,
-        z: bz,
-        scale: 0.6 + site.rand() * 0.4,
-        rotation: site.rand() * Math.PI * 2,
-        variant: site.rand() < 0.5 ? 0 : 1,
-      });
     }
   }
 }
@@ -193,36 +179,6 @@ export function islandGap(r: Roundabout, facade: Facade): [number, number] {
 }
 
 const xz = (p: { x: number; z: number }): [number, number] => [p.x, p.z];
-
-/** A tree in the middle of each island and a ring of bushes round it. */
-export function islandPlantings(rs: readonly Roundabout[], rand: () => number): Planting[] {
-  const out: Planting[] = [];
-  for (const r of rs) {
-    out.push({
-      kind: 'tree',
-      x: r.x,
-      z: r.z,
-      scale: 1 + rand() * 0.3,
-      rotation: rand() * Math.PI * 2,
-      variant: rand() < 0.5 ? 0 : 1,
-    });
-    const n = 3 + Math.floor(rand() * 3);
-    const a0 = rand() * Math.PI * 2;
-    for (let k = 0; k < n; k++) {
-      const a = a0 + (k * Math.PI * 2) / n;
-      const p = ringPoint(r, a, r.islandRadius * 0.5);
-      out.push({
-        kind: 'bush',
-        x: p.x,
-        z: p.z,
-        scale: 0.7 + rand() * 0.4,
-        rotation: rand() * Math.PI * 2,
-        variant: rand() < 0.5 ? 0 : 1,
-      });
-    }
-  }
-  return out;
-}
 
 /** The side street leaving `o` on `heading`, if one was laid. */
 function stubFrom(site: Site, o: { x: number; z: number }, heading: number): Street | undefined {
@@ -246,12 +202,18 @@ function stubEnd(s: Street): { x: number; z: number } {
  * street through the junction to the end of the other. None near a
  * roundabout; none along the route, whose boulevards carry green medians.
  */
-export function cityTrams(site: Site, roundabouts: readonly Roundabout[]): TramLine[] {
+export function cityTrams(
+  site: Site,
+  roundabouts: readonly Roundabout[],
+  rand: () => number,
+): TramLine[] {
   const out: TramLine[] = [];
   const nearRing = (x: number, z: number) =>
     roundabouts.some((r) => Math.hypot(r.x - x, r.z - z) < TRAM_ROUNDABOUT_CLEARANCE);
   // Every crossroads clear of the rings is a candidate; about half are taken, and at least one.
   const candidates: [Street, Street][] = [];
+  // How square on each candidate crosses the route (1 = at right angles).
+  const square: number[] = [];
   for (const j of site.junctions) {
     const inArm = j.arms.find((a) => a.role === 'in');
     const outArm = j.arms.find((a) => a.role === 'out');
@@ -261,10 +223,18 @@ export function cityTrams(site: Site, roundabouts: readonly Roundabout[]): TramL
     if (blocked.length !== 2 || nearRing(j.x, j.z)) continue;
     const a = stubFrom(site, j, blocked[0]!.heading);
     const b = stubFrom(site, j, blocked[1]!.heading);
-    if (a && b) candidates.push([a, b]);
+    if (a && b) {
+      candidates.push([a, b]);
+      square.push(Math.abs(Math.sin(blocked[0]!.heading - inArm.heading)));
+    }
   }
-  const chosen = candidates.filter(() => site.rand() < 0.5).slice(0, MAX_TRAM_CROSSINGS);
-  if (chosen.length === 0 && candidates.length > 0) chosen.push(candidates[0]!);
+  const picked = candidates.map(() => rand() < 0.5);
+  // At least one line crosses the route square on (or as near as any crossroads does).
+  const squarest = square.indexOf(Math.max(...square));
+  if (squarest >= 0 && !picked.some((p, i) => p && square[i]! > SQUARE_ON)) picked[squarest] = true;
+  const chosen = candidates.filter((_, i) => picked[i]).slice(0, MAX_TRAM_CROSSINGS);
+  if (squarest >= 0 && !chosen.includes(candidates[squarest]!))
+    chosen[chosen.length - 1] = candidates[squarest]!;
   for (const [a, b] of chosen) {
     const pa = stubEnd(a);
     const pb = stubEnd(b);
@@ -272,6 +242,9 @@ export function cityTrams(site: Site, roundabouts: readonly Roundabout[]): TramL
   }
   return out;
 }
+
+/** A tram line this square on to the route (|sin| of the angle) counts as crossing it at right angles. */
+const SQUARE_ON = 0.95;
 
 /** A junction corner without a junction to measure (none in practice) changes the route's width over this middle share of its arc. */
 const CORNER_CHANGE = 0.4;
@@ -472,15 +445,6 @@ export function cityMedians(
       while (t1 > t0 && inSpan(t1)) t1 -= 1;
       if (t1 - t0 < MEDIAN_MIN) continue;
       out.push({ x0: o.x + f.x * t0, z0: o.z + f.z * t0, x1: o.x + f.x * t1, z1: o.z + f.z * t1 });
-      for (let t = t0 + MEDIAN_BUSH_END; t <= t1 - MEDIAN_BUSH_END; t += MEDIAN_BUSH_SPACING)
-        site.plantings.push({
-          kind: 'bush',
-          x: o.x + f.x * t,
-          z: o.z + f.z * t,
-          scale: 0.45 + site.rand() * 0.2,
-          rotation: site.rand() * Math.PI * 2,
-          variant: site.rand() < 0.5 ? 0 : 1,
-        });
     }
   }
   return out;

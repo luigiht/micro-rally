@@ -18,6 +18,7 @@ import {
   left,
   openGround,
   place,
+  polylineFacade,
   row,
   straightFacade,
   street,
@@ -258,19 +259,58 @@ export function stubEnd(site: Site, s: StubSite): void {
   pushWall(site, at(s.j, s.heading, front, -f), at(s.j, s.heading, front, f));
 }
 
+/**
+ * Where a side street's frontage first stands clear past its junction's
+ * paving: walking out from the junction's centre, the first clear point
+ * after one that is not (a ring's centre is its island, clear until the
+ * ring itself). `ROW_SETBACK` if it never crosses any paving.
+ */
+function rowStart(site: Site, facade: Facade): number {
+  let crossed = false;
+  for (let s = 0; s < facade.length; s += ROW_SCAN) {
+    const p = facade.point(s);
+    if (!site.clear(p.x, p.z, 0)) crossed = true;
+    else if (crossed) return s;
+  }
+  return ROW_SETBACK;
+}
+const ROW_SCAN = 0.5;
+
+/**
+ * A city terrace along the straight line from `a` to `b`, its buildings
+ * standing on the side the `back` heading points to.
+ */
+function terraceAlong(site: Site, a: Pt, b: Pt, back: number): void {
+  const length = Math.hypot(b.x - a.x, b.z - a.z);
+  if (length < 1) return;
+  const along = Math.atan2(b.x - a.x, b.z - a.z);
+  const l = left(along);
+  const f = forward(back);
+  row(site, polylineFacade([a, b], l.x * f.x + l.z * f.z > 0 ? 1 : -1), 0, length);
+}
+
 /** Terraces down both sides of a side street, and walls closing the corners at its end. */
 export function stubRows(site: Site, s: StubSite): void {
   // An open street's rows stop short of the road it meets, leaving that road's pavement free.
   const front = s.open ? s.length - (s.endClear ?? OPEN_END_SETBACK) : s.length + FRONT_SETBACK;
   const end = front - 0.6;
   for (const side of [1, -1] as const) {
-    row(site, straightFacade(s.j, s.heading, s.hw, side, end), ROW_SETBACK, end);
+    const facade = straightFacade(s.j, s.heading, s.hw, side, end);
+    // A city's rows start where the frontage leaves the junction's paving, so the side street's
+    // first building meets the corner one.
+    row(site, facade, site.joined ? rowStart(site, facade) : ROW_SETBACK, end);
     if (s.open) continue;
     const f = (s.hw + FRONT_SETBACK) * side;
     const k = at(s.j, s.heading, front, f);
     pushWall(site, at(s.j, s.heading, end, f), k);
+    // A city closes the street's end with buildings either side of the end one, not walls.
+    if (site.joined) continue;
     if (s.endHx !== undefined && s.endHx < Math.abs(f) - 0.3)
       pushWall(site, k, at(s.j, s.heading, front, s.endHx * side));
+  }
+  if (site.joined && !s.open) {
+    const f = s.hw + FRONT_SETBACK;
+    terraceAlong(site, at(s.j, s.heading, front, -f), at(s.j, s.heading, front, f), s.heading);
   }
 }
 
@@ -390,6 +430,7 @@ export function junctionWalls(
         apron.handoff.x + apron.handoff.nx * FRONT_SETBACK,
         apron.handoff.z + apron.handoff.nz * FRONT_SETBACK,
       );
+      // The corner's line round the apron; in a city its building is fitted to it (`TownInfill`).
       pushWall(site, start, corner);
       pushWall(site, corner, end);
       cuts.corners.push({ k: corner, a: w.a, b: w.b });

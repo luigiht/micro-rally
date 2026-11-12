@@ -1,4 +1,4 @@
-import { BUILDING_SIZE } from './BuildingCatalog';
+import { BUILDING_SIZE, MAX_WIDEN } from './BuildingCatalog';
 import { SpatialHash } from './SpatialHash';
 import { buildingCorners, type Building } from './Town';
 
@@ -9,9 +9,9 @@ import { buildingCorners, type Building } from './Town';
  * building list and kept in step with it as buildings are pushed.
  */
 
-/** The furthest any style's corner stands from its centre. */
+/** The furthest any style's corner stands from its centre, a city's stretched fronts included. */
 export const MAX_BUILDING_REACH = Math.max(
-  ...Object.values(BUILDING_SIZE).map(({ hx, hz }) => Math.hypot(hx, hz)),
+  ...Object.values(BUILDING_SIZE).map(({ hx, hz }) => Math.hypot(hx * MAX_WIDEN, hz)),
 );
 const CELL = 16;
 

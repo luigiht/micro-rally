@@ -24,6 +24,7 @@ import { ParkingBayBuilder } from '../town/ParkingBayBuilder';
 import { RoundaboutBuilder } from '../town/RoundaboutBuilder';
 import { TownJunctionBuilder } from '../town/TownJunctionBuilder';
 import { TownStreetBuilder } from '../town/TownStreetBuilder';
+import { TownInfillBuilder } from '../town/TownInfillBuilder';
 import { TownWallBuilder } from '../town/TownWallBuilder';
 import { TramFleet } from '../town/TramFleet';
 import { TramTrackBuilder } from '../town/TramTrackBuilder';
@@ -58,8 +59,6 @@ export interface StageRenderOptions {
   streetFurniture: boolean;
   /** Cities: paving slabs and kerb stones on the pavements. */
   pavementDetail: boolean;
-  /** Cities: hedges in place of the garden walls. */
-  hedges: boolean;
   /** Cities: the trams that run the lines now and then (visual only). */
   tramService: boolean;
   /** Fallen leaves on the ground where the stage type sheds them (the Autumnal); visual only. */
@@ -86,7 +85,6 @@ export const DEFAULT_STAGE_RENDER: StageRenderOptions = {
   parkingBays: true,
   streetFurniture: true,
   pavementDetail: true,
-  hedges: true,
   tramService: true,
   leafLitter: true,
   tallGrass: true,
@@ -125,7 +123,8 @@ interface Surfaces {
   gates: GateBuilder;
   town: TownStreetBuilder | null;
   junctions: TownJunctionBuilder | null;
-  walls: TownWallBuilder | null;
+  /** A village's garden walls, or a city's infill buildings (its walls are colliders only). */
+  walls: TownWallBuilder | TownInfillBuilder | null;
   seawall: SeaWallBuilder | null;
   sea: SeaPlane | null;
   pools: OasisBuilder | null;
@@ -283,15 +282,10 @@ export class StageRenderer {
     const steps: (() => void)[] = [
       add('town', () => new TownStreetBuilder(town, field, stage.halfWidth, theme.road)),
       add('junctions', () => new TownJunctionBuilder(stage, field, theme.road)),
-      add(
-        'walls',
-        () =>
-          new TownWallBuilder(
-            town,
-            field,
-            theme.walls,
-            town.city && this.opts.hedges ? theme.hedges : undefined,
-          ),
+      add('walls', () =>
+        town.city
+          ? new TownInfillBuilder(town, field)
+          : new TownWallBuilder(town, field, theme.walls),
       ),
     ];
     if (town.roundabouts?.length)

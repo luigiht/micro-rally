@@ -11,7 +11,7 @@ import {
   type Face,
 } from './FacadeGeometry';
 import { box } from './HouseGeometry';
-import { acUnits, parapet, roofGarden, stairBulkhead, waterTower } from './RooftopGeometry';
+import { acUnits, parapet, stairBulkhead, waterTower } from './RooftopGeometry';
 
 /**
  * The city's brick tenement: a five-storey walk-up on a 12 × 10 footprint.
@@ -72,6 +72,5 @@ export function tenementRoofParts(): BufferGeometry[] {
     ...stairBulkhead(-3, 2, top, 2.8, 2.2),
     ...waterTower(3.5, -2, top),
     ...acUnits(-4.6, -3.2, top, 2),
-    ...roofGarden(1.5, 3.4, top, 5, 1),
   ];
 }

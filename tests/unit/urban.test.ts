@@ -253,13 +253,10 @@ describe('Urban stages', () => {
             expect(along).toBeGreaterThan(Math.hypot(m.x1 - m.x0, m.z1 - m.z0) / 2 + 6);
         }
       }
-      // The start line and the spawn stand on plain tarmac; bushes grow along every median's grass.
+      // The start line and the spawn stand on plain tarmac; a city plants nothing, medians included:
+      // its only greenery is the street trees along the pavements.
       expect(medianLift(medians, field.stage.spawn.x, field.stage.spawn.z)).toBe(0);
-      const onMedians = town.plantings.filter(
-        (p) => p.kind === 'bush' && medianLift(medians, p.x, p.z) > KERB_LIFT * 0.9,
-      );
-      expect(onMedians.length).toBeGreaterThanOrEqual(medians.length);
-      for (const p of onMedians) expect(p.scale).toBeLessThan(0.7);
+      expect(town.plantings).toEqual([]);
     }
   });
 

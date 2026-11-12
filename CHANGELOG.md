@@ -5,6 +5,22 @@ tags yet: `main` is deployed continuously, so entries are grouped by the day
 they landed. The numbered entries in [docs/DECISIONS.md](docs/DECISIONS.md)
 hold the reasoning behind each change; the numbers in brackets point there.
 
+## 2026-11-12
+
+### Changed
+
+- **Cities built wall to wall.** City buildings now stand side by side with
+  no gaps, hedges or garden walls between them. A building stretches or a
+  narrower one fits to close a gap, narrower fronts follow tight curves,
+  every junction corner has a corner building, and the few plots no
+  standard building fits take a building shaped to the plot: a cake slice
+  whose front follows a curved or angled corner. Corner buildings meet
+  their neighbours without passing through them. [234]
+- **Street trees are a city's only greenery.** The hedges, corner gardens,
+  roundabout bushes, median bushes, roof gardens and wild trees are gone;
+  small trees in kerbed pits now line every pavement about every 7.5 m.
+  [234]
+
 ## 2026-11-11
 
 ### Added

@@ -501,7 +501,8 @@ const URBAN: StageTypeDef = {
   terrain: { amplitude: 18, frequency: 1 / 260 },
   twistiness: 0,
   baseLength: 1700,
-  scenery: { trees: 8, broadleaf: 16, bushes: 10, rocks: 0, houses: 0 },
+  // A city's only greenery is its street trees: no wild trees or bushes on the hills between.
+  scenery: { trees: 0, broadleaf: 0, bushes: 0, rocks: 0, houses: 0 },
   parSpeed: 13,
   towns: false,
   urban: {

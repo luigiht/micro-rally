@@ -31,7 +31,9 @@ import { junctionKerbs } from './TownKerbs';
  * carriageway. Pure data worked out from the town and the route, like
  * `Crossings`.
  */
-const TREE_SPACING = LAMP_SPACING / 2;
+/** Street trees line every pavement this often: four to a lamp span, a quarter span off each lamp mark. */
+const TREE_SPACING = LAMP_SPACING / 4;
+const LAMP_MARK = LAMP_SPACING / 2;
 /** A tree whose spot is taken tries these shifts along the street before the row goes without it. */
 const TREE_SHIFTS = [0, 2, -2, 3.5, -3.5] as const;
 /** Pavement furniture clears a junction's paving by this much along the route, and a ring's hand-off. */
@@ -199,15 +201,15 @@ export function streetFurniture(
       from = (j && arm ? stubCut(j, arm, stage.halfWidth) : st.halfWidth + 8) + SIDE_FROM;
       to = len - SIDE_END;
     }
-    if (to - from < TREE_SPACING / 2) continue;
-    // Trees on both pavements, midway between the lamp marks, shifted a little where something is in the way.
+    if (to - from < LAMP_MARK / 2) continue;
+    // Trees on both pavements, never on a lamp mark, shifted a little where something is in the way.
     for (let d = from + TREE_SPACING / 2; d < to; d += TREE_SPACING)
       for (const side of [1, -1] as const)
         for (const shift of TREE_SHIFTS)
           if (d + shift > from && d + shift < to && place('treePit', st, d + shift, side, heading))
             break;
     // Lamps every other mark, alternating sides, with a small piece on the pavement opposite.
-    for (let d = from + TREE_SPACING; d < to; d += TREE_SPACING) {
+    for (let d = from + LAMP_MARK; d < to; d += LAMP_MARK) {
       place('lamp', st, d, lampSide, heading);
       place(pick(), st, d, lampSide > 0 ? -1 : 1, heading);
       lampSide = lampSide > 0 ? -1 : 1;

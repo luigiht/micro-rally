@@ -10,8 +10,6 @@ import { CAP, IRON, RAIL, STONE } from './FacadeGeometry';
  */
 const WHITE = new Color('#ffffff');
 const TANK = new Color('#6e5a48');
-const HEDGE = [new Color('#4f8a3b'), new Color('#67a048')] as const;
-const TROUGH = new Color('#8c8a86');
 const AC = new Color('#b9bcc0');
 const WOOD = new Color('#8a6a4a');
 
@@ -73,28 +71,6 @@ export function acUnits(x0: number, z: number, top: number, n = 2, pitch = 1.3):
       box(0.7, 0.1, 0.7, x, top + 0.9, z, CAP),
       box(0.04, 0.5, 0.8, x - 0.52, top + 0.45, z, CAP),
     );
-  }
-  return parts;
-}
-
-/** A roof garden: planter troughs with two-tone hedges along `len` at (x, z), running along x. */
-export function roofGarden(
-  x: number,
-  z: number,
-  top: number,
-  len: number,
-  rows = 2,
-): BufferGeometry[] {
-  const parts: BufferGeometry[] = [];
-  for (let r = 0; r < rows; r++) {
-    const zz = z + (r - (rows - 1) / 2) * 1.4;
-    parts.push(box(len, 0.4, 0.8, x, top + 0.2, zz, TROUGH));
-    const n = Math.max(1, Math.round(len / 1.2));
-    for (let i = 0; i < n; i++) {
-      const cx = x - len / 2 + (len / n) * (i + 0.5);
-      const h = 0.5 + ((i + r) % 2) * 0.2;
-      parts.push(box(len / n - 0.1, h, 0.6, cx, top + 0.4 + h / 2, zz, HEDGE[(i + r) % 2]!));
-    }
   }
   return parts;
 }

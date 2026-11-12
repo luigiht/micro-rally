@@ -1,5 +1,7 @@
 import type { BoxObstacle } from '../vehicle/Collisions';
+import { BUILDING_SIZE } from './BuildingCatalog';
 import type { Median } from './Median';
+import type { Infill } from './TownInfill';
 import { roundaboutBlocks, type Roundabout } from './Roundabout';
 import type { Prop } from './SceneryScatter';
 import { junctionReach } from './TownJunctions';
@@ -48,8 +50,10 @@ export interface TownDef {
   medians?: Median[];
   /** A city's per-sample half widths (each street one width, changing across the corner arcs), for `StageDef.widths`. */
   widths?: Float64Array;
-  /** Set for a city: the street detail (crossings, bays, furniture, hedges) is the city's. */
+  /** Set for a city: the street detail (crossings, bays, furniture) is the city's. */
   city?: true;
+  /** A city's buildings fitted to the plots no catalog building could take (`TownInfill`); their walls are only colliders. */
+  infills?: Infill[];
 }
 
 /** One arm of a junction: a street leaving the junction centre on `heading`. */
@@ -302,8 +306,8 @@ export function townProps(
   treeKind: 'tree' | 'broadleaf' = 'tree',
 ): Prop[] {
   const out: Prop[] = [];
-  for (const b of town.buildings)
-    out.push({
+  for (const b of town.buildings) {
+    const prop: Prop = {
       kind: b.style,
       x: b.x,
       y: buildingBaseHeight(b, ground),
@@ -311,7 +315,12 @@ export function townProps(
       scale: 1,
       rotation: b.yaw,
       variant: b.variant,
-    });
+    };
+    // A city building stretched or narrowed to close its terrace is drawn that wide.
+    const widen = b.hx / BUILDING_SIZE[b.style].hx;
+    if (Math.abs(widen - 1) > 1e-3) prop.widen = widen;
+    out.push(prop);
+  }
   const trams = town.trams ?? [];
   for (const r of town.cones) {
     const n = Math.max(3, Math.round((2 * r.halfLength) / CONE_SPACING) + 1);

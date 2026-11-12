@@ -85,7 +85,9 @@ cover the pure-TS core and anything else that can run without a browser:
   leaves off the road, under broadleaves, in the slope; taller trees),
   `autumnTrees` (six silhouettes, the colour mix, other regions unchanged),
   `updateCheck` (a new build, errors and offline as no news),
-  `gravelRoad` (stones on the Pinewood road, mostly at the edges and the
+  `cityTerraces` (city buildings wall to wall, stretched within limits and
+  drawn that wide, no greenery but street trees, every wall the front of a
+  fitted building behind the pavement), `gravelRoad` (stones on the Pinewood road, mostly at the edges and the
   hump between the tracks, the same every time),
   `pineWoods` (Pinewood's pines only, full, sparse and young umbrella-tier pines, denser, bigger and nearer the road;
   saplings on the verges; each pine one shape near, one stand-in far and
