@@ -319,8 +319,8 @@ circuit round a few of its blocks (`city/TramLoop.ts`).
   crossroads and their neighbours is built, open at both ends, between two
   junctions. Off the route every crossroads is a junction of side-street
   arms, levelled to one height that all its streets meet. Where the route
-  passes a street, cones and a crowd barrier (steel panels and a red and
-  white board) close it a few metres in, past its zebra. The barrier's
+  passes a street, cones and a crowd barrier (galvanised steel panels on
+  flat feet) close it a few metres in, past its zebra. The barrier's
   collider spans the street, so the car stays on the route. Where a tram
   runs through, the panels over its rails are left out but the collider
   stays.
