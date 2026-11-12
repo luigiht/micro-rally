@@ -2,7 +2,9 @@ import { Group, Mesh, MeshStandardMaterial, type BufferGeometry } from 'three';
 import { RAIL_LIFT, type TramLine } from '@/game/stage/Tram';
 import {
   loopFleet,
-  loopPose,
+  loopSectionPose,
+  SECTION_LENGTH,
+  TRAM_SECTIONS,
   tramPose,
   tramSchedule,
   type LoopFleet,
@@ -11,22 +13,26 @@ import {
 } from '@/game/stage/TramService';
 import type { TramLoopDef } from '@/game/stage/city/TramLoop';
 import type { GroundQuery } from '@/game/stage/Town';
-import { tramGeometry } from '../scenery/TramGeometry';
+import { tramGeometry, tramSectionGeometries } from '../scenery/TramGeometry';
 import { BED_LIFT } from './TramTrackBuilder';
 
-/** The bogies the tram rides on, either side of its centre, which set its pitch on a climbing street. */
+/** The bogies a whole tram rides on, either side of its centre, which set its pitch on a climbing street. */
 const BOGIE = 8;
+/** A loop tram's car pitches over its own bogies. */
+const CAR_BOGIE = SECTION_LENGTH * 0.4;
 
 /**
- * The trams on a city's lines: one mesh per line over a shared geometry,
- * posed each frame from the line's timetable (`TramService`) at the run's
- * clock, riding the rails with the street's slope and fading in and out at
- * the line's ends. The session poses the same timetable's hitboxes from
- * the same clock.
+ * The trams on a city's lines or its loop. On lines, one mesh per line over
+ * a shared geometry, posed each frame from the line's timetable
+ * (`TramService`) at the run's clock, fading in and out at the line's ends.
+ * On a loop, every tram is three cars, each its own mesh riding its own
+ * bogies round the rails (`loopSectionPose`), so the tram bends at its
+ * bellows through the curves. Each rides the street's slope. The session
+ * poses the same hitboxes from the same clock.
  */
 export class TramFleet {
   readonly group = new Group();
-  private readonly geometry: BufferGeometry;
+  private readonly geometries: BufferGeometry[];
   private readonly materials: MeshStandardMaterial[] = [];
   private readonly meshes: Mesh[] = [];
   private readonly runs: TramRun[];
@@ -42,18 +48,18 @@ export class TramFleet {
     loop?: TramLoopDef,
   ) {
     this.group.name = 'trams';
-    this.geometry = tramGeometry();
     this.fleet = loop ? loopFleet(loop, seed) : null;
+    this.geometries = this.fleet ? tramSectionGeometries() : [tramGeometry()];
     this.runs = this.fleet ? [] : tramSchedule(trams, seed);
-    const count = this.fleet ? this.fleet.offsets.length : trams.length;
+    const count = this.fleet ? this.fleet.offsets.length * TRAM_SECTIONS : trams.length;
     for (let i = 0; i < count; i++) {
       const material = new MeshStandardMaterial({
         vertexColors: true,
         flatShading: true,
         roughness: 0.6,
-        transparent: true,
+        transparent: !this.fleet,
       });
-      const mesh = new Mesh(this.geometry, material);
+      const mesh = new Mesh(this.geometries[this.fleet ? i % TRAM_SECTIONS : 0]!, material);
       mesh.castShadow = shadows;
       mesh.visible = false;
       mesh.rotation.order = 'YXZ';
@@ -63,31 +69,38 @@ export class TramFleet {
     }
   }
 
-  /** Pose every tram for the run's clock `t` (seconds). */
+  /** Pose every tram (every car, on a loop) for the run's clock `t` (seconds). */
   tick(t: number): void {
     for (let i = 0; i < this.meshes.length; i++) {
       const mesh = this.meshes[i]!;
       const pose = this.fleet
-        ? loopPose(this.fleet, i, t, this.pose)
+        ? loopSectionPose(
+            this.fleet,
+            Math.floor(i / TRAM_SECTIONS),
+            i % TRAM_SECTIONS,
+            t,
+            this.pose,
+          )
         : tramPose(this.trams[i]!, this.runs[i]!, t);
       if (!pose) {
         mesh.visible = false;
         continue;
       }
+      const reach = this.fleet ? CAR_BOGIE : BOGIE;
       const fx = Math.sin(pose.heading);
       const fz = Math.cos(pose.heading);
-      const ahead = this.field.deckAt(pose.x + fx * BOGIE, pose.z + fz * BOGIE);
-      const behind = this.field.deckAt(pose.x - fx * BOGIE, pose.z - fz * BOGIE);
+      const ahead = this.field.deckAt(pose.x + fx * reach, pose.z + fz * reach);
+      const behind = this.field.deckAt(pose.x - fx * reach, pose.z - fz * reach);
       mesh.position.set(pose.x, (ahead + behind) / 2 + BED_LIFT + RAIL_LIFT, pose.z);
       // A positive pitch about x drops +z, the nose.
-      mesh.rotation.set(-Math.atan2(ahead - behind, 2 * BOGIE), pose.heading, 0);
+      mesh.rotation.set(-Math.atan2(ahead - behind, 2 * reach), pose.heading, 0);
       this.materials[i]!.opacity = pose.opacity;
       mesh.visible = pose.opacity > 0.01;
     }
   }
 
   dispose(): void {
-    this.geometry.dispose();
+    for (const g of this.geometries) g.dispose();
     for (const m of this.materials) m.dispose();
   }
 }

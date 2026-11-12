@@ -3,8 +3,17 @@ import { loopAt } from '@/game/stage/city/TramLoop';
 import { createRoadHit } from '@/game/stage/RoadPath';
 import { halfWidthAt } from '@/game/stage/RoadWidth';
 import { generateStage } from '@/game/stage/StageGenerator';
-import { streetDistance } from '@/game/stage/Town';
-import { loopFleet, loopPose, TRAM_LENGTH } from '@/game/stage/TramService';
+import { segmentDistance, streetDistance, townProps } from '@/game/stage/Town';
+import { TRAM_BED_HALF } from '@/game/stage/Tram';
+import {
+  loopFleet,
+  loopPose,
+  loopSectionPose,
+  SECTION_LENGTH,
+  TRAM_BELLOWS,
+  TRAM_LENGTH,
+} from '@/game/stage/TramService';
+import { buildingIndex } from '@/game/stage/BuildingIndex';
 import { stageIndexOf } from './stageIndex';
 
 const SEEDS = [1, 2, 3, 4, 5, 6];
@@ -99,5 +108,65 @@ describe('tram loop', () => {
     const p = { x: 0, z: 0, heading: 0 };
     loopAt(stage.town!.tramLoop!, 123, p);
     expect(Number.isFinite(p.x) && Number.isFinite(p.z)).toBe(true);
+  });
+
+  it('bends its trams car by car round the curves, joined at the bellows', () => {
+    const stage = stages[0]!;
+    const fleet = loopFleet(stage.town!.tramLoop!, stage.seed);
+    const pose = { x: 0, z: 0, heading: 0, opacity: 1 };
+    let bent = 0;
+    for (let t = 0; t < 200; t += 0.5) {
+      const cars = [0, 1, 2].map((c) => ({ ...loopSectionPose(fleet, 0, c, t, pose) }));
+      const headings = cars.map((c) => c.heading);
+      const spread = Math.abs(
+        Math.atan2(Math.sin(headings[2]! - headings[0]!), Math.cos(headings[2]! - headings[0]!)),
+      );
+      if (spread > 0.2) bent++;
+      // Each car's front end meets the next car's rear end across the bellows.
+      for (let c = 0; c < 2; c++) {
+        const a = cars[c]!;
+        const b = cars[c + 1]!;
+        const front = {
+          x: a.x + Math.sin(a.heading) * (SECTION_LENGTH / 2),
+          z: a.z + Math.cos(a.heading) * (SECTION_LENGTH / 2),
+        };
+        const rear = {
+          x: b.x - Math.sin(b.heading) * (SECTION_LENGTH / 2),
+          z: b.z - Math.cos(b.heading) * (SECTION_LENGTH / 2),
+        };
+        expect(Math.hypot(front.x - rear.x, front.z - rear.z)).toBeLessThan(TRAM_BELLOWS + 0.6);
+      }
+    }
+    // Round the loop's corners the cars turn on their own: the tram does not cut across stiff.
+    expect(bent).toBeGreaterThan(5);
+  });
+
+  it('hangs the contact wire from span wires anchored on the facades either side', () => {
+    for (const stage of stages) {
+      const spans = stage.town!.tramLoop!.spans ?? [];
+      expect(spans.length).toBeGreaterThan(4);
+      const index = buildingIndex(stage.town!.buildings);
+      for (const sp of spans)
+        for (const [sign, out] of [
+          [1, sp.left],
+          [-1, sp.right],
+        ] as const) {
+          const x = sp.x + Math.cos(sp.heading) * out * sign;
+          const z = sp.z - Math.sin(sp.heading) * out * sign;
+          expect(index.covers(x, z, 0.7)).toBe(true);
+          expect(out).toBeGreaterThan(4);
+        }
+    }
+  });
+
+  it('keeps direction boards and cones off the rails, the boards in pairs either side', () => {
+    for (const stage of stages) {
+      const town = stage.town!;
+      const near = (x: number, z: number, d: number) =>
+        (town.trams ?? []).some((t) => segmentDistance(t.x0, t.z0, t.x1, t.z1, x, z) < d);
+      for (const a of town.arrows) expect(near(a.x, a.z, TRAM_BED_HALF + 0.5)).toBe(false);
+      for (const p of townProps(town, { deckAt: () => 0, heightAt: () => 0 }))
+        if (p.kind === 'cone') expect(near(p.x, p.z, TRAM_BED_HALF)).toBe(false);
+    }
   });
 });

@@ -22,7 +22,9 @@ import { fitInfills } from './TownInfill';
 import { SpatialHash } from './SpatialHash';
 import { cityToWorld } from './city/CityMap';
 import { cityNetwork } from './city/CityNetwork';
-import { chooseTramLoop, loopLines } from './city/TramLoop';
+import { chooseTramLoop, loopLines, planSpans } from './city/TramLoop';
+import { buildingIndex } from './BuildingIndex';
+import { junctionReach } from './TownJunctions';
 import type { CityPlan } from './city/CityRoute';
 import { trimWallsUnderBuildings, wallsToTerraces } from './TownJoinedRows';
 import { closeWallGaps } from './TownWallGaps';
@@ -49,6 +51,10 @@ const EDGE_SETBACK = 4;
 /** Side streets are gridded this coarsely for the clearance checks, reaching this much past their pavements (the most any check's negative slack asks). */
 const STREET_CELL = 32;
 const CLEAR_SLACK_MAX = 4;
+
+/** Tram span wires keep this far past a junction's reach, and need a building within this of each anchor. */
+const SPAN_JUNCTION_CLEAR = 6;
+const SPAN_ANCHOR_SLACK = 0.6;
 
 /** Plateau margin beyond the street grid: along the route (room for the approach ramps) and across. */
 const MARGIN_U = 70;
@@ -353,6 +359,32 @@ export function layoutTown(
   } else plantCorners(site, greens);
   // Whatever gap is left in a city takes a building fitted to its plot.
   const infills = city ? fitInfills(site) : [];
+  // The tram's contact wire hangs from span wires to the facades either side, where both stand.
+  if (tramLoop) {
+    const index = buildingIndex(site.buildings);
+    tramLoop.spans = planSpans(tramLoop, (x, z, heading) => {
+      if (
+        site.junctions.some(
+          (j) => Math.hypot(j.x - x, j.z - z) < junctionReach(j) + SPAN_JUNCTION_CLEAR,
+        )
+      )
+        return { left: null, right: null };
+      let hw: number | null = null;
+      if (path.nearest(x, z, 20, hit) && hit.distance < halfWidthAt(source, hit.along) + 1)
+        hw = halfWidthAt(source, hit.along);
+      else
+        for (const st of site.streets)
+          if (!st.route && streetDistance(st, x, z) < st.halfWidth + 1) hw = st.halfWidth;
+      if (hw === null) return { left: null, right: null };
+      const out = hw + FRONT_SETBACK;
+      const side = (sign: 1 | -1) => {
+        const ax = x + Math.cos(heading) * out * sign;
+        const az = z - Math.sin(heading) * out * sign;
+        return index.covers(ax, az, SPAN_ANCHOR_SLACK) ? out : null;
+      };
+      return { left: side(1), right: side(-1) };
+    });
+  }
   // Trams draw from their own stream, so nothing else laid out above moves them.
   const trams = map
     ? loopRails

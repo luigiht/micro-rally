@@ -258,10 +258,29 @@ function cab(end: 1 | -1, W: number, zFace: number): BufferGeometry[] {
 }
 
 export function tramGeometry(): BufferGeometry {
+  return merge(sectionParts().flatMap(({ parts }) => parts));
+}
+
+/**
+ * The tram as its three cars, each centred on its own middle (nose toward
+ * +z) so it can ride its own bogies round a curve: the rear car with the
+ * rear cab, the front one with the front cab, the bellows on each car's
+ * front end.
+ */
+export function tramSectionGeometries(): BufferGeometry[] {
+  return sectionParts().map(({ zc, parts }) => {
+    const g = merge(parts);
+    g.translate(0, 0, -zc);
+    return g;
+  });
+}
+
+function sectionParts(): { zc: number; parts: BufferGeometry[] }[] {
   const { length: L, width: W, sections, bellows } = TRAM;
   const secLen = (L - bellows * (sections - 1)) / sections;
-  const parts: BufferGeometry[] = [];
+  const out: { zc: number; parts: BufferGeometry[] }[] = [];
   for (let i = 0; i < sections; i++) {
+    const parts: BufferGeometry[] = [];
     const zc = -L / 2 + secLen / 2 + i * (secLen + bellows);
     const first = i === 0;
     const last = i === sections - 1;
@@ -295,7 +314,7 @@ export function tramGeometry(): BufferGeometry {
       parts.push(box(W - 0.6, FLOOR - 0.14, 1.6, 0, (FLOOR - 0.14) / 2, zc + dz, SKIRT));
     }
     if (i === 1) parts.push(...pantograph(zc + 1.2));
-    // Ribbed bellows between sections.
+    // Ribbed bellows between sections, carried on the car behind.
     if (i < sections - 1) {
       const bz = zc + secLen / 2 + bellows / 2;
       parts.push(
@@ -304,7 +323,9 @@ export function tramGeometry(): BufferGeometry {
       for (const dz of [-0.2, 0, 0.2])
         parts.push(box(W - 0.16, ROOF_Y - FLOOR, 0.08, 0, (FLOOR + ROOF_Y) / 2, bz + dz, RIB));
     }
+    if (last) parts.push(...cab(1, W, L / 2 - 0.1));
+    if (first) parts.push(...cab(-1, W, -L / 2 + 0.1));
+    out.push({ zc, parts });
   }
-  parts.push(...cab(1, W, L / 2 - 0.1), ...cab(-1, W, -L / 2 + 0.1));
-  return merge(parts);
+  return out;
 }

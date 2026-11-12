@@ -8,6 +8,7 @@ import {
   TRAM_WIRE_HEIGHT,
   type TramLine,
 } from '@/game/stage/Tram';
+import type { TramLoopDef, TramSpan } from '@/game/stage/city/TramLoop';
 import { LINE_ABOVE_DECK } from '../road/RoadBuilder';
 import { themeColor } from '../theme/themeColor';
 import type { RoadTheme } from '../theme/WorldTheme';
@@ -26,6 +27,11 @@ const RAIL_TOP = RAIL_LIFT + BED_LIFT;
 /** The overhead wire's thickness, and how far short of the line's ends it stops (the trams fade there). */
 const WIRE = 0.05;
 const WIRE_END = 2;
+/** Span wires: their thickness, how far above the contact wire they meet the wall, the wall rosette's size and its offset. */
+const SPAN_WIRE = 0.035;
+const SPAN_RISE = 1.1;
+const ROSETTE = 0.22;
+const ROSETTE_OFF = 0.05;
 
 /**
  * A city's tram tracks: a strip of sett paving across the carriageway with
@@ -48,11 +54,15 @@ export class TramTrackBuilder {
     trams: readonly TramLine[],
     private readonly field: GroundQuery,
     road: RoadTheme,
+    loop?: TramLoopDef,
   ) {
     this.group.name = 'tram-tracks';
     const bed = new Color(road.tramBed);
     const rail = themeColor(road.rail);
+    if (loop) this.loopTrack(loop, bed, rail);
     for (const t of trams) {
+      // A loop's pieces are drawn as one continuous track above.
+      if (loop && t.loop) continue;
       const dx = t.x1 - t.x0;
       const dz = t.z1 - t.z0;
       const len = Math.hypot(dx, dz);
@@ -153,6 +163,147 @@ export class TramTrackBuilder {
           this.corner(t, h, b, 0, lift - WIRE / 2),
           this.corner(t, h, b, 0, lift + WIRE / 2),
           this.corner(t, h, a, 0, lift + WIRE / 2),
+        ],
+        c,
+      );
+    }
+  }
+
+  /**
+   * A loop as one continuous track: the polyline resampled every `STEP`,
+   * each sample's cross-section mitred between its two pieces so the bed's
+   * and rails' edges run smooth round the curves without notches or
+   * overlaps; then the contact wire along the axis and the span wires out to
+   * the facades.
+   */
+  private loopTrack(loop: TramLoopDef, bed: Color, rail: Color): void {
+    const pts: { x: number; z: number }[] = [];
+    const n0 = loop.xs.length;
+    for (let k = 0; k < n0; k++) {
+      const ax = loop.xs[k]!;
+      const az = loop.zs[k]!;
+      const bx = loop.xs[(k + 1) % n0]!;
+      const bz = loop.zs[(k + 1) % n0]!;
+      const m = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / STEP));
+      for (let i = 0; i < m; i++)
+        pts.push({ x: ax + ((bx - ax) * i) / m, z: az + ((bz - az) * i) / m });
+    }
+    const n = pts.length;
+    // Per sample: the mitred left vector (scaled so offsets keep their width across each piece) and the height.
+    const lx: number[] = [];
+    const lz: number[] = [];
+    const base: number[] = [];
+    for (let i = 0; i < n; i++) {
+      const p = pts[(i - 1 + n) % n]!;
+      const c = pts[i]!;
+      const q = pts[(i + 1) % n]!;
+      const h0 = Math.atan2(c.x - p.x, c.z - p.z);
+      const h1 = Math.atan2(q.x - c.x, q.z - c.z);
+      const mx = Math.cos(h0) + Math.cos(h1);
+      const mz = -Math.sin(h0) - Math.sin(h1);
+      const ml = Math.hypot(mx, mz) || 1;
+      const half = Math.atan2(Math.sin(h1 - h0), Math.cos(h1 - h0)) / 2;
+      const scale = 1 / Math.max(0.5, Math.cos(half));
+      lx.push((mx / ml) * scale);
+      lz.push((mz / ml) * scale);
+      base.push(
+        Math.max(
+          this.field.heightAt(c.x, c.z),
+          this.field.heightAt(c.x + lx[i]! * TRAM_BED_HALF, c.z + lz[i]! * TRAM_BED_HALF),
+          this.field.heightAt(c.x - lx[i]! * TRAM_BED_HALF, c.z - lz[i]! * TRAM_BED_HALF),
+        ),
+      );
+    }
+    const at = (i: number, left: number, lift: number) => {
+      const k = i % n;
+      return [pts[k]!.x + lx[k]! * left, base[k]! + lift, pts[k]!.z + lz[k]! * left] as const;
+    };
+    const ribbon = (l0: number, l1: number, lift: number, c: Color) => {
+      for (let i = 0; i < n; i++) {
+        const b = this.pos.length / 3;
+        for (const [x, y, z] of [
+          at(i, l0, lift),
+          at(i + 1, l0, lift),
+          at(i + 1, l1, lift),
+          at(i, l1, lift),
+        ]) {
+          this.pos.push(x, y, z);
+          this.col.push(c.r, c.g, c.b);
+        }
+        this.idx.push(b, b + 1, b + 2, b, b + 2, b + 3);
+      }
+    };
+    ribbon(-TRAM_BED_HALF, TRAM_BED_HALF, BED_LIFT, bed);
+    for (const side of [-1, 1] as const) {
+      const c = (side * TRAM_GAUGE) / 2;
+      ribbon(c - RAIL_WIDTH / 2, c + RAIL_WIDTH / 2, RAIL_TOP, rail);
+    }
+    const wireY = RAIL_TOP + TRAM_WIRE_HEIGHT + WIRE / 2;
+    for (let i = 0; i < n; i++) {
+      this.quad(
+        [
+          at(i, -WIRE / 2, wireY),
+          at(i + 1, -WIRE / 2, wireY),
+          at(i + 1, WIRE / 2, wireY),
+          at(i, WIRE / 2, wireY),
+        ],
+        rail,
+      );
+      this.quad(
+        [
+          at(i, 0, wireY - WIRE / 2),
+          at(i + 1, 0, wireY - WIRE / 2),
+          at(i + 1, 0, wireY + WIRE / 2),
+          at(i, 0, wireY + WIRE / 2),
+        ],
+        rail,
+      );
+    }
+    for (const span of loop.spans ?? []) this.span(span, wireY, rail);
+  }
+
+  /** One span wire: from the contact wire over the axis out and up to a rosette on each facade. */
+  private span(sp: TramSpan, wireY: number, c: Color): void {
+    const fx = Math.sin(sp.heading);
+    const fz = Math.cos(sp.heading);
+    const lx = Math.cos(sp.heading);
+    const lz = -Math.sin(sp.heading);
+    const deck = this.field.heightAt(sp.x, sp.z);
+    const w = [sp.x, deck + wireY, sp.z] as const;
+    for (const [sign, out] of [
+      [1, sp.left],
+      [-1, sp.right],
+    ] as const) {
+      // Anchored a hair off the wall, a little higher than the wire so the span sags onto it.
+      const reach = out - ROSETTE_OFF;
+      const a = [
+        sp.x + lx * reach * sign,
+        deck + wireY + SPAN_RISE,
+        sp.z + lz * reach * sign,
+      ] as const;
+      const t = (p: readonly [number, number, number], dx: number, dy: number, dz: number) =>
+        [p[0] + dx, p[1] + dy, p[2] + dz] as const;
+      const h = SPAN_WIRE / 2;
+      this.quad(
+        [
+          t(w, -fx * h, 0, -fz * h),
+          t(a, -fx * h, 0, -fz * h),
+          t(a, fx * h, 0, fz * h),
+          t(w, fx * h, 0, fz * h),
+        ],
+        c,
+      );
+      this.quad([t(w, 0, -h, 0), t(a, 0, -h, 0), t(a, 0, h, 0), t(w, 0, h, 0)], c);
+      // The rosette: a small plate on the wall, facing the street.
+      const r = ROSETTE / 2;
+      const p = [sp.x + lx * out * sign, deck + wireY + SPAN_RISE, sp.z + lz * out * sign] as const;
+      const plate = t(p, -lx * sign * 0.02, 0, -lz * sign * 0.02);
+      this.quad(
+        [
+          t(plate, -fx * r, -r, -fz * r),
+          t(plate, fx * r, -r, fz * r),
+          t(plate, fx * r, r, fz * r),
+          t(plate, -fx * r, r, -fz * r),
         ],
         c,
       );

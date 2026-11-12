@@ -129,11 +129,42 @@ export function loopFleet(loop: TramLoopDef, seed: number): LoopFleet {
 const front = { x: 0, z: 0, heading: 0 };
 const back = { x: 0, z: 0, heading: 0 };
 
-/** Tram `k` of a loop fleet at clock `t`: between its bogies, heading from the rear one to the front one. */
+/** A tram is three cars joined by bellows (`TramGeometry`): each this long, the bellows this long between. */
+export const TRAM_SECTIONS = 3;
+export const TRAM_BELLOWS = 0.6;
+export const SECTION_LENGTH = (TRAM_LENGTH - TRAM_BELLOWS * (TRAM_SECTIONS - 1)) / TRAM_SECTIONS;
+/** Each car's centre along the tram from its middle, rear car first (the nose is toward +). */
+export const SECTION_OFFSETS = Array.from(
+  { length: TRAM_SECTIONS },
+  (_, i) => -TRAM_LENGTH / 2 + SECTION_LENGTH / 2 + i * (SECTION_LENGTH + TRAM_BELLOWS),
+);
+/** A car rides two bogies this far either side of its own centre. */
+const SECTION_BOGIE = SECTION_LENGTH * 0.4;
+
+/** Tram `k` of a loop fleet at clock `t`, as a whole: between bogies `LOOP_BOGIE` either side of its centre. */
 export function loopPose(fleet: LoopFleet, k: number, t: number, out: TramPose): TramPose {
-  const s = fleet.offsets[k]! + t * TRAM_SPEED;
-  loopAt(fleet.loop, s + LOOP_BOGIE, front);
-  loopAt(fleet.loop, s - LOOP_BOGIE, back);
+  return between(fleet.loop, fleet.offsets[k]! + t * TRAM_SPEED, LOOP_BOGIE, out);
+}
+
+/**
+ * Car `section` of tram `k` at clock `t`: each car rides its own two bogies
+ * on the rails, so round a curve the cars bend at the bellows like a train
+ * rather than the tram cutting across as one stiff body.
+ */
+export function loopSectionPose(
+  fleet: LoopFleet,
+  k: number,
+  section: number,
+  t: number,
+  out: TramPose,
+): TramPose {
+  const s = fleet.offsets[k]! + t * TRAM_SPEED + SECTION_OFFSETS[section]!;
+  return between(fleet.loop, s, SECTION_BOGIE, out);
+}
+
+function between(loop: TramLoopDef, s: number, half: number, out: TramPose): TramPose {
+  loopAt(loop, s + half, front);
+  loopAt(loop, s - half, back);
   out.x = (front.x + back.x) / 2;
   out.z = (front.z + back.z) / 2;
   out.heading = Math.atan2(front.x - back.x, front.z - back.z);
@@ -147,9 +178,16 @@ const pose: TramPose = { x: 0, z: 0, heading: 0, opacity: 1 };
 export function trafficBoxes(traffic: TramTraffic, t: number, out: BoxObstacle[]): BoxObstacle[] {
   if (!traffic.loop) return tramBoxes(traffic.lines, traffic.runs, t, out);
   out.length = 0;
-  for (let k = 0; k < traffic.loop.offsets.length; k++) {
-    loopPose(traffic.loop, k, t, pose);
-    out.push({ x: pose.x, z: pose.z, hx: TRAM_WIDTH / 2, hz: TRAM_LENGTH / 2, yaw: pose.heading });
-  }
+  for (let k = 0; k < traffic.loop.offsets.length; k++)
+    for (let c = 0; c < TRAM_SECTIONS; c++) {
+      loopSectionPose(traffic.loop, k, c, t, pose);
+      out.push({
+        x: pose.x,
+        z: pose.z,
+        hx: TRAM_WIDTH / 2,
+        hz: SECTION_LENGTH / 2 + TRAM_BELLOWS / 2,
+        yaw: pose.heading,
+      });
+    }
   return out;
 }

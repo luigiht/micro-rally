@@ -9,6 +9,12 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Changed
 
+- **Trams that bend, smooth tracks, wires that hang.** The tram rails now
+  curve smoothly round the corners. Each tram is three cars that bend at
+  their joints through the curves. The overhead wire hangs from span wires
+  fixed to the buildings either side of the street. Where a street with
+  rails is closed, cones stand either side of the rails and the turn sign
+  is two signs, one each side. [236]
 - **Cities are mapped towns with a tram loop.** A city stage is now a real
   street map: a gently warped grid of blocks, every street round the
   route's blocks built from crossroads to crossroads, and the route driving

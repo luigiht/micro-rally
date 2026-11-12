@@ -1,7 +1,7 @@
 import { CROSSING_EXTENT } from '../Crossings';
 import { ringOuterRadius, ringPoint, type Roundabout } from '../Roundabout';
 import { segmentDistance, type Arm, type Barrier, type Junction } from '../Town';
-import type { TramLine } from '../Tram';
+import { TRAM_BED_HALF, type TramLine } from '../Tram';
 import { stubCut } from '../TownJunctions';
 import { ARROW_AHEAD_OF_CONES, type StubSite } from '../TownSideStreets';
 import { at, street, type Pt, type Site } from '../TownTerraces';
@@ -24,6 +24,9 @@ const BARRIER_IN = CONES_IN + 1.5;
 /** A barrier stops this short of the kerbs each side. */
 const BARRIER_MARGIN = 0.3;
 const CONE_MARGIN = 0.5;
+/** A direction board is this wide each side of its post line; beside a tram, the two boards stand this far either side of the street's axis, clear of the rails' bed. */
+const BOARD_HALF = 0.7;
+const BOARD_ASIDE = TRAM_BED_HALF + 0.3 + BOARD_HALF;
 /** Corners this sharp carry a direction board on the street straight on. */
 const BOARD_TURN = Math.PI / 4;
 
@@ -189,8 +192,17 @@ export function cityNetwork(
         Math.abs(leg.turn) >= BOARD_TURN &&
         Math.abs(wrap(arm.heading - leg.headingIn)) < 0.3
       ) {
-        const a = at(j, arm.heading, cut + CONES_IN - ARROW_AHEAD_OF_CONES, 0);
-        site.arrows.push({ x: a.x, z: a.z, yaw: arm.heading, turn: leg.turn > 0 ? 1 : -1 });
+        const along = cut + CONES_IN - ARROW_AHEAD_OF_CONES;
+        const turn = leg.turn > 0 ? 1 : -1;
+        const mid = at(j, arm.heading, along, 0);
+        // Where a tram runs down the street, a board either side of its rails instead of one on them.
+        const tram = rails.some(
+          (t) => segmentDistance(t.x0, t.z0, t.x1, t.z1, mid.x, mid.z) < TRAM_BED_HALF + BOARD_HALF,
+        );
+        for (const across of tram ? [-BOARD_ASIDE, BOARD_ASIDE] : [0]) {
+          const a = at(j, arm.heading, along, across);
+          site.arrows.push({ x: a.x, z: a.z, yaw: arm.heading, turn });
+        }
       }
     }
   }
@@ -209,12 +221,10 @@ function closeStreet(
 ): void {
   const b = at(o, h, cut + BARRIER_IN, 0);
   // A tram runs down this street: the barrier leaves its rails a gap (the car still meets a
-  // collider right across), and no cones stand on them.
+  // collider right across). The cones stand either side of the rails: none is set on a tram bed.
   const tram = rails.some((t) => segmentDistance(t.x0, t.z0, t.x1, t.z1, b.x, b.z) < 1.5);
-  if (!tram) {
-    const c = at(o, h, cut + CONES_IN, 0);
-    site.cones.push({ x: c.x, z: c.z, yaw: h, halfLength: hw - CONE_MARGIN });
-  }
+  const c = at(o, h, cut + CONES_IN, 0);
+  site.cones.push({ x: c.x, z: c.z, yaw: h, halfLength: hw - CONE_MARGIN });
   out.barriers.push({
     x: b.x,
     z: b.z,

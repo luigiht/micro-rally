@@ -4439,3 +4439,25 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
        side, so it cuts the chord round curves. `trafficBoxes` serves the
        session. Medians keep off the rails, and so do cones.
      - **Saves:** move to v9, dropping city records, since the roads changed.
+
+236. **2026-11-12 — Trams that bend, smooth curved track, a hung catenary.**
+     The user saw notched chords at the loop's corners, a stiff tram cutting
+     across them, and a contact wire floating with nothing holding it up.
+     - **Track:** the loop's track is built once as continuous ribbons
+       (`TramTrackBuilder.loopTrack`). The loop is resampled every 2 m, each
+       cross-section mitred between its pieces, and its height is the
+       highest surface under the axis and the bed's edges. The loop's arcs
+       are sampled every 3° instead of 6°.
+     - **Trams:** each is now its three cars (`tramSectionGeometries`, each
+       centred on its own middle). `loopSectionPose` sets each car between
+       its own two bogies, so round a curve the cars bend at the bellows,
+       and the session's hitboxes are per car. A test checks that the cars
+       turn separately and that their ends stay within the bellows'
+       length.
+     - **Catenary:** `planSpans` puts a span every 25 m round the loop
+       (none within a junction's reach plus 6 m), wherever a building
+       stands within 0.6 m of the facade line on both sides. Each span runs
+       from the contact wire up 1.1 m to a rosette on each facade.
+     - **Signs and cones:** a street closed across the rails now keeps its
+       cones (the town already leaves the tram bed clear), and its sharp
+       corner's direction board becomes two, either side of the rails.

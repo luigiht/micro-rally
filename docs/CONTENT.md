@@ -394,10 +394,15 @@ circuit round a few of its blocks (`city/TramLoop.ts`).
   route and to be crossed by it straight over at a crossroads; failing
   that, to share and join it, or to be crossed twice. Its rails, bed and
   overhead wire run unbroken round it; the wheels feel a 2 cm ridge on each
-  rail. Trams, one per 420 m of loop and at least two, circle it at
-  8 m/s, evenly spaced. Each rides two bogies 8 m either side of its centre,
-  so it cuts the chord round the curves. No median grows where the rails
-  run, and no cones stand on them.
+  rail. The track is one continuous strip, mitred at every 2 m sample, so it
+  curves smoothly. The contact wire hangs from span wires every 25 m, run
+  up to rosettes on the facades either side wherever a building stands on
+  both (none across a junction). Trams, one per 420 m of loop and at least
+  two, circle it at 8 m/s, evenly spaced. Each is three cars, each riding
+  its own two bogies, so a tram bends at its bellows round the curves. No
+  median grows where the rails run and no cone stands on them; a street
+  closed across rails keeps its cones either side, and a sharp corner's
+  direction board becomes two, one either side of the rails.
 - **Buildings.** Four city styles join the village ones, all in the game's
   flat-shaded box style with cornices, lintels and sills on every casement
   and stone details in fixed colours, and each in four façade renders

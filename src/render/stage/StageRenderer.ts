@@ -306,7 +306,9 @@ export class StageRenderer {
     if (parking.length > 0)
       steps.push(add('parking', () => new ParkingBayBuilder(parking, field, theme.road)));
     if (town.trams?.length && this.opts.tramTracks)
-      steps.push(add('trams', () => new TramTrackBuilder(town.trams!, field, theme.road)));
+      steps.push(
+        add('trams', () => new TramTrackBuilder(town.trams!, field, theme.road, town.tramLoop)),
+      );
     if (town.trams?.length && this.opts.tramService)
       steps.push(
         add(

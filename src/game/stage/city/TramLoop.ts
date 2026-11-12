@@ -17,13 +17,47 @@ export interface TramLoopDef {
   xs: number[];
   zs: number[];
   length: number;
+  /** The contact wire's span wires, out to the facades either side (set once the buildings stand). */
+  spans?: TramSpan[];
+}
+
+/** A span wire across the street at (x, z) on the loop, `left` and `right` metres out from the axis to the facades. */
+export interface TramSpan {
+  x: number;
+  z: number;
+  heading: number;
+  left: number;
+  right: number;
+}
+
+/** Span wires every this far round the loop. */
+const SPAN_EVERY = 25;
+
+/**
+ * The span wires that hold the contact wire up: every `SPAN_EVERY` metres
+ * round the loop, wherever `reach` finds a facade on both sides (null on a
+ * side with none, or at a junction).
+ */
+export function planSpans(
+  loop: TramLoopDef,
+  reach: (x: number, z: number, heading: number) => { left: number | null; right: number | null },
+): TramSpan[] {
+  const out: TramSpan[] = [];
+  const p = { x: 0, z: 0, heading: 0 };
+  for (let s = SPAN_EVERY / 2; s < loop.length; s += SPAN_EVERY) {
+    loopAt(loop, s, p);
+    const r = reach(p.x, p.z, p.heading);
+    if (r.left !== null && r.right !== null)
+      out.push({ x: p.x, z: p.z, heading: p.heading, left: r.left, right: r.right });
+  }
+  return out;
 }
 
 /** The loop's corners turn round this radius. */
 export const TRAM_RADIUS = 18;
 /** Samples: this far apart on the straights, this many degrees apart round the corners. */
 const STRAIGHT_STEP = 4;
-const ARC_STEP = (6 * Math.PI) / 180;
+const ARC_STEP = (3 * Math.PI) / 180;
 /** Loop length bounds, metres, and the length the choice leans toward. */
 const MIN_LOOP = 800;
 const MAX_LOOP = 2600;
