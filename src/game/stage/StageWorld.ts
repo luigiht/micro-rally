@@ -5,7 +5,7 @@ import { propObstacles, scatterScenery, type Prop } from './SceneryScatter';
 import { calendarSlot, generateStage, type StageDef, type StageSlot } from './StageGenerator';
 import { TerrainField } from './TerrainField';
 import { townObstacles } from './Town';
-import { tramSchedule, type TramTraffic } from './TramService';
+import { loopFleet, tramSchedule, type TramTraffic } from './TramService';
 
 /** Everything deterministic about one stage: road, terrain, scenery, colliders. */
 export interface StageWorld {
@@ -59,8 +59,16 @@ function buildStageWorld(gameSeed: number, index: number, slot: StageSlot): Stag
     field,
     props,
     obstacles: new ObstacleGrid(propObstacles(props), boxes),
-    ...(stage.town?.trams?.length
-      ? { trams: { lines: stage.town.trams, runs: tramSchedule(stage.town.trams, stage.seed) } }
-      : {}),
+    ...(stage.town?.tramLoop
+      ? {
+          trams: {
+            lines: stage.town.trams ?? [],
+            runs: [],
+            loop: loopFleet(stage.town.tramLoop, stage.seed),
+          },
+        }
+      : stage.town?.trams?.length
+        ? { trams: { lines: stage.town.trams, runs: tramSchedule(stage.town.trams, stage.seed) } }
+        : {}),
   };
 }

@@ -85,6 +85,10 @@ cover the pure-TS core and anything else that can run without a browser:
   leaves off the road, under broadleaves, in the slope; taller trees),
   `autumnTrees` (six silhouettes, the colour mix, other regions unchanged),
   `updateCheck` (a new build, errors and offline as no news),
+  `cityGrid` (the map connected, blocks and angles, no streets crossing),
+  `cityRoute` (every crossroads the route passes on the road, corners at
+  their arcs, roundabouts where the map planned), `tramLoop` (closed, eased,
+  on the streets, shared with and crossed by the route, trams spaced),
   `cityTerraces` (city buildings wall to wall, stretched within limits and
   drawn that wide, no greenery but street trees, every wall the front of a
   fitted building behind the pavement), `gravelRoad` (stones on the Pinewood road, mostly at the edges and the

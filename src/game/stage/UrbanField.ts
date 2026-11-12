@@ -2,7 +2,8 @@ import { medianLift } from './Median';
 import type { RoadPath } from './RoadPath';
 import { handoffRadius, ringOuterRadius, type Roundabout } from './Roundabout';
 import type { TownDef } from './Town';
-import { tramLift } from './Tram';
+import { SpatialHash } from './SpatialHash';
+import { railLift, TRAM_GAUGE, type TramLine } from './Tram';
 
 /**
  * What a city does to the ground beyond what a village does (see
@@ -49,7 +50,8 @@ interface Flat {
 
 export class UrbanField {
   private readonly flats: Flat[];
-  private readonly trams: TownDef['trams'];
+  /** The rails gridded, so a height query weighs the few pieces round it (a tram loop has hundreds). */
+  private readonly rails = new SpatialHash<TramLine>(16);
   private readonly medians: TownDef['medians'];
 
   /** `ground` is the tamed hill height before any roundabout levelling, sampled once at each centre. */
@@ -73,7 +75,10 @@ export class UrbanField {
         y: ground(j.x, j.z),
       })),
     ];
-    this.trams = town.trams;
+    for (const t of town.trams ?? []) {
+      const len = Math.hypot(t.x1 - t.x0, t.z1 - t.z0);
+      this.rails.insert(t, (t.x0 + t.x1) / 2, (t.z0 + t.z1) / 2, len / 2 + TRAM_GAUGE);
+    }
     this.medians = town.medians;
   }
 
@@ -149,9 +154,18 @@ export class UrbanField {
 
   /** What stands up out of the deck under a wheel at (x, z): a boulevard's median kerb, and the tram rails' ridge; 0 on plain tarmac. */
   lift(x: number, z: number): number {
-    return (
-      (this.medians ? medianLift(this.medians, x, z) : 0) +
-      (this.trams ? tramLift(this.trams, x, z) : 0)
-    );
+    this.railQueryX = x;
+    this.railQueryZ = z;
+    this.railMax = 0;
+    this.rails.near(x, z, 0, this.weighRail);
+    return (this.medians ? medianLift(this.medians, x, z) : 0) + this.railMax;
   }
+
+  private railQueryX = 0;
+  private railQueryZ = 0;
+  private railMax = 0;
+  /** One rail piece's ridge at the current query point, kept if it is the highest (no closure per query). */
+  private readonly weighRail = (t: TramLine): void => {
+    this.railMax = Math.max(this.railMax, railLift(t, this.railQueryX, this.railQueryZ));
+  };
 }

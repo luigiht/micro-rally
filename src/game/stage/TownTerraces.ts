@@ -2,6 +2,7 @@ import {
   buildingCorners,
   FRONT_SETBACK,
   type Arrow,
+  type Barrier,
   type Building,
   type BuildingStyle,
   type ConeRow,
@@ -56,6 +57,8 @@ export interface Site {
   variants?: number;
   /** A city: terraces stand wall to wall, gaps closed by their buildings (`joinedRow`), not by garden walls. */
   joined?: boolean;
+  /** A mapped city's barriers across the streets the route passes (`cityNetwork`). */
+  barriers?: Barrier[];
   /** A city's roundabout islands, which no building stands on. */
   islands?: { x: number; z: number; r: number }[];
 }

@@ -1,6 +1,7 @@
 import { hashSeed, mulberry32 } from '../rng';
 import type { BoxObstacle } from '../vehicle/Collisions';
 import type { TramLine } from './Tram';
+import { loopAt, type TramLoopDef } from './city/TramLoop';
 
 /**
  * The trams that run the city's lines now and then: pure timetable, one
@@ -96,8 +97,59 @@ export function tramBoxes(
   return out;
 }
 
-/** The lines and their timetable, as the session carries them. */
+/** The lines and their timetable, as the session carries them; a mapped city's loop and its trams instead. */
 export interface TramTraffic {
   lines: readonly TramLine[];
   runs: readonly TramRun[];
+  loop?: LoopFleet;
+}
+
+/** The trams circling a loop: each a distance round it at clock 0. */
+export interface LoopFleet {
+  loop: TramLoopDef;
+  offsets: number[];
+}
+
+/** One tram for every this-many metres of loop, at least two. */
+const LOOP_SPACING = 420;
+/** A loop tram rides two bogies this far either side of its centre, which set its heading round the curves. */
+export const LOOP_BOGIE = 8;
+
+/** A loop's trams, evenly spaced round it from a phase drawn from the stage seed. */
+export function loopFleet(loop: TramLoopDef, seed: number): LoopFleet {
+  const rand = mulberry32(hashSeed(seed, 'trams'));
+  const count = Math.max(2, Math.round(loop.length / LOOP_SPACING));
+  const phase = rand() * loop.length;
+  return {
+    loop,
+    offsets: Array.from({ length: count }, (_, k) => phase + (k * loop.length) / count),
+  };
+}
+
+const front = { x: 0, z: 0, heading: 0 };
+const back = { x: 0, z: 0, heading: 0 };
+
+/** Tram `k` of a loop fleet at clock `t`: between its bogies, heading from the rear one to the front one. */
+export function loopPose(fleet: LoopFleet, k: number, t: number, out: TramPose): TramPose {
+  const s = fleet.offsets[k]! + t * TRAM_SPEED;
+  loopAt(fleet.loop, s + LOOP_BOGIE, front);
+  loopAt(fleet.loop, s - LOOP_BOGIE, back);
+  out.x = (front.x + back.x) / 2;
+  out.z = (front.z + back.z) / 2;
+  out.heading = Math.atan2(front.x - back.x, front.z - back.z);
+  out.opacity = 1;
+  return out;
+}
+
+const pose: TramPose = { x: 0, z: 0, heading: 0, opacity: 1 };
+
+/** Every tram's hitbox at clock `t`, lines or loop, into `out`. */
+export function trafficBoxes(traffic: TramTraffic, t: number, out: BoxObstacle[]): BoxObstacle[] {
+  if (!traffic.loop) return tramBoxes(traffic.lines, traffic.runs, t, out);
+  out.length = 0;
+  for (let k = 0; k < traffic.loop.offsets.length; k++) {
+    loopPose(traffic.loop, k, t, pose);
+    out.push({ x: pose.x, z: pose.z, hx: TRAM_WIDTH / 2, hz: TRAM_LENGTH / 2, yaw: pose.heading });
+  }
+  return out;
 }

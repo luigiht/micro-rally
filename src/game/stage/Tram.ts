@@ -10,6 +10,8 @@ export interface TramLine {
   z0: number;
   x1: number;
   z1: number;
+  /** One piece of a tram loop (`city/TramLoop`): its rails and wire run on into the next piece. */
+  loop?: true;
 }
 
 /** Standard gauge, rail to rail. */
@@ -35,24 +37,27 @@ function smoothstep(e0: number, e1: number, x: number): number {
  */
 export function tramLift(trams: readonly TramLine[], x: number, z: number): number {
   let lift = 0;
-  for (const t of trams) {
-    const pad = TRAM_GAUGE / 2 + RAIL_FELT;
-    if (
-      x < Math.min(t.x0, t.x1) - pad ||
-      x > Math.max(t.x0, t.x1) + pad ||
-      z < Math.min(t.z0, t.z1) - pad ||
-      z > Math.max(t.z0, t.z1) + pad
-    )
-      continue;
-    const dx = t.x1 - t.x0;
-    const dz = t.z1 - t.z0;
-    const len = Math.hypot(dx, dz);
-    if (len < 1e-6) continue;
-    const u = ((x - t.x0) * dx + (z - t.z0) * dz) / len;
-    if (u < 0 || u > len) continue;
-    const lateral = Math.abs(((x - t.x0) * dz - (z - t.z0) * dx) / len);
-    const d = Math.abs(lateral - TRAM_GAUGE / 2);
-    lift = Math.max(lift, RAIL_LIFT * (1 - smoothstep(0.05, RAIL_FELT, d)));
-  }
+  for (const t of trams) lift = Math.max(lift, railLift(t, x, z));
   return lift;
+}
+
+/** One line's rail ridge at (x, z) (see `tramLift`). */
+export function railLift(t: TramLine, x: number, z: number): number {
+  const pad = TRAM_GAUGE / 2 + RAIL_FELT;
+  if (
+    x < Math.min(t.x0, t.x1) - pad ||
+    x > Math.max(t.x0, t.x1) + pad ||
+    z < Math.min(t.z0, t.z1) - pad ||
+    z > Math.max(t.z0, t.z1) + pad
+  )
+    return 0;
+  const dx = t.x1 - t.x0;
+  const dz = t.z1 - t.z0;
+  const len = Math.hypot(dx, dz);
+  if (len < 1e-6) return 0;
+  const u = ((x - t.x0) * dx + (z - t.z0) * dz) / len;
+  if (u < 0 || u > len) return 0;
+  const lateral = Math.abs(((x - t.x0) * dz - (z - t.z0) * dx) / len);
+  const d = Math.abs(lateral - TRAM_GAUGE / 2);
+  return RAIL_LIFT * (1 - smoothstep(0.05, RAIL_FELT, d));
 }

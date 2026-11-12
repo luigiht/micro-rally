@@ -182,8 +182,8 @@ export const it: Messages = {
       entries: [
         {
           date: '12 novembre 2026',
-          title: 'Città senza vuoti',
-          body: 'Le strade della città sono ora file continue di edifici: niente siepi né muretti tra l’uno e l’altro, edifici d’angolo che si uniscono ai vicini e edifici sagomati sugli angoli irregolari. L’unico verde rimasto in città sono gli alberelli nelle aiuole lungo tutti i marciapiedi.',
+          title: 'Città con mappa, anello del tram e strade continue',
+          body: 'Le città sono ora vere mappe stradali: una griglia di isolati leggermente deformata, tutte le strade attorno al percorso costruite da incrocio a incrocio e il percorso che vi svolta e attraversa le rotatorie, con transenne che chiudono le strade che incrocia. Un anello del tram gira attorno ad alcuni isolati, curvando agli angoli, con tram che vi circolano mentre corri accanto e ne attraversi i binari. Le strade sono file continue di edifici con edifici d’angolo sagomati, e l’unico verde sono gli alberelli lungo i marciapiedi. I tempi migliori delle città vengono azzerati.',
         },
         {
           date: '11 novembre 2026',

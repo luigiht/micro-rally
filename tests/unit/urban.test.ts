@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { selfApproachOk, START_DISTANCE } from '@/game/stage/Centreline';
 import { parseSaveFile, SAVE_VERSION } from '@/game/save/SaveFile';
+import { stageIndexOf } from './stageIndex';
 import { isCircuitStage, isCityStage, STAGE_TYPES } from '@/game/stage/regions';
 import { createRoadHit } from '@/game/stage/RoadPath';
 import { halfWidthAt } from '@/game/stage/RoadWidth';
@@ -12,7 +13,7 @@ import { TerrainField } from '@/game/stage/TerrainField';
 import { KERB_LIFT, townObstacles, townProps } from '@/game/stage/Town';
 import { junctionReach } from '@/game/stage/TownJunctions';
 import { MEDIAN_HALF, medianLift } from '@/game/stage/Median';
-import { CITY_STUB_LENGTH, JUNCTION_HOLD, LANE_TAPER } from '@/game/stage/UrbanGenerator';
+import { JUNCTION_HOLD, LANE_TAPER } from '@/game/stage/UrbanGenerator';
 import { RAIL_LIFT, TRAM_BED_HALF, TRAM_GAUGE, tramLift } from '@/game/stage/Tram';
 import { planUrban } from '@/game/stage/UrbanPlan';
 
@@ -137,8 +138,10 @@ describe('Urban stages', () => {
       // A junction corner is one width from kerb to kerb: both route arms agree, the ribbon holds
       // that width through the junction's reach and a margin, and only widens beyond, smoothly.
       for (const j of stage.town!.junctions) {
-        const inArm = j.arms.find((a) => a.role === 'in')!;
-        const outArm = j.arms.find((a) => a.role === 'out')!;
+        const inArm = j.arms.find((a) => a.role === 'in');
+        const outArm = j.arms.find((a) => a.role === 'out');
+        // Crossroads off the route have no route arms to hold a width.
+        if (!inArm || !outArm) continue;
         expect(inArm.halfWidth).toBe(outArm.halfWidth);
         const turn = Math.atan2(
           Math.sin(outArm.heading - inArm.heading - Math.PI),
@@ -164,56 +167,60 @@ describe('Urban stages', () => {
     }
   });
 
-  it('run their side streets far from the route and lay a kerbed green median down every boulevard', () => {
+  it('lay their streets crossroads to crossroads off the route, closed where it passes, and a kerbed green median down every boulevard', () => {
     for (const seed of SEEDS) {
       const field = fieldFor(seed);
       const town = field.stage.town!;
-      const stubs = town.streets.filter(
-        (s) =>
-          !s.route &&
-          !town.roundabouts!.some(
-            (r) =>
-              Math.hypot(s.x0 - r.x, s.z0 - r.z) < ringOuterRadius(r) + 0.1 ||
-              Math.hypot(s.x0 - r.x, s.z0 - r.z) < ringLaneRadius(r) + 0.1,
-          ),
-      );
-      const lens = stubs.map((s) => Math.hypot(s.x1 - s.x0, s.z1 - s.z0));
-      expect(lens.filter((l) => l >= CITY_STUB_LENGTH - 1e-6).length).toBeGreaterThan(
-        lens.length / 3,
-      );
-      for (const l of lens) expect(l).toBeGreaterThanOrEqual(20 - 1e-6);
-      // No side street's carriageway runs into the route: a closed one keeps its end building
-      // off the route's pavements, an open one stops at the pavement it meets.
+      const atRing = (x: number, z: number) =>
+        town.roundabouts!.some(
+          (r) =>
+            Math.hypot(x - r.x, z - r.z) < ringOuterRadius(r) + 0.1 ||
+            Math.hypot(x - r.x, z - r.z) < ringLaneRadius(r) + 0.1,
+        );
+      const streets = town.streets.filter((s) => !s.route && !atRing(s.x0, s.z0));
+      expect(streets.length).toBeGreaterThan(30);
+      const junctionAt = (x: number, z: number) =>
+        town.junctions.find((j) => Math.hypot(j.x - x, j.z - z) < 1e-3);
       const hit = createRoadHit();
-      let open = 0;
-      for (const st of stubs) {
+      for (const st of streets) {
         const len = Math.hypot(st.x1 - st.x0, st.z1 - st.z0);
-        if (st.open) open++;
-        const tee = town.junctions.find((j) => Math.hypot(j.x - st.x1, j.z - st.z1) < 1e-3);
-        if (tee) {
-          // A street ending in a T junction on the route: the junction has the route and this one arm.
-          expect(tee.arms.filter((a) => a.role === 'blocked')).toHaveLength(1);
-          continue;
-        }
-        const reach = st.open ? len : len + 8;
-        for (let t = 30; t <= reach; t += 2) {
+        // Every street runs between two crossroads of the map, a block long.
+        expect(st.open).toBe(true);
+        expect(junctionAt(st.x0, st.z0), `${seed}`).toBeDefined();
+        expect(junctionAt(st.x1, st.z1), `${seed}`).toBeDefined();
+        expect(len).toBeGreaterThan(55);
+        expect(len).toBeLessThan(150);
+        // Its carriageway never runs into the route between its ends.
+        for (let t = 25; t <= len - 25; t += 2) {
           const x = st.x0 + ((st.x1 - st.x0) * t) / len;
           const z = st.z0 + ((st.z1 - st.z0) * t) / len;
           if (field.stage.path.nearest(x, z, 40, hit))
             expect(hit.distance, `${seed}`).toBeGreaterThan(
-              halfWidthAt(field.stage, hit.along) + (st.open ? 3 : st.halfWidth + 3),
+              halfWidthAt(field.stage, hit.along) + 3,
             );
         }
-        // An open street's deck meets the other road's without a step.
-        if (st.open) {
-          const ux = (st.x1 - st.x0) / len;
-          const uz = (st.z1 - st.z0) / len;
-          const a = field.deckAt(st.x1 - ux * 0.5, st.z1 - uz * 0.5);
-          const b = field.deckAt(st.x1 + ux * 1.0, st.z1 + uz * 1.0);
-          expect(Math.abs(a - b), `${seed}`).toBeLessThan(0.15);
+        // Where a street meets its far crossroads the decks agree: no step, at most the grade
+        // over this 1.5 m (12 % on the route).
+        const ux = (st.x1 - st.x0) / len;
+        const uz = (st.z1 - st.z0) / len;
+        const a = field.deckAt(st.x1 - ux * 0.5, st.z1 - uz * 0.5);
+        const b = field.deckAt(st.x1 + ux * 1.0, st.z1 + uz * 1.0);
+        expect(Math.abs(a - b), `${seed}`).toBeLessThan(0.2);
+      }
+      // Every street a route junction passes is closed by a barrier a few metres in.
+      for (const j of town.junctions) {
+        if (!j.arms.some((a) => a.role === 'in')) continue;
+        for (const arm of j.arms.filter((a) => a.role === 'blocked')) {
+          const closed = town.barriers!.some((b) => {
+            const dx = b.x - j.x;
+            const dz = b.z - j.z;
+            const along = dx * Math.sin(arm.heading) + dz * Math.cos(arm.heading);
+            const across = dx * Math.cos(arm.heading) - dz * Math.sin(arm.heading);
+            return along > 0 && along < 40 && Math.abs(across) < 0.5;
+          });
+          expect(closed, `${seed} junction ${j.x.toFixed(0)},${j.z.toFixed(0)}`).toBe(true);
         }
       }
-      expect(open).toBeGreaterThan(0);
       const medians = town.medians!;
       expect(medians.length).toBeGreaterThanOrEqual(2);
       for (const m of medians) {
@@ -358,26 +365,28 @@ describe('Urban stages', () => {
     }
   });
 
-  it('cross tram tracks that the wheels feel as a two centimetre ridge on each rail', () => {
+  it('lay tram tracks on the route that the wheels feel as a two centimetre ridge on each rail', () => {
     const hit = createRoadHit();
     for (const seed of SEEDS) {
       const field = fieldFor(seed);
       const stage = field.stage;
       const trams = stage.town!.trams!;
       expect(trams.length).toBeGreaterThanOrEqual(1);
-      // At least one line crosses the route square on.
+      // Rails on the route's carriageway somewhere (crossing it or running along it): a piece
+      // whose middle is on the route, clear of its edges.
+      let mx = 0;
+      let mz = 0;
       const crossing = trams.find((t) => {
-        const mx = (t.x0 + t.x1) / 2;
-        const mz = (t.z0 + t.z1) / 2;
-        if (!stage.path.nearest(mx, mz, 3, hit)) return false;
-        const h = stage.path.headings[hit.index]!;
-        const th = Math.atan2(t.x1 - t.x0, t.z1 - t.z0);
-        return Math.abs(Math.sin(th - h)) > 0.95;
+        const x = (t.x0 + t.x1) / 2;
+        const z = (t.z0 + t.z1) / 2;
+        if (!stage.path.nearest(x, z, 20, hit)) return false;
+        if (hit.distance > halfWidthAt(stage, hit.along) - 2.5) return false;
+        mx = x;
+        mz = z;
+        return true;
       });
       expect(crossing).toBeDefined();
       const t = crossing!;
-      const mx = (t.x0 + t.x1) / 2;
-      const mz = (t.z0 + t.z1) / 2;
       const th = Math.atan2(t.x1 - t.x0, t.z1 - t.z0);
       const lx = Math.cos(th);
       const lz = -Math.sin(th);
@@ -461,25 +470,52 @@ describe('Urban stages', () => {
       const plan = planUrban(seed, 2200, 0, URBAN);
       expect(plan.legs.length).toBeGreaterThan(8);
       expect(plan.legs.some((l) => l.roundabout)).toBe(true);
-      // A width changes only after a junction corner: across a kink, an avenue curve or a
-      // roundabout the next street is as wide as the last, and the finish boulevard follows a
-      // junction corner.
+      // A width changes only where the route turns onto another street: at a corner of 45° or
+      // more, or round a roundabout; through a crossroads straight on it keeps its street's.
       const legs = plan.legs;
       for (let i = 0; i + 1 < legs.length; i++) {
         const leg = legs[i]!;
         const next = legs[i + 1]!;
         if (leg.kind === 'straight' && Math.abs(leg.turn) >= Math.PI / 4) continue;
-        if (leg.roundabout || next.roundabout) continue;
+        if (leg.kind === 'curve' || next.kind === 'curve') continue;
         expect(next.halfWidth, `${seed} leg ${i}`).toBe(leg.halfWidth);
       }
-      const last = legs[legs.length - 1]!;
-      expect(last.halfWidth).toBe(URBAN.lanes.four);
-      expect(last.length).toBeGreaterThanOrEqual(300);
+      // The finish: an avenue run of at least 300 m after the last real turn.
+      let run = 0;
+      for (let i = legs.length - 1; i >= 0; i--) {
+        const leg = legs[i]!;
+        if (leg.kind === 'curve' || (i < legs.length - 1 && Math.abs(leg.turn) >= Math.PI / 4))
+          break;
+        expect(leg.halfWidth).toBe(URBAN.lanes.four);
+        run += leg.length;
+      }
+      expect(run).toBeGreaterThanOrEqual(300);
     }
   });
 });
 
 describe('save migration', () => {
+  it("moves v8 saves to v9, dropping the old cities' records only", () => {
+    const rec = { best: 90, splits: [30, 60, 90] };
+    const city = stageIndexOf('urban', 0);
+    const forest = stageIndexOf('forest', 0);
+    const save = parseSaveFile({
+      version: 8,
+      gameId: 'ABCD2345',
+      driverName: 'Ada',
+      gameSeed: 1,
+      money: 10,
+      stageIndex: city + 1,
+      records: { [city]: rec, [forest]: rec },
+      carId: 'hatchback',
+      ownedCars: ['hatchback'],
+      upgrades: {},
+      updatedAt: 1,
+    })!;
+    expect(save.version).toBe(SAVE_VERSION);
+    expect(Object.keys(save.records).map(Number)).toEqual([forest]);
+  });
+
   it('moves v4 saves to v5 and keeps records only where the region is unchanged', () => {
     const rec = { best: 90, splits: [30, 60, 90] };
     const save = parseSaveFile({

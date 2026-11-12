@@ -182,8 +182,8 @@ export const es: Messages = {
       entries: [
         {
           date: '12 de noviembre de 2026',
-          title: 'Ciudades sin huecos',
-          body: 'Las calles de la ciudad son ahora hileras continuas de edificios: sin setos ni tapias entre ellos, edificios de esquina que encajan con sus vecinos y edificios adaptados a las esquinas irregulares. La única vegetación que queda en la ciudad son los arbolitos en alcorques a lo largo de todas las aceras.',
+          title: 'Ciudades con mapa, tranvía y calles continuas',
+          body: 'Las ciudades son ahora mapas de calles de verdad: una cuadrícula de manzanas suavemente deformada, todas las calles alrededor del recorrido construidas de cruce a cruce y el recorrido girando por ellas y por sus rotondas, con vallas que cierran las calles por las que pasa. Un circuito de tranvía rodea varias manzanas, doblando las esquinas, con tranvías dando vueltas mientras corres a su lado y cruzas sus raíles. Las calles son hileras continuas de edificios con edificios de esquina adaptados, y la única vegetación son los arbolitos de las aceras. Los mejores tiempos de las ciudades se reinician.',
         },
         {
           date: '11 de noviembre de 2026',

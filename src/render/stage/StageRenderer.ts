@@ -24,6 +24,7 @@ import { ParkingBayBuilder } from '../town/ParkingBayBuilder';
 import { RoundaboutBuilder } from '../town/RoundaboutBuilder';
 import { TownJunctionBuilder } from '../town/TownJunctionBuilder';
 import { TownStreetBuilder } from '../town/TownStreetBuilder';
+import { RoadClosedBuilder } from '../town/RoadClosedBuilder';
 import { TownInfillBuilder } from '../town/TownInfillBuilder';
 import { TownWallBuilder } from '../town/TownWallBuilder';
 import { TramFleet } from '../town/TramFleet';
@@ -139,6 +140,8 @@ interface Surfaces {
   parking: ParkingBayBuilder | null;
   fleet: TramFleet | null;
   stones: GravelStoneBuilder | null;
+  /** A mapped city's barriers across the streets the route passes. */
+  closed: RoadClosedBuilder | null;
 }
 
 /**
@@ -231,6 +234,7 @@ export class StageRenderer {
       crossings: null,
       parking: null,
       fleet: null,
+      closed: null,
       stones:
         this.opts.roadStones && stage.surface === 'gravel'
           ? new GravelStoneBuilder(stage, field)
@@ -288,6 +292,7 @@ export class StageRenderer {
           : new TownWallBuilder(town, field, theme.walls),
       ),
     ];
+    if (town.barriers?.length) steps.push(add('closed', () => new RoadClosedBuilder(town, field)));
     if (town.roundabouts?.length)
       steps.push(
         add('roundabouts', () => new RoundaboutBuilder(town, stage, field, theme.road, grass)),
@@ -304,7 +309,10 @@ export class StageRenderer {
       steps.push(add('trams', () => new TramTrackBuilder(town.trams!, field, theme.road)));
     if (town.trams?.length && this.opts.tramService)
       steps.push(
-        add('fleet', () => new TramFleet(town.trams!, field, stage.seed, this.opts.shadows)),
+        add(
+          'fleet',
+          () => new TramFleet(town.trams!, field, stage.seed, this.opts.shadows, town.tramLoop),
+        ),
       );
     return steps;
   }
@@ -329,6 +337,7 @@ export class StageRenderer {
       s.parking,
       s.fleet,
       s.stones,
+      s.closed,
     ].filter((b) => b !== null);
   }
 

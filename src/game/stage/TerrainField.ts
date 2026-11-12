@@ -447,6 +447,13 @@ export class TerrainField implements TerrainQuery {
   /** Side streets start at the route's height and follow the ground outward, no steeper than the road. */
   private buildStubs(town: TownDef): StubDeck[] {
     const out: StubDeck[] = [];
+    // A mapped city's crossroads off the route: each is levelled to one height (see `UrbanField`),
+    // and every street starting or ending there takes that height, so they meet without a step.
+    const offRoute = town.map
+      ? town.junctions.filter((j) => j.arms.every((a) => a.role === 'blocked'))
+      : [];
+    const crossroadsAt = (x: number, z: number) =>
+      offRoute.find((j) => Math.hypot(j.x - x, j.z - z) < 0.5);
     for (const s of town.streets) {
       if (s.route) continue;
       const dx = s.x1 - s.x0;
@@ -465,9 +472,12 @@ export class TerrainField implements TerrainQuery {
           ? this.roadHeightAt(this.hit.along)
           : this.groundHeight(x, z);
       const profile = new Float64Array(PROFILE_SAMPLES);
+      const startsAt = crossroadsAt(s.x0, s.z0);
       for (let i = 0; i < PROFILE_SAMPLES; i++) {
         const lat = -s.halfWidth + (2 * s.halfWidth * i) / (PROFILE_SAMPLES - 1);
-        profile[i] = routeAt(ex + uz * lat, ez - ux * lat);
+        profile[i] = startsAt
+          ? this.groundHeight(startsAt.x, startsAt.z)
+          : routeAt(ex + uz * lat, ez - ux * lat);
       }
       const yZone = profile[(PROFILE_SAMPLES - 1) / 2]!;
       const end = this.groundHeight(s.x1, s.z1);
@@ -495,6 +505,8 @@ export class TerrainField implements TerrainQuery {
     const joined = out.map((s, i) => {
       if (!s.open) return s.y1;
       const e = ends[i]!;
+      const endsAt = crossroadsAt(e.x, e.z);
+      if (endsAt) return this.groundHeight(endsAt.x, endsAt.z);
       if (this.stage.path.nearest(e.x, e.z, this.corridor, this.hit)) {
         if (this.hit.distance < 1) {
           // On the route's axis: a T junction. The route's deck holds through the junction zone

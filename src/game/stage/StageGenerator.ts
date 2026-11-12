@@ -449,7 +449,7 @@ export function generateStage(
     built = buildCentreline(resume(seed), total, twist, plan, true);
   if (withTown && plan && fouls(built)) built = buildCentreline(resume(seed), total, twist, null);
   const { path, trace } = built;
-  const town = trace ? layoutTown(trace, path, seed, halfWidth, def.urban) : undefined;
+  const town = trace ? layoutTown(trace, path, seed, halfWidth, def.urban, plan?.city) : undefined;
   const widths = town ? (town.widths ?? buildWidths(path, town, halfWidth)) : undefined;
   const gates = placeGates(path, length, halfWidth, town, widths);
 

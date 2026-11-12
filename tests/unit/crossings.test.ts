@@ -30,7 +30,9 @@ describe('junctionCrossings', () => {
       const field = new TerrainField(stage);
       const town = stage.town!;
       const crossings = junctionCrossings(town, stage);
-      expect(crossings.length).toBeGreaterThan(town.junctions.length * 1.5);
+      // Junctions on the route carry crossings on their arms (those off it are plain crossroads).
+      const onRoute = town.junctions.filter((j) => j.arms.some((a) => a.role === 'in'));
+      expect(crossings.length).toBeGreaterThan(onRoute.length * 1.5);
       for (const c of crossings) {
         const lx = Math.cos(c.heading);
         const lz = -Math.sin(c.heading);

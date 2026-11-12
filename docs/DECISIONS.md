@@ -4389,3 +4389,53 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      first city stage, total wall length fell from about 2,600 m (1,580
      pieces, mostly hedges) to about 365 m, now invisible and fronting
      fitted buildings; buildings rose from 1,188 to about 1,220.
+
+235. **2026-11-12 — A mapped city with a tram loop.** The user asked for a
+     properly mapped, connected town: the route driving through its streets
+     and a tram circuit that turns corners. They chose:
+     - a warped grid;
+     - barriers on the streets the route passes;
+     - a closed tram loop on the streets.
+
+     A city is now planned as a map first.
+     - **Map (`city/CityGrid`):** a 13-column lattice, rows enough for the
+       stage, 80–120 m blocks, bent by two sines each way, an avenue every
+       third column and fourth row, a few side streets left out.
+     - **Route (`city/CityRoute`):** a self-avoiding walk that never heads
+       back toward the start. It is laid as the same town legs
+       `buildCentreline` takes, in a plan frame with the start crossroads at
+       the origin and the first street along +z, so every corner lands on
+       its crossroads (a test checks it).
+     - **Roundabouts:** placed at crossroads driven straight through or
+       turned left at. Their deflect, circulate, deflect passage is solved
+       analytically (`ringPassage`) for how far before and after the
+       virtual corner it starts and ends and where the island lies, so the
+       legs still meet the map and the island lands where the map planned.
+     - **Into the world:** `cityToWorld` places the map on the traced entry
+       pose.
+     - **Streets (`city/CityNetwork`):** they replace the corner and
+       crossroads stubs. Every map street with both ends among the route's
+       crossroads and their neighbours becomes an open street between two
+       junctions. Route junctions sit on the traced corners; off-route
+       crossroads have only side-street arms. Ring exits are the map's
+       streets.
+     - **Closures:** every arm the route passes is closed past its zebra by
+       cones and a barrier. The barrier collides across the whole street;
+       where a tram runs through, its panels are left out over the rails.
+     - **Terrain:** `TerrainField` takes each off-route crossroads' levelled
+       height for every street ending there, so streets meet without a step.
+     - **Speed:** clearance checks were walking every street per point. On
+       about 80 streets that cost 1.4 s, so the side streets are now gridded,
+       and a city stage generates in 0.35–0.55 s (from 0.73–0.98 s before).
+     - **Tram loop (`city/TramLoop`):** a rectangle of one to three by two to
+       four blocks, all its streets laid. It prefers one the route shares and
+       crosses straight over, then one it shares and joins, then one it
+       crosses twice, and leans toward 1.5 km long. Its corners are eased
+       round 18 m arcs, sampled into rail pieces (flagged `loop` so the wire
+       runs unbroken). Every seed tried gets one, of 0.9–1.4 km.
+     - **Rails and trams:** `UrbanField` grids the rails for `railLift`.
+       `TramService.loopFleet` spaces one tram per 420 m (at least two) from
+       a seeded phase; `loopPose` sets each between two bogies 8 m either
+       side, so it cuts the chord round curves. `trafficBoxes` serves the
+       session. Medians keep off the rails, and so do cones.
+     - **Saves:** move to v9, dropping city records, since the roads changed.

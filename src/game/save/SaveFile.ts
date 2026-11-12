@@ -8,7 +8,7 @@ export interface StageRecord {
   splits: number[];
 }
 
-export const SAVE_VERSION = 8;
+export const SAVE_VERSION = 9;
 export const DRIVER_NAME_MAX = 24;
 
 /** Everything needed to resume a game. Nothing personal beyond the driver name. */
@@ -222,6 +222,15 @@ function migrateV6(raw: Record<string, unknown>): Record<string, unknown> {
   return { ...raw, version: 7, records: kept };
 }
 
+/** v9 lays every city on a street map with a tram loop: the old cities' roads are gone, and so are their records. */
+function migrateV8(raw: Record<string, unknown>): Record<string, unknown> {
+  const records = isRecord(raw.records) ? raw.records : {};
+  const kept = Object.fromEntries(
+    Object.entries(records).filter(([key]) => stageSlot(Number(key)) !== 'urban'),
+  );
+  return { ...raw, version: 9, records: kept };
+}
+
 /** v8 fixes Alpine stages to snow; prior Alpine records may be for tarmac. */
 function migrateV7(raw: Record<string, unknown>): Record<string, unknown> {
   const records = isRecord(raw.records) ? raw.records : {};
@@ -277,6 +286,7 @@ export function parseSaveFile(data: unknown): SaveFile | null {
   if (raw.version === 5) raw = migrateV5(raw);
   if (raw.version === 6) raw = migrateV6(raw);
   if (raw.version === 7) raw = migrateV7(raw);
+  if (raw.version === 8) raw = migrateV8(raw);
   if (raw.version === SAVE_VERSION) return parseCurrent(raw);
   return null;
 }

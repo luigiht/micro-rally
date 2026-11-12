@@ -1,6 +1,15 @@
 import { Group, Mesh, MeshStandardMaterial, type BufferGeometry } from 'three';
 import { RAIL_LIFT, type TramLine } from '@/game/stage/Tram';
-import { tramPose, tramSchedule, type TramRun } from '@/game/stage/TramService';
+import {
+  loopFleet,
+  loopPose,
+  tramPose,
+  tramSchedule,
+  type LoopFleet,
+  type TramPose,
+  type TramRun,
+} from '@/game/stage/TramService';
+import type { TramLoopDef } from '@/game/stage/city/TramLoop';
 import type { GroundQuery } from '@/game/stage/Town';
 import { tramGeometry } from '../scenery/TramGeometry';
 import { BED_LIFT } from './TramTrackBuilder';
@@ -21,17 +30,23 @@ export class TramFleet {
   private readonly materials: MeshStandardMaterial[] = [];
   private readonly meshes: Mesh[] = [];
   private readonly runs: TramRun[];
+  /** A mapped city's loop and the trams circling it, in place of the lines' timetable. */
+  private readonly fleet: LoopFleet | null;
+  private readonly pose: TramPose = { x: 0, z: 0, heading: 0, opacity: 1 };
 
   constructor(
     private readonly trams: readonly TramLine[],
     private readonly field: GroundQuery,
     seed: number,
     shadows: boolean,
+    loop?: TramLoopDef,
   ) {
     this.group.name = 'trams';
     this.geometry = tramGeometry();
-    this.runs = tramSchedule(trams, seed);
-    for (let i = 0; i < trams.length; i++) {
+    this.fleet = loop ? loopFleet(loop, seed) : null;
+    this.runs = this.fleet ? [] : tramSchedule(trams, seed);
+    const count = this.fleet ? this.fleet.offsets.length : trams.length;
+    for (let i = 0; i < count; i++) {
       const material = new MeshStandardMaterial({
         vertexColors: true,
         flatShading: true,
@@ -50,12 +65,14 @@ export class TramFleet {
 
   /** Pose every tram for the run's clock `t` (seconds). */
   tick(t: number): void {
-    this.trams.forEach((line, i) => {
+    for (let i = 0; i < this.meshes.length; i++) {
       const mesh = this.meshes[i]!;
-      const pose = tramPose(line, this.runs[i]!, t);
+      const pose = this.fleet
+        ? loopPose(this.fleet, i, t, this.pose)
+        : tramPose(this.trams[i]!, this.runs[i]!, t);
       if (!pose) {
         mesh.visible = false;
-        return;
+        continue;
       }
       const fx = Math.sin(pose.heading);
       const fz = Math.cos(pose.heading);
@@ -66,7 +83,7 @@ export class TramFleet {
       mesh.rotation.set(-Math.atan2(ahead - behind, 2 * BOGIE), pose.heading, 0);
       this.materials[i]!.opacity = pose.opacity;
       mesh.visible = pose.opacity > 0.01;
-    });
+    }
   }
 
   dispose(): void {

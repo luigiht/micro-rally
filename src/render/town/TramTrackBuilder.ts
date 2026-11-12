@@ -64,7 +64,9 @@ export class TramTrackBuilder {
         this.strip(t, h, len, c - RAIL_WIDTH / 2, c + RAIL_WIDTH / 2, RAIL_TOP, rail);
       }
       // The contact wire over the axis, its underside on the pantograph's strips, stopping short of the ends.
-      this.wire(t, h, WIRE_END, len - WIRE_END, RAIL_TOP + TRAM_WIRE_HEIGHT + WIRE / 2, rail);
+      // A loop's wire runs on unbroken from piece to piece; a line's stops short of its ends.
+      const end = t.loop ? 0 : WIRE_END;
+      this.wire(t, h, end, len - end, RAIL_TOP + TRAM_WIRE_HEIGHT + WIRE / 2, rail);
     }
     const raw = new BufferGeometry();
     raw.setAttribute('position', new BufferAttribute(Float32Array.from(this.pos), 3));

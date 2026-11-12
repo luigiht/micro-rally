@@ -1,16 +1,18 @@
 import type { UrbanDef } from './regions';
-import type { Median } from './Median';
+import { MEDIAN_HALF, type Median } from './Median';
 import { createRoadHit, type RoadPath } from './RoadPath';
 import { ringChords, ringOuterRadius, ringPoint, ringSweep, type Roundabout } from './Roundabout';
 import type { Junction, Street } from './Town';
 import { junctionKerbs } from './TownKerbs';
 import { junctionReach } from './TownJunctions';
 import { applyPlan, planStub, stubSite, type StubSite } from './TownSideStreets';
-import { PAVEMENT_WIDTH } from './Town';
+import { PAVEMENT_WIDTH, segmentDistance } from './Town';
 import { ROW_SETBACK } from './TownSideStreets';
 import { halfWidthAt, type RoadWidthSource } from './RoadWidth';
 import { at, type Facade, type Site } from './TownTerraces';
-import type { TramLine } from './Tram';
+import type { CityMap } from './city/CityMap';
+import { ringExits } from './city/CityNetwork';
+import { TRAM_BED_HALF, type TramLine } from './Tram';
 import { crossroadsStreets, type TracedLeg } from './TownGenerator';
 
 /**
@@ -63,6 +65,7 @@ export function cityRoundabout(
   stubs: StubSite[],
   leg: TracedLeg,
   stage: RoadWidthSource,
+  map?: CityMap,
 ): Roundabout {
   const path = stage.path;
   const p0 = leg.points[0]!;
@@ -88,6 +91,12 @@ export function cityRoundabout(
   };
   const chords: Street[] = ringChords(r);
   site.streets.push(...chords);
+  // A mapped city's exits are its streets to the crossroads round the ring (`cityNetwork` lays them).
+  if (map) {
+    r.exits.push(...ringExits(map, r));
+    ringWalls(site, r, stage);
+    return r;
+  }
   for (let k = 1; k <= 3; k++) {
     const a = r.angleIn + (sense * k * Math.PI) / 2;
     // Clear of the route's entry and exit, and on the undriven part of the ring.
@@ -182,12 +191,21 @@ const xz = (p: { x: number; z: number }): [number, number] => [p.x, p.z];
 
 /** The side street leaving `o` on `heading`, if one was laid. */
 function stubFrom(site: Site, o: { x: number; z: number }, heading: number): Street | undefined {
-  return site.streets.find(
-    (s) =>
-      !s.route &&
+  for (const s of site.streets) {
+    if (s.route) continue;
+    if (
       Math.hypot(s.x0 - o.x, s.z0 - o.z) < 0.05 &&
-      Math.abs(wrap(Math.atan2(s.x1 - s.x0, s.z1 - s.z0) - heading)) < 0.02,
-  );
+      Math.abs(wrap(Math.atan2(s.x1 - s.x0, s.z1 - s.z0) - heading)) < 0.02
+    )
+      return s;
+    // A mapped city's street between two route crossroads may run from the far one: read it back.
+    if (
+      Math.hypot(s.x1 - o.x, s.z1 - o.z) < 0.05 &&
+      Math.abs(wrap(Math.atan2(s.x0 - s.x1, s.z0 - s.z1) - heading)) < 0.02
+    )
+      return { ...s, x0: s.x1, z0: s.z1, x1: s.x0, z1: s.z0 };
+  }
+  return undefined;
 }
 
 /** The point `TRAM_END` short of a side street's far end. */
@@ -217,7 +235,8 @@ export function cityTrams(
   for (const j of site.junctions) {
     const inArm = j.arms.find((a) => a.role === 'in');
     const outArm = j.arms.find((a) => a.role === 'out');
-    if (!inArm || !outArm || Math.abs(wrap(outArm.heading - inArm.heading - Math.PI)) > 0.01)
+    // Straight through, give or take a mapped city's gentle bend at its crossroads.
+    if (!inArm || !outArm || Math.abs(wrap(outArm.heading - inArm.heading - Math.PI)) > 0.2)
       continue;
     const blocked = j.arms.filter((a) => a.role === 'blocked');
     if (blocked.length !== 2 || nearRing(j.x, j.z)) continue;
@@ -381,8 +400,14 @@ export function cityMedians(
   legs: readonly TracedLeg[],
   stage: RoadWidthSource,
   def: UrbanDef,
+  trams: readonly TramLine[] = [],
 ): Median[] {
   const out: Median[] = [];
+  // No median where a tram runs down the street: the rails take the middle.
+  const onRails = (x: number, z: number) =>
+    trams.some(
+      (t) => segmentDistance(t.x0, t.z0, t.x1, t.z1, x, z) < MEDIAN_HALF + TRAM_BED_HALF + 1,
+    );
   const hit = createRoadHit();
   const path = stage.path;
   for (const leg of legs) {
@@ -437,9 +462,10 @@ export function cityMedians(
     });
     // Also no median where the boulevard has begun dropping its lanes toward a junction.
     const inSpan = (t: number) =>
-      path.nearest(o.x + f.x * t, o.z + f.z * t, 10, hit) &&
-      (spans.some(([a, b]) => hit.along > a && hit.along < b) ||
-        halfWidthAt(stage, hit.along) < leg.halfWidth - 1e-3);
+      onRails(o.x + f.x * t, o.z + f.z * t) ||
+      (path.nearest(o.x + f.x * t, o.z + f.z * t, 10, hit) &&
+        (spans.some(([a, b]) => hit.along > a && hit.along < b) ||
+          halfWidthAt(stage, hit.along) < leg.halfWidth - 1e-3));
     for (let [t0, t1] of pieces) {
       while (t0 < t1 && inSpan(t0)) t0 += 1;
       while (t1 > t0 && inSpan(t1)) t1 -= 1;

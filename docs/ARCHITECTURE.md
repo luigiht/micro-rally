@@ -109,6 +109,18 @@ flowchart LR
   draws it (`render/road/KerbBuilder.ts`, `BarrierBuilder.ts`,
   `CircuitDressingBuilder.ts` over `TrackMesh.ts`), each behind its own
   `StageRenderOptions` flag.
+- City map (`game/stage/city/`): `CityGrid` draws the warped lattice of
+  crossroads and streets; `CityRoute` walks the route along it and lays it as
+  town legs (`planUrban` returns them with the map), so `buildCentreline`,
+  gates and progress are unchanged; `CityMap.cityToWorld` places the map on
+  the traced entry; `CityNetwork` turns the streets round the route's blocks
+  into junctions, open streets and barriers (`TownDef.barriers`, colliders in
+  `townObstacles`, drawn by `render/town/RoadClosedBuilder`); `TramLoop`
+  picks a rectangle of blocks for the tram circuit (`TownDef.tramLoop`, its
+  rail pieces in `trams`), whose trams `TramService.loopFleet`/`loopPose`
+  pose for `TramFleet` and the session's hitboxes. `TerrainField` levels
+  every street ending at an off-route crossroads to that crossroads' height,
+  and `UrbanField` grids the rails for the wheels' lift.
 - Road surface dressing (`render/road/RoadBuilder.ts`): snow, mud and
   gravel roads cut the carriageway into wheel-track bands (`rutStrips`,
   a `RutProfile` per surface: depth, tones, and for gravel a fade that lets

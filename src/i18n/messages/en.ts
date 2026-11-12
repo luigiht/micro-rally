@@ -174,8 +174,8 @@ export const en = {
       entries: [
         {
           date: '12 November 2026',
-          title: 'Cities built wall to wall',
-          body: 'City streets are now continuous rows of buildings: no hedges or garden walls between them, corner buildings that meet their neighbours cleanly, and buildings shaped to fit the odd corners. The only greenery left in a city is the small trees in kerbed pits along every pavement.',
+          title: 'Mapped cities, tram loop, wall-to-wall streets',
+          body: 'Cities are now real street maps: a gently warped grid of blocks, every street round the route built from crossroads to crossroads, the route turning through them and its roundabouts, with barriers closing the streets it passes. A tram circuit loops round a few blocks, rounding the corners, with trams circling it while you race alongside and across its rails. City streets are continuous rows of buildings with corner buildings shaped to fit, and the only greenery is the small trees along the pavements. Best times on city stages are reset.',
         },
         {
           date: '11 November 2026',

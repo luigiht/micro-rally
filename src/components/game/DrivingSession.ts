@@ -11,7 +11,7 @@ import {
   type BoxObstacle,
   type ObstacleGrid,
 } from '@/game/vehicle/Collisions';
-import { tramBoxes, type TramTraffic } from '@/game/stage/TramService';
+import { trafficBoxes, type TramTraffic } from '@/game/stage/TramService';
 import { Autopilot, DEFAULT_AUTOPILOT } from '@/game/vehicle/Autopilot';
 import { createControlInput, mergeControlInput } from '@/game/vehicle/ControlInput';
 import { createVehiclePose, interpolatePose } from '@/game/vehicle/interpolatePose';
@@ -112,12 +112,7 @@ export class DrivingSession {
     let impact = 0;
     if (this.world.obstacles) impact = resolveObstacleCollisions(s, this.world.obstacles);
     if (this.world.trams) {
-      const boxes = tramBoxes(
-        this.world.trams.lines,
-        this.world.trams.runs,
-        this.time,
-        this.tramHits,
-      );
+      const boxes = trafficBoxes(this.world.trams, this.time, this.tramHits);
       impact = Math.max(impact, resolveBoxCollisions(s, boxes));
     }
     if (impact > 0) run?.onImpact(impact);

@@ -4,7 +4,7 @@ import type { UrbanDef } from './regions';
 import { createRoadHit, type RoadPath } from './RoadPath';
 import { buildWidths, halfWidthAt } from './RoadWidth';
 import { roundaboutsClear, type Roundabout } from './Roundabout';
-import { FRONT_SETBACK, streetDistance, type Junction, type TownDef } from './Town';
+import { FRONT_SETBACK, streetDistance, type Junction, type Street, type TownDef } from './Town';
 import { junctionKerbs } from './TownKerbs';
 import { tangentLength } from './TownPlan';
 import {
@@ -19,6 +19,11 @@ import {
 import { MIN_JUNCTION_TURN } from './UrbanPlan';
 import { clipStubsToRoads, joinStubs } from './UrbanStreets';
 import { fitInfills } from './TownInfill';
+import { SpatialHash } from './SpatialHash';
+import { cityToWorld } from './city/CityMap';
+import { cityNetwork } from './city/CityNetwork';
+import { chooseTramLoop, loopLines } from './city/TramLoop';
+import type { CityPlan } from './city/CityRoute';
 import { trimWallsUnderBuildings, wallsToTerraces } from './TownJoinedRows';
 import { closeWallGaps } from './TownWallGaps';
 import {
@@ -41,6 +46,10 @@ export { STUB_LENGTH } from './TownSideStreets';
 export const CROSSROADS_BLOCK = 80;
 /** Terraces may start this close to the town's entry and exit points. */
 const EDGE_SETBACK = 4;
+/** Side streets are gridded this coarsely for the clearance checks, reaching this much past their pavements (the most any check's negative slack asks). */
+const STREET_CELL = 32;
+const CLEAR_SLACK_MAX = 4;
+
 /** Plateau margin beyond the street grid: along the route (room for the approach ramps) and across. */
 const MARGIN_U = 70;
 const MARGIN_V = 40;
@@ -202,7 +211,13 @@ export function layoutTown(
   seed: number,
   base: number,
   city?: UrbanDef,
+  cityPlan?: CityPlan,
 ): TownDef {
+  // A city's map, placed on the route as the builder laid it.
+  const map = cityPlan ? cityToWorld(cityPlan, trace.entry) : undefined;
+  // Its tram circuit round a few of its blocks, chosen first so the barriers leave the rails clear.
+  const tramLoop = map ? chooseTramLoop(map, seed) : null;
+  const loopRails = tramLoop ? loopLines(tramLoop) : [];
   const site: Site = {
     rand: mulberry32(hashSeed(seed, 'town-layout')),
     clear: () => true,
@@ -236,12 +251,15 @@ export function layoutTown(
     }
     for (let k = 0; k < leg.points.length - 1; k++)
       site.streets.push(street(leg.points[k]!, leg.points[k + 1]!, leg.halfWidth, true));
-    if (leg.kind === 'corner' && Math.abs(leg.turn) >= MIN_JUNCTION_TURN)
+    if (leg.kind === 'corner' && Math.abs(leg.turn) >= MIN_JUNCTION_TURN && !map)
       cornerStreets(site, stubs, legs, i, corners++ === 0);
     if (leg.kind === 'curve' && leg.roundabout)
-      roundabouts.push(cityRoundabout(site, stubs, leg, citySource));
+      roundabouts.push(cityRoundabout(site, stubs, leg, citySource, map));
   });
-  if (city) cityCrossroads(site, stubs, legs);
+  // A mapped city lays its streets from its map; the rest grow side streets from the route.
+  const network = map ? cityNetwork(site, map, legs, roundabouts, base, loopRails) : null;
+  if (network) site.barriers = network.barriers;
+  else if (city) cityCrossroads(site, stubs, legs);
   else
     legs.forEach((leg, i) => {
       if (leg.kind === 'straight' && hasCrossroads(legs, i)) crossroadsStreets(site, stubs, leg);
@@ -249,7 +267,7 @@ export function layoutTown(
   const cityWidths = city ? traceWidths(path, legs, base, site.junctions) : undefined;
   if (cityWidths) citySource.widths = cityWidths;
   // A city's long side streets stop short of the route's other legs and of every ring.
-  if (city) {
+  if (city && !network) {
     clipStubsToRoads(site, stubs, citySource, roundabouts);
     joinStubs(stubs, citySource);
   }
@@ -263,6 +281,20 @@ export function layoutTown(
   // a village narrows its streets from the junctions and widens back beyond them.
   const widths = city ? cityWidths : buildWidths(path, site, base);
   const source = { halfWidth: base, path, ...(widths ? { widths } : {}) };
+  // Every side street gridded by its length, so a check reads the few round it, not a city's hundred.
+  const sideStreets = new SpatialHash<Street>(STREET_CELL);
+  for (const st of site.streets) {
+    if (st.route) continue;
+    const reach = st.halfWidth + FRONT_SETBACK + CLEAR_SLACK_MAX;
+    const n = Math.max(1, Math.ceil(Math.hypot(st.x1 - st.x0, st.z1 - st.z0) / (STREET_CELL / 2)));
+    for (let i = 0; i <= n; i++)
+      sideStreets.insert(
+        st,
+        st.x0 + ((st.x1 - st.x0) * i) / n,
+        st.z0 + ((st.z1 - st.z0) * i) / n,
+        reach,
+      );
+  }
   site.clear = (x, z, slack) => {
     if (
       path.nearest(x, z, 20, hit) &&
@@ -270,10 +302,12 @@ export function layoutTown(
     )
       return false;
     if (!roundaboutsClear(roundabouts, x, z, slack)) return false;
-    for (const st of site.streets)
-      if (!st.route && streetDistance(st, x, z) < st.halfWidth + FRONT_SETBACK - slack)
-        return false;
-    return true;
+    return !sideStreets.near(
+      x,
+      z,
+      0,
+      (st) => streetDistance(st, x, z) < st.halfWidth + FRONT_SETBACK - slack,
+    );
   };
   const facades: RouteFacades = {
     left: routeFacade(path, widths, base, from, to, 1),
@@ -307,7 +341,7 @@ export function layoutTown(
     }
     row(site, facade, s0, facade.length - EDGE_SETBACK);
   }
-  for (const s of stubs) stubRows(site, s);
+  for (const s of [...stubs, ...(network?.stubs ?? [])]) stubRows(site, s);
   closeWallGaps(site);
   // A city's corners are built up: its walls give way to the buildings, and no garden is planted.
   if (city) {
@@ -320,8 +354,12 @@ export function layoutTown(
   // Whatever gap is left in a city takes a building fitted to its plot.
   const infills = city ? fitInfills(site) : [];
   // Trams draw from their own stream, so nothing else laid out above moves them.
-  const trams = city ? cityTrams(site, roundabouts, mulberry32(hashSeed(seed, 'trams'))) : [];
-  const medians = city ? cityMedians(site, legs, citySource, city) : [];
+  const trams = map
+    ? loopRails
+    : city
+      ? cityTrams(site, roundabouts, mulberry32(hashSeed(seed, 'trams')))
+      : [];
+  const medians = city ? cityMedians(site, legs, citySource, city, trams) : [];
 
   // Footprint: the bounding box of everything in the town frame, with ramp room along the route.
   const h0 = trace.entry.heading;
@@ -368,7 +406,18 @@ export function layoutTown(
     walls: site.walls,
     plantings: site.plantings,
     ...(city && widths
-      ? { relief: city.relief, roundabouts, trams, medians, widths, city: true as const, infills }
+      ? {
+          relief: city.relief,
+          roundabouts,
+          trams,
+          medians,
+          widths,
+          city: true as const,
+          infills,
+          ...(map ? { map } : {}),
+          ...(site.barriers ? { barriers: site.barriers } : {}),
+          ...(tramLoop ? { tramLoop } : {}),
+        }
       : {}),
   };
 }

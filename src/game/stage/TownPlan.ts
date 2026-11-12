@@ -1,3 +1,4 @@
+import type { CityPlan } from './city/CityRoute';
 import { rallyIndex } from './regions';
 import { hashSeed, mulberry32 } from '../rng';
 
@@ -62,6 +63,8 @@ export interface TownPlan {
   /** Control distance at which the entry leg begins. */
   entryAt: number;
   legs: TownLeg[];
+  /** A city's map and the route's crossroads on it, in the plan frame (see `city/CityRoute`). */
+  city?: CityPlan;
 }
 
 interface Pt {

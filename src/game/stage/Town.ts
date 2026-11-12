@@ -2,6 +2,8 @@ import type { BoxObstacle } from '../vehicle/Collisions';
 import { BUILDING_SIZE } from './BuildingCatalog';
 import type { Median } from './Median';
 import type { Infill } from './TownInfill';
+import type { CityMap } from './city/CityMap';
+import type { TramLoopDef } from './city/TramLoop';
 import { roundaboutBlocks, type Roundabout } from './Roundabout';
 import type { Prop } from './SceneryScatter';
 import { junctionReach } from './TownJunctions';
@@ -54,6 +56,12 @@ export interface TownDef {
   city?: true;
   /** A city's buildings fitted to the plots no catalog building could take (`TownInfill`); their walls are only colliders. */
   infills?: Infill[];
+  /** A city's street map in the world (`city/CityMap`): every crossroads and street, the route's among them. */
+  map?: CityMap;
+  /** Barriers across the city streets the route passes, so the car keeps to the route. */
+  barriers?: Barrier[];
+  /** A mapped city's tram circuit (`city/TramLoop`); `trams` then holds its rail pieces. */
+  tramLoop?: TramLoopDef;
 }
 
 /** One arm of a junction: a street leaving the junction centre on `heading`. */
@@ -125,6 +133,19 @@ export interface ConeRow {
   halfLength: number;
 }
 
+/** A crowd barrier across a city street the route passes, `halfLength` either side of (x, z), the street running on along `yaw`. */
+export interface Barrier {
+  x: number;
+  z: number;
+  yaw: number;
+  halfLength: number;
+  /** A tram runs through: the barrier is drawn with a gap for its rails (its collider still spans the street). */
+  tramGap?: true;
+}
+
+/** A barrier collides as a box this thick. */
+export const BARRIER_HALF = 0.3;
+
 /** A tree or bush planted inside the village. */
 export interface Planting {
   kind: 'tree' | 'bush';
@@ -190,6 +211,9 @@ export function townObstacles(town: TownDef): BoxObstacle[] {
       yaw: Math.atan2(dx, dz),
     });
   }
+  // A barrier runs across its street: its length along the street's left.
+  for (const b of town.barriers ?? [])
+    out.push({ x: b.x, z: b.z, hx: BARRIER_HALF, hz: b.halfLength, yaw: b.yaw + Math.PI / 2 });
   return out;
 }
 
@@ -208,7 +232,14 @@ export function townBlocks(town: TownDef, x: number, z: number): boolean {
   return false;
 }
 
-function segmentDistance(x0: number, z0: number, x1: number, z1: number, x: number, z: number) {
+export function segmentDistance(
+  x0: number,
+  z0: number,
+  x1: number,
+  z1: number,
+  x: number,
+  z: number,
+) {
   const dx = x1 - x0;
   const dz = z1 - z0;
   const len2 = dx * dx + dz * dz;

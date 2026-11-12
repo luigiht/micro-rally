@@ -291,20 +291,39 @@ A Desert stage is a piste of packed sand through a dune sea, with oases.
 
 ## Urban
 
-An Urban stage is a big city from the start line to the finish: the whole
-route is one town (`UrbanPlan.ts` draws it, `TownGenerator.layoutTown` lays
-it with the city hooks in `UrbanGenerator.ts`, `UrbanField.ts` shapes the
-ground), so everything the villages have, junctions, blocked side streets
-with cones and boards, kerbed pavements, terraces and garden walls, is here
-too, at a city's scale.
+An Urban stage is a big city from the start line to the finish, laid out on
+a street map: a warped grid of blocks (`city/CityGrid.ts`), the route a walk
+along its streets (`city/CityRoute.ts`, laid by `UrbanPlan.ts` as ordinary
+town legs), every street round the blocks the route borders built as a real
+street from crossroads to crossroads (`city/CityNetwork.ts`), and a tram
+circuit round a few of its blocks (`city/TramLoop.ts`).
+`TownGenerator.layoutTown` lays it with the city hooks in
+`UrbanGenerator.ts`, and `UrbanField.ts` shapes the ground.
 
-- **Plan.** Blocks of 60–160 m end in corners: mostly right angles, some
-  skewed to 60°, 75°, 105° or 120°, some gentle kinks of 15°–35° (irregular
-  streets, which bend without a junction). Now and then a block ends in a
-  sweeping avenue arc of 40–90 m radius instead. Corners round `8 m + half
-width`, so a boulevard turns on a 15 m arc and a lane on an 11 m one. The
-  route keeps within 100° of the stage axis and is checked whole against the
-  self-approach rule (up to 40 draws, then a staircase of right angles).
+- **Map.** A lattice of crossroads 80–120 m apart across and along the
+  stage, bent by two gentle sweeps each way (no block quite square, streets
+  curving over the town). Each lattice line is one street class all its
+  length: an avenue (four lanes) every third column and every fourth row,
+  two or three lanes otherwise, now and then a narrow lane. A few side
+  streets are left out, so some blocks run double.
+- **Route.** A walk from the start crossroads that never goes back toward
+  the start and never passes a crossroads twice. It runs a block or three
+  straight and a block or two across, turning left and right. It passes
+  one to three roundabouts at crossroads it drives straight through or
+  turns left at, and finishes along an avenue with no turn in its last
+  520 m. Each street is a straight leg whose corner lands on its crossroads,
+  rounded at `8 m + half width` (a bend of under 20° rounds at 30 m). The
+  plan is checked against the self-approach rule; a straight run up the
+  start column is the fallback.
+- **Streets and closures.** Every street with both ends among the route's
+  crossroads and their neighbours is built, open at both ends, between two
+  junctions. Off the route every crossroads is a junction of side-street
+  arms, levelled to one height that all its streets meet. Where the route
+  passes a street, cones and a crowd barrier (steel panels and a red and
+  white board) close it a few metres in, past its zebra. The barrier's
+  collider spans the street, so the car stays on the route. Where a tram
+  runs through, the panels over its rails are left out but the collider
+  stays.
 - **Lanes.** A street's width is drawn afresh only after a junction corner
   (kinks, avenue curves and roundabouts carry it through): a narrow one-way lane (3.2 m half
   width, at most once a stage, square corners and short blocks), two lanes
@@ -326,39 +345,24 @@ width`, so a boulevard turns on a 15 m arc and a lane on an 11 m one. The
   wheels feel it; nothing planted on it) from 6 m after its start to 6 m before its end, broken
   round every crossroads and never before the first 70 m of road, where the
   start gantry stands.
-- **Junctions.** Every corner of 45° or more is a junction with two blocked
-  side streets; blocks of 110 m and over get a crossroads about every 75 m.
-  A city's side streets run 150 m from their junction (a village's run
-  32 m), lined with terraces, so the city reads on past the route instead of
-  ending at a wall a few metres in. One that would run into the route runs
-  on to the route's axis and ends in a T junction there, with a mouth, kerb
-  returns and an opening in the ribbon like any crossroads
-  (`UrbanStreets.ts`; none within 60 m of the start or finish); one that
-  would run into another side street runs to that street's carriageway
-  through a square mouth cut in its pavement, open-ended (no end building,
-  its deck taking the other road's level); two that face each other down
-  one line meet in the middle; only one that would reach a roundabout stops
-  short with a building across its end, never below 20 m. A wide street's cones stand beyond its junction's
-  own surface, and a row across a side street that carries a tram line leaves the tram bed
-  clear (no cone within 1.6 m of the line), so the tram passes between the cones. A side
-  street ends in a T on the route only where it meets it within 22° of square (an oblique T's
-  kerb returns stretch into aprons along the road); it opens onto another side street only
-  16 m or more past that street's junction, clear of its kerb returns and wedge walls, and
-  never within 8 m of the route's pavement; otherwise it stops short with its end building
-  and the route's terraces run on past it. The garden walls round the junction greens are closed: any
-  wall end that meets neither another wall nor a building is joined to the
-  nearest such end within 6 m (`TownWallGaps.ts`), the ring walls run
-  exactly up to each road's facade lines, and in a village every walled corner takes up
-  to two trees and five bushes. A city has no garden walls or greens: its terraces stand
-  wall to wall (no party gap; a gap is closed by stretching a neighbour up to 1.5× its front
-  or fitting a building 0.6–1.5× a catalog front, narrower fronts on tight curves), every
-  corner square takes a corner building, side-street rows start where their frontage leaves
-  the junction's paving, the apron edges and blocked street ends carry terraces, and any plot
-  no catalog building fits takes a building fitted to it (`TownInfill.ts`), one simple outline
-  each: round a curved or square corner a slice (its front along the pavement, its sides
-  running in to the apex where the ends' normals meet, cut off square past 14 m or at a
-  street), elsewhere the front offset 2–9 m straight back; 7–12 m tall, windows spaced along the
-  whole front and a cornice. Its wall stays only as that front's collider.
+- **Junctions and frontage.** Every crossroads the route passes is a
+  junction: the way in, the way on, and its other streets (closed). Route
+  junctions sit exactly on the traced corners, so lane drops and kerbs line
+  up. A city has no garden walls or greens. Its terraces stand wall to wall
+  (no party gap). A gap is closed by stretching a neighbour up to 1.5× its
+  front, or by fitting a building 0.6–1.5× a catalog front. Fronts are
+  narrower on tight curves, and none is placed where the pavement line turns
+  more than 25° along its front. Side-street rows start where their frontage
+  leaves the junction's paving, and blocked street ends carry terraces. Any
+  plot no catalog building fits takes a building fitted to it
+  (`TownInfill.ts`), one simple outline each:
+  - round a curved or square corner, a cake slice: its front along the
+    pavement, its sides running in to the apex where the ends' normals meet
+    (cut off square past 14 m or at a street), at the lower neighbour's
+    eaves height;
+  - elsewhere, the front offset 2–9 m straight back.
+    Windows are spaced along the whole front, with a cornice. Its wall stays
+    only as that front's collider.
 - **Roundabouts.** One a stage, two from the third difficulty loop, three
   from the fifth: the route deflects right through 28° on a 20 m arc onto a
   ring round an island of 8–11 m radius, circulates left through 56° (straight
@@ -367,9 +371,9 @@ width`, so a boulevard turns on a 15 m arc and a lane on an 11 m one. The
   the route does not drive is laid as short chord streets, so it is tarmac at
   deck level, and the hills are levelled to the island's height for 18 m
   beyond the ring, blending back over 40 m, so the ring lies flat. The
-  island stands a kerb above the ring (grass in a city, nothing planted, no building on it); blocked
-  exits leave the ring every quarter turn from the entry where they clear
-  the route's own arms, closed by cones like any side street. The ring's
+  island stands a kerb above the ring (grass in a city, nothing planted, no building on it); its
+  exits are the map's streets to the crossroads round it, each closed by
+  cones and a barrier like any street the route passes. The ring's
   tarmac is one full annulus under the route and the exits, and its outer
   kerb, pavement and edge line are broken wherever the route's deflections
   and the exits cross the band (found by walking the route), as the ribbon's
@@ -384,27 +388,16 @@ width`, so a boulevard turns on a 15 m arc and a lane on an 11 m one. The
   edge at the hand-off. Garden walls run behind the ring's outer pavement
   in 3 m chords, broken for every road, and down each exit's facades to its
   terraces, with a bush in every corner, as a junction's wedges have.
-- **Trams.** Up to five lines cross the route square on at crossroads, from
-  the end of one side street through the junction to the end of the other;
-  none within 45 m of a roundabout, none along the route itself. A
-  line is two rails a standard gauge (1.435 m) apart set in a 2.6 m strip of
-  sett paving that rides over whatever it crosses, under a single overhead
-  contact wire 5.15 m over the rails, following them up and down and
-  stopping 2 m short of the line's ends; no poles. The rails
-  stand 2 cm proud and the wheels feel them as a double ridge (felt 15 cm
-  wide so a 120 Hz step cannot miss one); grip is tarmac's throughout.
-  Now and then a tram runs the line (`TramService.ts`, `TramFleet.ts`): a
-  24 m low-floor tram in three sections joined by ribbed bellows, white
-  over a blue lower band, framed windows and double doors, slatted roof
-  pods and a raised single-arm pantograph whose strips ride the contact
-  wire, and cabs with chamfered corners, a raked screen,
-  destination band, wiper, mirrors, bumper and lights, at 29 km/h every 55–95 s per line on a timetable
-  from the stage seed, alternating direction, riding the rails with the
-  street's slope and fading in and out at the line's ends. It is solid:
-  the session poses the same timetable's hitbox (24 × 2.65 m, once the tram
-  has half faded in) from the run's clock every physics step, so the car is
-  stopped by a tram exactly where it sees one, and a tram rolling into a
-  standing car shoves it along.
+- **Trams.** One closed loop a stage, round a rectangle of one to three by
+  two to four blocks (0.8–2.6 km, about 1–1.4 km in practice), its corners
+  eased round 18 m arcs. It is chosen to share at least one street with the
+  route and to be crossed by it straight over at a crossroads; failing
+  that, to share and join it, or to be crossed twice. Its rails, bed and
+  overhead wire run unbroken round it; the wheels feel a 2 cm ridge on each
+  rail. Trams, one per 420 m of loop and at least two, circle it at
+  8 m/s, evenly spaced. Each rides two bogies 8 m either side of its centre,
+  so it cuts the chord round the curves. No median grows where the rails
+  run, and no cones stand on them.
 - **Buildings.** Four city styles join the village ones, all in the game's
   flat-shaded box style with cornices, lintels and sills on every casement
   and stone details in fixed colours, and each in four façade renders

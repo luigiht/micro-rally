@@ -9,6 +9,16 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Changed
 
+- **Cities are mapped towns with a tram loop.** A city stage is now a real
+  street map: a gently warped grid of blocks, every street round the
+  route's blocks built from crossroads to crossroads, and the route driving
+  through it, turning left and right at the junctions and through its
+  roundabouts. The streets it passes are closed by cones and crowd
+  barriers, so the car stays on course while the town runs on beyond. A
+  tram circuit loops round a few blocks, its rails rounding the corners,
+  with trams circling it all the time; the route runs alongside it and
+  crosses it. Best times on city stages are reset, since their roads
+  changed. [235]
 - **Cities built wall to wall.** City buildings now stand side by side with
   no gaps, hedges or garden walls between them. A building stretches or a
   narrower one fits to close a gap, narrower fronts follow tight curves,
