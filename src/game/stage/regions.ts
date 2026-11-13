@@ -327,10 +327,11 @@ const ALPINE: StageTypeDef = {
   twistiness: 1.4,
   baseLength: 1500,
   // The Arctic's crowd too: groups in winter clothes on the verges, the start and the checkpoints.
+  // A dense winter wood (`AlpineKits`): tiered snow pines, a few bare broadleaves, snowy bushes.
   scenery: {
-    trees: 78,
-    broadleaf: 6,
-    bushes: 6,
+    trees: 112,
+    broadleaf: 7,
+    bushes: 10,
     rocks: 14,
     houses: 0.7,
     spectators: 2.2,
@@ -555,6 +556,8 @@ const ARCTIC: StageTypeDef = {
     amplitude: 9,
     frequency: 1 / 320,
     banks: { height: 0.9, width: 3.2 },
+    // The road a little up on its bed, banks and all: half the Autumnal's lift.
+    embankment: { height: 0.3, width: 2.4 },
     crests: { every: 190, height: 1.1, length: 36 },
   },
   // Studded tyres on packed snow: far more grip than the Alpine's dusting gives, and quicker, deeper steering.

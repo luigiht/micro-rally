@@ -49,7 +49,8 @@ const INK: Readonly<Record<Surface, { color: string; opacity: number }>> = {
   gravel: { color: '#8b6a4a', opacity: 0.5 },
   grass: { color: '#46602a', opacity: 0.6 },
   mud: { color: '#2f2012', opacity: 0.65 },
-  snow: { color: '#aebccb', opacity: 0.75 },
+  // Packed snow: the lit snow's own neutral white, a shade down, so a mark reads as pressed snow.
+  snow: { color: '#c4c6c3', opacity: 0.55 },
   sand: { color: '#a3835a', opacity: 0.5 },
   dune: { color: '#c9ad78', opacity: 0.55 },
 };

@@ -39,7 +39,14 @@ stage of a dusk-running type, as the calendar does (`StageSlot`).
   flat; a level plateau under each town. Chunks of 64 m are meshed in a Web
   Worker from the seed alone and streamed around the car.
 - **Scenery.** Instanced, chunked and collidable: two tree species (pines and
-  broadleaves, frosted and bare in the Alps), bushes, rocks and farmhouses on
+  broadleaves; in the Alps their own winter woods, `render/scenery/kits/AlpineKits.ts`:
+  each pine one of nine tiered silhouettes, broad, tall, leaning, young,
+  snow-laden, sparse, columnar, lopsided or squat, each in its own green, every
+  tier a whorl of drooping branch tips under snow whose edge zigzags between them,
+  a snowy leader on top and a stout trunk, and every tree drawn a little wider or
+  narrower, taller or shorter, tipped off upright and lighter or darker by its spot; each broadleaf a
+  bare branching tree; every bush under snow; all about the stock pine's 5 m),
+  bushes, rocks and farmhouses on
   level pads well back from the road. Trees keep 3 m clear of the carriageway
   and their canopies apart; houses keep 14 m clear and never stand on steep
   ground.
@@ -85,7 +92,7 @@ input.
 | Circuit    | track   | parkland racing, kerbs and gravel traps                                                                                                                                                                                              |
 | Autumnal   | mud     | tall mixed autumn woods, fallen leaves, crowds, ruts                                                                                                                                                                                 |
 | Pinewood   | gravel  | faint wheel traces and loose stones on the gravel, a dense pine wood, curved trunks, tall bare-trunked pines and saplings on the verges, tall grass on the verges and the hills, no round bushes, the wood running into the distance |
-| Alpine     | snow    | frosted pines and sharper mountain bends                                                                                                                                                                                             |
+| Alpine     | snow    | a dense winter wood (tiered snow pines, a few bare trees, snowy bushes) and sharper mountain bends                                                                                                                                   |
 | Forest     | tarmac  | green woodland on asphalt                                                                                                                                                                                                            |
 | Urban      | tarmac  | a city from start to finish                                                                                                                                                                                                          |
 | Coastal    | tarmac  | limestone cliffs, beach and sea                                                                                                                                                                                                      |
@@ -129,7 +136,11 @@ nearly flat country (relief 9 m, long waves) with long flowing bends.
   verges, from 0.6 m beyond the carriageway out over 3.2 m
   (`terrain.banks`): the terrain mesh heaps it and the wheels climb it, so
   leaving the road means riding up the bank. None through a village, where
-  the pavements run, and none beside a side street.
+  the pavements run, and none beside a side street. The road stands a
+  little up on its bed (`terrain.embankment`, 0.3 m over 2.4 m, half the
+  Autumnal's), so the ground falls away past the edges and the banks sit
+  on it, their crests 0.55 m over the carriageway and the ground beyond
+  0.3 m below it.
 - **Forest wall.** Tall spruces (`spruce`: a thin trunk the whole height
   carrying eight or nine irregular whorls of foliage from just above the snow, each an octagonal
   truncated cone of its own width and depth set a little off the axis, with
@@ -598,18 +609,20 @@ the cameras.
 
 ## Surfaces
 
-| Surface | Where                                                             | Feel                                                                                         |
-| ------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| track   | every circuit                                                     | race asphalt: a quarter more grip than tarmac and a planted rear, so the car slides far less |
-| tarmac  | some Forest and Alpine stages, every Coast and Urban stage, towns | most grip, highest par speed                                                                 |
-| gravel  | most Forest stages                                                | the reference surface                                                                        |
-| mud     | some Forest stages                                                | slow and slippery                                                                            |
-| snow    | most Alpine stages, and off road there                            | least grip, dusted asphalt look                                                              |
-| sand    | every Desert stage                                                | packed piste, a little looser than gravel                                                    |
-| dune    | off the road in the Desert                                        | soft sand, the car wallows                                                                   |
-| grass   | off the road everywhere else                                      | heavy drag                                                                                   |
+| Surface | Where                                                             | Feel                                                                                                                   |
+| ------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| track   | every circuit                                                     | race asphalt: a quarter more grip than tarmac and a planted rear, so the car slides far less                           |
+| tarmac  | some Forest and Alpine stages, every Coast and Urban stage, towns | most grip, highest par speed                                                                                           |
+| gravel  | most Forest stages                                                | the reference surface                                                                                                  |
+| mud     | some Forest stages                                                | slow and slippery                                                                                                      |
+| snow    | most Alpine stages, and off road there                            | least grip, dusted asphalt look (soft lane bands: swept wheel tracks, dust between and along the edges, all wandering) |
+| sand    | every Desert stage                                                | packed piste, a little looser than gravel                                                                              |
+| dune    | off the road in the Desert                                        | soft sand, the car wallows                                                                                             |
+| grass   | off the road everywhere else                                      | heavy drag                                                                                                             |
 
-Tyre marks are drawn per surface into a single fading ring-buffer mesh.
+Tyre marks are drawn per surface into a single fading ring-buffer mesh: rubber black on
+tarmac, earth tones off it, and on snow a neutral white a shade below the lit snow, so a
+mark reads as packed snow rather than a blue line.
 
 ## Not yet built
 

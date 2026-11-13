@@ -9,6 +9,20 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Changed
 
+- **Winter woods in the Alps.** Alpine stages are now planted thick with
+  their own winter pines, each tier a whorl of drooping branches under
+  snow, in nine shapes from slim spires to squat snow-laden ones, each tree
+  its own size, green and lean, with a few bare trees and snowy bushes
+  among them, all at the size of the old pines. [244]
+- **Arctic road on a low bed.** The Arctic road now sits a little above the
+  ground, with its snow banks on the falling ground either side. [244]
+
+- **Wintry Alpine roads.** The Alpine passes' tarmac now shows soft,
+  uneven bands of snow dust: wheel tracks swept darker, a little snow
+  between them and along the edges, all wandering as real tracks do.
+  Braking marks on snow are now the colour of packed snow instead of a
+  blue-grey line. [243]
+
 - **Livelier city streets.** Street trees now come in six species, from
   round limes and slim columns to the odd pale birch or dark holm oak, all
   in shades of green, each street mostly planted with one and every tree a

@@ -21,10 +21,13 @@ import { routeOpenings, type Openings } from '@/game/stage/TownKerbs';
 import {
   ASPHALT_JITTER,
   cellTone,
+  dustAt,
+  dustBand,
   laneBands,
   MAX_BANDS,
   SLAB_JITTER,
   SLAB_ROWS,
+  TRACK_TONE,
   WHEEL_TONE,
 } from './SurfaceDetail';
 import { themeColor, themedMaterial } from '../theme/themeColor';
@@ -281,7 +284,8 @@ interface Strip {
   b: (hw: number, k: number) => number;
   lift: number;
   color: Color;
-  cover?: (i: number) => number;
+  /** How much snow dust lies over the strip at a station (its sample index and half width). */
+  cover?: (i: number, hw: number) => number;
   shaded: boolean;
   town?: { color: Color; lift: number };
   /** Which verge this strip lies on (+1 left, -1 right); such strips stop across junction openings. */
@@ -574,6 +578,25 @@ export class RoadBuilder {
         strips.splice(0, 1, ...left, ...tracks, ...right);
       } else strips.splice(0, 1, ...tracks);
     }
+    // A dusted mountain road in lane bands: the wheel tracks swept dark, snow dust between them
+    // and along the edges, thickening through the patches; every piece mottled (`SurfaceDetail`).
+    if (snowy && !drifts && !town?.city) {
+      const carriageway = strips.indexOf(roadBase);
+      const patch = roadBase.cover;
+      if (carriageway >= 0)
+        strips.splice(
+          carriageway,
+          1,
+          ...Array.from({ length: MAX_BANDS }, (_, i): Strip => ({
+            ...roadBase,
+            a: (hw, k) => dustBand(hw, i, k)?.a ?? hw,
+            b: (hw, k) => dustBand(hw, i, k)?.b ?? hw,
+            cover: (k, hw) => dustAt(hw, i, k, patch ? patch(k, hw) : 0),
+            detail: (hw, k) =>
+              (laneBands(hw)[i]?.wheel ? TRACK_TONE : 1) * cellTone(k, i, 307, ASPHALT_JITTER),
+          })),
+        );
+    }
     // A city's carriageway in lane bands, each lane's wheel paths worn darker and the asphalt
     // mottled piece by piece; its pavements in rows of slabs (`SurfaceDetail`).
     if (stage.town?.city) {
@@ -627,7 +650,7 @@ export class RoadBuilder {
       const tone = typeof strip.tone === 'function' ? strip.tone(st.k) : (strip.tone ?? 1);
       const shade = (strip.shaded ? st.shade : 1) * (1 + (tone - 1) * rutBlend);
       const c = strip.cover
-        ? tint.copy(strip.color).lerp(dust, strip.cover(st.k) * (1 - t))
+        ? tint.copy(strip.color).lerp(dust, strip.cover(st.k, st.hw) * (1 - t))
         : tint.copy(strip.color);
       if (t > 0) c.lerp(strip.town!.color, t);
       pos.push(st.x + st.lx * e, y, st.z + st.lz * e);

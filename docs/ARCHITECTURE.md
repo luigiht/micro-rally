@@ -86,8 +86,14 @@ flowchart LR
 - Arctic: no modules of its own. The stage type's `terrain.banks` heaps the
   snow ridges in `TerrainField.bankLift` (both the mesh sample and the
   wheels' deck), `SceneryDensity.spruces` feeds the `spruce` prop kind
-  through the ordinary scatter, and `RallyKits` dresses it in three parts
-  (trunk, tinted foliage, snow caps).
+  through the ordinary scatter, and `kits/SpruceKits.ts` dresses it in
+  three parts (trunk, tinted foliage, snow caps) from `SpruceGeometry.ts`.
+- Alpine: its woods are `render/scenery/SnowPineGeometry.ts` (tiered snow
+  pines, each tier a whorl of branch tips) and `AlpineTreeGeometry.ts` (a
+  bare tree, a snowy bush), dressed by
+  `kits/AlpineKits.ts`, which `rallyKits` takes for the stock pine,
+  broadleaf, bush and shared trunk when the stage is Alpine
+  (`sceneryKitsFor`); each prop's shape is picked by its spot.
   Spectators are placed by `game/stage/Spectators.ts` (crowds at the start,
   gates, crests and finish, groups between) and drawn by
   `render/scenery/kits/SpectatorKits.ts` as two kits per pose from

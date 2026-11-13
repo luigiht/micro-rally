@@ -4733,3 +4733,78 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      - Tests: every catalog building's door sill meets the pavement, or the
        foundation is at its reach; pavement furniture keeps clear of the
        widened doors.
+
+243. **2026-11-13 — Alpine dusted tarmac in soft bands; snow-coloured tyre marks.**
+     The user asked for more texture on the Alpine road, then for it to be
+     subtler and less ruled, and for the braking marks to match the snow.
+     - **Road (`RoadBuilder`, `SurfaceDetail.dustBand`/`dustAt`):** where
+       the surface is `snow` and the region heaps no banks (the Alpine
+       passes), the carriageway is cut into the city's lane bands
+       (`laneBands`) and each band takes its own share of snow dust: the
+       wheel tracks swept almost clear and 5 % darker (wet), 5 % dust
+       between them, 8 % over the crown, 12 % along the edges; a snow patch
+       adds 0.8–1.1× its cover per band (the tracks least), capped at 65 %.
+       Nothing runs ruled: each lane's tracks wander ±0.25 m together over
+       ~24 m, every band edge strays ±0.16 m on its own over ~3 m, each
+       band's dust drifts ±6 %, and every piece is mottled ±3.5 %. A first
+       pass (12–26 % dust, 0.9 tracks, edges fixed) read as stripes; the
+       user found it too strong and too straight. The band edges are the
+       lateral functions of the strips, so two neighbouring bands share
+       their wandering edge exactly. Arctic roads (banked) and every other
+       surface are unchanged; in a village the dust fades out with the
+       snow patches, as before.
+     - **Tyre marks (`SkidMarks`):** the snow ink was a blue-grey
+       (`#aebccb` at 75 %), unlit, which showed as a blue line on lit snow.
+       It is now a neutral `#c4c6c3` at 55 %, a shade below lit snow, so a
+       mark reads as packed snow; on the dusted tarmac it leaves a pale
+       smear. The Arctic shares it.
+
+244. **2026-11-13 — The Arctic road on a low bed; the Alpine's own winter woods.**
+     - **Arctic embankment:** the user asked for the Arctic road to sit a
+       little up, like the Autumnal's but less. `terrain.embankment` (0.3 m
+       over 2.4 m, the Autumnal's 0.55 m over 2.4 m) now applies with the
+       snow banks: the ground falls from 0.3 m past the edge and the banks
+       ride on it, crests 0.55 m over the carriageway instead of 0.85 m,
+       the ground beyond 0.3 m below the road. The verge strips drop with
+       it as on the Autumnal; the banks still clear the existing tests'
+       bars (crest over 0.54 m).
+     - **Alpine trees:** a first pass planted the Arctic's tall spruces in
+       the Alps and snowed the stock pine; the user asked for trees of the
+       Alps' own, smaller and nearer the old pines, after a low-poly winter
+       tree set they sent (a reference only), and then for the pines to be
+       less like cones. At the stock pine's size:
+       - `SnowPineGeometry`: tiered pines. Each tier is a whorl of branch
+         clumps: its rim a star of six to eight branch tips (each ±12 % in
+         reach and drooping under the snow) with notches pulled in to 64 %
+         and up between them, closed underneath by a skirt to the trunk.
+         Snow covers the whorl's top out to 74 % of the way to the tips,
+         12 % less into the notches, so its edge zigzags; it stands 5 % out
+         and 3 cm up from the green and turns down over it in a lip, so no
+         two faces share a plane. The top tier carries a thin snowy leader;
+         the trunk flares at its foot. A first pass of plain heptagonal
+         cones, green round the lower 27 % and white above, read as cones;
+         the user then found the pines too alike, so there are nine
+         silhouettes, each laid out from a `PineSpec` (tier count, foot and
+         top, reach at the foot and the top and the taper's fullness, tier
+         overlap, snow reach, droop, lean, lopsided sway, trunk): broad,
+         tall, leaning, young, snow-laden, sparse, columnar, lopsided and
+         squat, 3.4–6.9 m. Each is one mesh in vertex colours (its own
+         green between the region's two pine greens and brightness, the
+         lower tiers 10 % darker; white snow; the trunk), so nine shapes
+         take nine draws a chunk, fewer than five shapes in three tinted
+         parts did. Each pine is also drawn 0.8–1.2× as wide and
+         0.85–1.2× as tall, tipped up to 4° off upright, 0.9–1.06× as bright
+         and up to 3.5 % warmer or cooler, all by its spot (`AlpineKits`).
+       - `AlpineTreeGeometry`: a bare tree with branches spiralling up by
+         the golden angle, each with a twig, in weathered grey-brown; a bush
+         under a cap of snow. Snow-capped round broadleaves (one crown, or
+         one with a side crown) were tried and dropped: the user found them
+         off and unrealistic.
+         `AlpineKits` swaps these in for the Alpine's stock pine, broadleaf,
+         bush and shared trunk, each pine's shape by its spot and its green
+         the region's two-tone tint a shade either way. Density: pines 78 →
+         112, broadleaves (all bare) 6 → 7, bushes 6 → 10 per 100 m; no
+         spruces. Kits: 18 instead of 4, still one instanced mesh per kit per
+         chunk; a pine is about 90 triangles a tier.
+     - **Spruce code** moved from `RallyKits` (575 lines) into
+       `SpruceGeometry.ts` and `kits/SpruceKits.ts`, unchanged.
