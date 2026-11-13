@@ -29,6 +29,7 @@ import {
   PLATEAU_BLEND,
   plateauDistance,
   townFade,
+  type Junction,
   type TownDef,
 } from './Town';
 import { junctionKerbs, type JunctionSurface } from './TownKerbs';
@@ -132,8 +133,14 @@ interface StubDeck {
   y1: number;
   /** An open city street: its far end takes the deck of the road it meets. */
   open: boolean;
-  /** An open street ending in a T on the route: within this fraction of its length from its end the deck is the route's. */
+  /** The junction zone at the start, as a fraction of the length. */
+  zone: number;
+  /** A street starting at a mapped city's junction: the junction's level, held across the street through the zone. */
+  startLevel: number | null;
+  /** An open street ending in a T on the route, or at a crossroads off it: within this fraction of its length from its end the deck is level with the junction. */
   farZone: number;
+  /** The junction's level through the far zone; null where the far zone is the route's deck. */
+  endLevel: number | null;
   /** The last `stubHit` query that weighed this street (it is filed in every cell it crosses). */
   visit: number;
 }
@@ -143,9 +150,14 @@ function stubDeckAt(s: StubDeck, x: number, z: number, routeDeck: number | null)
   const len2 = s.len * s.len;
   let t = len2 > 0 ? ((x - s.x0) * s.dx + (z - s.z0) * s.dz) / len2 : 0;
   t = t < 0 ? 0 : t > 1 ? 1 : t;
-  const zone = (s.hw + JUNCTION_REACH) / s.len;
+  const zone = s.zone;
+  // A crossroads off the route is one level for every street meeting there, so its paving lies flat.
+  if (t <= zone && s.startLevel !== null) return s.startLevel;
   if (t <= zone && routeDeck !== null) return routeDeck;
-  if (s.farZone > 0 && t >= 1 - s.farZone && routeDeck !== null) return routeDeck;
+  if (s.farZone > 0 && t >= 1 - s.farZone) {
+    if (s.endLevel !== null) return s.endLevel;
+    if (routeDeck !== null) return routeDeck;
+  }
   const lat = ((x - s.x0) * s.dz - (z - s.z0) * s.dx) / s.len;
   const start = profileAt(s, lat);
   const span = Math.max(1e-6, 1 - s.farZone - zone);
@@ -447,13 +459,26 @@ export class TerrainField implements TerrainQuery {
   /** Side streets start at the route's height and follow the ground outward, no steeper than the road. */
   private buildStubs(town: TownDef): StubDeck[] {
     const out: StubDeck[] = [];
-    // A mapped city's crossroads off the route: each is levelled to one height (see `UrbanField`),
-    // and every street starting or ending there takes that height, so they meet without a step.
-    const offRoute = town.map
-      ? town.junctions.filter((j) => j.arms.every((a) => a.role === 'blocked'))
-      : [];
-    const crossroadsAt = (x: number, z: number) =>
-      offRoute.find((j) => Math.hypot(j.x - x, j.z - z) < 0.5);
+    // A mapped city's junctions each lie at one level: off the route, the crossroads' ground
+    // (see `UrbanField`); on it, the route's deck there, which `UrbanField.levelProfile` holds
+    // level through the junction. Every street starting or ending at one holds that level across
+    // its whole width through the junction's paving, then ramps along its length only, so every
+    // street is flat across however it climbs and meets the next without a step or a twist.
+    const levels = new Map<Junction, number>();
+    if (town.map)
+      for (const j of town.junctions) {
+        const onRoute = j.arms.some((a) => a.role !== 'blocked');
+        if (!onRoute) levels.set(j, this.groundHeight(j.x, j.z));
+        else if (this.stage.path.nearest(j.x, j.z, 60, this.hit))
+          levels.set(j, this.roadHeightAt(this.hit.along));
+      }
+    const junctionAt = (x: number, z: number) => {
+      for (const j of levels.keys()) if (Math.hypot(j.x - x, j.z - z) < 0.5) return j;
+      return undefined;
+    };
+    // How far a junction's level reaches along each street meeting there: past its widest street's paving.
+    const levelReach = (j: Junction) =>
+      Math.max(...j.arms.map((a) => a.halfWidth)) + JUNCTION_REACH;
     for (const s of town.streets) {
       if (s.route) continue;
       const dx = s.x1 - s.x0;
@@ -472,12 +497,11 @@ export class TerrainField implements TerrainQuery {
           ? this.roadHeightAt(this.hit.along)
           : this.groundHeight(x, z);
       const profile = new Float64Array(PROFILE_SAMPLES);
-      const startsAt = crossroadsAt(s.x0, s.z0);
+      const startsAt = junctionAt(s.x0, s.z0);
+      const startLevel = startsAt ? levels.get(startsAt)! : null;
       for (let i = 0; i < PROFILE_SAMPLES; i++) {
         const lat = -s.halfWidth + (2 * s.halfWidth * i) / (PROFILE_SAMPLES - 1);
-        profile[i] = startsAt
-          ? this.groundHeight(startsAt.x, startsAt.z)
-          : routeAt(ex + uz * lat, ez - ux * lat);
+        profile[i] = startLevel ?? routeAt(ex + uz * lat, ez - ux * lat);
       }
       const yZone = profile[(PROFILE_SAMPLES - 1) / 2]!;
       const end = this.groundHeight(s.x1, s.z1);
@@ -494,7 +518,10 @@ export class TerrainField implements TerrainQuery {
         yZone,
         y1: yZone + rise,
         open: s.open === true,
+        zone: startsAt ? Math.min(0.45, levelReach(startsAt) / len) : zoneEnd / len,
+        startLevel,
         farZone: 0,
+        endLevel: null,
         visit: 0,
       });
     }
@@ -505,14 +532,19 @@ export class TerrainField implements TerrainQuery {
     const joined = out.map((s, i) => {
       if (!s.open) return s.y1;
       const e = ends[i]!;
-      const endsAt = crossroadsAt(e.x, e.z);
-      if (endsAt) return this.groundHeight(endsAt.x, endsAt.z);
+      const endsAt = junctionAt(e.x, e.z);
+      if (endsAt) {
+        const level = levels.get(endsAt)!;
+        s.farZone = Math.min(0.45, levelReach(endsAt) / s.len);
+        s.endLevel = level;
+        return level;
+      }
       if (this.stage.path.nearest(e.x, e.z, this.corridor, this.hit)) {
         if (this.hit.distance < 1) {
-          // On the route's axis: a T junction. The route's deck holds through the junction zone
+          // On the route's axis, a T junction: the route's deck holds through the junction zone
           // at this end as at the other, and the ramp between the zones ends at the route's deck
           // where the far zone begins.
-          const hw = halfWidthAt(this.stage, this.hit.along);
+          const hw = Math.max(s.hw, halfWidthAt(this.stage, this.hit.along));
           const zoneLen = Math.min(s.len / 2, hw + JUNCTION_REACH);
           s.farZone = zoneLen / s.len;
           const zx = e.x - (s.dx / s.len) * zoneLen;

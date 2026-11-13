@@ -16,6 +16,15 @@ import {
 } from '@/game/stage/Roundabout';
 import { stubCut } from '@/game/stage/TownJunctions';
 import { LINE_ABOVE_DECK } from '../road/RoadBuilder';
+import {
+  ASPHALT_JITTER,
+  cellTone,
+  laneBands,
+  SLAB_JITTER,
+  SLAB_LENGTH,
+  SLAB_ROWS,
+  WHEEL_TONE,
+} from '../road/SurfaceDetail';
 import { themeColor } from '../theme/themeColor';
 import type { RoadTheme } from '../theme/WorldTheme';
 
@@ -167,8 +176,8 @@ export class TownStreetBuilder {
     const pavement = new Color(road.pavement);
     const line = themeColor(road.line);
     const kerb = themeColor(road.kerb);
-    for (const st of town.streets) {
-      if (st.route) continue;
+    town.streets.forEach((st, n) => {
+      if (st.route) return;
       const dx = st.x1 - st.x0;
       const dz = st.z1 - st.z0;
       const h = Math.atan2(dx, dz);
@@ -177,11 +186,48 @@ export class TownStreetBuilder {
       const cut = cutOf(town, st, h, halfWidth);
       const end = endOf(town, st, h, len, halfWidth);
       // A roundabout's ring chords are shorter than any cut: the ring is drawn by its own builder.
-      if (end <= cut) continue;
+      if (end <= cut) return;
       const kerbCut = Math.min(end, kerbCutOf(town, st, cut));
-      const strip = (a0: number, a1: number, l0: number, l1: number, lift: number, c: Color) =>
-        this.strip(st.x0, st.z0, h, a0, a1, l0, l1, lift, c);
-      strip(cut, end, -hw, hw, 0, tarmac);
+      const strip = (
+        a0: number,
+        a1: number,
+        l0: number,
+        l1: number,
+        lift: number,
+        c: Color,
+        tone?: (piece: number) => number,
+        step?: number,
+      ) => this.strip(st.x0, st.z0, h, a0, a1, l0, l1, lift, c, tone, step);
+      // A city's carriageway in lane bands with darker wheel paths and mottled asphalt, its
+      // pavements in rows of slabs (`SurfaceDetail`); a village's plain.
+      if (town.city)
+        laneBands(hw).forEach((band, i) =>
+          strip(
+            cut,
+            end,
+            band.a,
+            band.b,
+            0,
+            tarmac,
+            (piece) => (band.wheel ? WHEEL_TONE : 1) * cellTone(piece, i, n, ASPHALT_JITTER),
+          ),
+        );
+      else strip(cut, end, -hw, hw, 0, tarmac);
+      const pavementStrip = (p0: number, p1: number, lo: number, side: 1 | -1) => {
+        if (!town.city) return strip(p0, p1, lo, lo + PAVEMENT_WIDTH, KERB_LIFT, pavement);
+        const row = PAVEMENT_WIDTH / SLAB_ROWS;
+        for (let r = 0; r < SLAB_ROWS; r++)
+          strip(
+            p0,
+            p1,
+            lo + row * r,
+            lo + row * (r + 1),
+            KERB_LIFT,
+            pavement,
+            (piece) => cellTone(piece, r, n * 2 + (side > 0 ? 1 : 0), SLAB_JITTER),
+            SLAB_LENGTH,
+          );
+      };
       const mouths = mouthsOf(town, st, h, len);
       // An open street's own pavements stop at the pavement of the side street it meets; one ending
       // in a T on the route stops at the junction's cut like any arm.
@@ -190,7 +236,7 @@ export class TownStreetBuilder {
         const lo = Math.min(side * hw, side * (hw + PAVEMENT_WIDTH));
         const inner = Math.min(side * (hw - LINE_INSET), side * (hw - LINE_INSET - LINE_WIDTH));
         for (const [p0, p1] of openPieces(kerbCut, sideEnd, mouths, side)) {
-          strip(p0, p1, lo, lo + PAVEMENT_WIDTH, KERB_LIFT, pavement);
+          pavementStrip(p0, p1, lo, side);
           strip(p0, p1, inner, inner + LINE_WIDTH, LINE_ABOVE_DECK, line);
           this.face(st.x0, st.z0, h, p0, p1, side * hw, side, kerb);
         }
@@ -209,7 +255,7 @@ export class TownStreetBuilder {
           KERB_LIFT,
           pavement,
         );
-    }
+    });
     const raw = new BufferGeometry();
     raw.setAttribute('position', new BufferAttribute(Float32Array.from(this.pos), 3));
     raw.setAttribute('color', new BufferAttribute(Float32Array.from(this.col), 3));
@@ -266,9 +312,12 @@ export class TownStreetBuilder {
     l1: number,
     lift: number,
     c: Color,
+    tone?: (piece: number) => number,
+    step = STRIP_STEP,
   ): void {
-    for (let a = a0; a < a1 - 1e-6; a += STRIP_STEP) {
-      const b = Math.min(a1, a + STRIP_STEP);
+    const shaded = new Color();
+    for (let a = a0; a < a1 - 1e-6; a += step) {
+      const b = Math.min(a1, a + step);
       this.quad(
         [
           this.corner(cx, cz, heading, a, l0, lift),
@@ -276,7 +325,7 @@ export class TownStreetBuilder {
           this.corner(cx, cz, heading, b, l1, lift),
           this.corner(cx, cz, heading, a, l1, lift),
         ],
-        c,
+        tone ? shaded.copy(c).multiplyScalar(tone(Math.floor(a / step))) : c,
       );
     }
   }

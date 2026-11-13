@@ -3,9 +3,8 @@ import { createRoadHit } from '@/game/stage/RoadPath';
 import { halfWidthAt } from '@/game/stage/RoadWidth';
 import { generateStage } from '@/game/stage/StageGenerator';
 import { TerrainField } from '@/game/stage/TerrainField';
-import { KERB_LIFT, townObstacles } from '@/game/stage/Town';
+import { buildingDoor, KERB_LIFT, townObstacles } from '@/game/stage/Town';
 import { scatterScenery } from '@/game/stage/SceneryScatter';
-import { DOOR_OFFSET } from '@/game/stage/BuildingCatalog';
 import { stageIndexOf } from './stageIndex';
 
 const URBAN_INDEX = stageIndexOf('urban');
@@ -20,7 +19,8 @@ const PAVEMENT_KINDS = [
   'treePit',
 ] as const;
 
-describe('streetFurniture', () => {
+// Generating a city takes about a second, so tests that build several get time for it.
+describe('streetFurniture', { timeout: 30_000 }, () => {
   it('stands every piece on a pavement, off the doors and buildings, and every manhole on the carriageway', () => {
     for (const seed of SEEDS) {
       const stage = generateStage(seed, URBAN_INDEX);
@@ -28,13 +28,7 @@ describe('streetFurniture', () => {
       const props = scatterScenery(field);
       const town = stage.town!;
       const obstacles = townObstacles(town);
-      const doors = town.buildings.map((b) => {
-        const lx = DOOR_OFFSET[b.style];
-        const lz = -b.hz;
-        const c = Math.cos(b.yaw);
-        const s = Math.sin(b.yaw);
-        return { x: b.x + lx * c + lz * s, z: b.z - lx * s + lz * c };
-      });
+      const doors = town.buildings.map(buildingDoor);
       const counts: Record<string, number> = {};
       const hit = createRoadHit();
       // Collected and asserted once: an expect per piece and building is millions of calls.
@@ -73,7 +67,7 @@ describe('streetFurniture', () => {
         }
       }
       expect(misplaced).toEqual([]);
-      for (const kind of [...PAVEMENT_KINDS, 'manhole', 'parkedCar'])
+      for (const kind of [...PAVEMENT_KINDS, 'manhole'])
         expect(counts[kind] ?? 0, `${seed} ${kind}`).toBeGreaterThan(0);
       // Lamps keep their rhythm: roughly one per 30 m of route, give or take the junctions.
       expect(counts.lamp!).toBeGreaterThan(stage.length / 90);

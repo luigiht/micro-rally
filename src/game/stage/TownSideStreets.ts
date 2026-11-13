@@ -263,18 +263,22 @@ export function stubEnd(site: Site, s: StubSite): void {
  * Where a side street's frontage first stands clear past its junction's
  * paving: walking out from the junction's centre, the first clear point
  * after one that is not (a ring's centre is its island, clear until the
- * ring itself). `ROW_SETBACK` if it never crosses any paving.
+ * ring itself), and never past `ROW_SETBACK`: each building checks its own
+ * clearance as the row is laid, while a late start leaves the frontage bare.
+ * `ROW_SETBACK` too if it crosses no paving within `ROW_START_REACH`.
  */
 function rowStart(site: Site, facade: Facade): number {
   let crossed = false;
-  for (let s = 0; s < facade.length; s += ROW_SCAN) {
+  for (let s = 0; s < Math.min(facade.length, ROW_START_REACH); s += ROW_SCAN) {
     const p = facade.point(s);
     if (!site.clear(p.x, p.z, 0)) crossed = true;
-    else if (crossed) return s;
+    else if (crossed) return Math.min(s, ROW_SETBACK);
   }
   return ROW_SETBACK;
 }
 const ROW_SCAN = 0.5;
+/** A junction's paving reaches no further along a street's frontage than this. */
+const ROW_START_REACH = 40;
 
 /**
  * A city terrace along the straight line from `a` to `b`, its buildings

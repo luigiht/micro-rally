@@ -22,6 +22,7 @@ import { pineKits } from './PineKits';
 import { leafLitterGeometry, leafLitterMaterial } from '../LeafLitterGeometry';
 import { tallGrassKits } from './GrassKits';
 import type { KindKit } from '../SceneryChunkManager';
+import { cityGreenKits } from './CityGreenKits';
 import { spectatorKits } from './SpectatorKits';
 import {
   benchGeometry,
@@ -468,6 +469,7 @@ export function rallyKits(palette: StagePalette, shadows: boolean, snow: boolean
       receiveShadow: shadows,
     },
     ...tallGrassKits(palette, shadows),
+    ...cityGreenKits(shadows),
     {
       sources: ['rock'],
       geometry: new DodecahedronGeometry(0.9, 0).translate(0, 0.25, 0),

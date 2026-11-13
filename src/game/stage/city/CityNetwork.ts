@@ -2,11 +2,11 @@ import { CROSSING_EXTENT } from '../Crossings';
 import { ringOuterRadius, ringPoint, type Roundabout } from '../Roundabout';
 import { segmentDistance, type Arm, type Barrier, type Junction } from '../Town';
 import { TRAM_BED_HALF, type TramLine } from '../Tram';
-import { stubCut } from '../TownJunctions';
+import { normHeading, stubCut } from '../TownJunctions';
 import { ARROW_AHEAD_OF_CONES, type StubSite } from '../TownSideStreets';
 import { at, street, type Pt, type Site } from '../TownTerraces';
 import type { TracedLeg } from '../TownGenerator';
-import type { CityMap } from './CityMap';
+import { cityStreets, type CityMap } from './CityMap';
 
 /**
  * A city's streets off the route: the map's streets round every block the
@@ -34,6 +34,30 @@ export interface NetworkOut {
   /** The streets off the route, as sites for their terraces (open at both ends). */
   stubs: StubSite[];
   barriers: Barrier[];
+  /** Every node of the city's street graph: its junctions, its rings and the route's two ends. */
+  nodes: Map<number, NetworkNode>;
+}
+
+/** One street leaving a node: its heading from the node, half width, the node it reaches, and its arm on the junction there. */
+export interface NodeArm {
+  heading: number;
+  halfWidth: number;
+  to: number;
+  route: boolean;
+  arm?: Arm;
+}
+
+/**
+ * A node of the city's street graph: where it stands (a junction's centre,
+ * a ring's island centre, or for the route's two ends outside the city the
+ * map's crossroads), its junction or ring, and every street leaving it in
+ * heading order, as `sortedArms` orders a junction's.
+ */
+export interface NetworkNode {
+  at: Pt;
+  junction?: Junction;
+  ring?: Roundabout;
+  arms: NodeArm[];
 }
 
 const heading = (a: Pt, b: Pt) => Math.atan2(b.x - a.x, b.z - a.z);
@@ -43,28 +67,15 @@ const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
 export function ringExits(map: CityMap, centre: Pt): number[] {
   const ring = map.roundabouts.find((r) => Math.hypot(r.x - centre.x, r.z - centre.z) < 1);
   if (!ring) return [];
-  const k = map.route.indexOf(ring.node);
-  const routeNeighbours = new Set([map.route[k - 1], map.route[k + 1]]);
-  const corridor = corridorNodes(map);
-  return map.adjacency[ring.node]!.map((e) => across(map, e, ring.node))
-    .filter((n) => !routeNeighbours.has(n) && corridor.has(n))
-    .map((n) => heading(ring, map.nodes[n]!));
+  const { edges } = cityStreets(map);
+  return map.adjacency[ring.node]!.filter((e) => edges.has(e)).map((e) =>
+    heading(ring, map.nodes[across(map, e, ring.node)]!),
+  );
 }
 
 function across(map: CityMap, e: number, n: number): number {
   const edge = map.edges[e]!;
   return edge.a === n ? edge.b : edge.a;
-}
-
-/** The route's crossroads and every crossroads one street from them. */
-function corridorNodes(map: CityMap): Set<number> {
-  const out = new Set<number>();
-  for (const n of map.route.slice(1)) {
-    out.add(n);
-    for (const e of map.adjacency[n]!) out.add(across(map, e, n));
-  }
-  out.delete(map.route[0]!);
-  return out;
 }
 
 /**
@@ -80,23 +91,15 @@ export function cityNetwork(
   routeHalfWidth: number,
   rails: readonly TramLine[] = [],
 ): NetworkOut {
-  const out: NetworkOut = { stubs: [], barriers: [] };
-  const corridor = corridorNodes(map);
+  const out: NetworkOut = { stubs: [], barriers: [], nodes: new Map() };
+  const { nodes: corridor, edges: laid } = cityStreets(map);
   const routeIndex = new Map(map.route.map((n, k) => [n, k]));
   const ringOf = new Map<number, Roundabout>();
   for (const r of map.roundabouts) {
     const built = rings.find((b) => Math.hypot(b.x - r.x, b.z - r.z) < 1);
     if (built) ringOf.set(r.node, built);
   }
-  const routeEdge = (a: number, b: number) => {
-    const ka = routeIndex.get(a);
-    const kb = routeIndex.get(b);
-    return ka !== undefined && kb !== undefined && Math.abs(ka - kb) === 1;
-  };
-  const corridorEdge = (e: number) => {
-    const { a, b } = map.edges[e]!;
-    return corridor.has(a) && corridor.has(b) && !routeEdge(a, b);
-  };
+  const corridorEdge = (e: number) => laid.has(e);
   // Where each crossroads stands: a route corner's polygon corner as traced, else the map's.
   const corners = legs.filter((l) => l.kind === 'corner' && l.corner);
   const position = new Map<number, Pt>();
@@ -107,10 +110,13 @@ export function cityNetwork(
       ? corners.find((l) => Math.hypot(l.corner!.x - p.x, l.corner!.z - p.z) < 1.5)
       : undefined;
     if (leg) cornerLeg.set(n, leg);
-    position.set(n, leg ? leg.corner! : { x: p.x, z: p.z });
+    // A ring's exits run out from its island's centre, so the arms that meet them aim there too.
+    const ring = ringOf.get(n);
+    position.set(n, leg ? leg.corner! : ring ? { x: ring.x, z: ring.z } : { x: p.x, z: p.z });
   }
   // The junctions.
   const junctionAt = new Map<number, Junction>();
+  const armTo = new Map<Arm, number>();
   for (const n of corridor) {
     if (ringOf.has(n)) continue;
     const here = position.get(n)!;
@@ -124,28 +130,35 @@ export function cityNetwork(
       const next = map.nodes[map.route[k + 1]!]!;
       const hin = leg ? leg.headingIn : heading(prev, here);
       const hout = leg ? leg.headingOut : heading(here, next);
-      // The junction is as wide as the narrower of the route's two streets (see `traceWidths`).
+      // At a corner each of the route's arms is its own street's width: the ribbon holds the
+      // narrower round the arc and widens inside the junction's paving (see `traceWidths`).
       const li = leg ? legs.indexOf(leg) : -1;
-      const hw = leg
-        ? Math.min(
-            legs[li - 1]?.halfWidth ?? leg.halfWidth,
-            legs[li + 1]?.halfWidth ?? leg.halfWidth,
-          )
-        : routeHalfWidth;
-      arms.push({ heading: hin + Math.PI, halfWidth: hw, role: 'in' });
-      arms.push({ heading: hout, halfWidth: hw, role: 'out' });
+      const hwIn = leg ? (legs[li - 1]?.halfWidth ?? leg.halfWidth) : routeHalfWidth;
+      const hwOut = leg ? (legs[li + 1]?.halfWidth ?? leg.halfWidth) : routeHalfWidth;
+      arms.push({ heading: hin + Math.PI, halfWidth: hwIn, role: 'in' });
+      arms.push({ heading: hout, halfWidth: hwOut, role: 'out' });
+      armTo.set(arms[0]!, map.route[k - 1]!);
+      armTo.set(arms[1]!, map.route[k + 1]!);
       if (leg && Math.abs(leg.turn) >= Math.PI / 9) radius = leg.radius;
     } else if (side.length < 2) continue;
     for (const e of side) {
       const m = across(map, e, n);
-      arms.push({
+      const arm: Arm = {
         heading: heading(here, position.get(m) ?? map.nodes[m]!),
         halfWidth: map.edges[e]!.halfWidth,
         role: 'blocked',
-      });
+      };
+      arms.push(arm);
+      armTo.set(arm, m);
     }
     if (arms.length < 2) continue;
-    const j: Junction = { x: here.x, z: here.z, arms, ...(radius !== undefined ? { radius } : {}) };
+    // A corner is a square junction of straight arms (`JunctionBox`), its arc inside the paving.
+    const j: Junction = {
+      x: here.x,
+      z: here.z,
+      arms,
+      ...(radius !== undefined ? { radius, box: true as const } : {}),
+    };
     site.junctions.push(j);
     junctionAt.set(n, j);
   }
@@ -177,6 +190,7 @@ export function cityNetwork(
     site.streets.push(st);
     out.stubs.push({ j: from, heading: h, hw, length, full: length, open: true, endClear: 0 });
   }
+  out.nodes = graphNodes(map, laid, position, junctionAt, armTo, ringOf);
   // Every side street a route junction passes is closed a few metres in.
   for (const [n, j] of junctionAt) {
     const k = routeIndex.get(n);
@@ -232,4 +246,71 @@ function closeStreet(
     halfLength: hw - BARRIER_MARGIN,
     ...(tram ? { tramGap: true as const } : {}),
   });
+}
+
+/**
+ * The city's street graph as nodes (see `NetworkNode`): every junction with
+ * its arms, every ring with its exits and the route's arms, and the route's
+ * first and last crossroads, which stand outside the city with the route's
+ * one street each.
+ */
+function graphNodes(
+  map: CityMap,
+  laid: ReadonlySet<number>,
+  position: ReadonlyMap<number, Pt>,
+  junctionAt: ReadonlyMap<number, Junction>,
+  armTo: ReadonlyMap<Arm, number>,
+  ringOf: ReadonlyMap<number, Roundabout>,
+): Map<number, NetworkNode> {
+  const nodes = new Map<number, NetworkNode>();
+  const route = map.route;
+  const where = (n: number): Pt => position.get(n) ?? { x: map.nodes[n]!.x, z: map.nodes[n]!.z };
+  const width = (a: number, b: number) =>
+    map.edges[map.adjacency[a]!.find((e) => across(map, e, a) === b)!]!.halfWidth;
+  const sorted = (arms: NodeArm[]) =>
+    arms.sort((p, q) => normHeading(p.heading) - normHeading(q.heading));
+  for (const [n, j] of junctionAt)
+    nodes.set(n, {
+      at: { x: j.x, z: j.z },
+      junction: j,
+      arms: sorted(
+        j.arms.map((arm) => ({
+          heading: arm.heading,
+          halfWidth: arm.halfWidth,
+          to: armTo.get(arm)!,
+          route: arm.role !== 'blocked',
+          arm,
+        })),
+      ),
+    });
+  const routeAt = new Map(route.map((n, k) => [n, k]));
+  for (const [n, ring] of ringOf) {
+    const k = routeAt.get(n)!;
+    const to = [
+      route[k - 1]!,
+      route[k + 1]!,
+      ...map.adjacency[n]!.filter((e) => laid.has(e)).map((e) => across(map, e, n)),
+    ];
+    nodes.set(n, {
+      at: { x: ring.x, z: ring.z },
+      ring,
+      arms: sorted(
+        to.map((m, i) => ({
+          heading: heading(ring, where(m)),
+          halfWidth: width(n, m),
+          to: m,
+          route: i < 2,
+        })),
+      ),
+    });
+  }
+  for (const [n, m] of [
+    [route[0]!, route[1]!],
+    [route[route.length - 1]!, route[route.length - 2]!],
+  ] as const)
+    nodes.set(n, {
+      at: where(n),
+      arms: [{ heading: heading(where(n), where(m)), halfWidth: width(n, m), to: m, route: true }],
+    });
+  return nodes;
 }

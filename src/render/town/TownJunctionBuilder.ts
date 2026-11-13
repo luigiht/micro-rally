@@ -9,15 +9,20 @@ import {
   type Pt,
 } from '@/game/stage/TownKerbs';
 import { LINE_ABOVE_DECK } from '../road/RoadBuilder';
+import { cellTone, SLAB_JITTER, SLAB_ROWS } from '../road/SurfaceDetail';
 import { themeColor } from '../theme/themeColor';
 import type { RoadTheme } from '../theme/WorldTheme';
 
 /** The pavement starts this far over the tarmac so no seam shows along the kerb. */
+/** Round a corner, slabs take their tone from this world grid (the kerb's pieces are shorter than a slab). */
+const SLAB_CELL = 2;
 const PAVEMENT_OVERLAP = 0.05;
 /** Mouth strips are laid in pieces this long along the arm, so they follow the deck. */
 const MOUTH_STEP = 2;
 const LINE_INSET = 0.35;
 const LINE_WIDTH = 0.22;
+
+type Layer = { pos: number[]; col: number[] };
 
 /**
  * The paved ground of every junction. Kerbs come from `junctionKerbs`: one
@@ -26,14 +31,16 @@ const LINE_WIDTH = 0.22;
  * exact normals, so the pavement band and the white edge line are offset
  * strips that meet the ribbon's and the side-street plates' own sections
  * vertex for vertex. Tarmac fills the mouths and kerb-return crescents from
- * the same geometry, flush with the ribbon. One merged mesh.
+ * the same geometry, flush with the ribbon. Two merged meshes: the tarmac
+ * fill, and the pavements, kerbs and lines dressed over it.
  */
 export class TownJunctionBuilder {
   readonly group = new Group();
-  private readonly geometry: BufferGeometry;
-  private readonly material: MeshStandardMaterial;
-  private readonly pos: number[] = [];
-  private readonly col: number[] = [];
+  private readonly geometries: BufferGeometry[] = [];
+  private readonly materials: MeshStandardMaterial[] = [];
+  /** The tarmac fill, and the dressing over it: pavements, kerb faces and the white edge line. */
+  private readonly fill: Layer = { pos: [], col: [] };
+  private readonly dressing: Layer = { pos: [], col: [] };
   private readonly tarmac: Color;
   private readonly pavement: Color;
   private readonly line: Color;
@@ -52,36 +59,72 @@ export class TownJunctionBuilder {
     for (const j of stage.town?.junctions ?? []) {
       const kerbs = junctionKerbs(j, stage, stage.halfWidth);
       for (const o of kerbs.outlines) {
-        this.strip(o.points, -PAVEMENT_OVERLAP, PAVEMENT_WIDTH, KERB_LIFT, this.pavement);
+        // A city's pavement round the corner in two rows of slabs, each a touch lighter or darker.
+        if (stage.town?.city) {
+          const row = PAVEMENT_WIDTH / SLAB_ROWS;
+          for (let r = 0; r < SLAB_ROWS; r++)
+            this.strip(
+              o.points,
+              r === 0 ? -PAVEMENT_OVERLAP : row * r,
+              row * (r + 1),
+              KERB_LIFT,
+              this.pavement,
+              (x, z) =>
+                cellTone(
+                  Math.floor(x / SLAB_CELL),
+                  Math.floor(z / SLAB_CELL),
+                  401 + r,
+                  SLAB_JITTER,
+                ),
+            );
+        } else this.strip(o.points, -PAVEMENT_OVERLAP, PAVEMENT_WIDTH, KERB_LIFT, this.pavement);
         this.strip(o.points, -LINE_INSET - LINE_WIDTH, -LINE_INSET, LINE_ABOVE_DECK, this.line);
         this.face(o.points);
       }
-      this.fill(kerbs.surface);
+      this.fillSurface(kerbs.surface);
     }
+    // The fill a step behind the ribbon, which wins where a boxed junction's paving lies under its
+    // arc; the dressing level with it, so the edge line's 2 cm over the deck always tells, as the
+    // ribbon's own edge lines do. Both offset toward the eye, so they win depth ties with the terrain.
+    this.build(this.fill, -1);
+    this.build(this.dressing, -2);
+  }
+
+  /** One merged mesh of a layer, drawn with depth offset `offset`. */
+  private build(layer: Layer, offset: number): void {
     const raw = new BufferGeometry();
-    raw.setAttribute('position', new BufferAttribute(Float32Array.from(this.pos), 3));
-    raw.setAttribute('color', new BufferAttribute(Float32Array.from(this.col), 3));
+    raw.setAttribute('position', new BufferAttribute(Float32Array.from(layer.pos), 3));
+    raw.setAttribute('color', new BufferAttribute(Float32Array.from(layer.col), 3));
     // Weld the fans and strips so the normals smooth across their seams instead of faceting the tarmac.
-    this.geometry = mergeVertices(raw, 1e-3);
+    const geometry = mergeVertices(raw, 1e-3);
     raw.dispose();
-    this.geometry.computeVertexNormals();
-    this.geometry.computeBoundingSphere();
-    // Offset like the ribbon, so the surface wins depth ties with the terrain beneath it.
-    this.material = new MeshStandardMaterial({
+    geometry.computeVertexNormals();
+    geometry.computeBoundingSphere();
+    const material = new MeshStandardMaterial({
       vertexColors: true,
       roughness: 0.75,
       polygonOffset: true,
-      polygonOffsetFactor: -2,
-      polygonOffsetUnits: -2,
+      polygonOffsetFactor: offset,
+      polygonOffsetUnits: offset,
     });
-    const mesh = new Mesh(this.geometry, this.material);
+    this.geometries.push(geometry);
+    this.materials.push(material);
+    const mesh = new Mesh(geometry, material);
     mesh.receiveShadow = true;
     mesh.matrixAutoUpdate = false;
     this.group.add(mesh);
   }
 
   /** Band between offsets `o0` and `o1` along the kerb normals, each vertex on the ground there plus `lift`. */
-  private strip(points: KerbPoint[], o0: number, o1: number, lift: number, c: Color): void {
+  private strip(
+    points: KerbPoint[],
+    o0: number,
+    o1: number,
+    lift: number,
+    c: Color,
+    tone?: (x: number, z: number) => number,
+  ): void {
+    const shaded = new Color();
     const at = (p: KerbPoint, o: number) =>
       this.field.deckAt(p.x + p.nx * o, p.z + p.nz * o) + lift;
     for (let i = 0; i + 1 < points.length; i++) {
@@ -99,11 +142,14 @@ export class TownJunctionBuilder {
         [q, a1, at(q, a1)],
         [p, a1, at(p, a1)],
       ] as const;
+      const piece = tone
+        ? shaded.copy(c).multiplyScalar(tone((p.x + q.x) / 2, (p.z + q.z) / 2))
+        : c;
       // Two triangles, vertices pushed in order: the geometry is non-indexed.
       for (const k of [0, 1, 2, 0, 2, 3]) {
         const [v, o, y] = corners[k]!;
-        this.pos.push(v.x + v.nx * o, y, v.z + v.nz * o);
-        this.col.push(c.r, c.g, c.b);
+        this.dressing.pos.push(v.x + v.nx * o, y, v.z + v.nz * o);
+        this.dressing.col.push(piece.r, piece.g, piece.b);
       }
     }
   }
@@ -113,7 +159,7 @@ export class TownJunctionBuilder {
    * (so it follows the deck) and a fan over each kerb return's crescent,
    * from the same geometry as the kerbs, flush with the ribbon and plates.
    */
-  private fill(surface: JunctionSurface): void {
+  private fillSurface(surface: JunctionSurface): void {
     for (const poly of surface.polygons) {
       if (poly.length === 4) this.mouth(poly);
       else this.fan(poly);
@@ -164,8 +210,8 @@ export class TownJunctionBuilder {
         : [high[0], high[1], low[1], low[0]];
       for (const k of [0, 1, 2, 0, 2, 3]) {
         const v = quad[k]!;
-        this.pos.push(v[0], v[1], v[2]);
-        this.col.push(this.kerb.r, this.kerb.g, this.kerb.b);
+        this.dressing.pos.push(v[0], v[1], v[2]);
+        this.dressing.col.push(this.kerb.r, this.kerb.g, this.kerb.b);
       }
     }
   }
@@ -183,14 +229,14 @@ export class TownJunctionBuilder {
     for (let i = 1; i + 1 < pts.length; i++) {
       for (const k of [0, i, i + 1]) {
         const v = pts[k]!;
-        this.pos.push(v.x, ys[k]!, v.z);
-        this.col.push(c.r, c.g, c.b);
+        this.fill.pos.push(v.x, ys[k]!, v.z);
+        this.fill.col.push(c.r, c.g, c.b);
       }
     }
   }
 
   dispose(): void {
-    this.geometry.dispose();
-    this.material.dispose();
+    for (const g of this.geometries) g.dispose();
+    for (const m of this.materials) m.dispose();
   }
 }

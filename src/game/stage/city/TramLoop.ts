@@ -1,15 +1,15 @@
-import { hashSeed, mulberry32 } from '../../rng';
 import type { TramLine } from '../Tram';
+import { edgeBetween, type CityGraph } from './CityGrid';
 import type { CityMap } from './CityMap';
 
 /**
  * A city's tram circuit: a closed loop round a rectangle of blocks of its
- * map (one to three blocks across, two to four along), running on its
- * streets with its corners eased round `TRAM_RADIUS` arcs. It is chosen to
- * share at least one street with the route and to be crossed by it at a
- * crossroads the route drives straight through,
- * so the driver races alongside the trams and across their rails; never
- * through a roundabout or near the start.
+ * map (one to four blocks across, one to six along), running on its streets
+ * with its corners eased round `TRAM_RADIUS` arcs. It is planned with the
+ * route (`CityRoute.planCity`), which is drawn again until the route crosses
+ * the loop's rails at `MIN_CROSSINGS` crossroads or more; never through a
+ * roundabout, near the start or on the finish straight. Its streets are
+ * built whether or not the route passes them (`cityStreets`).
  */
 
 /** A closed loop as sampled points (the last joins back to the first), and its length. */
@@ -62,122 +62,115 @@ const ARC_STEP = (3 * Math.PI) / 180;
 const MIN_LOOP = 800;
 const MAX_LOOP = 2600;
 const IDEAL_LOOP = 1500;
+/** The rectangle's size in blocks, across and along the stage. */
+const MAX_ACROSS = 4;
+const MAX_ALONG = 6;
+/** The route crosses the loop's rails at this many crossroads or more. */
+export const MIN_CROSSINGS = 4;
 
 interface Pt {
   x: number;
   z: number;
 }
 
-/** The map's route crossroads and every crossroads one street from them (the streets the city lays). */
-function corridor(map: CityMap): Set<number> {
-  const out = new Set<number>();
-  const across = (e: number, n: number) =>
-    map.edges[e]!.a === n ? map.edges[e]!.b : map.edges[e]!.a;
-  for (const n of map.route.slice(1)) {
-    out.add(n);
-    for (const e of map.adjacency[n]!) out.add(across(e, n));
-  }
-  out.delete(map.route[0]!);
-  return out;
-}
-
 /** The perimeter of lattice rectangle [i0, i1] × [j0, j1], as node ids in order round it, or null if any street is missing. */
-function perimeter(
-  map: CityMap,
-  at: (i: number, j: number) => number,
-  i0: number,
-  i1: number,
-  j0: number,
-  j1: number,
-): number[] | null {
+function perimeter(g: CityGraph, i0: number, i1: number, j0: number, j1: number): number[] | null {
   const ring: [number, number][] = [];
   for (let i = i0; i < i1; i++) ring.push([i, j0]);
   for (let j = j0; j < j1; j++) ring.push([i1, j]);
   for (let i = i1; i > i0; i--) ring.push([i, j1]);
   for (let j = j1; j > j0; j--) ring.push([i0, j]);
-  const ids = ring.map(([i, j]) => at(i, j));
+  const ids = ring.map(([i, j]) => g.at(i, j));
   if (ids.some((id) => id < 0)) return null;
-  for (let k = 0; k < ids.length; k++) {
-    const a = ids[k]!;
-    const b = ids[(k + 1) % ids.length]!;
-    if (!map.adjacency[a]!.some((e) => map.edges[e]!.a === b || map.edges[e]!.b === b)) return null;
-  }
+  for (let k = 0; k < ids.length; k++)
+    if (!edgeBetween(g, ids[k]!, ids[(k + 1) % ids.length]!)) return null;
   return ids;
 }
 
-/** Pick the city's tram loop (in the world frame), or null when no rectangle of its streets suits. */
-export function chooseTramLoop(map: CityMap, seed: number): TramLoopDef | null {
-  const rand = mulberry32(hashSeed(seed, 'tram-loop'));
-  const index = new Map<string, number>();
-  map.nodes.forEach((n, id) => index.set(`${n.i},${n.j}`, id));
-  const at = (i: number, j: number) => index.get(`${i},${j}`) ?? -1;
-  const laid = corridor(map);
-  const rings = new Set(map.roundabouts.map((r) => r.node));
-  const routeAt = new Map(map.route.map((n, k) => [n, k]));
-  const routeEdge = (a: number, b: number) => {
-    const ka = routeAt.get(a);
-    const kb = routeAt.get(b);
-    return ka !== undefined && kb !== undefined && Math.abs(ka - kb) === 1;
+/**
+ * Where the route drives straight over the loop: crossroads on a side of the
+ * rectangle (not a corner) that the route neither arrives at nor leaves along
+ * the loop's streets, so it comes from one side of the rails and goes on to
+ * the other.
+ */
+export function loopCrossings(
+  g: CityGraph,
+  route: readonly number[],
+  ids: readonly number[],
+): number {
+  const place = new Map(ids.map((id, p) => [id, p]));
+  const n = ids.length;
+  const corner = (p: number) => {
+    const a = g.nodes[ids[(p - 1 + n) % n]!]!;
+    const b = g.nodes[ids[p]!]!;
+    const c = g.nodes[ids[(p + 1) % n]!]!;
+    return a.i - b.i !== b.i - c.i || a.j - b.j !== b.j - c.j;
   };
-  const lastSafe = map.route.length - 3;
+  let crossings = 0;
+  for (let k = 1; k < route.length - 1; k++) {
+    const p = place.get(route[k]!);
+    if (p === undefined || corner(p)) continue;
+    const along = (m: number) => {
+      const q = place.get(m);
+      return q !== undefined && (Math.abs(p - q) === 1 || Math.abs(p - q) === n - 1);
+    };
+    if (!along(route[k - 1]!) && !along(route[k + 1]!)) crossings++;
+  }
+  return crossings;
+}
+
+/**
+ * The tram loop for a planned city, as its rectangle's perimeter (node ids
+ * in order round it), or null when none suits: on the map's streets, clear
+ * of the start, the finish straight and every roundabout, `MIN_LOOP` to
+ * `MAX_LOOP` long, and crossed by the route at `MIN_CROSSINGS` crossroads or
+ * more. Leans toward more crossings, then toward `IDEAL_LOOP` long.
+ */
+export function planTramLoop(
+  g: CityGraph,
+  route: readonly number[],
+  rings: ReadonlySet<number>,
+  rand: () => number,
+): number[] | null {
+  const routeAt = new Map(route.map((n, k) => [n, k]));
+  const lastSafe = route.length - 3;
   let best: { ids: number[]; score: number } | null = null;
-  const is = map.nodes.map((n) => n.i);
-  const js = map.nodes.map((n) => n.j);
-  for (let i0 = Math.min(...is); i0 <= Math.max(...is); i0++)
-    for (let j0 = 2; j0 <= Math.max(...js); j0++)
-      for (let w = 1; w <= 3; w++)
-        for (let h = 2; h <= 4; h++) {
-          const ids = perimeter(map, at, i0, i0 + w, j0, j0 + h);
+  const is = g.nodes.map((n) => n.i);
+  const js = g.nodes.map((n) => n.j);
+  const iMin = Math.min(...is);
+  const iMax = Math.max(...is);
+  const jMax = Math.max(...js);
+  for (let i0 = iMin; i0 < iMax; i0++)
+    for (let j0 = 2; j0 < jMax; j0++)
+      for (let w = 1; w <= MAX_ACROSS; w++)
+        for (let h = 1; h <= MAX_ALONG; h++) {
+          if (i0 + w > iMax || j0 + h > jMax) continue;
+          const ids = perimeter(g, i0, i0 + w, j0, j0 + h);
           if (!ids) continue;
-          if (ids.some((id) => !laid.has(id) || rings.has(id))) continue;
-          if (ids.some((id) => (routeAt.get(id) ?? 0) > lastSafe)) continue;
+          if (ids.some((id) => rings.has(id) || (routeAt.get(id) ?? 1) > lastSafe)) continue;
+          if (ids.some((id) => routeAt.get(id) === 0)) continue;
           let length = 0;
-          let shared = 0;
           for (let k = 0; k < ids.length; k++) {
-            const a = ids[k]!;
-            const b = ids[(k + 1) % ids.length]!;
-            length += Math.hypot(
-              map.nodes[b]!.x - map.nodes[a]!.x,
-              map.nodes[b]!.z - map.nodes[a]!.z,
-            );
-            if (routeEdge(a, b)) shared++;
+            const a = g.nodes[ids[k]!]!;
+            const b = g.nodes[ids[(k + 1) % ids.length]!]!;
+            length += Math.hypot(b.x - a.x, b.z - a.z);
           }
           if (length < MIN_LOOP || length > MAX_LOOP) continue;
-          // Crossings: route crossroads on the loop the route drives straight through, neither
-          // arriving nor leaving along the loop's streets; joins: where it turns onto or off them.
-          const onLoop = new Set(ids);
-          let crossings = 0;
-          let joins = 0;
-          for (const id of ids) {
-            const k = routeAt.get(id);
-            if (k === undefined) continue;
-            const along = (n: number | undefined) => {
-              if (n === undefined || !onLoop.has(n)) return false;
-              const p = ids.indexOf(id);
-              const q = ids.indexOf(n);
-              return Math.abs(p - q) === 1 || Math.abs(p - q) === ids.length - 1;
-            };
-            const a = along(map.route[k - 1]);
-            const b = along(map.route[k + 1]);
-            if (!a && !b) crossings++;
-            else if (a !== b) joins++;
-          }
-          // Best a loop the route both shares and crosses; then one it shares and joins; then one it crosses twice.
-          const tier =
-            shared >= 1 && crossings >= 1
-              ? 0
-              : shared >= 1 && joins >= 2
-                ? 1
-                : crossings >= 2
-                  ? 2
-                  : -1;
-          if (tier < 0) continue;
+          const crossings = loopCrossings(g, route, ids);
+          if (crossings < MIN_CROSSINGS) continue;
           const score =
-            tier * 10000 + Math.abs(length - IDEAL_LOOP) - 150 * Math.min(shared, 3) + rand() * 100;
+            -400 * Math.min(crossings, MIN_CROSSINGS + 2) +
+            Math.abs(length - IDEAL_LOOP) +
+            rand() * 100;
           if (!best || score < best.score) best = { ids, score };
         }
-  if (!best) return null;
-  return loopShape(best.ids.map((id) => ({ x: map.nodes[id]!.x, z: map.nodes[id]!.z })));
+  return best ? best.ids : null;
+}
+
+/** The city's tram loop in the world frame, from the plan's rectangle (see `planTramLoop`); null when it has none. */
+export function chooseTramLoop(map: CityMap): TramLoopDef | null {
+  if (map.tram.length < 4) return null;
+  return loopShape(map.tram.map((id) => ({ x: map.nodes[id]!.x, z: map.nodes[id]!.z })));
 }
 
 /** The loop through `corners` (in order, closed), each corner eased round `TRAM_RADIUS`, sampled. */

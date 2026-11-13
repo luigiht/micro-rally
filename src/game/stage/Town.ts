@@ -1,8 +1,9 @@
 import type { BoxObstacle } from '../vehicle/Collisions';
-import { BUILDING_SIZE } from './BuildingCatalog';
+import { BUILDING_SIZE, DOOR_OFFSET } from './BuildingCatalog';
 import type { Median } from './Median';
 import type { Infill } from './TownInfill';
 import type { CityMap } from './city/CityMap';
+import type { FrontageChain } from './city/CityFrontage';
 import type { TramLoopDef } from './city/TramLoop';
 import { roundaboutBlocks, type Roundabout } from './Roundabout';
 import type { Prop } from './SceneryScatter';
@@ -62,6 +63,8 @@ export interface TownDef {
   barriers?: Barrier[];
   /** A mapped city's tram circuit (`city/TramLoop`); `trams` then holds its rail pieces. */
   tramLoop?: TramLoopDef;
+  /** A mapped city's frontage (`city/CityFrontage`): every pavement's back edge, buildings on each chain's left. */
+  frontage?: FrontageChain[];
 }
 
 /** One arm of a junction: a street leaving the junction centre on `heading`. */
@@ -78,6 +81,8 @@ export interface Junction {
   arms: Arm[];
   /** The route's corner arc radius here when the leg set its own (see `cornerRadius`). */
   radius?: number;
+  /** A city corner, laid as a square junction of straight arms (see `JunctionBox`). */
+  box?: true;
 }
 
 /** Garden wall segment along a facade line. */
@@ -306,13 +311,32 @@ export function buildingCorners(b: Footprint): [number, number][] {
 }
 
 /**
+ * A building's foundation reaches this far below its base (the render kits
+ * draw it 1.6 m down), so its front may stand this much over the pavement.
+ */
+const FOUNDATION_REACH = 1.5;
+
+/** Where a catalog building's door meets its front, as wide as the building is drawn. */
+export function buildingDoor(b: Building): { x: number; z: number } {
+  const lx = DOOR_OFFSET[b.style] * (b.hx / BUILDING_SIZE[b.style].hx);
+  const lz = -b.hz;
+  const c = Math.cos(b.yaw);
+  const s = Math.sin(b.yaw);
+  return { x: b.x + lx * c + lz * s, z: b.z - lx * s + lz * c };
+}
+
+/**
  * Ground height at a building's front: the pavement its door opens onto.
  * Its terrace is levelled here, so the sill meets the street whatever the
- * hill does behind.
+ * hill does behind; on a steep street a door far off the middle of a wide
+ * front is raised at most so far that the foundation still reaches the
+ * pavement at the front's lower corner.
  */
 export function buildingBaseHeight(b: Building, ground: GroundQuery): number {
   const [, , fr, fl] = buildingCorners(b);
-  return (ground.deckAt(fr![0], fr![1]) + ground.deckAt(fl![0], fl![1])) / 2 + KERB_LIFT;
+  const door = buildingDoor(b);
+  const low = Math.min(ground.deckAt(fr![0], fr![1]), ground.deckAt(fl![0], fl![1]));
+  return Math.min(ground.deckAt(door.x, door.z), low + FOUNDATION_REACH) + KERB_LIFT;
 }
 
 /**

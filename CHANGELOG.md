@@ -5,7 +5,68 @@ tags yet: `main` is deployed continuously, so entries are grouped by the day
 they landed. The numbered entries in [docs/DECISIONS.md](docs/DECISIONS.md)
 hold the reasoning behind each change; the numbers in brackets point there.
 
+## 2026-11-13
+
+### Changed
+
+- **Livelier city streets.** Street trees now come in six species, from
+  round limes and slim columns to the odd pale birch or dark holm oak, all
+  in shades of green, each street mostly planted with one and every tree a
+  little different.
+  The avenues' medians are planted in schemes of round bushes, low
+  rounded hedges, small conifers and leafy bushes in different shades of green, with
+  tall grass between them. The roads show
+  darker worn wheel paths and mottled asphalt, and the pavements are laid
+  as slabs, all in the same flat-shaded style. [241]
+
+- **Every pavement has a building behind it.** City buildings are now laid
+  out block by block along the back of every pavement, the city's outer
+  edge included, so no pavement faces bare grass. Corner buildings have a
+  face, windows and a door on each street, every building has its door on
+  the street, and no building stands inside another. [240]
+
+### Fixed
+
+- **Floating doors.** Doors on sloping streets now open onto the
+  pavement instead of hanging above it. [242]
+- **Flickering edge lines.** The white lines round city junction corners
+  no longer vanish in the distance and reappear as you drive up. [242]
+
+- **Missing buildings along some city routes.** On some cities the route's
+  own street had no buildings along it at all; it now does. [240]
+
 ## 2026-11-12
+
+### Changed
+
+- **Square city junctions, flat streets, even lanes.** Every street in a
+  city is now level from side to side however steep it climbs, so tram
+  tracks lie flush. Corners are square junctions with the same rounded
+  kerb at every corner and even pavements all round. Every street has two
+  lanes or four, changing only at junctions. Street trees are evenly spaced
+  on both pavements, and the avenues' green medians carry bushes. Parked
+  cars no longer appear, since they needed three-lane streets. Side streets
+  are lined with buildings all the way from junction to junction, with no
+  grass behind the pavement. City best times are reset again. [239]
+- **Every city has roundabouts and a tram line to cross.** Each city route
+  now passes two roundabouts (three on later stages) and crosses the tram
+  line's rails at four junctions or more. The tram loop's streets are all
+  built, with buildings along them. City best times are reset, since the
+  routes are new. [238]
+
+### Fixed
+
+- **No pavement slabs at junctions by roundabouts.** Streets leading
+  away from a roundabout no longer run their pavement out over the corners
+  of the next junction. [238]
+
+- **Every city street goes somewhere.** A closed street beside the route
+  no longer ends at its barrier with grass behind it: the city now builds
+  the blocks all round the route, corners included, so every closed street
+  runs on to the next junction between buildings. Junction corners on a
+  hill no longer show tilted, shaded wedges or a kerb poking into the
+  road: the side streets now hold the junction's level where they meet it.
+  [237]
 
 ### Changed
 

@@ -29,8 +29,10 @@ import {
 export type PropKind =
   | 'tree'
   | 'broadleaf'
+  | 'streetTree'
   | 'palm'
   | 'bush'
+  | 'shrub'
   | 'rock'
   | 'house'
   | 'townhouse'
@@ -134,6 +136,7 @@ const TOWN_HOUSE_CLEARANCE = 40;
 export const CANOPY_RADIUS: Readonly<Partial<Record<PropKind, number>>> = {
   tree: 1.4,
   broadleaf: 2.2,
+  streetTree: 2.2,
   palm: 2.6,
   spruce: 1.3,
 };
@@ -203,8 +206,10 @@ export function canopyRadius(
 const COLLIDER_RADIUS: Readonly<Record<PropKind, number>> = {
   tree: 0.45,
   broadleaf: 0.4,
+  streetTree: 0.4,
   palm: 0.3,
   bush: 0,
+  shrub: 0,
   rock: 0.85,
   house: 0,
   townhouse: 0,

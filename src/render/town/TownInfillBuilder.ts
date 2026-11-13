@@ -27,6 +27,14 @@ const WINDOW_EVERY = 2.6;
 const PLINTH = 0.7;
 const CORNICE_H = 0.35;
 const CORNICE_OUT = 0.2;
+/** A street door: its opening, its frame's width round it, and how far both stand proud of the wall. */
+const DOOR_W = 1.3;
+const DOOR_H = 2.4;
+const DOOR_FRAME = 0.18;
+/** A door's sill takes the pavement's height this far out in front of it. */
+const DOOR_STEP_OUT = 0.3;
+const DOOR = new Color('#3b2a20');
+const FRAME = new Color('#e8e1d2');
 
 /** Triangles with a colour per corner, flat-shaded. */
 class Faces {
@@ -45,12 +53,12 @@ class Faces {
 }
 
 /**
- * A city's fitted buildings (`TownInfill`): each footprint (a slice round a
- * corner, a block in an L, a strip along a gap) stands from a sunk footing
- * to its roof, walls in the building's tint, and along the street front a
- * darker plinth, a row of windows per storey spaced along the whole front
- * (curve and all) and a cornice; a flat grey roof. One merged mesh for the
- * whole city.
+ * A city's fitted buildings (`TownInfill`): each footprint (a corner lot
+ * with a face on each street, a lot no catalog building stood on) stands
+ * from a sunk footing to its roof, walls in the building's tint, and along
+ * the street front a darker plinth, a row of windows per storey spaced along
+ * the whole front (round the corner and all), a door on each street face and
+ * a cornice; a flat grey roof. One merged mesh for the whole city.
  */
 export class TownInfillBuilder {
   readonly group = new Group();
@@ -104,6 +112,23 @@ export class TownInfillBuilder {
         }
         return { x: nx, z: nz, len, ux: (q.x - p.x) / len, uz: (q.z - p.z) / len };
       };
+      // Where along the front each door stands, so the ground floor's windows leave it room.
+      const doorAt: number[] = [];
+      {
+        let r = 0;
+        for (let i = 1; i < pulled.length; i++) {
+          const p = pulled[i - 1]!;
+          const q = pulled[i]!;
+          const len = Math.hypot(q.x - p.x, q.z - p.z);
+          for (const d of infill.doors ?? []) {
+            const u = len > 0 ? ((d.x - p.x) * (q.x - p.x) + (d.z - p.z) * (q.z - p.z)) / len : 0;
+            const off =
+              len > 0 ? Math.abs((d.x - p.x) * (q.z - p.z) - (d.z - p.z) * (q.x - p.x)) / len : 0;
+            if (u >= -0.01 && u <= len + 0.01 && off < 0.2) doorAt.push(r + u);
+          }
+          r += len;
+        }
+      }
       let run = 0;
       let next = WINDOW_EVERY / 2;
       for (let i = 1; i < pulled.length; i++) {
@@ -151,8 +176,12 @@ export class TownInfillBuilder {
           const s = next - run;
           const a = Math.max(0, s - WINDOW_W / 2);
           const b = Math.min(o.len, s + WINDOW_W / 2);
+          const byDoor = doorAt.some(
+            (d) => Math.abs(d - (run + s)) < (DOOR_W + WINDOW_W) / 2 + 0.3,
+          );
           if (b - a > WINDOW_W * 0.6)
-            for (let y = floor + 1.1; y + WINDOW_H < top - CORNICE_H - 0.3; y += STOREY)
+            for (let y = floor + 1.1; y + WINDOW_H < top - CORNICE_H - 0.3; y += STOREY) {
+              if (y < floor + STOREY && byDoor) continue;
               f.quad(
                 at(a, y, 0.03),
                 at(b, y, 0.03),
@@ -160,7 +189,38 @@ export class TownInfillBuilder {
                 at(a, y + WINDOW_H, 0.03),
                 WINDOW,
               );
+            }
           next += WINDOW_EVERY;
+        }
+        // The doors on this piece: a light frame with the dark door inside it, its sill on the
+        // pavement in front (the lower jamb's, so no gap shows under it on a hill).
+        for (const d of doorAt) {
+          if (d < run - 0.01 || d > run + o.len + 0.01) continue;
+          const s = d - run;
+          const half = DOOR_W / 2;
+          const outer = half + DOOR_FRAME;
+          const pavementAt = (t: number) => {
+            const [x, , z] = at(s + t, 0, DOOR_STEP_OUT);
+            return ground.deckAt(x!, z!) + KERB_LIFT;
+          };
+          const sill = Math.min(
+            floor,
+            Math.max(bottom, Math.min(pavementAt(-outer), pavementAt(outer))),
+          );
+          f.quad(
+            at(s - outer, sill, 0.05),
+            at(s + outer, sill, 0.05),
+            at(s + outer, sill + DOOR_H + DOOR_FRAME, 0.05),
+            at(s - outer, sill + DOOR_H + DOOR_FRAME, 0.05),
+            FRAME,
+          );
+          f.quad(
+            at(s - half, sill, 0.07),
+            at(s + half, sill, 0.07),
+            at(s + half, sill + DOOR_H, 0.07),
+            at(s - half, sill + DOOR_H, 0.07),
+            DOOR,
+          );
         }
         run += o.len;
       }

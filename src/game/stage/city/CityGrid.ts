@@ -6,8 +6,8 @@ import type { UrbanDef } from '../regions';
  * its columns (`i`, across) and rows (`j`, along the stage) spaced 80–120 m
  * apart, then bent by two gentle sweeps each way so the streets curve over
  * the whole town and no block is quite square. Each lattice line is one
- * street class all its length (an avenue every third column and every
- * fourth row, two or three lanes otherwise, the odd narrow lane), and a few
+ * street class all its length (a four-lane avenue every third column and
+ * every fourth row, two lanes otherwise), and a few
  * side streets are left out so some blocks run double. The route
  * (`CityRoute`) is a walk along these streets; the rest of the map is built
  * round it. Pure data in the plan frame: +z along the stage, +x to the left.
@@ -56,11 +56,16 @@ const AVENUE_ROW = 4;
 /** Side streets left out, as a share of those that can go without cutting the map. */
 const DROP_SHARE = 0.06;
 
-/** The lattice's street class along line `k`: an avenue every `every`, otherwise two or three lanes, rarely one. */
+/**
+ * The lattice's street class along line `k`: a four-lane avenue every
+ * `every`, two lanes otherwise. Always an even count, one each way or two,
+ * and one class the whole length of the line, so a street's lanes only
+ * change at a junction. The draw is kept so the grid's other draws keep
+ * their stream.
+ */
 function lineWidth(rand: () => number, k: number, every: number, lanes: UrbanDef['lanes']): number {
-  if (k % every === 0) return lanes.four;
-  const r = rand();
-  return r < 0.08 ? lanes.narrow : r < 0.6 ? lanes.two : lanes.three;
+  rand();
+  return k % every === 0 ? lanes.four : lanes.two;
 }
 
 /**

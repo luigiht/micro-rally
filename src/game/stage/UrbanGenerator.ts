@@ -4,7 +4,9 @@ import { createRoadHit, type RoadPath } from './RoadPath';
 import { ringChords, ringOuterRadius, ringPoint, ringSweep, type Roundabout } from './Roundabout';
 import type { Junction, Street } from './Town';
 import { junctionKerbs } from './TownKerbs';
-import { junctionReach } from './TownJunctions';
+import { boxArmCut } from './JunctionBox';
+import { junctionReach, junctionTurn } from './TownJunctions';
+import { tangentLength } from './TownPlan';
 import { applyPlan, planStub, stubSite, type StubSite } from './TownSideStreets';
 import { PAVEMENT_WIDTH, segmentDistance } from './Town';
 import { ROW_SETBACK } from './TownSideStreets';
@@ -92,9 +94,9 @@ export function cityRoundabout(
   const chords: Street[] = ringChords(r);
   site.streets.push(...chords);
   // A mapped city's exits are its streets to the crossroads round the ring (`cityNetwork` lays them).
+  // Its frontage is the city's (`CityFrontage`), round the ring's pavement like every other.
   if (map) {
     r.exits.push(...ringExits(map, r));
-    ringWalls(site, r, stage);
     return r;
   }
   for (let k = 1; k <= 3; k++) {
@@ -320,6 +322,8 @@ export function traceWidths(
     wide: number;
     /** Which side the wider street lies: -1 before the junction, 1 after. */
     wideSide: -1 | 1;
+    /** A square junction's own taper length, inside its paving. */
+    taper?: number;
   }
   const holds: Hold[] = [];
   legs.forEach((leg, k) => {
@@ -331,6 +335,24 @@ export function traceWidths(
     if (Math.abs(from - to) < 1e-9) return;
     const j = junctions?.find((q) => Math.hypot(q.x - leg.corner!.x, q.z - leg.corner!.z) < 0.5);
     if (!j) return;
+    const wideSide = from > to ? -1 : 1;
+    if (j.box) {
+      // A square junction (`JunctionBox`): the narrower width round the arc only, the wider
+      // street's taking over inside the junction's paving, between the arc's tangent and the arm's
+      // cut, so each street keeps its lanes from junction to junction.
+      const wideArm = j.arms.find((a) => a.role === (wideSide > 0 ? 'out' : 'in'))!;
+      const room = boxArmCut(j, wideArm, base) - tangentLength(junctionTurn(j), j.radius);
+      holds.push({
+        k,
+        lo: a0,
+        hi: a1,
+        narrow: Math.min(from, to),
+        wide: Math.max(from, to),
+        wideSide,
+        taper: Math.max(0.5, room - 0.5),
+      });
+      return;
+    }
     const mid = (a0 + a1) / 2;
     const hold = junctionReach(j) + JUNCTION_HOLD;
     holds.push({
@@ -339,13 +361,13 @@ export function traceWidths(
       hi: mid + hold,
       narrow: Math.min(from, to),
       wide: Math.max(from, to),
-      wideSide: from > to ? -1 : 1,
+      wideSide,
     });
   });
   for (const h of holds) {
     // The taper runs `LANE_TAPER` beyond the hold on the wider side, or as far as the next
     // junction's hold if that comes first. Only ever narrows, so overlaps settle on the narrowest.
-    let taper = LANE_TAPER;
+    let taper = h.taper ?? LANE_TAPER;
     for (const o of holds) {
       if (o === h) continue;
       if (h.wideSide > 0 && o.lo > h.hi) taper = Math.min(taper, o.lo - h.hi);

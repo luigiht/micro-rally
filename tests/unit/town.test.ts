@@ -13,6 +13,7 @@ import { ROAD_BED_DROP, ROAD_LIFT, TerrainField } from '@/game/stage/TerrainFiel
 import {
   buildingBaseHeight,
   buildingCorners,
+  buildingDoor,
   FRONT_SETBACK,
   KERB_LIFT,
   onTownStreet,
@@ -425,9 +426,9 @@ describe('town generator', () => {
         }
       }
       // Every building stands on a terrace levelled with the pavement at its door: the deck under
-      // the back corners meets the base height exactly; the front corners sit a kerb above the deck,
-      // give or take the fall of a steep street along a wide front (up to 12.5 % over a 10 m shop),
-      // which the 1.75 m foundation absorbs.
+      // the back corners meets the base height exactly, and so does the pavement under the door,
+      // unless a door far off the middle of a wide front on a steep street would lift the front's
+      // lower corner past the foundation's reach (1.5 m, of the kits' 1.75 m): it stops there.
       const props = scatterScenery(field);
       for (const b of town.buildings) {
         const base = buildingBaseHeight(b, field);
@@ -435,9 +436,13 @@ describe('town generator', () => {
         for (const [x, z] of [br!, bl!])
           if (Math.abs(field.deckAt(x, z) - base) > 0.03)
             problems.push(`terrace ${stage.seed}: ${(field.deckAt(x, z) - base).toFixed(2)}`);
-        for (const [x, z] of [fr!, fl!])
-          if (Math.abs(field.deckAt(x, z) + KERB_LIFT - base) > 0.65)
-            problems.push(`door step ${stage.seed}: ${(field.deckAt(x, z) - base).toFixed(2)}`);
+        const fronts = [fr!, fl!].map(([x, z]) => field.deckAt(x, z) + KERB_LIFT);
+        const reach = base - Math.min(...fronts);
+        const door = buildingDoor(b);
+        const sill = base - field.deckAt(door.x, door.z) - KERB_LIFT;
+        if (Math.abs(sill) > 0.03 && Math.abs(reach - 1.5) > 0.03)
+          problems.push(`door step ${stage.seed}: ${sill.toFixed(2)}`);
+        if (reach > 1.53) problems.push(`foundation ${stage.seed}: ${reach.toFixed(2)}`);
       }
       expect(props.filter((p) => p.kind === b0Kind(town)).length).toBeGreaterThan(0);
       expect(problems, `${stage.seed}/${stage.index}`).toEqual([]);

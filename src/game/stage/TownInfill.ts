@@ -1,6 +1,7 @@
 import { CITY_EAVES } from './BuildingCatalog';
 import { buildingIndex } from './BuildingIndex';
 import type { Wall } from './Town';
+import { isSimple, overlaps } from './Footprints';
 import type { Pt, Site } from './TownTerraces';
 
 /**
@@ -21,6 +22,8 @@ export interface Infill {
   back: Pt[];
   height: number;
   tint: number;
+  /** Street doors on its front: where each stands and the way it faces (unit, toward the street). */
+  doors?: { x: number; z: number; nx: number; nz: number }[];
 }
 
 /** Façade tints the renderer chooses from. */
@@ -157,17 +160,134 @@ function backOf(site: Site, pts: Pt[], inward: 1 | -1): Pt[] | null {
   }
   // Straight or bending away: offset every point straight back (mitred at the bends).
   for (const depth of DEPTHS) {
-    const offs = pts.map((p, i) => {
-      const a = i > 0 ? normal(pts[i - 1]!, p, inward) : null;
-      const b = i < pts.length - 1 ? normal(p, pts[i + 1]!, inward) : null;
-      const n = a && b ? { x: a.x + b.x, z: a.z + b.z } : (a ?? b)!;
-      const len = Math.hypot(n.x, n.z) || 1;
-      const cos = a && b ? Math.max(0.5, (n.x * b.x + n.z * b.z) / len) : 1;
-      return { x: p.x + (n.x / len) * (depth / cos), z: p.z + (n.z / len) * (depth / cos) };
-    });
+    const offs = offsetBack(pts, inward, depth);
     if (clearAll(offs)) return offs.reverse();
   }
   return null;
+}
+
+/** The front `pts` offset `depth` toward the plot, mitred at the bends, in the front's order. */
+function offsetBack(pts: Pt[], inward: 1 | -1, depth: number): Pt[] {
+  return pts.map((p, i) => {
+    const a = i > 0 ? normal(pts[i - 1]!, p, inward) : null;
+    const b = i < pts.length - 1 ? normal(p, pts[i + 1]!, inward) : null;
+    const n = a && b ? { x: a.x + b.x, z: a.z + b.z } : (a ?? b)!;
+    const len = Math.hypot(n.x, n.z) || 1;
+    const cos = a && b ? Math.max(0.5, (n.x * b.x + n.z * b.z) / len) : 1;
+    return { x: p.x + (n.x / len) * (depth / cos), z: p.z + (n.z / len) * (depth / cos) };
+  });
+}
+
+/** A lot's building is this deep where it stays clear, else the next of `DEPTHS`, else `SHELL_DEPTH`. */
+const SHELL_DEPTH = 1;
+/** A street face this long gets its own door; a shorter front gets one in its middle. */
+const DOOR_FACE = 5;
+/** A front turning more than this at a vertex starts a new street face. */
+const FACE_TURN = (25 * Math.PI) / 180;
+
+/**
+ * The building of one city lot (`CityFrontageFill`): its front is the lot's
+ * stretch of frontage (in order, the plot on its left), its back the front
+ * offset straight back (mitred round a corner) as deep as `maxDepth` allows
+ * while every back point stays behind every pavement, a shell `SHELL_DEPTH`
+ * deep where nothing deeper does. Its sides are the lot's own cuts, square to
+ * the front, so it meets its neighbours without crossing them. A door stands
+ * in the middle of each street face (each run of the front between turns),
+ * and its front is laid as walls, its collider.
+ */
+export function fitLot(
+  site: Site,
+  front: readonly Pt[],
+  maxDepth: number,
+  placed: readonly Infill[],
+): Infill {
+  const pts = front.map((p) => ({ x: p.x, z: p.z }));
+  const index = buildingIndex(site.buildings);
+  // Clear of every pavement, unfolded (a front turning hard folds a deep offset over itself),
+  // and clear of every building standing, catalog or fitted.
+  const stands = (back: Pt[]) => {
+    if (!back.every((c) => site.clear(c.x, c.z, 0.05))) return false;
+    const outline = [...pts, ...back];
+    if (!isSimple(outline)) return false;
+    const cx = outline.reduce((s, p) => s + p.x, 0) / outline.length;
+    const cz = outline.reduce((s, p) => s + p.z, 0) / outline.length;
+    const reach = Math.max(...outline.map((p) => Math.hypot(p.x - cx, p.z - cz)));
+    const hitsBuilding = index.near(cx, cz, reach, ({ corners }) =>
+      overlaps(
+        outline,
+        [0, 1, 3, 2].map((i) => ({ x: corners[i]![0], z: corners[i]![1] })),
+      ),
+    );
+    return !hitsBuilding && !placed.some((o) => overlaps(outline, [...o.front, ...o.back]));
+  };
+  let back: Pt[] | null = null;
+  for (const depth of [...DEPTHS, SHELL_DEPTH]) {
+    if (depth > maxDepth) continue;
+    const offs = offsetBack(pts, 1, depth).reverse();
+    if (stands(offs)) {
+      back = offs;
+      break;
+    }
+  }
+  back ??= offsetBack(pts, 1, SHELL_DEPTH).reverse();
+  for (let i = 1; i < pts.length; i++)
+    site.walls.push({ x0: pts[i - 1]!.x, z0: pts[i - 1]!.z, x1: pts[i]!.x, z1: pts[i]!.z });
+  const first = pts[0]!;
+  return {
+    front: pts,
+    back,
+    height: neighbourHeight(site, first, pts[pts.length - 1]!) ?? 10 + hash(first, 1) * 4,
+    tint: Math.floor(hash(first, 2) * INFILL_TINTS),
+    doors: doorsOf(pts),
+  };
+}
+
+/** A door in the middle of each street face of a front with its plot on the left; one in the middle when no face is long enough. */
+function doorsOf(pts: readonly Pt[]): NonNullable<Infill['doors']> {
+  const faces: Pt[][] = [[pts[0]!]];
+  for (let i = 1; i < pts.length; i++) {
+    faces[faces.length - 1]!.push(pts[i]!);
+    if (i < pts.length - 1) {
+      const a = pts[i - 1]!;
+      const b = pts[i]!;
+      const c = pts[i + 1]!;
+      const d = Math.atan2(c.x - b.x, c.z - b.z) - Math.atan2(b.x - a.x, b.z - a.z);
+      if (Math.abs(Math.atan2(Math.sin(d), Math.cos(d))) > FACE_TURN) faces.push([b]);
+    }
+  }
+  const middle = (face: readonly Pt[], length: number) => {
+    let run = 0;
+    for (let i = 1; i < face.length; i++) {
+      const p = face[i - 1]!;
+      const q = face[i]!;
+      const len = Math.hypot(q.x - p.x, q.z - p.z);
+      if (run + len >= length / 2 && len > 0) {
+        const t = (length / 2 - run) / len;
+        // The plot lies left of the front; the street, right: (−dz, dx) per unit length.
+        return {
+          x: p.x + (q.x - p.x) * t,
+          z: p.z + (q.z - p.z) * t,
+          nx: -(q.z - p.z) / len,
+          nz: (q.x - p.x) / len,
+        };
+      }
+      run += len;
+    }
+    return null;
+  };
+  const lengthOf = (face: readonly Pt[]) => {
+    let len = 0;
+    for (let i = 1; i < face.length; i++)
+      len += Math.hypot(face[i]!.x - face[i - 1]!.x, face[i]!.z - face[i - 1]!.z);
+    return len;
+  };
+  const doors = faces
+    .filter((f) => lengthOf(f) >= DOOR_FACE)
+    .map((f) => middle(f, lengthOf(f)))
+    .filter((d): d is NonNullable<typeof d> => d !== null);
+  if (doors.length > 0) return doors;
+  const whole = middle(pts, lengthOf(pts));
+  return whole ? [whole] : [];
 }
 
 /** How close to a run's end a neighbour must stand to set the fitted building's height. */

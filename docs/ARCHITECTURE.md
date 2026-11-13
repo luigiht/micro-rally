@@ -113,10 +113,15 @@ flowchart LR
   crossroads and streets; `CityRoute` walks the route along it and lays it as
   town legs (`planUrban` returns them with the map), so `buildCentreline`,
   gates and progress are unchanged; `CityMap.cityToWorld` places the map on
-  the traced entry; `CityNetwork` turns the streets round the route's blocks
-  into junctions, open streets and barriers (`TownDef.barriers`, colliders in
-  `townObstacles`, drawn by `render/town/RoadClosedBuilder`); `TramLoop`
-  picks a rectangle of blocks for the tram circuit (`TownDef.tramLoop`, its
+  the traced entry; `CityMap.cityStreets` picks the crossroads and streets
+  the city lays (shared by `CityNetwork` and `TramLoop`); `CityFrontage` walks
+  `CityNetwork`'s street graph (`NetworkOut.nodes`) into frontage chains, and
+  `CityFrontageFill` cuts them into lots of catalog rows and fitted buildings
+  (`TownInfill.fitLot`, outlines checked by `Footprints`); `CityNetwork` turns
+  them into junctions, open streets and barriers (`TownDef.barriers`, colliders in
+  `townObstacles`, drawn by `render/town/RoadClosedBuilder`); `TramLoop.planTramLoop`
+  picks a rectangle of blocks for the tram circuit while the route is planned
+  (`CityPlan.tram`; `chooseTramLoop` shapes it in the world as `TownDef.tramLoop`, its
   rail pieces in `trams`), whose trams `TramService.loopFleet`/`loopPose`
   pose for `TramFleet` and the session's hitboxes. `TerrainField` levels
   every street ending at an off-route crossroads to that crossroads' height,
@@ -163,7 +168,9 @@ flowchart LR
   width with kerbed pavements cut exactly at each junction opening,
   `TownJunctionBuilder` lays the pavement band and edge line as offset strips
   along the kerb outlines and fills the mouths with tarmac cut from the
-  junction's distance field (`Isobands.ts`), `TownStreetBuilder` lays the
+  junction's distance field (`Isobands.ts`), in two meshes (the tarmac fill
+  a depth-offset step behind the ribbon, the pavements, kerbs and lines
+  level with it), `TownStreetBuilder` lays the
   side-street plates, lines and pavements beyond each cut, `TownWallBuilder`
   merges the garden walls, and `SceneryChunkManager` instances the building,
   flower-box and street-furniture kits (`render/scenery/BuildingGeometry.ts`,

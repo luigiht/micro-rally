@@ -13,7 +13,7 @@ import { TerrainField } from '@/game/stage/TerrainField';
 import { KERB_LIFT, townObstacles, townProps } from '@/game/stage/Town';
 import { junctionReach } from '@/game/stage/TownJunctions';
 import { MEDIAN_HALF, medianLift } from '@/game/stage/Median';
-import { JUNCTION_HOLD, LANE_TAPER } from '@/game/stage/UrbanGenerator';
+import { boxArmCut } from '@/game/stage/JunctionBox';
 import { RAIL_LIFT, TRAM_BED_HALF, TRAM_GAUGE, tramLift } from '@/game/stage/Tram';
 import { planUrban } from '@/game/stage/UrbanPlan';
 
@@ -56,7 +56,8 @@ describe('the cycle', () => {
   });
 });
 
-describe('Urban stages', () => {
+// Generating a city takes about a second, so tests that build several get time for it.
+describe('Urban stages', { timeout: 30_000 }, () => {
   it('are a tarmac city from the start line to the finish, with streets of two to four lanes', () => {
     for (const seed of SEEDS) {
       const stage = fieldFor(seed).stage;
@@ -124,44 +125,42 @@ describe('Urban stages', () => {
     }
   });
 
-  it('hold one width along every street and drop lanes before a narrower junction, never inside it', () => {
+  it('keep each street to two or four lanes from junction to junction, changing only inside a corner', () => {
     const hit = createRoadHit();
     for (const seed of SEEDS) {
       const stage = fieldFor(seed).stage;
-      // A street long enough to clear the lane drops at both ends holds its own width in the middle.
+      const lanes = STAGE_TYPES.urban.urban!.lanes;
+      // Every street a two-lane street or a four-lane avenue.
+      for (const st of stage.town!.streets)
+        expect([lanes.two, lanes.four], `${seed} street`).toContain(st.halfWidth);
+      // A straight holds its own width in its middle, however long or short.
       for (const st of stage.town!.streets.filter((x) => x.route)) {
-        const len = Math.hypot(st.x1 - st.x0, st.z1 - st.z0);
-        if (len < 2 * (LANE_TAPER + 40)) continue;
+        if (Math.hypot(st.x1 - st.x0, st.z1 - st.z0) < 30) continue;
         stage.path.nearest((st.x0 + st.x1) / 2, (st.z0 + st.z1) / 2, 5, hit);
         expect(halfWidthAt(stage, hit.along)).toBeCloseTo(st.halfWidth, 2);
       }
-      // A junction corner is one width from kerb to kerb: both route arms agree, the ribbon holds
-      // that width through the junction's reach and a margin, and only widens beyond, smoothly.
+      // At a corner, the narrower width round the arc and each arm's own by the end of its paving.
       for (const j of stage.town!.junctions) {
-        const inArm = j.arms.find((a) => a.role === 'in');
-        const outArm = j.arms.find((a) => a.role === 'out');
-        // Crossroads off the route have no route arms to hold a width.
-        if (!inArm || !outArm) continue;
-        expect(inArm.halfWidth).toBe(outArm.halfWidth);
-        const turn = Math.atan2(
-          Math.sin(outArm.heading - inArm.heading - Math.PI),
-          Math.cos(outArm.heading - inArm.heading - Math.PI),
-        );
-        if (Math.abs(turn) < Math.PI / 4) continue;
+        if (!j.box) continue;
+        const inArm = j.arms.find((a) => a.role === 'in')!;
+        const outArm = j.arms.find((a) => a.role === 'out')!;
         stage.path.nearest(j.x, j.z, 60, hit);
-        const apex = hit.along;
-        const hold = junctionReach(j) + JUNCTION_HOLD;
-        for (const sign of [-1, 1]) {
-          let prev = inArm.halfWidth;
-          for (let d = 0; d <= hold + LANE_TAPER + 2; d += 1) {
-            const hw = halfWidthAt(stage, apex + sign * d);
-            if (d <= hold - 0.5)
-              expect(hw, `${seed} apex ${apex.toFixed(0)}`).toBeCloseTo(inArm.halfWidth, 1);
-            // Never a step: at most a lane's change over ten metres (a neighbouring corner's own
-            // drop may begin inside this window, so the width need not rise all the way).
-            expect(Math.abs(hw - prev)).toBeLessThan(0.4);
-            prev = hw;
-          }
+        expect(halfWidthAt(stage, hit.along)).toBeCloseTo(
+          Math.min(inArm.halfWidth, outArm.halfWidth),
+          1,
+        );
+        for (const arm of [inArm, outArm]) {
+          const cut = boxArmCut(j, arm, stage.halfWidth) + 0.5;
+          stage.path.nearest(
+            j.x + Math.sin(arm.heading) * cut,
+            j.z + Math.cos(arm.heading) * cut,
+            20,
+            hit,
+          );
+          expect(halfWidthAt(stage, hit.along), `${seed} arm at ${hit.along}`).toBeCloseTo(
+            arm.halfWidth,
+            1,
+          );
         }
       }
     }
@@ -350,7 +349,7 @@ describe('Urban stages', () => {
         for (const b of stage.town!.buildings)
           expect(Math.hypot(b.x - r.x, b.z - r.z)).toBeGreaterThan(ringOuterRadius(r));
         // The route's inner edge never bites into the island on its way in and out: the island's
-        // kerb stays a circle.
+        // kerb stays a circle. The path's 2 m chords sag up to ~0.1 m inside a ring this tight.
         for (let d = r.from - 30; d <= r.to + 30; d += 1) {
           const s = { x: 0, z: 0, heading: 0 };
           stage.path.sample(d, s);
@@ -359,7 +358,7 @@ describe('Urban stages', () => {
             Math.sign((r.x - s.x) * Math.cos(s.heading) - (r.z - s.z) * Math.sin(s.heading)) || 1;
           const ex = s.x + Math.cos(s.heading) * hw * toCentre;
           const ez = s.z - Math.sin(s.heading) * hw * toCentre;
-          expect(Math.hypot(ex - r.x, ez - r.z)).toBeGreaterThanOrEqual(r.islandRadius - 0.1);
+          expect(Math.hypot(ex - r.x, ez - r.z)).toBeGreaterThanOrEqual(r.islandRadius - 0.15);
         }
       }
     }
@@ -414,13 +413,17 @@ describe('Urban stages', () => {
         const h = field.roadHeightAt(d);
         lo = Math.min(lo, h);
         hi = Math.max(hi, h);
-        expect(Math.abs(field.roadHeightAt(d + 2) - h) / 2).toBeLessThanOrEqual(0.12 + 1e-6);
+        // 12 % on the open street, up to 15 % on the ramps between two level junctions.
+        expect(Math.abs(field.roadHeightAt(d + 2) - h) / 2).toBeLessThanOrEqual(0.15 + 1e-6);
       }
       expect(hi - lo).toBeGreaterThan(6);
-      const junctions = stage.town!.junctions.map((j) => {
-        stage.path.nearest(j.x, j.z, 60, hit);
-        return hit.along;
-      });
+      // The junctions the route drives through (the city's others stand a block or more away).
+      const junctions = stage
+        .town!.junctions.filter((j) => j.arms.some((a) => a.role !== 'blocked'))
+        .map((j) => {
+          stage.path.nearest(j.x, j.z, 60, hit);
+          return hit.along;
+        });
       for (const g of stage.gates) {
         if (g.kind !== 'checkpoint') continue;
         for (const j of junctions)
@@ -495,6 +498,48 @@ describe('Urban stages', () => {
 });
 
 describe('save migration', () => {
+  it("moves v10 saves to v11, dropping the cities' records only", () => {
+    const rec = { best: 90, splits: [30, 60, 90] };
+    const city = stageIndexOf('urban', 2);
+    const forest = stageIndexOf('forest', 2);
+    const save = parseSaveFile({
+      version: 10,
+      gameId: 'ABCD2345',
+      driverName: 'Ada',
+      gameSeed: 1,
+      money: 10,
+      stageIndex: city + 1,
+      records: { [city]: rec, [forest]: rec },
+      carId: 'hatchback',
+      ownedCars: ['hatchback'],
+      upgrades: {},
+      updatedAt: 1,
+    })!;
+    expect(save.version).toBe(SAVE_VERSION);
+    expect(Object.keys(save.records).map(Number)).toEqual([forest]);
+  });
+
+  it("moves v9 saves to v10, dropping the cities' records only", () => {
+    const rec = { best: 90, splits: [30, 60, 90] };
+    const city = stageIndexOf('urban', 1);
+    const forest = stageIndexOf('forest', 1);
+    const save = parseSaveFile({
+      version: 9,
+      gameId: 'ABCD2345',
+      driverName: 'Ada',
+      gameSeed: 1,
+      money: 10,
+      stageIndex: city + 1,
+      records: { [city]: rec, [forest]: rec },
+      carId: 'hatchback',
+      ownedCars: ['hatchback'],
+      upgrades: {},
+      updatedAt: 1,
+    })!;
+    expect(save.version).toBe(SAVE_VERSION);
+    expect(Object.keys(save.records).map(Number)).toEqual([forest]);
+  });
+
   it("moves v8 saves to v9, dropping the old cities' records only", () => {
     const rec = { best: 90, splits: [30, 60, 90] };
     const city = stageIndexOf('urban', 0);

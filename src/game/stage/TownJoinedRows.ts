@@ -96,6 +96,11 @@ function fits(site: Site, b: Building, row: readonly Planned[], skip?: Planned):
   return row.every((p) => p === skip || apart(p.b, b, -ROW_OVERLAP));
 }
 
+/** Whether `b` stands behind every pavement, off the islands and clear of the town's buildings (see `fits`). */
+export function standsClear(site: Site, b: Building): boolean {
+  return fits(site, b, []);
+}
+
 /** A building of `style` with its front from `s` to about `s + 2·hx` on the facade, or null where it does not stand. */
 function stand(
   site: Site,

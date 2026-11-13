@@ -200,12 +200,14 @@ export function cycleSlot(types: readonly StageTypeId[], index: number): StageSl
  */
 const JUNCTION_GATE_CLEARANCE = 25;
 
-/** Path distances of a city's junctions, where its checkpoints keep off. */
+/** Path distances of the junctions a city's route drives through, where its checkpoints keep off; in order. */
 function junctionDistances(path: RoadPath, town: TownDef): number[] {
   const hit = createRoadHit();
   const out: number[] = [];
-  for (const j of town.junctions) if (path.nearest(j.x, j.z, 60, hit)) out.push(hit.along);
-  return out;
+  for (const j of town.junctions)
+    if (j.arms.some((a) => a.role !== 'blocked') && path.nearest(j.x, j.z, 60, hit))
+      out.push(hit.along);
+  return out.sort((a, b) => a - b);
 }
 
 /** `distance` moved past the nearest junction zone or ring it falls in, forward if it is past the middle, back otherwise. */
@@ -266,6 +268,7 @@ function placeGates(
     // so it keeps its gap.
     if (town && whole)
       for (const j of junctions)
+        // In order, so each move can only meet the junctions after it.
         if (Math.abs(distance - j) < JUNCTION_GATE_CLEARANCE)
           distance = j + JUNCTION_GATE_CLEARANCE;
     if (distance <= finish - MIN_GATE_GAP) distances.push(distance);

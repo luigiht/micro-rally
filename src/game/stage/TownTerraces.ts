@@ -128,11 +128,15 @@ function simplify(pts: Pt[], eps: number): Pt[] {
     const az = pts[a]!.z;
     const dx = pts[b]!.x - ax;
     const dz = pts[b]!.z - az;
-    const len = Math.hypot(dx, dz) || 1;
+    const len = Math.hypot(dx, dz);
     let worst = eps;
     let idx = -1;
     for (let i = a + 1; i < b; i++) {
-      const d = Math.abs((pts[i]!.x - ax) * dz - (pts[i]!.z - az) * dx) / len;
+      // A loop's ends meet: measure from that point instead of a line of no length.
+      const d =
+        len > 1e-9
+          ? Math.abs((pts[i]!.x - ax) * dz - (pts[i]!.z - az) * dx) / len
+          : Math.hypot(pts[i]!.x - ax, pts[i]!.z - az);
       if (d > worst) {
         worst = d;
         idx = i;

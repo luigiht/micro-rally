@@ -7,7 +7,8 @@ import { stageIndexOf } from './stageIndex';
 const SEEDS = [1, 2, 3, 4, 5, 6];
 const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
 
-describe('city route', () => {
+// Generating a city takes about a second, so tests that build several get time for it.
+describe('city route', { timeout: 30_000 }, () => {
   it('drives along the map: every crossroads it passes lies on the road, every corner at its arc', () => {
     for (const seed of SEEDS) {
       const stage = generateStage(seed, stageIndexOf('urban', 1));

@@ -21,6 +21,8 @@ import { clipStubsToRoads, joinStubs } from './UrbanStreets';
 import { fitInfills } from './TownInfill';
 import { SpatialHash } from './SpatialHash';
 import { cityToWorld } from './city/CityMap';
+import { frontageChains } from './city/CityFrontage';
+import { fillFrontage as buildFrontage } from './city/CityFrontageFill';
 import { cityNetwork } from './city/CityNetwork';
 import { chooseTramLoop, loopLines, planSpans } from './city/TramLoop';
 import { buildingIndex } from './BuildingIndex';
@@ -222,7 +224,7 @@ export function layoutTown(
   // A city's map, placed on the route as the builder laid it.
   const map = cityPlan ? cityToWorld(cityPlan, trace.entry) : undefined;
   // Its tram circuit round a few of its blocks, chosen first so the barriers leave the rails clear.
-  const tramLoop = map ? chooseTramLoop(map, seed) : null;
+  const tramLoop = map ? chooseTramLoop(map) : null;
   const loopRails = tramLoop ? loopLines(tramLoop) : [];
   const site: Site = {
     rand: mulberry32(hashSeed(seed, 'town-layout')),
@@ -279,10 +281,10 @@ export function layoutTown(
   }
   for (const s of stubs) layStub(site, s);
   const hit = createRoadHit();
-  path.nearest(trace.entry.x, trace.entry.z, 20, hit);
-  const from = hit.along;
-  path.nearest(trace.exit.x, trace.exit.z, 20, hit);
-  const to = hit.along;
+  // The trace's ends on the road; a city's exit lies past the road's end (its run-out is cut
+  // short of the last leg), where the town runs to the road's end.
+  const from = path.nearest(trace.entry.x, trace.entry.z, 20, hit) ? hit.along : 0;
+  const to = path.nearest(trace.exit.x, trace.exit.z, 20, hit) ? hit.along : path.length;
   // A city's streets each hold one width along their length and change it across the corner arcs;
   // a village narrows its streets from the junctions and widens back beyond them.
   const widths = city ? cityWidths : buildWidths(path, site, base);
@@ -319,12 +321,28 @@ export function layoutTown(
     left: routeFacade(path, widths, base, from, to, 1),
     right: routeFacade(path, widths, base, from, to, -1),
   };
+  // A city keeps buildings off its roundabouts' islands.
+  if (city) site.islands = roundabouts.map((r) => ({ x: r.x, z: r.z, r: r.islandRadius }));
+  // A mapped city builds along its whole frontage, block by block (`CityFrontage`): every
+  // pavement has a building behind it, and nothing below applies.
+  const frontage =
+    map && network
+      ? frontageChains({
+          nodes: network.nodes,
+          route: map.route,
+          facades,
+          path,
+          base,
+          endSetback: EDGE_SETBACK,
+        })
+      : null;
+  const mapped = frontage ? buildFrontage(site, frontage) : null;
   // The hall and the other end buildings before the terraces, so the landmarks survive.
-  for (const s of stubs) stubEnd(site, s);
+  if (!mapped) for (const s of stubs) stubEnd(site, s);
   // Junction walls, and where they interrupt the route's facades; then terraces between the interruptions.
   const gaps = { left: [] as [number, number][], right: [] as [number, number][] };
   const greens: Corner[] = [];
-  for (const j of site.junctions) {
+  for (const j of mapped ? [] : site.junctions) {
     const cuts = junctionWalls(site, j, facades, junctionKerbs(j, source, base));
     greens.push(...cuts.corners);
     for (const side of ['left', 'right'] as const)
@@ -332,33 +350,33 @@ export function layoutTown(
         gaps[side].push([Math.min(...cuts[side]), Math.max(...cuts[side])]);
   }
   // No terrace on a roundabout's island: the route's inner facade skips the arc round it.
-  for (const r of roundabouts) {
+  for (const r of mapped ? [] : roundabouts) {
     const side = r.sense > 0 ? 'left' : 'right';
     gaps[side].push(islandGap(r, facades[side]));
   }
-  // A city keeps buildings off its roundabouts' islands.
-  if (city) site.islands = roundabouts.map((r) => ({ x: r.x, z: r.z, r: r.islandRadius }));
-  for (const side of ['left', 'right'] as const) {
-    const facade = facades[side];
-    let s0 = EDGE_SETBACK;
-    for (const [a, b] of gaps[side].sort((p, q) => p[0] - q[0])) {
-      row(site, facade, s0, a);
-      s0 = Math.max(s0, b);
+  if (!mapped) {
+    for (const side of ['left', 'right'] as const) {
+      const facade = facades[side];
+      let s0 = EDGE_SETBACK;
+      for (const [a, b] of gaps[side].sort((p, q) => p[0] - q[0])) {
+        row(site, facade, s0, a);
+        s0 = Math.max(s0, b);
+      }
+      row(site, facade, s0, facade.length - EDGE_SETBACK);
     }
-    row(site, facade, s0, facade.length - EDGE_SETBACK);
+    for (const s of [...stubs, ...(network?.stubs ?? [])]) stubRows(site, s);
+    closeWallGaps(site);
+    // A city's corners are built up: its walls give way to the buildings, and no garden is planted.
+    if (city) {
+      // Trim the walls to the terraces, turn the straight runs left into terraces too, and trim
+      // again; the corners are left for one fitted building each.
+      trimWallsUnderBuildings(site);
+      wallsToTerraces(site);
+      trimWallsUnderBuildings(site);
+    } else plantCorners(site, greens);
   }
-  for (const s of [...stubs, ...(network?.stubs ?? [])]) stubRows(site, s);
-  closeWallGaps(site);
-  // A city's corners are built up: its walls give way to the buildings, and no garden is planted.
-  if (city) {
-    // Trim the walls to the terraces, turn the straight runs left into terraces too, and trim
-    // again; the corners are left for one fitted building each.
-    trimWallsUnderBuildings(site);
-    wallsToTerraces(site);
-    trimWallsUnderBuildings(site);
-  } else plantCorners(site, greens);
   // Whatever gap is left in a city takes a building fitted to its plot.
-  const infills = city ? fitInfills(site) : [];
+  const infills = mapped ?? (city ? fitInfills(site) : []);
   // The tram's contact wire hangs from span wires to the facades either side, where both stand.
   if (tramLoop) {
     const index = buildingIndex(site.buildings);
@@ -447,6 +465,7 @@ export function layoutTown(
           city: true as const,
           infills,
           ...(map ? { map } : {}),
+          ...(frontage ? { frontage } : {}),
           ...(site.barriers ? { barriers: site.barriers } : {}),
           ...(tramLoop ? { tramLoop } : {}),
         }

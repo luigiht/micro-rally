@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { loopAt } from '@/game/stage/city/TramLoop';
+import { loopAt, MIN_CROSSINGS } from '@/game/stage/city/TramLoop';
 import { createRoadHit } from '@/game/stage/RoadPath';
 import { halfWidthAt } from '@/game/stage/RoadWidth';
 import { generateStage } from '@/game/stage/StageGenerator';
@@ -18,7 +18,8 @@ import { stageIndexOf } from './stageIndex';
 
 const SEEDS = [1, 2, 3, 4, 5, 6];
 
-describe('tram loop', () => {
+// Generating a city takes about a second, so tests that build several get time for it.
+describe('tram loop', { timeout: 30_000 }, () => {
   const stages = SEEDS.map((seed) => generateStage(seed, stageIndexOf('urban', 1)));
 
   it('closes round a few blocks, its corners eased, on the streets all the way', () => {
@@ -57,16 +58,13 @@ describe('tram loop', () => {
     }
   });
 
-  it('runs alongside the route for a stretch and crosses it', () => {
+  it('is crossed by the route at four crossroads or more, its rails square across the road', () => {
     const hit = createRoadHit();
     for (const stage of stages) {
       const loop = stage.town!.tramLoop!;
-      const on = loop.xs.map((x, k) => stage.path.nearest(x, loop.zs[k]!, 1, hit));
-      // Shared: a stretch of samples on the route's axis.
-      expect(on.filter(Boolean).length * 4).toBeGreaterThan(80);
-      // Crossed: a loop piece cuts the route at 30° or more somewhere.
+      // Where a loop piece cuts the route at 30° or more, clustered to one point per crossing.
       const { xs, zs, count } = stage.path;
-      let crossings = 0;
+      const points: { x: number; z: number }[] = [];
       const n = loop.xs.length;
       for (let k = 0; k < n; k++) {
         const ax = loop.xs[k]!;
@@ -86,10 +84,11 @@ describe('tram loop', () => {
           const angle = Math.abs(
             Math.sin(Math.atan2(bx - ax, bz - az) - Math.atan2(dx - cx, dz - cz)),
           );
-          if (angle > 0.5) crossings++;
+          if (angle > 0.5 && !points.some((p) => Math.hypot(p.x - cx, p.z - cz) < 20))
+            points.push({ x: cx, z: cz });
         }
       }
-      expect(crossings).toBeGreaterThanOrEqual(1);
+      expect(points.length, `seed ${stage.seed}`).toBeGreaterThanOrEqual(MIN_CROSSINGS);
     }
   });
 

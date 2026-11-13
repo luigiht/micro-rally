@@ -4461,3 +4461,275 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
      - **Signs and cones:** a street closed across the rails now keeps its
        cones (the town already leaves the tram bed clear), and its sharp
        corner's direction board becomes two, either side of the rails.
+
+237. **2026-11-12 — Every city street connected; junction paving on the deck.**
+     The user found a closed street with grass right behind its barrier, and
+     shaded wedges and a kerb tip on a hilly corner.
+     - **Streets (`CityMap.cityStreets`):** the city laid the streets among
+       the route's crossroads and their four neighbours. A neighbour with
+       one such street (beside a corner, the start, the lattice's edge or a
+       dropped side street) got no junction, so its street was never laid,
+       but the route's junction still closed the arm: a barrier in front of
+       nothing (120 across 36 stages of six seeds). The city now takes the
+       eight neighbours (diagonals close the blocks round a corner), leaves
+       out the route's first and last crossroads (behind the start, past
+       the run-out, where a crossroads of blocked arms cut across the
+       road), and drops any crossroads off the route with fewer than two
+       streets, repeatedly, so every street runs junction to junction.
+       `CityNetwork`, `ringExits` and `TramLoop` share it; a tram loop's
+       sides must be laid streets or the route's. Cities generate 15–25 %
+       slower (0.4–2.1 s for loops one to six) for the extra streets.
+     - **Decks (`TerrainField.buildStubs`):** the deck under a junction's
+       paving is whichever street is nearest. A street ending at a
+       crossroads off the route ramped straight into it, and one ending at
+       a route corner (the crossroads lies inside the bend, ~5.6 m off the
+       axis, so the T-junction test missed it) ramped into the corner. The
+       paving's fan triangles then spanned decks up to 0.94 m apart. A
+       crossroads off the route now holds its level along every street
+       meeting there for its widest street's width plus the junction reach
+       (`startLevel`, `endLevel`), and a street ending at any junction the
+       route drives holds the route's deck through its far zone. Paving now
+       sits within 0.09 m of the deck. Levelling the route's own profile
+       through every junction was tried and dropped: it changed nothing the
+       decks did not fix.
+     - **Traffic lights** skip a corner a rail passes within 1.5 m of: a
+       tram loop's 18 m curve can cut a junction's pavement corner, and one
+       light stood on the rails once the loops were chosen afresh.
+     - **Tests:** `cityStreets.test.ts` checks every off-route crossroads
+       meets two streets, every closed arm has its street, and junction
+       paving lies within 0.15 m of the deck. The city terraces' share of
+       garden walls between buildings rose from 4.8 % to 5.1 % with the
+       extra crossroads (their corners are where the gaps are), so its
+       bound is 6 %.
+     - The route is unchanged, so saves keep their city records.
+
+238. **2026-11-12 — Roundabouts and a tram loop planned with the route.** The
+     user asked for a fully connected network of streets and junctions,
+     mapped first and the stage traced through it, with a few roundabouts and
+     a tram circuit the route crosses at least four times. The network part
+     is 237 (every street junction to junction); this entry is the rest.
+     - **Corner slabs by roundabouts:** a ring's exit streets run out from
+       its island's centre, but the junction at their far end aimed its arm
+       at the map's crossroads, a few metres off, so the arm missed the
+       street by 4–7°. `TownStreetBuilder` matches a street's end to an arm
+       within 0.01 rad, and an unmatched end ran its pavements nearly to
+       the junction's centre: the square slabs over the kerb returns. A
+       ring's crossroads now stands at its island's centre in `cityNetwork`,
+       and a test checks every street end meets an arm.
+     - **Roundabouts:** two a city, three from the second difficulty loop
+       (was one to three).
+     - **Tram loop (`TramLoop.planTramLoop`):** chosen in the plan frame
+       while the route is planned, from rectangles of one to four by one to
+       six blocks anywhere on the map, crossed straight over by the route
+       at `MIN_CROSSINGS` (4) crossroads or more: a side node (not a
+       corner) the route neither arrives at nor leaves along the loop. It
+       keeps clear of the start, the finish straight and the rings, leans
+       toward more crossings and then 1.5 km. Picked after the route, from
+       streets already built round it, four crossings were out of reach.
+       The plan carries it (`CityPlan.tram`, `CityMap.tram`) and
+       `cityStreets` builds all its streets.
+     - **Planning:** `planCity` draws the route again (up to 200 times, was 60) until it has every roundabout and such a loop, keeping the
+       closest valid plan otherwise. Across 14 seeds and their first three
+       to six cities every one had both; a city now generates in 0.6–2.6 s.
+     - **Checkpoints** keep 25 m off the junctions the route drives through
+       only (the loop and the closed blocks put other crossroads within
+       60 m of the road, and boards were pushed back onto route junctions
+       dodging them); the final forward push walks them in order.
+     - **Saves** move to v10, dropping city records: the routes changed.
+     - City test files get a 30 s timeout; the ring bite tolerance is
+       0.15 m (the path's 2 m chords sag up to ~0.1 m inside a 13 m ring,
+       and more rings brought one over 0.1 m).
+
+239. **2026-11-12 — Flat streets, square corners, even lanes and trees.**
+     The user saw a tram bed glitching against a tilted road, kerbs and
+     pavements jumping at T junctions, and asked for every street flat
+     across however steep, square junctions with even pavements, two or four
+     lanes changing only at junctions, evenly spaced trees, and bushes on the
+     boulevards' medians.
+     - **Flat across:** a side street took its start height across its width
+       from the route's deck at each point, so on a hill it inherited the
+       route's grade sideways and twisted (up to 1.64 m across a street; a
+       level tram bed then cut in and out of it). `UrbanField.levelJunctions`
+       now holds the route's deck level through every junction it drives
+       (stretches merged where they meet, each level clamped to within a
+       ramp's reach of its neighbours' and the rings', ramps eased over 30 m,
+       then grade-limited at 15 % both ways until settled), and
+       `TerrainField.buildStubs` gives every street a single level at each
+       junction (the route's deck there, or the crossroads' ground), held
+       across its width through the paving and ramped along its length only.
+       An audit of stage 26 finds no street tilted across at all (was 460
+       samples over 0.15 m). The route's grade limit becomes 15 % on the ramps
+       between level junctions (12 % elsewhere).
+     - **Square corners (`JunctionBox.ts`, `Junction.box`):** a corner's ribbon
+       arc swept through the junction at `8 + half width`, and the space
+       between it and the straight streets was patched by fillets found
+       against the curve and straight-through aprons, which drew kerbs across
+       a carriageway and left pavements missing. A city corner is now drawn
+       as a crossroads of straight arms, the route's included, with the same
+       3 m kerb return between each pair (a taper where two carry straight
+       on, a square corner outside an L), one paving over the box, and the
+       ribbon's verges opened on both sides across it. For the arc to stay on
+       that paving its inner edge must not pass the kerb return, which holds
+       when its radius is at most half width + 3 m; `CityRoute.cornerRadius`
+       now rounds at the narrower street's half width + 3 m, so the inner
+       edge is the kerb return exactly. The shared kerb shapes moved to
+       `KerbShapes.ts`. The junction paving draws a depth step behind the
+       ribbon, which wins where both lie.
+     - **Corner buildings:** `junctionWalls` puts a boxed junction's corner
+       walls on the arms' straight frontages, inside the turn too, and the
+       route's terraces stop at each route arm's cut (a terrace following the
+       ribbon jogged where it widened inside the box, and two buildings
+       overlapped).
+     - **Lanes:** the lattice draws two-lane streets and four-lane avenues
+       only, rings two lanes. At a corner each route arm keeps its own
+       street's width; `traceWidths` holds the narrower round the arc and
+       widens between the tangent and the arm's cut, inside the paving, so no
+       street drops lanes mid-block. Parking bays need three-lane streets,
+       so they no longer appear (`ParkingBays` is unchanged).
+     - **Trees and medians:** each street is split into the stretches
+       between its junctions and trees spread evenly over each (about 7.5 m,
+       the same spots both sides, no shifting; one at a door is left out),
+       lamps every other gap. Bushes (scale 0.36–0.46) stand down every
+       median's grass every 6 m, 2 m in from its ends.
+     - **Frontage:** the user saw a pavement with grass behind it. A side
+       street's row started at `rowStart`, the first clear point after the
+       junction's paving; where the frontage started clear it walked on and
+       found the far junction instead, and the row began there (29 bare
+       stretches of 10–70 m over six cities, most of them from before this
+       entry). It now looks only 40 m out and never starts a row past
+       `ROW_SETBACK`, since each building checks its own clearance anyway; a
+       boxed wedge whose two arms carry nearly straight on puts its corner
+       between their frontages instead of where the lines meet far off. A
+       test walks both sides of every side street and finds no bare stretch
+       of 10 m past a junction's reach.
+     - **Saves** move to v11, dropping city records (the corners and rings
+       changed the routes again since v10).
+
+240. **2026-11-13 — A city built along its whole frontage, lot by lot.** The
+     user still found pavements with grass behind them (straight across a
+     T's head), then corners without a face on each street, facades
+     intersecting, and buildings without a door on the street; they asked to
+     rebuild the logic so every inch of pavement fronts a building, corner
+     buildings have two street faces, every building on a pavement has a
+     street door, and no building stands inside another.
+     - **Why rebuild:** a mapped city's buildings came from route terraces
+       gapped at junctions, side-street rows started by `rowStart`, corner
+       walls (`junctionWalls`, `boxWedgeWalls`), ring walls, wall joining and
+       trimming, `wallsToTerraces`, and `fitInfills`, which dropped any run it
+       could not fit (and `pushWall` any stretch not clear). Every seam was a
+       chance for bare ground, and fitted buildings were never checked against
+       the catalog ones.
+     - **Frontage (`city/CityFrontage.ts`):** `cityNetwork` now returns its
+       street graph (`NetworkOut.nodes`: every junction, ring and the route's
+       two ends, with their arms in heading order and the node each reaches).
+       Walking it with the buildings on the left gives one chain per block and
+       round the city's outside, open only at the route's ends. A street side
+       runs `hw + 3` off its axis (the route's is its facade); a junction
+       corner is the wedge's facade corner `k` (a kerb return's radius equals
+       a pavement's width, so the pavement's back edge meets itself there),
+       the midpoint across a 165–195° wedge, a 3 m arc round a boxed reflex
+       corner's carriageway corner, the route facade's own crossing on a
+       non-boxed route junction; round a ring, the circle 3 m outside it
+       between the arms' meeting points (a route arm's is its facade's crossing
+       within 30 m of its straight line's, never sweeping past the wedge), or
+       where a narrow wedge's two frontages cross before reaching it.
+     - **Lots (`city/CityFrontageFill.ts`):** each chain is cut into lots
+       square to the frontage. A bend of over 25° (close turns joined) is a
+       corner lot 13.5 m down each street (more than the deepest catalog
+       building, 12 m, so the two streets' buildings never meet behind it),
+       fitted as one building with a face and a door on each street. Straight
+       stretches are shared among catalog buildings scaled alike to fill them
+       exactly (`standsClear` checks each); a stretch that fails is fitted.
+       `TownInfill.fitLot` offsets a front back up to 9 m, shallower where it
+       would reach a pavement, fold over itself or overlap a building
+       (`Footprints.isSimple`/`overlaps`, sides shrunk a hair so shared lot
+       lines only touch), a 1 m shell at worst; it puts a door mid-face on
+       each street face. `TownInfillBuilder` draws the doors (framed, no
+       ground-floor window beside them); `StreetFurniture` keeps off them.
+     - **Fixes found on the way:** `layoutTown` took the town's end from the
+       trace's exit within 20 m of the road; a city's exit lies past the
+       road's end, the lookup failed and `to` stayed at `from`, so the route's
+       facades had no length and seed 3's route had no terraces at all (and
+       crossings, fades and furniture keyed on `town.to` misbehaved): it now
+       falls back to the road's length. `polylineFacade`'s simplification
+       dropped every point of a closed loop (it measured from a line of no
+       length): it now measures from the loop's meeting point. The previous
+       round's `rowStart`/`STRAIGHT_ON` corner patches no longer apply to
+       mapped cities; `boxWedgeWalls` is gone.
+     - **Result (six seeds, first city):** 0–2 m of 16–21 km of frontage
+       bare (at a couple of outside-corner seams), no overlaps between any
+       buildings, 180–245 two-faced corner buildings, 0.3–1.1 s a city
+       (faster than before: fewer, wider catalog buildings). Tests:
+       frontage coverage, no overlaps, corner doors facing pavements.
+
+241. **2026-11-13 — Varied city greenery; worn asphalt and slab pavements.**
+     The user asked for variety in the median bushes and street trees, and
+     texture on the road and pavements, keeping the low-poly look.
+     - **Greenery:** two city-only prop kinds, so no other region changes.
+       `streetTree` (in the pits) comes in six species, the prop's
+       `variant`: round lime, oval hornbeam, layered plane, a slim column
+       (the oval crown drawn narrow and tall on a longer trunk), a pale
+       birch and a dark holm oak, every crown green (the user asked that
+       the street trees, like the medians, show only shades of green: a
+       first pass had a pink blossom and a copper beech). Each stretch between junctions picks a
+       main species (weights 4/3/3/2/0.6/0.6), 15 % of its trees another; each
+       tree is 0.85–1.15× its species' size and its colour one of the
+       species' few, a shade either way by its spot. `shrub` (the medians)
+       comes in five shapes: round bush, hedge mound (three rounded clumps
+       run together, turned along the divider; a first pass had a square
+       clipped box, which the user found too blocky), small conifer, leafy bush and grass clump, each in its own
+       shades of green (the user asked for green only, no flowering
+       colours). Each median takes one of six planting schemes repeated down
+       its length, with two tufts of the regions' tall grass (`grass`, its
+       two green tints only, at 0.5–0.7×) in each gap between shrubs. Kits in
+       `render/scenery/kits/CityGreenKits.ts`, added to `rallyKits`.
+     - **Surfaces (`render/road/SurfaceDetail.ts`), all in vertex colour:**
+       a city carriageway is cut into lane bands (`laneBands`), each lane's
+       two wheel paths (±0.85 m off its middle, 0.55 m wide) at 0.89 of the
+       asphalt and every piece of asphalt within ±3.5 % of it; pavements are
+       two rows of slabs (2 m along the ribbon's stations and the side
+       streets, a 2 m world grid round junction corners) within ±10 %. A
+       piece shaded on its own keeps its own corners, so `mergeVertices`
+       leaves the slab edges crisp. Applied to the ribbon (`RoadBuilder`,
+       a `detail` shade per piece), the side streets (`TownStreetBuilder`)
+       and the junction kerbs' pavements (`TownJunctionBuilder`); villages
+       and open roads are unchanged.
+     - **Cost and tiers:** a city's ribbon gains up to 20 bands across
+       instead of one and its pavements two rows, a few tens of thousands of
+       triangles in all, no textures and no new draw calls. The project has
+       no quality-tier settings yet, so this detail is not switchable; it
+       should join the Low tier's cuts when tiers arrive.
+
+242. **2026-11-13 — Doors on the pavement; junction lines drawn level with the ribbon.**
+     The user found doors floating above sloping pavements and the white
+     edge lines winking out and back as the car closed on them.
+     - **Fitted buildings' doors (`TownInfillBuilder`):** a fitted
+       building's floor is its front's highest pavement, and every door
+       stood on it, so on a hill a door downhill of that point floated (up
+       to 1.5 m on the user's stage). Each door's sill now takes the
+       pavement 0.3 m in front of it, at the lower of its two jambs, so no
+       gap shows under it; the floor, plinth and windows are unchanged.
+     - **Catalog buildings (`Town.buildingBaseHeight`):** a building's base
+       was the mean of its two front corners' pavements, exact only for a
+       door in the middle; a shop's (3.4 m off it, more when widened) or a
+       townhouse's (1.8 m) sat off the pavement by the street's fall over
+       that distance. The base is now the pavement at the door
+       (`buildingDoor`, which also scales the door's offset by the
+       building's widening, and which `StreetFurniture` now shares), held
+       at most 1.5 m above the front's lower corner so the kits' 1.6 m
+       foundation still reaches the ground there. The terrace pads follow,
+       since they use the same height.
+     - **Edge lines:** decision 241 put the junction mesh's depth offset a
+       step behind the ribbon's (−1 against −2), so the ribbon's banded
+       tarmac would win over a boxed junction's paving. But that mesh also
+       draws the white edge line round each kerb return and along the
+       route's edge through each mouth, where it lies on the ribbon's
+       carriageway only 2 cm up; at a glancing view from afar, one step of
+       slope-scaled offset is more than 2 cm, so the tarmac covered the
+       line until the car came close. `TownJunctionBuilder` now builds two
+       meshes: the tarmac fill at −1 and the dressing (pavements, kerb
+       faces, lines) at −2, level with the ribbon, as before 241. One more
+       draw call per city.
+     - Tests: every catalog building's door sill meets the pavement, or the
+       foundation is at its reach; pavement furniture keeps clear of the
+       widened doors.

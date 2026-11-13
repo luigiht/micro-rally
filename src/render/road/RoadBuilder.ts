@@ -18,6 +18,15 @@ import { halfWidthAt } from '@/game/stage/RoadWidth';
 import { roundaboutOpenings } from '@/game/stage/Roundabout';
 import { KERB_LIFT, townFade } from '@/game/stage/Town';
 import { routeOpenings, type Openings } from '@/game/stage/TownKerbs';
+import {
+  ASPHALT_JITTER,
+  cellTone,
+  laneBands,
+  MAX_BANDS,
+  SLAB_JITTER,
+  SLAB_ROWS,
+  WHEEL_TONE,
+} from './SurfaceDetail';
 import { themeColor, themedMaterial } from '../theme/themeColor';
 import type { RoadTheme } from '../theme/WorldTheme';
 
@@ -284,6 +293,8 @@ interface Strip {
   /** A shade on the strip's colour, fixed or varying along the road (by station sample index). */
   tone?: number | ((k: number) => number);
   blendFromRoad?: boolean;
+  /** A shade on each piece of its own (a city's slabs and asphalt, `SurfaceDetail`), from the half width and station there. */
+  detail?: (hw: number, k: number) => number;
 }
 
 /** Ribbon road split into pieces for frustum culling, plus verges, edge lines and marker posts. */
@@ -563,6 +574,39 @@ export class RoadBuilder {
         strips.splice(0, 1, ...left, ...tracks, ...right);
       } else strips.splice(0, 1, ...tracks);
     }
+    // A city's carriageway in lane bands, each lane's wheel paths worn darker and the asphalt
+    // mottled piece by piece; its pavements in rows of slabs (`SurfaceDetail`).
+    if (stage.town?.city) {
+      const carriageway = strips.indexOf(roadBase);
+      if (carriageway >= 0)
+        strips.splice(
+          carriageway,
+          1,
+          ...Array.from({ length: MAX_BANDS }, (_, i): Strip => ({
+            ...roadBase,
+            a: (hw) => laneBands(hw)[i]?.a ?? hw,
+            b: (hw) => laneBands(hw)[i]?.b ?? hw,
+            detail: (hw, k) =>
+              (laneBands(hw)[i]?.wheel ? WHEEL_TONE : 1) * cellTone(k, i, 101, ASPHALT_JITTER),
+          })),
+        );
+      for (const side of [1, -1] as const) {
+        const at = strips.findIndex((st) => st.side === side && st.town?.color === pavement.color);
+        if (at < 0) continue;
+        const verge = strips[at]!;
+        const row = VERGE_WIDTH / SLAB_ROWS;
+        strips.splice(
+          at,
+          1,
+          ...Array.from({ length: SLAB_ROWS }, (_, r): Strip => ({
+            ...verge,
+            a: (hw) => (side === 1 ? hw + row * r : -hw - row * (r + 1)),
+            b: (hw) => (side === 1 ? hw + row * (r + 1) : -hw - row * r),
+            detail: (_hw, k) => cellTone(k, r, side === 1 ? 211 : 223, SLAB_JITTER),
+          })),
+        );
+      }
+    }
     // Into and out of a town the ribbon eases over TOWN_FADE: the surface colour toward tarmac, the
     // verges up into pavements, the kerb faces growing with them.
     const vertex = (st: Station, e: number, strip: Strip, raise = 0, dip = 0) => {
@@ -638,6 +682,11 @@ export class RoadBuilder {
         vertex(p, strip.b(p.hw, p.k), strip, rb, db);
         vertex(q, strip.a(q.hw, q.k), strip, ra, da);
         vertex(q, strip.b(q.hw, q.k), strip, rb, db);
+        // A piece shaded on its own keeps its own corners: they do not weld to the next piece's.
+        if (strip.detail) {
+          const shade = strip.detail(p.hw, p.k);
+          for (let i = base * 3; i < (base + 4) * 3; i++) col[i]! *= shade;
+        }
         index.push(base, base + 2, base + 1, base + 2, base + 3, base + 1);
       }
     }

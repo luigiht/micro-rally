@@ -1,14 +1,17 @@
 import { hashSeed, mulberry32 } from '../../rng';
 import type { UrbanDef } from '../regions';
+import { FILLET } from '../Town';
 import { samplePoints, selfSeparated, tangentLength, type TownLeg } from '../TownPlan';
 import { across, cityGrid, edgeBetween, HALF_COLS, type CityGraph } from './CityGrid';
+import { planTramLoop } from './TramLoop';
 
 /**
  * The stage's route through the city map: a walk along the grid's streets
  * from the start crossroads, never back the way it came and never through a
  * crossroads twice, turning left and right at the junctions (a block or
- * three straight, a block or two across), passing one to three roundabouts
- * at crossroads it drives straight through or turns left at, and finishing
+ * three straight, a block or two across), passing two or three roundabouts
+ * at crossroads it drives straight through or turns left at, crossing the
+ * tram loop's rails at four crossroads or more, and finishing
  * along an avenue at least `FINAL_RUN` metres from its last turn. Laid as
  * the same legs `buildCentreline` takes, in the plan frame (the start node at
  * the origin, the first street along +z), so every corner of the route lands
@@ -18,8 +21,7 @@ import { across, cityGrid, edgeBetween, HALF_COLS, type CityGraph } from './City
 /** Deflection onto and off a roundabout's ring: the angle and arc radius (as `UrbanPlan` lays them). */
 export const DEFLECTION = (28 * Math.PI) / 180;
 export const DEFLECTION_RADIUS = 20;
-/** Corners round `8 + half width`; the warp's slight bends at crossroads round this. */
-const CORNER_RADIUS_BASE = 8;
+/** The warp's slight bends at crossroads round this (corners: see `cornerRadius`). */
 const KINK_RADIUS = 30;
 /** A turn under this at a crossroads is the warp's bend, not a corner. */
 const KINK = (20 * Math.PI) / 180;
@@ -29,7 +31,10 @@ const MIN_TAIL = 8;
 export const FINAL_RUN = 520;
 /** The route keeps a column from the lattice's edge, so streets run beyond it on both sides. */
 const SIDE_MARGIN = 2;
-const MAX_ATTEMPTS = 60;
+const MAX_ATTEMPTS = 200;
+/** Roundabouts on the route: two, and a third from the second difficulty loop. */
+const MIN_ROUNDABOUTS = 2;
+const MAX_ROUNDABOUTS = 3;
 
 export interface CityRoundabout {
   /** The crossroads it stands on, and its island's centre and radius in the plan frame. */
@@ -44,6 +49,8 @@ export interface CityPlan {
   graph: CityGraph;
   route: number[];
   roundabouts: CityRoundabout[];
+  /** The tram loop's crossroads in order round its rectangle (see `planTramLoop`); empty when it has none. */
+  tram: number[];
 }
 
 const straight = (length: number, turn: number, radius: number, halfWidth: number): TownLeg => ({
@@ -214,8 +221,21 @@ function turnAt(g: CityGraph, route: readonly number[], k: number): number {
   return wrap(headingOf(g, route[k]!, route[k + 1]!) - headingOf(g, route[k - 1]!, route[k]!));
 }
 
-function cornerRadius(turn: number, hw: number): number {
-  return Math.abs(turn) < KINK ? KINK_RADIUS : CORNER_RADIUS_BASE + hw;
+/**
+ * A corner rounds at the narrower street's half width plus the kerb return's
+ * radius, so its inner edge is the junction's kerb return exactly and the
+ * junction is square round it (`JunctionBox`); the warp's slight bends round
+ * `KINK_RADIUS`.
+ */
+function cornerRadius(turn: number, hwIn: number, hwOut: number): number {
+  return Math.abs(turn) < KINK ? KINK_RADIUS : Math.min(hwIn, hwOut) + FILLET;
+}
+
+/** The half widths either side of the route's crossroads `k`. */
+function widthsAt(g: CityGraph, route: readonly number[], k: number): [number, number] {
+  const hw = (a: number, b: number) => edgeBetween(g, route[a]!, route[b]!)?.halfWidth;
+  const hwIn = hw(k - 1, k) ?? hw(k, k + 1)!;
+  return [hwIn, hw(k, k + 1) ?? hwIn];
 }
 
 /** Pick the roundabouts: crossroads driven straight through or turned left at, with room either side. */
@@ -241,18 +261,17 @@ function pickRoundabouts(
       if (Math.abs(turn) > 0.35 && Math.abs(turn - Math.PI / 2) > 0.35) continue;
       if (at[k]! < 250 || at[k]! > span - FINAL_RUN - 150) continue;
       if (out.some((r) => Math.abs(route.indexOf(r.node) - k) < 3)) continue;
-      const hwIn = edgeBetween(g, route[k - 1]!, route[k]!)!.halfWidth;
-      const ringHw = Math.min(hwIn, def.lanes.three);
+      const ringHw = def.lanes.two;
       const islandRadius = def.island.min + rand() * (def.island.max - def.island.min);
       const p = ringPassage(islandRadius + ringHw, turn);
       const prevTurn = turnAt(g, route, k - 1);
       const nextTurn = turnAt(g, route, k + 1);
       const roomIn =
-        length(g, route[k - 1]!, route[k]!) - tangentLength(prevTurn, cornerRadius(prevTurn, hwIn));
-      const hwOut = edgeBetween(g, route[k]!, route[k + 1]!)!.halfWidth;
+        length(g, route[k - 1]!, route[k]!) -
+        tangentLength(prevTurn, cornerRadius(prevTurn, ...widthsAt(g, route, k - 1)));
       const roomOut =
         length(g, route[k]!, route[k + 1]!) -
-        tangentLength(nextTurn, cornerRadius(nextTurn, hwOut));
+        tangentLength(nextTurn, cornerRadius(nextTurn, ...widthsAt(g, route, k + 1)));
       if (p.before > roomIn - MIN_TAIL || p.after > roomOut - MIN_TAIL) continue;
       const gap = Math.abs(at[k]! - target);
       if (gap < bestGap) {
@@ -299,7 +318,7 @@ function routeLegs(
     const ring = ringAt.get(b);
     const turn = turnAt(g, route, k);
     if (ring) {
-      const ringHw = Math.min(hw, def.lanes.three);
+      const ringHw = def.lanes.two;
       const p = ringPassage(ring.islandRadius + ringHw, turn);
       len -= p.before;
       legs.push(straight(len, 0, 0, hw));
@@ -320,7 +339,8 @@ function routeLegs(
       break;
     }
     const corner = Math.abs(turn) < 1e-4 ? 0 : turn;
-    legs.push(straight(len, corner, corner === 0 ? 0 : cornerRadius(corner, hw), hw));
+    const radius = corner === 0 ? 0 : cornerRadius(corner, ...widthsAt(g, route, k));
+    legs.push(straight(len, corner, radius, hw));
     laid += len;
   }
   return legs;
@@ -352,7 +372,10 @@ export function planCity(
   def: UrbanDef,
 ): { legs: TownLeg[]; city: CityPlan } {
   const rand = mulberry32(hashSeed(seed, 'city-route'));
-  const count = Math.min(3, 1 + Math.floor(loop / 2));
+  const count = Math.min(MAX_ROUNDABOUTS, MIN_ROUNDABOUTS + Math.floor(loop / 2));
+  // The first valid plan with every roundabout and a tram loop the route crosses often enough;
+  // failing that, the valid plan that came closest.
+  let fallback: { legs: TownLeg[]; city: CityPlan; score: number } | null = null;
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const g = cityGrid(seed, span, def);
     const route = walk(g, rand, span);
@@ -361,15 +384,21 @@ export function planCity(
     const roundabouts = pickRoundabouts(g, route, rand, count, span, def);
     const legs = routeLegs(g, route, roundabouts, span, def);
     if (legs.reduce((s, l) => s + l.length, 0) < span - 1 || !valid(legs)) continue;
-    return { legs, city: { graph: g, route: trimRoute(g, route, legs), roundabouts } };
+    const trimmed = trimRoute(g, route, legs);
+    const tram = planTramLoop(g, trimmed, new Set(roundabouts.map((r) => r.node)), rand) ?? [];
+    const city: CityPlan = { graph: g, route: trimmed, roundabouts, tram };
+    const score = (tram.length > 0 ? 10 : 0) + Math.min(roundabouts.length, count);
+    if (score === 10 + count) return { legs, city };
+    if (!fallback || score > fallback.score) fallback = { legs, city, score };
   }
+  if (fallback) return { legs: fallback.legs, city: fallback.city };
   // Straight up the start column: always valid.
   const g = cityGrid(seed, span, def);
   const route: number[] = [];
   for (let j = 0; g.at(0, j) >= 0; j++) route.push(g.at(0, j));
   toPlanFrame(g, route[0]!, route[1]!);
   const legs = routeLegs(g, route, [], span, def);
-  return { legs, city: { graph: g, route: trimRoute(g, route, legs), roundabouts: [] } };
+  return { legs, city: { graph: g, route: trimRoute(g, route, legs), roundabouts: [], tram: [] } };
 }
 
 /** The route's crossroads up to where its legs end, and the one it is heading for there. */
