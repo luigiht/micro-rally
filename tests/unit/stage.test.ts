@@ -16,6 +16,7 @@ import {
   stagePalette,
   stageSlot,
 } from '@/game/stage/regions';
+import { roadSeparation } from './roadSeparation';
 import { stageIndexOf } from './stageIndex';
 import { generateStage, stageBrief, stageHasTown, stageTypeAt } from '@/game/stage/StageGenerator';
 import { StageRun, TREE_PENALTY_SECONDS } from '@/game/stage/StageRun';
@@ -114,20 +115,18 @@ describe('StageGenerator', () => {
 
   it('is curvy but never brings distant parts of the road close together', () => {
     for (let seed = 1; seed <= 12; seed++) {
-      const p = generateStage(seed * 7919, seed % 3).path;
+      const stage = generateStage(seed * 7919, seed % 3);
+      const p = stage.path;
       let turn = 0;
       for (let i = 1; i < p.count; i++) {
         const dh = p.headings[i]! - p.headings[i - 1]!;
         turn += Math.abs(Math.atan2(Math.sin(dh), Math.cos(dh)));
       }
       expect(turn / (p.length / 1000)).toBeGreaterThan(8);
-      let minSep = Infinity;
-      for (let i = 0; i < p.count; i += 4) {
-        for (let j = i + 100; j < p.count; j += 4) {
-          minSep = Math.min(minSep, Math.hypot(p.xs[i]! - p.xs[j]!, p.zs[i]! - p.zs[j]!));
-        }
-      }
-      expect(minSep).toBeGreaterThan(50);
+      // Only a hairpin stack's own legs come closer, and never nearer than about two hairpin radii.
+      const sep = roadSeparation(stage);
+      expect(sep.open).toBeGreaterThan(50);
+      if (stage.lacets) expect(sep.share).toBeGreaterThan(0.9);
     }
   });
 
@@ -222,7 +221,9 @@ describe('StageGenerator', () => {
 
 describe('stagePalette', () => {
   it('Autumnal wears its autumn palette in the trees only', () => {
-    const summer = STAGE_TYPES.forest.palette;
+    // The summer woodland's palette, as the Pinewood wears it without its pine greens.
+    const summer = { ...STAGE_TYPES.pinewood.palette };
+    delete summer.pines;
     const autumn = stagePalette('autumnal');
     expect(autumn).not.toBe(summer);
     expect(stagePalette('autumnal')).toBe(autumn);
@@ -231,12 +232,13 @@ describe('stagePalette', () => {
       expect(autumn[key] === summer[key]).toBe(!treeKeys.includes(key));
     }
     expect(stagePalette('pinewood')).toBe(STAGE_TYPES.pinewood.palette);
-    // Pinewood is the Forest's summer palette with its own pine greens.
-    expect({ ...stagePalette('pinewood'), pines: undefined }).toEqual({
-      ...summer,
-      pines: undefined,
-    });
-    expect(stagePalette('forest')).toBe(summer);
+    // The Greenvale wears its own greens over the summer sky, and its valley ground.
+    const greenvale = stagePalette('forest');
+    expect(greenvale).toBe(STAGE_TYPES.forest.palette);
+    expect(greenvale.sky).toBe(summer.sky);
+    expect(greenvale.grassLow).not.toBe(summer.grassLow);
+    expect(greenvale.meadows).toBeDefined();
+    expect(summer.meadows).toBeUndefined();
     expect(stagePalette('alpine')).toBe(STAGE_TYPES.alpine.palette);
     expect(stageBrief(1, stageIndexOf('autumnal')).surface).toBe('mud');
   });

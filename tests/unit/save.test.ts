@@ -84,9 +84,9 @@ describe('SaveFile', () => {
     };
     const migrated = parseSaveFile({ ...VALID, version: 7, records })!;
     expect(migrated.version).toBe(SAVE_VERSION);
+    // Stage 1's Alpine record goes at v8, stage 2's Greenvale record at v12 (new roads).
     expect(migrated.records).toEqual({
       0: records[0],
-      2: records[2],
       3: records[3],
     });
   });

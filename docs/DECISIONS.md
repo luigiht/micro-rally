@@ -4808,3 +4808,199 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
          chunk; a pine is about 90 triangles a tier.
      - **Spruce code** moved from `RallyKits` (575 lines) into
        `SpruceGeometry.ts` and `kits/SpruceKits.ts`, unchanged.
+
+245. **2026-11-14 — Forest stages renamed Greenvale (Valverde in es/it).**
+     The user wanted a name that calls out valleys, trees and winding
+     roads, in the manner of Arctic and Autumnal. No single word carries
+     all three: Greenvale names the green woods and the valley the road
+     winds along, and pairs with Pinewood as a compound. Spanish and
+     Italian both read Valverde ("green valley") naturally, replacing
+     Bosque and Foresta. Considered: Serpentine (curves only, and these
+     roads are middling for twistiness at 0.9), Glen (awkward to
+     translate), Woodvale (too close to Pinewood in a list) and Sylvan
+     (trees only).
+     - **Only player-facing text changed:** `stageTypes.forest` in the
+       three dictionaries, How to play, docs and the multiplayer e2e
+       label. The type's id stays `forest`: it is stored in saves and
+       session type lists, and its `seedKey` feeds stage generation, so
+       renaming either would break saves or reshape every existing
+       seed's stages. `FOREST`, `FOREST_PALETTE` and `FOREST_AUTUMN` keep
+       their names to match.
+     - Older About and changelog entries keep saying Forest, as history.
+
+246. **2026-11-14 — Greenvale as a Monte Carlo mountain road.**
+     The user asked for Greenvale roads like the Monte Carlo rally's: curvier,
+     more mountains and curves. They also wanted its trees redesigned after the low-poly
+     sets in `context/low-poly-trees` (references only, nothing shipped), tall
+     grass, a textured road, then (while watching it live) more detailed hills,
+     denser woods, greener and more varied ground with grey rock faces and
+     brown toward the road, and the road standing proud of its shoulders.
+     - **Hairpin stacks** (`Lacets`). The signature of the Col de Turini
+       is the lacet, so the walk now lays them itself rather than hoping the
+       random bends make one (its heading is clamped within 72° of the axis,
+       so it never could). A stack is a Z of three legs and two opposite
+       hairpins, laid as straights and short-chord arcs like a village's legs.
+       It climbs four radii along the axis and rejoins it on the axis
+       heading, so nothing downstream changes. Stacked legs stand two radii
+       apart (17–21 m radii, so 34–42 m), and each corridor (4.5 + 3 + 9 m)
+       stays clear of the next, as the coast's stacks do. Legs stay under
+       66 m so two stacked legs' far ends are under 200 m of road apart. The
+       self-approach tests now exempt a stack's own legs (`roadSeparation`)
+       and require two radii (×0.9) there instead.
+     - **The ground suits the road, not the other way round.** Road-first
+       like every other region, so the hills are made to climb under each
+       stack: a smooth step of about 20 m along the axis
+       (`lacetGround`, in `baseHeight`, so the road profile, scenery and
+       mesh all see it). The legs sit at 4 %, 50 % and 96 % of it, about 7 %
+       from leg to leg. Beyond the stack its line wanders ±60 m and its
+       slope eases to 2.2× as long, so it reads as a mountain flank rather
+       than a terrace. A terrain-first build like the coast's was rejected:
+       it would have needed a second ground model.
+     - **Banked like the coast.** `terrain.banked` reuses the coast's
+       cut/fill envelope (ground within 1.2 slope of every stretch in reach)
+       and its 9 m blend, without the shore fade, easing out over 20 m round
+       a village's plateau. Without it, stacked legs at different heights met
+       in a step at their midline.
+     - **Mountains.** 40 m relief (22 before) at 1/280, 40 % of it ridged
+       noise. Its fold is a soft |n| (rounded over 0.12 of the noise),
+       because a hard crest zigzagged across the 2 m mesh cells (the user saw
+       the sawtooth). On top sit 2.2 m of knolls and gullies at 34 m and 13 m
+       (`rugged`). Twistiness 1.6 (0.9 before), straights 6 % of bends (20 %).
+       Par speed 13.5 m/s (15).
+     - **Pinewood and Autumnal unchanged.** They spread the old Greenvale
+       definition, which is now `WOODLAND`; every new field is opt-in and the
+       walk draws nothing extra without `lacets`, so their roads are as before.
+     - **Ground colour** (`valleyFaceColor`, palette `meadows`). Built like the
+       coast's face colouring: hollowness (the bare hills 14 m round a corner
+       against the corner, four extra `groundHeight` reads per vertex in the
+       worker, about 3 ms a chunk) drives lush versus sunlit; two value-noise
+       scales patch olive and deep green; tilt from 0.16 to 0.32 turns faces
+       to grey rock in beds, plus outcrops on patchy steeper slopes; the
+       road blend browns the last metres; every face ±14 %.
+     - **Woods** (`GreenvaleTreeGeometry`, `GreenvaleKits`). Crowns of
+       jittered icosahedra (corners moved by position, so lumps stay closed),
+       each facet shaded by how much it faces the sky between 72 % of its
+       green and a warm sunlit green. Firs are scalloped drooping skirts;
+       cypresses a lumpy lathe. One vertex-coloured mesh per form, detail 1
+       near and 0 far (under half the vertices). A stone pine's bent trunk is
+       one tube with shared rings: two cylinders left a visible cut at the
+       bend (the user spotted it). Densities rose to about 400 trees per
+       100 m with the deep wood; a Greenvale stage builds in 40–100 ms and
+       holds 60 fps on the dev Mac.
+     - **Asphalt** (`MountainRoadStrips`, `wornTone`, `wornDip`). The
+       Alpine's wandering lane bands, toned per piece: polished tracks,
+       rubber through bends by curvature (from 0.02 to 0.06 per metre), and
+       patches on 6 % of 12 m lane stretches. The user then asked for
+       irregularities in the surface, so `Strip.dip` can now vary by station.
+       Each band edge sinks up to about 7 cm: a lane's slow heave, shallow
+       ruts beside the tracks and a little station-by-station roughness. It
+       never rises, so the edge lines never sink into it, and the
+       carriageway's own edges stay at the deck. A dashed centre line was
+       considered and dropped, because the ribbon cannot end a dash square.
+     - **Raised edge.** `embankment` gained `from` and `lip`: Greenvale's
+       ground falls 15 cm from 2 cm past the edge over 28 cm, so wheels feel
+       it. A first build drew a dark edge face (55 % of the road colour) and
+       a gravel shoulder; the user found the line too hard and asked for the
+       asphalt to merge into the gravel. Each verge strip now splits three
+       ways. A broken edge, 35 % of the way to the gravel's colour and 80 %
+       as bright, runs 55–145 % of the 30 cm lip as it wanders. Grit 65 % of
+       the way to the gravel spills 0.3–1.1 m past it. Then comes the
+       mottled shoulder.
+     - **Groves** (`Groves`, `SceneryDensity.groves`). The user wanted
+       the stage, at times, to cross very dense forest of the chunky
+       broadleaves. A per-stage value noise along the road (knots 240 m
+       apart, cut at 0.55, so about 45 % of the road) marks the groves. In
+       them the broadleaf draw is 3.5× and up to 20 % bigger, crowns stand 0.7
+       of their spacing apart (0.85 outside), and a grove
+       layer spreads 260 more per 100 m evenly out to 70 m. Only regions
+       with `groves` draw the layer, so no other region's scatter shifts. A
+       grove holds 60 fps on the dev Mac; a Greenvale stage now carries
+       about 2,000–2,600 broadleaves and 3,500 conifers.
+     - **Spectators on good ground** (`Spectators.standable`). On the
+       new mountains, crowds stood on steep cuttings and at the lip of
+       drops. The user asked for level ground or a mound, always with a clear
+       view of the road. A place must be within 30 cm of level over 0.9 m,
+       have no fall of more than 1.4 m within 3 m, and keep the hill out of
+       the line from the eyes (1.55 m) to a car (1 m over the road) in front
+       and 12 m along it one way or the other. Aiming at the road surface
+       instead hid it from the Arctic's crowds behind their 0.9 m snow banks.
+       Crowds step back 1.5 or 3 m before giving a place up; groups search 10 m
+       along and 5 m back for their ends and middle. This applies to every
+       type but circuits: a general rule, and the Alpine's hills had the same
+       problem. Other stages' spectators can therefore move.
+     - Saves go to v12, dropping Greenvale records: every Greenvale road changed.
+
+247. **2026-11-14 — Crowd benches; checkpoints off the hairpin stacks.**
+     After spectators were held to good ground (246), many Greenvale
+     checkpoints drew 0–10 people (the Arctic's draw 20–60). The user asked
+     for crowds round the start, the checkpoints, the jumps and the finish,
+     shaping the terrain if need be.
+     - **Benches** (`CrowdBenches`). Pads (as under the houses) were
+       rejected: they are flat, so along a 12 % road they step like stairs,
+       and they override everything under them, the berms included. A bench
+       is instead a strip either side of the road, level across and
+       following the deck along it, at the gravel shoulder's height. It runs
+       3.6–14 m past the carriageway's edge, eased in over 0.5 m and out
+       over 4 m across, 4 m past the crowd's ends and 8 m along. In
+       `TerrainField.sample` and `deckAt` the ground is drawn toward it
+       before the trench, the snow banks and the detail are applied. The
+       berm (a mound) lands on top, the small bumps are suppressed, and the
+       pads still win. A side is skipped where another stretch of road (or
+       the same road doubling back round a tight bend) comes within its
+       corridor plus 2 m of the bench's middle or outer foot, or within 5 m
+       of a village's footprint. The crowd spans moved out of `Spectators`
+       into `CrowdSpans`, so the terrain can read them without an import
+       cycle.
+     - **Checkpoints off the stacks.** Most of the empty checkpoints stood
+       inside a hairpin stack, whose other legs leave no room for a bench.
+       `placeGates` now moves a checkpoint 30 m clear of a stack, to the
+       nearer end, and on past it if the 60 m gap pushes it back in, as it
+       already does for villages.
+     - Result over 12 Greenvale stages: starts 41–87 people, checkpoints
+       13–46, finishes 79–198. Greenvale has no jumps (only the Autumnal
+       raises crests), but the benches follow any crowd span there is.
+
+248. **2026-11-14 — Greenvale jumps; a varied Alpine wood, snowfields and crowd benches.**
+     - **Greenvale jumps** (`terrain.crests` with `turn`, `search`, `level`).
+       The Autumnal's rule (a straight, nearly level 42 m) found a spot on
+       only half the Greenvale stages: a mountain road is seldom straight
+       and level at once. Every stage has four or five stretches straight
+       enough once grade is set aside, so a levelled crest takes the
+       straightest within 300 m about every 420 m, and the road is levelled
+       there. The run-up (24 m), hump and landing (16 m) are laid on a line
+       of at most 2 % through the crest's height. `RoadProfile.limitAround`
+       then holds the road either side to 12 % outward from that stretch;
+       limiting the whole profile again first pulled the run-up itself back
+       into a 12 % ramp, and the hump went to 19.8 %. A stage that finds no
+       spot takes its straightest stretch anywhere. Crests now also keep off
+       the stacks and never fall past the finish (a crest in the runout had
+       turned up); with `slope` set, the steepest grade under a hump counts
+       rather than its rise end to end. The Autumnal's rule is unchanged.
+       Crowds and benches follow the crests through `crowdSpans`.
+     - **Alpine woods** (`AlpineConiferGeometry`), after
+       `context/low-poly-snowy-trees`. The tiered snow pines stay (60 %, now
+       eleven with a laden giant and a white spire). New: drooping-frond
+       spruces (22 %), each frond two bent double-sided strips with a band
+       of snow a hair above. The first build was too sparse and see-through;
+       it now has 10 or 9 wider fronds a whorl and 12 or 14 whorls. Also
+       snow-clump firs (18 %): faceted clumps painted snow by how much they
+       face the sky, over a green body cone. The first build floated its
+       tiers like plates; the clumps are now taller and overlap. Stumps
+       stand in one bush in four, and rocks are boulders capped wherever
+       they face the sky; the stock rock is skipped for the Alpine, and the
+       boulders are no longer tumbled, so the snow stays on top. Bare trees
+       and snowy broadleaves stay out: the user dropped them before.
+     - **Alpine ground.** Reuses the Greenvale's `valleyFaceColor` with snow
+       tones. The first tones sat so near white that lighting clipped them,
+       so they were spread wider. The hollow measure (14 m round a point)
+       caught only 11 % of the Alpine's broad valleys, so it now adds half
+       of a 45 m ring as well. That deepens the Greenvale's valley greens a
+       little too, which the user had asked for there. Ridges 45 % and 2.4 m
+       of knolls bring steep faces from 2 % of the ground to 5 %, which go to
+       rock.
+     - **Alpine crowds.** `terrain.benches` on. `planBenches` now takes the
+       region's road corridor (flat margin plus blend: 19 m unbanked, 12 m
+       banked) for its other-stretch check. Starts draw 43–82, checkpoints
+       16–45, finishes 95–201.
+     - Saves go to v13: both types' road profiles changed, so Greenvale and
+       Alpine records go.

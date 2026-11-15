@@ -26,6 +26,7 @@ import {
   JUNCTION_REACH,
 } from '@/game/stage/Town';
 import { apart } from '@/game/stage/TownTerraces';
+import { roadSeparation } from './roadSeparation';
 import { hasTown, NARROW_HALF_WIDTH } from '@/game/stage/TownPlan';
 import { halfWidthAt } from '@/game/stage/RoadWidth';
 import { createStageWorld } from '@/game/stage/StageWorld';
@@ -401,11 +402,8 @@ describe('town generator', () => {
   it('keeps the generator invariants: no self-approach, grade-limited streets, buildings on the ground', () => {
     for (const stage of townStages().slice(0, 12)) {
       const p = stage.path;
-      let minSep = Infinity;
-      for (let i = 0; i < p.count; i += 4)
-        for (let j = i + 100; j < p.count; j += 4)
-          minSep = Math.min(minSep, Math.hypot(p.xs[i]! - p.xs[j]!, p.zs[i]! - p.zs[j]!));
-      expect(minSep, `${stage.seed}/${stage.index}`).toBeGreaterThan(50);
+      // A hairpin stack's own legs stand two radii apart by design (`roadSeparation`).
+      expect(roadSeparation(stage).open, `${stage.seed}/${stage.index}`).toBeGreaterThan(50);
       const field = new TerrainField(stage);
       const town = stage.town!;
       const problems: string[] = [];

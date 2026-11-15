@@ -164,7 +164,7 @@ pattern used throughout the project:
 4. Hold `KeyW` for a second or two, press `KeyC` to change camera, `KeyH`
    to hide the HUD, and take `page.screenshot()`.
 
-Useful stages (any game seed): index 2 is Forest on tarmac with a village
+Useful stages (any game seed): index 2 is Greenvale on tarmac with a village
 (`?spawn=town` for its entry), index 3 Coastal, index 4 Arctic, index 5
 Autumnal with a village and crowds behind berms, index 6 Desert,
 index 8 the first city, index 9 the first circuit and index 10 an Alpine

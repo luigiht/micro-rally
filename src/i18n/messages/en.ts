@@ -133,7 +133,7 @@ export const en = {
       highlights: [
         {
           title: 'Stages and progression',
-          body: 'Rally stages cycle through seven stage types, each with its own road surface: Pinewood gravel, Alpine snow, Forest and Coastal tarmac, Arctic snow, Autumnal mud and Desert sand. Every ninth stage is a city and every tenth is a three-lap circuit; when they coincide, the city comes first and the circuit follows. The rally mix then loops with longer, tighter roads.',
+          body: 'Rally stages cycle through seven stage types, each with its own road surface: Pinewood gravel, Alpine snow, Greenvale and Coastal tarmac, Arctic snow, Autumnal mud and Desert sand. Every ninth stage is a city and every tenth is a three-lap circuit; when they coincide, the city comes first and the circuit follows. The rally mix then loops with longer, tighter roads.',
         },
         {
           title: 'Drive, reset and replay',
@@ -433,7 +433,7 @@ export const en = {
     autumnal: 'Autumnal',
     pinewood: 'Pinewood',
     alpine: 'Alpine',
-    forest: 'Forest',
+    forest: 'Greenvale',
     urban: 'Urban',
     coastal: 'Coastal',
     desert: 'Desert',

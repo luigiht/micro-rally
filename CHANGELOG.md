@@ -5,6 +5,46 @@ tags yet: `main` is deployed continuously, so entries are grouped by the day
 they landed. The numbered entries in [docs/DECISIONS.md](docs/DECISIONS.md)
 hold the reasoning behind each change; the numbers in brackets point there.
 
+## 2026-11-14
+
+### Changed
+
+- **Jumps on Greenvale, a richer Alpine.** Every Greenvale stage now has
+  one to four jumps, each on a levelled run-up with a crowd either side.
+  The Alpine's woods add drooping-frond spruces, chunky snow-clump firs and
+  two heavily laden firs to the tiered pines, plus snowy stumps and
+  snow-capped boulders. Its snowfields are shaded blue in the hollows and
+  warm on the crests, with wind-crust patches and grey rock on the steep
+  faces, over more rugged mountains. Its crowds stand on level benches at
+  the start, checkpoints and finish. Greenvale and Alpine best times are
+  cleared. [248]
+- **Greenvale goes to Monte Carlo.** Greenvale stages are now Riviera
+  mountain roads: tarmac that hardly ever runs straight, between big
+  ridged mountains. Once or twice a stage the road climbs or drops a
+  hillside through a stack of two hairpins.
+  - **Woods.** The new woods mix oaks, chestnuts, umbrella stone pines and
+    lindens with drooping-tier firs, spruces and cypresses, all faceted and
+    much denser, over tall grass. Now and then the road plunges through
+    thick broadleaf forest.
+  - **Ground.** It is greener and patchier, lush in the hollows and sunlit
+    on the crests, with grey rock on the steep faces and cuttings and brown
+    earth toward the road.
+  - **Road.** The asphalt shows its wear (polished wheel tracks, rubber
+    through the bends, patches, shallow ruts and heaves). It stands a little
+    proud of its gravel shoulders, its edge crumbling into them.
+  - **Spectators.** Everywhere, spectators now stand only on fairly level
+    ground with a clear view of the road, never on a steep bank or at the
+    edge of a drop. On Greenvale the hillside is levelled into a bench
+    beside the road wherever the crowds gather, so the start, every
+    checkpoint and the finish draw a proper crowd, and checkpoints stand at
+    the foot or top of a hairpin stack rather than on it. [247]
+  - **Saves.** Greenvale best times are cleared, since every Greenvale road
+    changed. [246]
+- **Forest stages are now Greenvale.** The green, wooded tarmac stages take
+  a name for their valleys and winding roads: Greenvale in English,
+  Valverde in Spanish and Italian. Saves and sessions carry over
+  unchanged. [245]
+
 ## 2026-11-13
 
 ### Changed

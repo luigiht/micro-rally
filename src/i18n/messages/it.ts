@@ -138,7 +138,7 @@ export const it: Messages = {
       highlights: [
         {
           title: 'Prove e progressione',
-          body: 'Le prove rally ruotano tra sette tipi, ognuno con il proprio fondo: Pineta su ghiaia, Alpino su neve, Foresta e Costiero su asfalto, Artico su neve, Autunnale su fango e Deserto su sabbia. Ogni nona prova è una città e ogni decima è un circuito di tre giri; quando coincidono, la città viene prima e il circuito subito dopo. Il ciclo rally riprende con strade più lunghe e curve più strette.',
+          body: 'Le prove rally ruotano tra sette tipi, ognuno con il proprio fondo: Pineta su ghiaia, Alpino su neve, Valverde e Costiero su asfalto, Artico su neve, Autunnale su fango e Deserto su sabbia. Ogni nona prova è una città e ogni decima è un circuito di tre giri; quando coincidono, la città viene prima e il circuito subito dopo. Il ciclo rally riprende con strade più lunghe e curve più strette.',
         },
         {
           title: 'Guida, riparti e rivedi',
@@ -446,7 +446,7 @@ export const it: Messages = {
     autumnal: 'Autunnale',
     pinewood: 'Pineta',
     alpine: 'Alpino',
-    forest: 'Foresta',
+    forest: 'Valverde',
     urban: 'Urbano',
     coastal: 'Costiero',
     desert: 'Deserto',

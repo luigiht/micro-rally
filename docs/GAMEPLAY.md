@@ -29,7 +29,7 @@ here as of 2 November 2026.
 - Two drivers share a **session**: one seed, so identical stages, and a
   fixed run of 3, 6 or 9 stages. The host ticks the **stage types** the
   session uses (all by default); its stages take them in turn, in the
-  picker's order (Pinewood, Alpine, Forest, Coastal, Arctic, Autumnal,
+  picker's order (Pinewood, Alpine, Greenvale, Coastal, Arctic, Autumnal,
   Desert, Urban, Circuit), with towns and dusk runs on every third as in the
   career. **Each driver picks their own car** in the lobby, any in the
   catalogue; driving their first stage locks it in for the session. The
@@ -106,7 +106,7 @@ the last sector board or lap line passed.
 ## Par and prize money
 
 - **Par time** is the stage length divided by the stage type's par speed (15 m/s
-  Forest, 14 m/s Alpine) times a surface factor (tarmac 1.12, gravel 1,
+  Pinewood, 13.5 m/s Greenvale, 14 m/s Alpine) times a surface factor (tarmac 1.12, gravel 1,
   mud 0.85, snow 0.82, sand 0.9), plus 12 s when the stage has a town.
 - **Prize** = $800 per kilometre × surface difficulty (tarmac 1, grass 1.1,
   gravel 1.15, sand 1.2, mud 1.3, snow 1.35) × pace factor × (1 + 0.25 per
@@ -122,15 +122,20 @@ the last sector board or lap line passed.
 - Every ninth stage (9, 18, 27…) is a city, and every tenth (10, 20,
   30…) a circuit race; where the two would meet (stage 90, 180…) the city
   keeps the stage and the circuit is the next one. The stages between run
-  through a seven-type rally mix in turn: Pinewood, Alpine, Forest, Coastal,
+  through a seven-type rally mix in turn: Pinewood, Alpine, Greenvale, Coastal,
   Arctic, Autumnal and Desert, so a type never runs twice in a row. Each type
   has one fixed road surface.
   Every six stages the roads lengthen by 25 % and the bends tighten a
   little, so there is always a next stage.
+- Greenvale stages are Riviera mountain roads in the Monte Carlo manner:
+  tarmac that hardly ever runs straight, between big ridged mountains, and
+  once or twice a stage a stack of two hairpins climbing or dropping a
+  hillside. The asphalt stands 15 cm above its gravel shoulders, so a wheel
+  off the edge drops onto them.
 - Every third rally stage carries a town: the route leaves the open road,
   threads a village of right-angle corners, narrow streets and blocked side
   streets, and rejoins the stage. Counted along the mix, villages come round
-  Pinewood, Autumnal, Forest and Alpine; Coastal, Arctic and Desert build
+  Pinewood, Autumnal, Greenvale and Alpine; Coastal, Arctic and Desert build
   none, so a town slot that falls there stays open road, and cities and
   circuits are never counted.
 - Any stage up to the first unfinished one can be driven again from the
@@ -145,7 +150,7 @@ the last sector board or lap line passed.
 | Autumnal   | mud     | grass               | autumn trees, crowds, mud ruts and jumps | 1800 m      | 15 m/s    |
 | Pinewood   | gravel  | grass               | soft, wooded hills                       | 1800 m      | 15 m/s    |
 | Alpine     | snow    | snow                | sharper bends and frosted pines          | 1500 m      | 14 m/s    |
-| Forest     | tarmac  | grass               | soft, wooded hills                       | 1800 m      | 15 m/s    |
+| Greenvale  | tarmac  | grass               | mountains, hairpin stacks, mixed woods   | 1800 m      | 13.5 m/s  |
 | Urban      | tarmac  | grass               | city streets and roundabouts             | 1700 m      | 13 m/s    |
 | Coastal    | tarmac  | grass               | limestone cliffs and sea                 | 1600 m      | 15 m/s    |
 | Desert     | sand    | dune                | dunes and oases                          | 1900 m      | 16 m/s    |
@@ -167,7 +172,7 @@ drive down and back up. An Urban stage is a city from start to finish: blocks
 of two to four lanes turning mostly right angles (with the odd skewed corner,
 gentle kink and sweeping avenue), a roundabout or more to circle, tram tracks
 to cross (the car feels the rails), apartment blocks and offices on streets
-that climb and dip. Night exists as a name only (a Forest clone) and is not yet in the loop. Each stage
+that climb and dip. Night exists as a name only (a Greenvale clone) and is not yet in the loop. Each stage
 also rolls a weather (clear or overcast) into its brief; rendering does not
 react to it yet.
 

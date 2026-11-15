@@ -30,6 +30,7 @@ import {
   TRACK_TONE,
   WHEEL_TONE,
 } from './SurfaceDetail';
+import { raisedEdge, wornCarriageway } from './MountainRoadStrips';
 import { themeColor, themedMaterial } from '../theme/themeColor';
 import type { RoadTheme } from '../theme/WorldTheme';
 
@@ -57,6 +58,7 @@ const SNOW_POLE_HEIGHT = 2.4;
 export const LINE_ABOVE_DECK = 0.02;
 export const LINE_LIFT = ROAD_LIFT + LINE_ABOVE_DECK;
 const LINE_WIDTH = 0.22;
+const NO_DIP = [0, 0] as const;
 
 /** Integer mix hash to 0..1; a plain multiply-mod ramps instead of scattering. */
 function hash01(k: number): number {
@@ -278,7 +280,7 @@ interface Station {
 }
 
 /** One ribbon strip: lateral extent, lift, flat colour, optional snow cover and tarmac shade jitter; `town` overrides inside a town. */
-interface Strip {
+export interface Strip {
   /** Lateral extents as functions of the local half width and the station's sample index. */
   a: (hw: number, k: number) => number;
   b: (hw: number, k: number) => number;
@@ -292,8 +294,8 @@ interface Strip {
   side?: number;
   /** A vertical kerb face, only in town: a positive rise lifts the `b` edge by this much, a negative one the `a` edge. */
   rise?: number;
-  /** Heights of the `a` and `b` edges below the strip's lift (a rut's walls and floor), and a shade on its colour. */
-  dip?: readonly [number, number];
+  /** Heights of the `a` and `b` edges below the strip's lift (a rut's walls and floor), fixed or by station. */
+  dip?: readonly [number, number] | ((hw: number, k: number) => readonly [number, number]);
   /** A shade on the strip's colour, fixed or varying along the road (by station sample index). */
   tone?: number | ((k: number) => number);
   blendFromRoad?: boolean;
@@ -597,6 +599,14 @@ export class RoadBuilder {
           })),
         );
     }
+    // The Greenvale's mountain road: worn tarmac in wandering bands, and the asphalt standing a hand
+    // above a gravel shoulder (`MountainRoadStrips`).
+    const region = STAGE_TYPES[stage.stageType];
+    if (region.wornTarmac && !snowy && !town?.city) {
+      wornCarriageway(strips, roadBase, path);
+      const lip = region.terrain.embankment?.lip;
+      if (lip) raisedEdge(strips, this.verge, road, lip);
+    }
     // A city's carriageway in lane bands, each lane's wheel paths worn darker and the asphalt
     // mottled piece by piece; its pavements in rows of slabs (`SurfaceDetail`).
     if (stage.town?.city) {
@@ -675,7 +685,9 @@ export class RoadBuilder {
         // a is the right-hand edge; wind counter-clockwise seen from above. A kerb face raises one edge instead.
         const ra = strip.rise !== undefined && strip.rise < 0 ? -strip.rise : 0;
         const rb = strip.rise !== undefined && strip.rise > 0 ? strip.rise : 0;
-        const [da, db] = strip.dip ?? [0, 0];
+        const dips = strip.dip;
+        const [da, db] = typeof dips === 'function' ? dips(p.hw, p.k) : (dips ?? NO_DIP);
+        const [qa, qb] = typeof dips === 'function' ? dips(q.hw, q.k) : [da, db];
         if (strip.blendFromRoad) {
           const corners = [
             [p, strip.a(p.hw, p.k)],
@@ -703,8 +715,8 @@ export class RoadBuilder {
         }
         vertex(p, strip.a(p.hw, p.k), strip, ra, da);
         vertex(p, strip.b(p.hw, p.k), strip, rb, db);
-        vertex(q, strip.a(q.hw, q.k), strip, ra, da);
-        vertex(q, strip.b(q.hw, q.k), strip, rb, db);
+        vertex(q, strip.a(q.hw, q.k), strip, ra, qa);
+        vertex(q, strip.b(q.hw, q.k), strip, rb, qb);
         // A piece shaded on its own keeps its own corners: they do not weld to the next piece's.
         if (strip.detail) {
           const shade = strip.detail(p.hw, p.k);

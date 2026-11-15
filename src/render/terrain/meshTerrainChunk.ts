@@ -2,6 +2,7 @@ import type { CoastDef, StagePalette } from '@/game/stage/regions';
 import type { TerrainField, TerrainSample } from '@/game/stage/TerrainField';
 import { PAVEMENT_COLOR, ROAD_COLORS } from '../road/roadColors';
 import { coastFaceColor, type CoastFace, type CoastTones } from './coastFaceColor';
+import { valleyFaceColor, type ValleyFace, type ValleyTones } from './valleyFaceColor';
 
 export type Rgb = readonly [number, number, number];
 
@@ -18,6 +19,8 @@ export interface TerrainColors {
   rockFrom?: number;
   /** Coast stages: strata, scree and scrub tones, coloured by `coastFaceColor` in place of the plain rock blend. */
   coast?: CoastTones;
+  /** Palettes with `meadows` (the Greenvale): valley greens, rock and roadside earth by `valleyFaceColor`. */
+  valley?: ValleyTones;
   /** Cities: the ground under carriageways and under pavements (see `TerrainSample.paved`). */
   tarmac: Rgb;
   pavement: Rgb;
@@ -65,6 +68,19 @@ export function terrainColors(p: StagePalette, coast?: CoastDef): TerrainColors 
     pavement: hexToLinear(PAVEMENT_COLOR),
     berm: scaleRgb(hexToLinear(p.grassLow), 0.82),
   };
+  if (p.meadows) {
+    const m = p.meadows;
+    out.valley = {
+      lush: hexToLinear(m.lush),
+      meadow: hexToLinear(m.meadow),
+      sunlit: hexToLinear(m.sunlit),
+      olive: hexToLinear(m.olive),
+      rock: out.rock,
+      rockDark: hexToLinear(m.rockDark),
+      rockLight: hexToLinear(m.rockLight),
+      earth: hexToLinear(m.earth),
+    };
+  }
   if (coast) {
     out.sand = hexToLinear(coast.sand);
     out.sandWet = hexToLinear(coast.sandWet);
@@ -82,6 +98,26 @@ export function terrainColors(p: StagePalette, coast?: CoastDef): TerrainColors 
     };
   }
   return out;
+}
+
+/**
+ * How far the bare hills round (x, z) rise above it on average, positive down
+ * a hollow: a dip `HOLLOW_NEAR` across, plus a share of the valley
+ * `HOLLOW_FAR` across it lies in, so broad valley floors read as well as gullies.
+ */
+const HOLLOW_NEAR = 14;
+const HOLLOW_FAR = 45;
+const FAR_SHARE = 0.5;
+function hollowAt(field: TerrainField, x: number, z: number): number {
+  const y = field.groundHeight(x, z);
+  const ring = (r: number) =>
+    (field.groundHeight(x + r, z) +
+      field.groundHeight(x - r, z) +
+      field.groundHeight(x, z + r) +
+      field.groundHeight(x, z - r)) /
+      4 -
+    y;
+  return ring(HOLLOW_NEAR) + FAR_SHARE * ring(HOLLOW_FAR);
 }
 
 function hash(i: number, j: number): number {
@@ -111,9 +147,12 @@ export function meshTerrainChunk(
   const dry = new Float32Array(n * n);
   const paved = new Float32Array(n * n);
   const earth = new Float32Array(n * n);
+  // The valley colouring wants each corner's lie: how far the bare hills there sit below their surroundings.
+  const hollow = colors.valley ? new Float32Array(n * n) : null;
   const s: TerrainSample = { height: 0, roadBlend: 0, roadDistance: 0 };
   for (let j = 0; j < n; j++) {
     for (let i = 0; i < n; i++) {
+      if (hollow) hollow[j * n + i] = hollowAt(field, x0 + i * step, z0 + j * step);
       field.sample(x0 + i * step, z0 + j * step, s);
       hs[j * n + i] = s.height;
       road[j * n + i] = s.roadBlend;
@@ -142,6 +181,7 @@ export function meshTerrainChunk(
     hashB: 0,
   };
   const rgb = [0, 0, 0];
+  const valley: ValleyFace = { x: 0, z: 0, h: 0, ny: 1, hollow: 0, road: 0, hashA: 0, hashB: 0 };
   const emit = (
     ia: number,
     ib: number,
@@ -194,6 +234,19 @@ export function meshTerrainChunk(
       rgb[1] = g;
       rgb[2] = b;
       coastFaceColor(colors.coast, face, rgb);
+      r = rgb[0]!;
+      g = rgb[1]!;
+      b = rgb[2]!;
+    } else if (colors.valley && hollow) {
+      valley.x = (ax + bx + qx) / 3;
+      valley.z = (az + bz + qz) / 3;
+      valley.h = h;
+      valley.ny = ny;
+      valley.hollow = (hollow[ia]! + hollow[ib]! + hollow[ic]!) / 3;
+      valley.road = (road[ia]! + road[ib]! + road[ic]!) / 3;
+      valley.hashA = hash(seed * 3 + 1, cz * 7919 + cx);
+      valley.hashB = hash(seed * 5 + 2, cx * 6151 - cz);
+      valleyFaceColor(colors.valley, valley, rgb);
       r = rgb[0]!;
       g = rgb[1]!;
       b = rgb[2]!;

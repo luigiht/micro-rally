@@ -13,7 +13,8 @@ another device.
 - **Procedural stages.** Every stage is generated from your game's seed: a
   winding road through terrain, checkpoint gates in order and a finish line,
   with a par time, prize money for finishing and repair fees for hitting the
-  scenery. Regions cycle Forest, Alpine, Arctic (a Finnish winter road
+  scenery. Regions cycle Greenvale (a Monte Carlo–style mountain road with hairpin
+  stacks), Alpine, Arctic (a Finnish winter road
   between snow banks and tall spruces), Coast (a cliff road over the sea),
   Urban (a city of boulevards, roundabouts and trams) and Desert (a sand
   piste through dunes and oases): a city every ninth stage, a circuit every

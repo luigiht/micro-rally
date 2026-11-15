@@ -83,17 +83,31 @@ flowchart LR
   colliders, the mesher paints the mask rock and the shore sand, and the
   renderer draws the walls (`render/road/SeaWallBuilder.ts` over
   `StoneWallGeometry.ts`) and the sea (`render/terrain/SeaPlane.ts`).
+- Greenvale: `game/stage/Lacets.ts` lays the hairpin stacks for the
+  centreline walk (`WalkStyle.lacets`) and steps the hills under them
+  (`lacetGround`, added in `TerrainField.baseHeight`); `StageDef.lacets`
+  carries each stack with its road span. The region's `terrain.ridges`,
+  `rugged` and `banked` shape and bank the ground in `TerrainField`. The
+  mesher colours it with `render/terrain/valleyFaceColor.ts` (palette
+  `meadows`). The road builder lays worn tarmac and the raised edge from
+  `render/road/MountainRoadStrips.ts` (`wornTarmac`, `embankment.lip`).
+  The woods are `render/scenery/GreenvaleTreeGeometry.ts`, dressed by
+  `kits/GreenvaleKits.ts` in place of the stock trees; `game/stage/Groves.ts`
+  marks the stretches where `SceneryScatter` thickens them into forest.
+  `game/stage/CrowdBenches.ts` levels the ground beside the crowds
+  (`CrowdSpans.ts`, shared with `Spectators`) for `TerrainField`.
 - Arctic: no modules of its own. The stage type's `terrain.banks` heaps the
   snow ridges in `TerrainField.bankLift` (both the mesh sample and the
   wheels' deck), `SceneryDensity.spruces` feeds the `spruce` prop kind
   through the ordinary scatter, and `kits/SpruceKits.ts` dresses it in
   three parts (trunk, tinted foliage, snow caps) from `SpruceGeometry.ts`.
 - Alpine: its woods are `render/scenery/SnowPineGeometry.ts` (tiered snow
-  pines, each tier a whorl of branch tips) and `AlpineTreeGeometry.ts` (a
-  bare tree, a snowy bush), dressed by
-  `kits/AlpineKits.ts`, which `rallyKits` takes for the stock pine,
-  broadleaf, bush and shared trunk when the stage is Alpine
-  (`sceneryKitsFor`); each prop's shape is picked by its spot.
+  pines) and `AlpineConiferGeometry.ts` (frond spruces, snow-clump firs,
+  snowy boulders and stumps), dressed by `kits/AlpineKits.ts`; its ground is
+  coloured by `render/terrain/valleyFaceColor.ts` from the palette's snow
+  `meadows`, and its crowds stand on `CrowdBenches`. `rallyKits` takes the
+  kits for the stock pine, bush, rock and shared trunk when the stage is
+  Alpine (`sceneryKitsFor`); each prop's shape is picked by its spot.
   Spectators are placed by `game/stage/Spectators.ts` (crowds at the start,
   gates, crests and finish, groups between) and drawn by
   `render/scenery/kits/SpectatorKits.ts` as two kits per pose from

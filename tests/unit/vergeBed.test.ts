@@ -82,7 +82,7 @@ describe('terrain under the verge strips', () => {
 
   it('builds the Autumnal lane up on a bank: the ground falls 0.55 m across each verge, for the wheels too', () => {
     const { stage, field } = createStageWorld(1, autumnalIndex());
-    const forest = createStageWorld(1, stageIndexOf('forest', 1));
+    const pinewood = createStageWorld(1, stageIndexOf('pinewood', 1));
     const at = { x: 0, z: 0, heading: 0 };
     let checked = 0;
     for (let d = 100; d < 1500; d += 50) {
@@ -102,6 +102,33 @@ describe('terrain under the verge strips', () => {
       checked++;
     }
     expect(checked).toBeGreaterThan(10);
-    expect(forest.field.bankDrop(3)).toBe(0);
+    expect(pinewood.field.bankDrop(3)).toBe(0);
+  });
+
+  it('stands the Greenvale asphalt 15 cm proud of its gravel shoulders, for the wheels too', () => {
+    const { stage, field } = createStageWorld(1, stageIndexOf('forest', 1));
+    expect(field.bankDrop(0)).toBe(0);
+    expect(field.bankDrop(0.3)).toBeCloseTo(0.15, 3);
+    expect(field.bankDrop(3)).toBeCloseTo(0.15, 3);
+    const at = { x: 0, z: 0, heading: 0 };
+    let checked = 0;
+    for (let d = 100; d < 1500; d += 50) {
+      if (stage.town && d > stage.town.from - 200 && d < stage.town.to + 200) continue;
+      stage.path.sample(d, at);
+      const hw = halfWidthAt(stage, d);
+      const deck = field.roadHeightAt(d) + ROAD_LIFT;
+      const lx = Math.cos(at.heading);
+      const lz = -Math.sin(at.heading);
+      for (const side of [1, -1]) {
+        const h = (e: number) =>
+          field.heightAt(at.x + lx * side * (hw + e), at.z + lz * side * (hw + e));
+        // On the asphalt at its edge (the deck there, give or take the grade round a bend), then a
+        // step down onto the shoulder within the lip.
+        expect(h(-0.1)).toBeCloseTo(deck, 0);
+        expect(h(-0.1) - h(0.4)).toBeGreaterThan(0.13);
+      }
+      checked++;
+    }
+    expect(checked).toBeGreaterThan(10);
   });
 });

@@ -23,6 +23,7 @@ import { tallGrassKits } from './GrassKits';
 import type { KindKit } from '../SceneryChunkManager';
 import { cityGreenKits } from './CityGreenKits';
 import { alpineKits } from './AlpineKits';
+import { greenvaleKits } from './GreenvaleKits';
 import { spruceKits } from './SpruceKits';
 import { spectatorKits } from './SpectatorKits';
 import {
@@ -237,14 +238,15 @@ function mat(color: string, vertexColors = false): MeshStandardMaterial {
  * The daytime scenery: cone pines, round broadleaf trees, blob bushes, faceted
  * rocks, farmhouses, the four town building styles with their flower boxes,
  * and the town's street furniture. `snow` (alpine) puts the houses under snow;
- * `winterTrees` (the Alpine) plants its own winter woods (`AlpineKits`) for the
- * stock pines, broadleaves and bushes.
+ * `woods` names a region that plants its own woods, trunks and all, for the
+ * stock pines, broadleaves and bushes: the Alpine's winter woods
+ * (`AlpineKits`, no broadleaves) or the Greenvale's Riviera woods (`GreenvaleKits`).
  */
 export function rallyKits(
   palette: StagePalette,
   shadows: boolean,
   snow: boolean,
-  winterTrees = false,
+  woods?: 'alpine' | 'greenvale',
 ): KindKit[] {
   const pine = [new Color(palette.foliage), new Color(palette.foliageAlt)] as const;
   const leaf = [new Color(palette.canopy), new Color(palette.canopyAlt)] as const;
@@ -271,14 +273,16 @@ export function rallyKits(
     style === 'office' ? officeWalls : CITY_STYLES.includes(style) ? cityWalls : townWalls;
   const roofsFor = (style: BuildingStyle) =>
     style === 'office' || CITY_STYLES.includes(style) ? cityRoofs : townRoofs;
-  // The Autumnal and the Alpine dress their woods themselves, trunks and all for the Alpine.
-  const woods = palette.autumn
+  // The Autumnal, the Alpine and the Greenvale dress their woods themselves, trunks and all for the last two.
+  const ownWoods = palette.autumn
     ? autumnKits(palette.autumn, shadows)
-    : winterTrees
+    : woods === 'alpine'
       ? alpineKits(palette, shadows)
-      : null;
+      : woods === 'greenvale'
+        ? greenvaleKits(palette, shadows)
+        : null;
   return [
-    ...(woods ?? [
+    ...(ownWoods ?? [
       ...(palette.pines
         ? pineKits(palette.pines, shadows)
         : [
@@ -327,7 +331,7 @@ export function rallyKits(
       tint: null,
       castShadow: false,
     },
-    ...(winterTrees
+    ...(woods
       ? []
       : [
           {
@@ -356,18 +360,23 @@ export function rallyKits(
     },
     ...tallGrassKits(palette, shadows),
     ...cityGreenKits(shadows),
-    {
-      sources: ['rock'],
-      geometry: new DodecahedronGeometry(0.9, 0).translate(0, 0.25, 0),
-      material: mat(palette.boulder),
-      tint: null,
-      castShadow: shadows,
-      // Rocks sit into the ground and tumble about their heading.
-      place: (p, dummy) => {
-        dummy.position.y -= 0.2 * p.scale;
-        dummy.rotation.x = p.rotation;
-      },
-    },
+    // The Alpine lays its own boulders under snow (`AlpineKits`).
+    ...(woods === 'alpine'
+      ? []
+      : [
+          {
+            sources: ['rock'],
+            geometry: new DodecahedronGeometry(0.9, 0).translate(0, 0.25, 0),
+            material: mat(palette.boulder),
+            tint: null,
+            castShadow: shadows,
+            // Rocks sit into the ground and tumble about their heading.
+            place: (p, dummy) => {
+              dummy.position.y -= 0.2 * p.scale;
+              dummy.rotation.x = p.rotation;
+            },
+          } satisfies KindKit,
+        ]),
     {
       sources: ['house'],
       geometry: houseWallsGeometry(),

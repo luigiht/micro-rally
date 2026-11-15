@@ -8,7 +8,7 @@ export interface StageRecord {
   splits: number[];
 }
 
-export const SAVE_VERSION = 11;
+export const SAVE_VERSION = 13;
 export const DRIVER_NAME_MAX = 24;
 
 /** Everything needed to resume a game. Nothing personal beyond the driver name. */
@@ -240,6 +240,27 @@ function migrateV10(raw: Record<string, unknown>): Record<string, unknown> {
   return { ...raw, version: 11, records: kept };
 }
 
+/** v13 lays jumps on the Greenvale roads and ridges and knolls under the Alpine passes: both types' records go. */
+function migrateV12(raw: Record<string, unknown>): Record<string, unknown> {
+  const records = isRecord(raw.records) ? raw.records : {};
+  const kept = Object.fromEntries(
+    Object.entries(records).filter(([key]) => {
+      const slot = stageSlot(Number(key));
+      return slot !== 'forest' && slot !== 'alpine';
+    }),
+  );
+  return { ...raw, version: 13, records: kept };
+}
+
+/** v12 reroutes every Greenvale stage over the mountains, hairpin stacks and all: their records go. */
+function migrateV11(raw: Record<string, unknown>): Record<string, unknown> {
+  const records = isRecord(raw.records) ? raw.records : {};
+  const kept = Object.fromEntries(
+    Object.entries(records).filter(([key]) => stageSlot(Number(key)) !== 'forest'),
+  );
+  return { ...raw, version: 12, records: kept };
+}
+
 /** v10 plans every city with two or three roundabouts and a tram loop it crosses four times: new routes, so the cities' records go. */
 function migrateV9(raw: Record<string, unknown>): Record<string, unknown> {
   const records = isRecord(raw.records) ? raw.records : {};
@@ -307,6 +328,8 @@ export function parseSaveFile(data: unknown): SaveFile | null {
   if (raw.version === 8) raw = migrateV8(raw);
   if (raw.version === 9) raw = migrateV9(raw);
   if (raw.version === 10) raw = migrateV10(raw);
+  if (raw.version === 11) raw = migrateV11(raw);
+  if (raw.version === 12) raw = migrateV12(raw);
   if (raw.version === SAVE_VERSION) return parseCurrent(raw);
   return null;
 }

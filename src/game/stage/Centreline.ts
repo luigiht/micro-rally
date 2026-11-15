@@ -1,3 +1,4 @@
+import { layLacet, lacetLength, lacetRise, Pen, type Lacet, type LacetStyle } from './Lacets';
 import { RoadPath } from './RoadPath';
 import type { TownTrace } from './TownGenerator';
 import { cornerRadius, tangentLength, type TownPlan } from './TownPlan';
@@ -63,7 +64,26 @@ const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
 export interface Centreline {
   path: RoadPath;
   trace: TownTrace | null;
+  /** The hairpin stacks laid (`WalkStyle.lacets`); empty when the region lays none. */
+  lacets: Lacet[];
 }
+
+/** How a region's open road wanders, beyond its twistiness. */
+export interface WalkStyle {
+  /** Share of bends that are straights instead (0.2 when unset). */
+  straights?: number;
+  /** Hairpin stacks up the hillsides (`Lacets`); none when unset. */
+  lacets?: LacetStyle;
+}
+
+/** Stacks keep this far (road distance) from a town's approach and from its exit. */
+const LACET_TOWN_GAP = 300;
+/** A stack starts only once the walk heads within this of the stage axis; until then it is steered back. */
+const LACET_ALIGN = 0.35;
+/** The road's last stretch before the finish and runout stays clear of stacks. */
+const LACET_TAIL = 260;
+/** After a stack the walk runs on straight for this many steps before bending again. */
+const LACET_SETTLE = 2;
 
 /**
  * Heading random walk on a 20 m control polygon, smoothed with Catmull-Rom.
@@ -79,6 +99,7 @@ export function buildCentreline(
   twist: number,
   plan: TownPlan | null,
   mirror = false,
+  style: WalkStyle = {},
 ): Centreline {
   const theta0 = rand() * Math.PI * 2;
   let heading = theta0;
@@ -89,6 +110,18 @@ export function buildCentreline(
   let x = 0;
   let z = 0;
   let trace: TownTrace | null = null;
+  const lacets: Lacet[] = [];
+  const lacetStyle = style.lacets;
+  const straights = style.straights ?? 0.2;
+  // Where the next stack may start, and the road-distance window the town keeps clear of stacks.
+  let lacetAt = lacetStyle ? lacetStyle.first + rand() * lacetStyle.span : Infinity;
+  const townFrom = plan ? plan.entryAt - TOWN_APPROACH - STEER_IN - LACET_TOWN_GAP : Infinity;
+  let townTo = Infinity;
+  // Room for a whole stack here: clear of the town's approach and exit, and of the finish.
+  const lacetRoom = (d: number) => {
+    const size = lacetStyle ? lacetLength(lacetStyle.radius[1], lacetStyle.leg[1]) : 0;
+    return d + size < total - LACET_TAIL && (d + size < townFrom || d > townTo);
+  };
   const ctrl: number[] = [
     x - Math.sin(heading) * CONTROL_STEP,
     z - Math.cos(heading) * CONTROL_STEP,
@@ -194,6 +227,7 @@ export function buildCentreline(
       trace.exit = { x, z };
       heading = h;
       d += Math.round(emitted / CONTROL_STEP) * CONTROL_STEP - CONTROL_STEP;
+      townTo = d + LACET_TOWN_GAP;
       curv = 0;
       bendCurv = 0;
       bendLeft = 1;
@@ -215,9 +249,35 @@ export function buildCentreline(
       bendCurv = 0;
       curv = 0;
       bendLeft = 1;
+    } else if (lacetStyle && d >= lacetAt && lacetRoom(d)) {
+      const dev = wrap(heading - theta0);
+      if (Math.abs(dev) > LACET_ALIGN) {
+        // Steer back toward the axis first, as before a town, so the stack climbs along it.
+        heading -= Math.sign(dev) * Math.min(STEER_RATE, Math.abs(dev));
+        curv = 0;
+        bendCurv = 0;
+        bendLeft = 1;
+      } else {
+        const side: 1 | -1 = Math.abs(dev) > 0.05 ? (dev > 0 ? 1 : -1) : rand() < 0.5 ? -1 : 1;
+        const [r0, r1] = lacetStyle.radius;
+        const [l0, l1] = lacetStyle.leg;
+        const radius = r0 + rand() * (r1 - r0);
+        const leg = l0 + rand() * (l1 - l0);
+        const rise = lacetRise(radius, leg, lacetStyle.grade) * (rand() < 0.5 ? -1 : 1);
+        const pen = new Pen(x, z, heading, ctrl);
+        lacets.push(layLacet(pen, theta0, side, radius, leg, rise));
+        x = pen.x;
+        z = pen.z;
+        heading = pen.h;
+        d += Math.round(pen.length / CONTROL_STEP) * CONTROL_STEP;
+        lacetAt = d + lacetStyle.between + rand() * lacetStyle.span;
+        curv = 0;
+        bendCurv = 0;
+        bendLeft = LACET_SETTLE;
+      }
     } else if (d > START_DISTANCE + CONTROL_STEP) {
       if (bendLeft <= 0) {
-        if (rand() < 0.2) {
+        if (rand() < straights) {
           bendCurv = 0;
           bendLeft = 1 + Math.floor(rand() * 2);
         } else {
@@ -272,7 +332,7 @@ export function buildCentreline(
       }
     }
   }
-  return { path: RoadPath.fromPolyline(dense, ROAD_SPACING), trace };
+  return { path: RoadPath.fromPolyline(dense, ROAD_SPACING), trace, lacets };
 }
 
 /** True when no two samples 200 m apart along the road come within 52 m of each other in the window [a, b] along it. */

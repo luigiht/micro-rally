@@ -138,7 +138,7 @@ export const es: Messages = {
       highlights: [
         {
           title: 'Tramos y progresión',
-          body: 'Los tramos de rally recorren siete tipos, cada uno con su propia superficie: Pinar de grava, Alpino nevado, Bosque y Costero de asfalto, Ártico nevado, Otoñal de barro y Desierto de arena. Cada noveno tramo es una ciudad y cada décimo es un circuito de tres vueltas; si coinciden, primero va la ciudad y después el circuito. El ciclo de rally continúa con carreteras más largas y curvas más cerradas.',
+          body: 'Los tramos de rally recorren siete tipos, cada uno con su propia superficie: Pinar de grava, Alpino nevado, Valverde y Costero de asfalto, Ártico nevado, Otoñal de barro y Desierto de arena. Cada noveno tramo es una ciudad y cada décimo es un circuito de tres vueltas; si coinciden, primero va la ciudad y después el circuito. El ciclo de rally continúa con carreteras más largas y curvas más cerradas.',
         },
         {
           title: 'Conduce, reinicia y repite',
@@ -449,7 +449,7 @@ export const es: Messages = {
     autumnal: 'Otoñal',
     pinewood: 'Pinar',
     alpine: 'Alpino',
-    forest: 'Bosque',
+    forest: 'Valverde',
     urban: 'Urbano',
     coastal: 'Costero',
     desert: 'Desierto',

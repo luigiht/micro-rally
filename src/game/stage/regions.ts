@@ -1,4 +1,6 @@
 import type { Surface } from '../vehicle/surfaces';
+import type { GroveDef } from './Groves';
+import type { LacetStyle } from './Lacets';
 import type { PineForm } from './SceneryScatter';
 import type { BuildingStyle } from './Town';
 
@@ -38,6 +40,22 @@ export interface StagePalette {
   };
   /** Pine woods: each pine takes one of these greens and one of the detailed pine silhouettes. */
   pines?: readonly string[];
+  /**
+   * Valley ground (`valleyFaceColor`), in place of the plain low-to-high
+   * grass ramp: the Greenvale's lush green down the hollows, meadow green,
+   * sunlit green over the crests, olive patches, grey rock in beds from dark
+   * to light (the body is `rock`) and brown earth toward the road; the
+   * Alpine's snowfields in the same roles.
+   */
+  meadows?: {
+    lush: string;
+    meadow: string;
+    sunlit: string;
+    olive: string;
+    rockDark: string;
+    rockLight: string;
+    earth: string;
+  };
 }
 
 export interface SceneryDensity {
@@ -88,6 +106,8 @@ export interface SceneryDensity {
   meadow?: number;
   /** Clusters of fallen leaves on the ground per 100 m of road, both sides, plus a few under each broadleaf. */
   leaves?: number;
+  /** Stretches of dense broadleaf forest the road runs through (`Groves`); none when unset. */
+  groves?: GroveDef;
 }
 
 /** A stage type with oases (see `Oases`): how often along the road, how wide the pool, how many palms. */
@@ -158,14 +178,49 @@ export interface StageTypeDef {
     frequency: number;
     dunes?: boolean;
     banks?: { height: number; width: number };
-    /** The road is built up on a bank: the ground falls this far over this width past its edges. */
-    embankment?: { height: number; width: number };
-    crests?: { every: number; height: number; length: number };
+    /**
+     * The road is built up on a bank: the ground falls this far over this width past its edges,
+     * from `from` metres out (0.3 when unset). With `lip`, the fall is the asphalt's own edge,
+     * drawn as a dark face this wide down to a gravel shoulder (`MountainRoadStrips`).
+     */
+    embankment?: { height: number; width: number; from?: number; lip?: number };
+    crests?: {
+      every: number;
+      height: number;
+      length: number;
+      /**
+       * Most turning (radians) over the hump and 6 m either side (0.4), steepest grade under it
+       * (0.06), and how far along to look for such a stretch (120 m). With `level`, the road is
+       * levelled to that grade for the run-up, hump and landing instead of needing to be flat.
+       */
+      turn?: number;
+      slope?: number;
+      search?: number;
+      level?: number;
+    };
+    /** Share of the relief drawn as sharp-crested ridges over broad valleys: mountains rather than hills. */
+    ridges?: number;
+    /** Metres of knolls, ribs and gullies laid over the broad relief, so a hillside is never smooth. */
+    rugged?: number;
+    /** Where the crowds gather, the ground either side of the road is levelled into benches (`CrowdBenches`). */
+    benches?: boolean;
+    /**
+     * The ground beside the road is held within a bank's slope of every
+     * stretch of it, cut above and filled below, and gives way to the hills
+     * over a short blend, as on the coast: hairpin stacks never meet in a wall.
+     */
+    banked?: boolean;
   };
   /** How the car handles here, as multipliers on the sim's grip, steering rate and steering lock; 1 each when unset. */
   handling?: { grip: number; steer: number; lock: number };
-  /** Road curviness 0..1. */
+  /** Road curviness: about 1 for a winding road, more for one that bends harder and oftener. */
   twistiness: number;
+  /** Share of the open road's bends that run straight instead (0.2 when unset). */
+  straights?: number;
+  /** Hairpin stacks up the hillsides (`Lacets`); none when unset. */
+  lacets?: LacetStyle;
+  /** The tarmac shows its wear (`SurfaceDetail.wornTone`): polished tracks, rubber through the bends, patches. */
+  wornTarmac?: boolean;
   /** The open road's half width (m), where it differs from its surface's (4.5 on tarmac, 4 elsewhere). */
   roadHalfWidth?: number;
   baseLength: number;
@@ -192,6 +247,33 @@ const FOREST_PALETTE: StagePalette = {
 };
 
 /**
+ * The Greenvale's summer: richer greens in the grass and the woods (firs and
+ * cypresses in the pine greens, oaks, lindens and chestnuts in the canopy
+ * greens), grey rock, and a brown shoulder and earth by the road.
+ */
+const GREENVALE_PALETTE: StagePalette = {
+  ...FOREST_PALETTE,
+  grassLow: '#5f9c46',
+  grassHigh: '#9cc062',
+  rock: '#8c8e8b',
+  shoulder: '#8f7b52',
+  foliage: '#2f6c45',
+  foliageAlt: '#2b583b',
+  canopy: '#4f9140',
+  canopyAlt: '#6b9a3a',
+  boulder: '#8e908b',
+  meadows: {
+    lush: '#3d7d38',
+    meadow: '#64a246',
+    sunlit: '#a9c565',
+    olive: '#8c9b4c',
+    rockDark: '#6b6e6c',
+    rockLight: '#aeb0aa',
+    earth: '#8b7451',
+  },
+};
+
+/**
  * Autumn, worn by Forest stages on mud: sky, ground and trunks are the summer
  * ones, every other pine is a golden larch, the broadleaves turn orange and
  * rust, and the bushes follow the pines.
@@ -211,7 +293,8 @@ const FOREST_AUTUMN: StagePalette = {
   },
 };
 
-const FOREST: StageTypeDef = {
+/** The summer woodland the Pinewood and the Autumnal start from: soft wooded hills and a winding road. */
+const WOODLAND: StageTypeDef = {
   id: 'forest',
   seedKey: 'forest',
   surface: 'tarmac',
@@ -226,8 +309,64 @@ const FOREST: StageTypeDef = {
   towns: true,
 };
 
+/**
+ * Greenvale (id `forest`): a Riviera mountain road in the Monte Carlo
+ * manner. Tarmac that hardly ever runs straight, through green wooded
+ * valleys between big sharp-crested mountains, the hillsides banked down to
+ * it; once or twice a stage it climbs or drops a hillside in a stack of two
+ * hairpins (`Lacets`). Mixed woods of oaks, chestnuts, stone pines,
+ * cypresses and firs (`GreenvaleKits`), over tall grass.
+ */
+const FOREST: StageTypeDef = {
+  ...WOODLAND,
+  palette: GREENVALE_PALETTE,
+  wornTarmac: true,
+  // The asphalt stands 15 cm proud of its gravel shoulders, falling over its 30 cm edge.
+  terrain: {
+    amplitude: 40,
+    frequency: 1 / 280,
+    ridges: 0.4,
+    rugged: 2.2,
+    banked: true,
+    benches: true,
+    // A few jumps where the road straightens for a moment, gentle enough to fly on a mountain road.
+    crests: { every: 420, height: 0.75, length: 30, turn: 0.6, search: 300, level: 0.02 },
+    embankment: { height: 0.15, width: 0.28, from: 0.02, lip: 0.3 },
+  },
+  twistiness: 1.6,
+  straights: 0.06,
+  // Legs short enough that two stacked legs' far ends are under 200 m of road apart, the
+  // hairpins wide enough that their corridors stay apart (see `Lacets.RADIUS_MIN`).
+  lacets: { first: 260, span: 220, between: 380, radius: [17, 21], leg: [50, 66], grade: 0.075 },
+  // Thick mixed woods close to the road and on into the distance, tall grass along the verges
+  // and over the hillsides.
+  scenery: {
+    trees: 110,
+    broadleaf: 150,
+    bushes: 40,
+    rocks: 12,
+    houses: 0.8,
+    meanOffset: 18,
+    crowding: 0.85,
+    deepWood: 140,
+    grass: 560,
+    meadow: 700,
+    // About a third of the road plunges through thick broadleaf forest, in runs of a few hundred metres.
+    groves: {
+      share: 0.45,
+      length: 240,
+      boost: 3.5,
+      grow: 0.2,
+      crowding: 0.7,
+      deep: 260,
+      reach: 70,
+    },
+  },
+  parSpeed: 13.5,
+};
+
 const PINEWOOD: StageTypeDef = {
-  ...FOREST,
+  ...WOODLAND,
   id: 'pinewood',
   surface: 'gravel',
   // Detailed pines in five greens, from deep to sunlit.
@@ -235,7 +374,7 @@ const PINEWOOD: StageTypeDef = {
   // A dense pine wood the road cuts through: many tall pines standing close together right up to
   // the verges, fewer broadleaves among them.
   scenery: {
-    ...FOREST.scenery,
+    ...WOODLAND.scenery,
     trees: 720,
     // Pines only: no broadleaves or round bushes in the wood.
     broadleaf: 0,
@@ -263,13 +402,13 @@ const PINEWOOD: StageTypeDef = {
 };
 
 const AUTUMNAL: StageTypeDef = {
-  ...FOREST,
+  ...WOODLAND,
   id: 'autumnal',
   surface: 'mud',
   palette: FOREST_AUTUMN,
   // A built-up lane: the ground falls away 0.55 m across the verges on either side.
   terrain: {
-    ...FOREST.terrain,
+    ...WOODLAND.terrain,
     crests: { every: 220, height: 0.75, length: 30 },
     embankment: { height: 0.55, width: 2.4 },
   },
@@ -278,9 +417,9 @@ const AUTUMNAL: StageTypeDef = {
   handling: { grip: 1.3, steer: 1, lock: 1 },
   // A single-track mud lane, 6 m across: narrower than a village's old-town streets.
   roadHalfWidth: 3,
-  // Taller, thicker autumn woods than the Forest's, with fallen leaves on the grass.
+  // Taller, thicker autumn woods than the summer woodland's, with fallen leaves on the grass.
   scenery: {
-    ...FOREST.scenery,
+    ...WOODLAND.scenery,
     trees: 135,
     broadleaf: 55,
     bushes: 24,
@@ -319,20 +458,34 @@ const ALPINE: StageTypeDef = {
     canopyAlt: '#d5dce1',
     trunk: '#4e3a2b',
     boulder: '#8b9098',
+    // Snowfields: blue-shadowed down the hollows, sunlit on the crests, wind crust in patches, grey
+    // rock in beds on the steep faces, and grit-stained snow by the road.
+    meadows: {
+      lush: '#a3b6cf',
+      meadow: '#d8e0e9',
+      sunlit: '#f7f5ee',
+      olive: '#b9c5d3',
+      rockDark: '#545a63',
+      rockLight: '#a3a8b0',
+      earth: '#bbb5aa',
+    },
   },
-  terrain: { amplitude: 34, frequency: 1 / 230 },
+  // Mountains with ridged crests and knolls, and crowd benches where the spectators gather.
+  terrain: { amplitude: 34, frequency: 1 / 230, ridges: 0.45, rugged: 2.4, benches: true },
   // Winter tyres: 35 % more grip on the snow-dusted tarmac, so the cars climb the passes instead of
   // spinning their wheels; still short of the Arctic's studs. Steering is unchanged.
   handling: { grip: 1.35, steer: 1, lock: 1 },
   twistiness: 1.4,
   baseLength: 1500,
   // The Arctic's crowd too: groups in winter clothes on the verges, the start and the checkpoints.
-  // A dense winter wood (`AlpineKits`): tiered snow pines, a few bare broadleaves, snowy bushes.
+  // A dense winter wood (`AlpineKits`): tiered snow pines and snowy bushes, no broadleaves.
   scenery: {
-    trees: 112,
-    broadleaf: 7,
+    trees: 118,
+    broadleaf: 0,
     bushes: 10,
     rocks: 14,
+    // The wood carries on up the hillsides out of sight.
+    deepWood: 90,
     houses: 0.7,
     spectators: 2.2,
     berms: true,

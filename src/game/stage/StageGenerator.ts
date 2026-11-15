@@ -31,6 +31,7 @@ import {
   START_DISTANCE,
 } from './Centreline';
 import { buildCoastRoad } from './CoastRoad';
+import type { Lacet, StageLacet } from './Lacets';
 import { CoastShape } from './CoastShape';
 import { buildWidths, halfWidthAt } from './RoadWidth';
 import { layoutTown } from './TownGenerator';
@@ -41,6 +42,11 @@ export { ROAD_SPACING } from './Centreline';
 /** Checkpoint boards keep this far clear of a town's route interval. */
 const TOWN_GATE_CLEARANCE = 40;
 const MIN_GATE_GAP = 60;
+/**
+ * Checkpoint boards keep this far clear of a hairpin stack (`Lacets`), so
+ * their crowds have the hillside to themselves: at its foot or its top.
+ */
+const STACK_GATE_CLEARANCE = 30;
 /** Four slow corners and narrow streets cost about this much against par. */
 const TOWN_PAR_SECONDS = 12;
 
@@ -124,6 +130,8 @@ export interface StageDef extends StageBrief {
   widths?: Float64Array;
   /** Set on circuit stages: the path is one closed lap and the gates repeat once per lap. */
   circuit?: CircuitInfo;
+  /** The hairpin stacks the road climbs (`Lacets`), where the region lays them; the ground steps up across each. */
+  lacets?: StageLacet[];
 }
 
 /** The stage's slot (`stageSlot`: a city, a circuit or the rally mix) and its difficulty loop, which steps on its own cadence. */
@@ -242,6 +250,7 @@ function placeGates(
   halfWidth: number,
   town: TownDef | undefined,
   widths: Float64Array | undefined,
+  stacks: readonly StageLacet[] = [],
 ): Gate[] {
   const sample: RoadSample = { x: 0, z: 0, heading: 0 };
   const checkpoints = Math.min(6, Math.max(2, Math.round(length / 450)));
@@ -262,8 +271,18 @@ function placeGates(
           ? town.from - TOWN_GATE_CLEARANCE
           : town.to + TOWN_GATE_CLEARANCE;
     if (town && whole) distance = nudgeOffJunctions(distance, junctions, town);
+    // Off a hairpin stack, to whichever end is nearer.
+    for (const s of stacks) {
+      const lo = s.from - STACK_GATE_CLEARANCE;
+      const hi = s.to + STACK_GATE_CLEARANCE;
+      if (distance > lo && distance < hi) distance = distance < (lo + hi) / 2 ? lo : hi;
+    }
     const prev = distances[distances.length - 1];
     if (prev !== undefined && distance < prev + MIN_GATE_GAP) distance = prev + MIN_GATE_GAP;
+    // The spacing may have put it back on a stack: on past it, forward only.
+    for (const s of stacks)
+      if (distance > s.from - STACK_GATE_CLEARANCE && distance < s.to + STACK_GATE_CLEARANCE)
+        distance = s.to + STACK_GATE_CLEARANCE;
     // The spacing may have put it back on a junction: move it on past that junction, forward only,
     // so it keeps its gap.
     if (town && whole)
@@ -286,6 +305,14 @@ function placeGates(
       halfWidth: halfWidthAt(source, distance) + 3,
     };
   });
+}
+
+/** Each stack with the road distances where it leaves the stage axis and where it rejoins it. */
+function lacetSpans(path: RoadPath, lacets: readonly Lacet[]): StageLacet[] {
+  const hit = createRoadHit();
+  const along = (p: { x: number; z: number }) =>
+    path.nearest(p.x, p.z, 10, hit) ? hit.along : NaN;
+  return lacets.map((l) => ({ ...l, from: along(l.entry), to: along(l.exit) }));
 }
 
 /** Draws the brief in RNG order; `generateStage` continues with the same stream. */
@@ -417,6 +444,10 @@ export function generateStage(
       ? 5.5
       : (def.roadHalfWidth ?? (surface === 'tarmac' ? 4.5 : 4));
   const total = START_DISTANCE + length + RUNOUT;
+  const style = {
+    ...(def.straights !== undefined ? { straights: def.straights } : {}),
+    ...(def.lacets ? { lacets: def.lacets } : {}),
+  };
   // The town draws from its own seed so the brief and the walk keep their streams. The walk is
   // rebuilt with the plan mirrored if the town fouls the open road around it, and without a town
   // if that fails too, so the stage's own invariants always hold. A city's plan covers the whole
@@ -441,20 +472,23 @@ export function generateStage(
           ),
         ).path,
         trace: null,
+        lacets: [],
       }
-    : buildCentreline(resume(seed), total, twist, plan);
+    : buildCentreline(resume(seed), total, twist, plan, false, style);
   const fouls = (c: typeof built) => {
     if (!c.trace) return false;
     const t = layoutTown(c.trace, c.path, seed, halfWidth);
     return !selfApproachOk(c.path, t.from - 420, t.to + 420);
   };
   if (withTown && plan && fouls(built))
-    built = buildCentreline(resume(seed), total, twist, plan, true);
-  if (withTown && plan && fouls(built)) built = buildCentreline(resume(seed), total, twist, null);
-  const { path, trace } = built;
+    built = buildCentreline(resume(seed), total, twist, plan, true, style);
+  if (withTown && plan && fouls(built))
+    built = buildCentreline(resume(seed), total, twist, null, false, style);
+  const { path, trace, lacets } = built;
   const town = trace ? layoutTown(trace, path, seed, halfWidth, def.urban, plan?.city) : undefined;
   const widths = town ? (town.widths ?? buildWidths(path, town, halfWidth)) : undefined;
-  const gates = placeGates(path, length, halfWidth, town, widths);
+  const stacks = lacetSpans(path, lacets);
+  const gates = placeGates(path, length, halfWidth, town, widths, stacks);
 
   const sample: RoadSample = { x: 0, z: 0, heading: 0 };
   path.sample(START_DISTANCE - 4, sample);
@@ -467,5 +501,6 @@ export function generateStage(
     spawn: { x: sample.x, z: sample.z, yaw: sample.heading },
     ...(town ? { town } : {}),
     ...(widths ? { widths } : {}),
+    ...(stacks.length > 0 ? { lacets: stacks } : {}),
   };
 }

@@ -12,7 +12,7 @@ import { BufferAttribute, BufferGeometry, Color, CylinderGeometry } from 'three'
  * proud of the green and turns down over it in a lip, so the two never share
  * a plane. The top tier carries a thin leader; the trunk flares at its foot.
  *
- * Nine silhouettes, each laid out from a few numbers (`PineSpec`): how many
+ * Eleven silhouettes, each laid out from a few numbers (`PineSpec`): how many
  * tiers, how tall, how wide at the foot and the top and how the reach falls
  * between them, how much the tiers overlap (a sparse tree shows its trunk
  * between them), how far the snow lies out, and whether the top leans or the
@@ -164,6 +164,34 @@ export const PINE_SPECS: readonly PineSpec[] = [
     trunk: 0.26,
     green: 0.9,
     shade: 0.97,
+  },
+  // Laden giant: six broad tiers buried to their tips, drooping hard.
+  {
+    salt: 10,
+    tiers: 6,
+    foot: 1.0,
+    top: 7.2,
+    reach: 1.9,
+    topReach: 0.42,
+    snow: 0.95,
+    droop: 0.26,
+    trunk: 0.28,
+    green: 0.25,
+    shade: 0.92,
+  },
+  // White spire: eight narrow tiers all but white.
+  {
+    salt: 11,
+    tiers: 8,
+    foot: 1.1,
+    top: 7.6,
+    reach: 1.2,
+    topReach: 0.3,
+    fullness: 0.8,
+    snow: 0.93,
+    trunk: 0.21,
+    green: 0.4,
+    shade: 0.95,
   },
 ];
 

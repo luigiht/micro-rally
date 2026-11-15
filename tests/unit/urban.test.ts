@@ -498,10 +498,58 @@ describe('Urban stages', { timeout: 30_000 }, () => {
 });
 
 describe('save migration', () => {
+  it("moves v12 saves to v13, dropping the Greenvale's and the Alpine's records only", () => {
+    const rec = { best: 90, splits: [30, 60, 90] };
+    const greenvale = stageIndexOf('forest', 1);
+    const alpine = stageIndexOf('alpine', 1);
+    const pinewood = stageIndexOf('pinewood', 1);
+    const save = parseSaveFile({
+      version: 12,
+      gameId: 'ABCD2345',
+      driverName: 'Ada',
+      gameSeed: 1,
+      money: 10,
+      stageIndex: greenvale + 1,
+      records: { [greenvale]: rec, [alpine]: rec, [pinewood]: rec },
+      carId: 'hatchback',
+      ownedCars: ['hatchback'],
+      upgrades: {},
+      updatedAt: 1,
+    })!;
+    expect(save.version).toBe(SAVE_VERSION);
+    expect(Object.keys(save.records).map(Number)).toEqual([pinewood]);
+  });
+
+  it("moves v11 saves to v12, dropping the Greenvale's records only", () => {
+    const rec = { best: 90, splits: [30, 60, 90] };
+    const greenvale = stageIndexOf('forest', 1);
+    const pinewood = stageIndexOf('pinewood', 1);
+    const city = stageIndexOf('urban', 1);
+    const save = parseSaveFile({
+      version: 11,
+      gameId: 'ABCD2345',
+      driverName: 'Ada',
+      gameSeed: 1,
+      money: 10,
+      stageIndex: city + 1,
+      records: { [greenvale]: rec, [pinewood]: rec, [city]: rec },
+      carId: 'hatchback',
+      ownedCars: ['hatchback'],
+      upgrades: {},
+      updatedAt: 1,
+    })!;
+    expect(save.version).toBe(SAVE_VERSION);
+    expect(
+      Object.keys(save.records)
+        .map(Number)
+        .sort((a, b) => a - b),
+    ).toEqual([pinewood, city].sort((a, b) => a - b));
+  });
+
   it("moves v10 saves to v11, dropping the cities' records only", () => {
     const rec = { best: 90, splits: [30, 60, 90] };
     const city = stageIndexOf('urban', 2);
-    const forest = stageIndexOf('forest', 2);
+    const pinewood = stageIndexOf('pinewood', 2);
     const save = parseSaveFile({
       version: 10,
       gameId: 'ABCD2345',
@@ -509,20 +557,20 @@ describe('save migration', () => {
       gameSeed: 1,
       money: 10,
       stageIndex: city + 1,
-      records: { [city]: rec, [forest]: rec },
+      records: { [city]: rec, [pinewood]: rec },
       carId: 'hatchback',
       ownedCars: ['hatchback'],
       upgrades: {},
       updatedAt: 1,
     })!;
     expect(save.version).toBe(SAVE_VERSION);
-    expect(Object.keys(save.records).map(Number)).toEqual([forest]);
+    expect(Object.keys(save.records).map(Number)).toEqual([pinewood]);
   });
 
   it("moves v9 saves to v10, dropping the cities' records only", () => {
     const rec = { best: 90, splits: [30, 60, 90] };
     const city = stageIndexOf('urban', 1);
-    const forest = stageIndexOf('forest', 1);
+    const pinewood = stageIndexOf('pinewood', 1);
     const save = parseSaveFile({
       version: 9,
       gameId: 'ABCD2345',
@@ -530,20 +578,20 @@ describe('save migration', () => {
       gameSeed: 1,
       money: 10,
       stageIndex: city + 1,
-      records: { [city]: rec, [forest]: rec },
+      records: { [city]: rec, [pinewood]: rec },
       carId: 'hatchback',
       ownedCars: ['hatchback'],
       upgrades: {},
       updatedAt: 1,
     })!;
     expect(save.version).toBe(SAVE_VERSION);
-    expect(Object.keys(save.records).map(Number)).toEqual([forest]);
+    expect(Object.keys(save.records).map(Number)).toEqual([pinewood]);
   });
 
   it("moves v8 saves to v9, dropping the old cities' records only", () => {
     const rec = { best: 90, splits: [30, 60, 90] };
     const city = stageIndexOf('urban', 0);
-    const forest = stageIndexOf('forest', 0);
+    const pinewood = stageIndexOf('pinewood', 0);
     const save = parseSaveFile({
       version: 8,
       gameId: 'ABCD2345',
@@ -551,14 +599,14 @@ describe('save migration', () => {
       gameSeed: 1,
       money: 10,
       stageIndex: city + 1,
-      records: { [city]: rec, [forest]: rec },
+      records: { [city]: rec, [pinewood]: rec },
       carId: 'hatchback',
       ownedCars: ['hatchback'],
       upgrades: {},
       updatedAt: 1,
     })!;
     expect(save.version).toBe(SAVE_VERSION);
-    expect(Object.keys(save.records).map(Number)).toEqual([forest]);
+    expect(Object.keys(save.records).map(Number)).toEqual([pinewood]);
   });
 
   it('moves v4 saves to v5 and keeps records only where the region is unchanged', () => {

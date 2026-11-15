@@ -48,3 +48,20 @@ export function smoothRoadProfile(
   if (closed) a[count - 1] = a[0]!;
   return a;
 }
+
+/**
+ * After the stretch `i0`..`i1` of an open profile was reshaped, hold the
+ * road either side of it to the steepest grade again, outward from it, so
+ * the stretch itself keeps its new shape; stops once the old profile is met.
+ */
+export function limitAround(heights: Float64Array, spacing: number, i0: number, i1: number): void {
+  const step = MAX_GRADE * spacing;
+  const clamp = (i: number, p: number) => {
+    const h = Math.min(p + step, Math.max(p - step, heights[i]!));
+    const moved = h !== heights[i];
+    heights[i] = h;
+    return moved;
+  };
+  for (let i = i1 + 1; i < heights.length && clamp(i, heights[i - 1]!); i++);
+  for (let i = i0 - 1; i >= 0 && clamp(i, heights[i + 1]!); i--);
+}

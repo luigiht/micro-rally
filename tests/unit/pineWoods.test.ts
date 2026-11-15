@@ -12,7 +12,8 @@ import { stageIndexOf } from './stageIndex';
 
 describe('Pinewood pines', () => {
   const pinewood = createStageWorld(2, stageIndexOf('pinewood', 1));
-  const forest = createStageWorld(2, stageIndexOf('forest', 1));
+  // The summer woodland's own trees, as the Autumnal plants them (the Greenvale has its own woods).
+  const forest = createStageWorld(2, stageIndexOf('autumnal', 1));
   type World = typeof pinewood;
   const of = (w: World, kind: string) => w.props.filter((p) => p.kind === kind);
   const perKm = (w: World) => of(w, 'tree').length / (w.stage.path.length / 1000);
@@ -34,13 +35,13 @@ describe('Pinewood pines', () => {
     return area / (w.stage.path.length / 1000);
   };
 
-  it('grow denser, bigger, taller and nearer the road than the Forest’s', () => {
+  it('grow denser, bigger, taller and nearer the road than the woodland’s', () => {
     expect(coverPerKm(pinewood)).toBeGreaterThan(coverPerKm(forest) * 2);
     expect(perKm(pinewood)).toBeGreaterThan(perKm(forest) * 0.6);
-    // Lining the road: more pines within 8 m of its edge, per km, than the Forest has.
+    // Lining the road: more pines within 8 m of its edge, per km, than the woodland has.
     const lining = (w: World) =>
       gaps(w, 'tree').filter((g) => g < 8).length / (w.stage.path.length / 1000);
-    expect(lining(pinewood)).toBeGreaterThan(lining(forest) * 1.3);
+    expect(lining(pinewood)).toBeGreaterThan(lining(forest) * 1.2);
     const mean = (w: World) =>
       of(w, 'tree').reduce((s, p) => s + p.scale, 0) / of(w, 'tree').length;
     expect(mean(pinewood)).toBeGreaterThan(mean(forest) * 1.2);

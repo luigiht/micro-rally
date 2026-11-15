@@ -92,8 +92,8 @@ input.
 | Circuit    | track   | parkland racing, kerbs and gravel traps                                                                                                                                                                                              |
 | Autumnal   | mud     | tall mixed autumn woods, fallen leaves, crowds, ruts                                                                                                                                                                                 |
 | Pinewood   | gravel  | faint wheel traces and loose stones on the gravel, a dense pine wood, curved trunks, tall bare-trunked pines and saplings on the verges, tall grass on the verges and the hills, no round bushes, the wood running into the distance |
-| Alpine     | snow    | a dense winter wood (tiered snow pines, a few bare trees, snowy bushes) and sharper mountain bends                                                                                                                                   |
-| Forest     | tarmac  | green woodland on asphalt                                                                                                                                                                                                            |
+| Alpine     | snow    | a varied winter wood (tiered snow pines, frond spruces, snow-clump firs, stumps), snowfields and rock faces, crowd benches                                                                                                           |
+| Greenvale  | tarmac  | Riviera mountain road: hairpin stacks, mixed woods, rock cuttings                                                                                                                                                                    |
 | Urban      | tarmac  | a city from start to finish                                                                                                                                                                                                          |
 | Coastal    | tarmac  | limestone cliffs, beach and sea                                                                                                                                                                                                      |
 | Desert     | sand    | dunes, palms and oases                                                                                                                                                                                                               |
@@ -103,6 +103,96 @@ into the sim's `gripScale`): the Arctic's studded tyres 1.45×, the
 Alpine's winter tyres 1.35× and the Autumnal's mud tyres 1.3×. That lets
 the cars climb the snow and mud hills instead of spinning their wheels.
 Only the Arctic also quickens the steering.
+
+**Greenvale** (id `forest`). A Monte Carlo–style mountain road.
+
+- **Road.** Twistiness 1.6 and only 6 % of bends straight (the walk's
+  `straights`, 20 % elsewhere). Once or twice a stage the walk lays a
+  **hairpin stack** (`Lacets`): it steers back onto the stage axis, turns off
+  it into a 50–66 m leg across the hillside, doubles back up the slope in a
+  17–21 m hairpin, runs back across, doubles back the other way, runs a
+  shorter third leg and turns back onto the axis. The first stack comes 260–480 m in,
+  the next at least 380 m after, none within 300 m of a village or near the
+  finish. Stacked legs stand two radii apart, so their corridors never meet.
+- **Ground.** Hills of 40 m relief, two fifths of it sharp-crested ridges
+  over broad valleys, plus 2.2 m of knolls and gullies (`terrain.rugged`).
+  Under each stack the hills step up or down by about 20 m across it, so
+  the legs stand one above the next; past the stack's ends the step's line
+  wanders and eases out (`lacetGround`). The ground is banked to every
+  stretch of road as on the coast (`terrain.banked`: cut and fill no steeper
+  than 1.2, a 9 m blend), so stacked legs never meet in a wall.
+- **Colour** (`valleyFaceColor`). Meadow green, lush green down the hollows
+  (the bare hills 14 m round a point stand above it), sunlit yellow-green
+  over the crests, broad olive and deep-green patches. Grey rock in light and
+  dark beds on faces steeper than about 33°, with outcrops on steeper
+  slopes. Brown earth easing in toward the road, and every face a little
+  lighter or darker.
+- **Asphalt** (`MountainRoadStrips`, `SurfaceDetail.wornTone`/`wornDip`).
+  The carriageway is cut into wandering lane bands: mottled pieces, wheel
+  tracks polished a shade darker, black rubber along them through the bends
+  (heaviest under 17 m radius), and a lane patched for 12 m now and then. It
+  is uneven too, by a few centimetres and only ever below the deck: each lane
+  heaves slowly, the wheel tracks sit in shallow ruts, and every band edge
+  strays station by station. The asphalt stands 15 cm proud of its gravel
+  shoulders (`terrain.embankment` with a `lip`), and its edge crumbles into
+  them. First comes a broken edge, half asphalt and half grit, falling to the
+  shoulder (wheels feel the step) and running 55–145 % of the 30 cm lip's
+  width as it wanders. Then grit spilt 0.3–1.1 m onto the gravel, then the
+  shoulder, every piece mottled.
+- **Woods** (`GreenvaleTreeGeometry`, `kits/GreenvaleKits.ts`). Broadleaves
+  are oaks (34 %), chestnut domes (24 %), umbrella stone pines (22 %) and
+  lindens (20 %), each a crown of faceted lumps on a forked trunk. Conifers
+  are drooping-tier firs (38 %), tall spruces (22 %), Italian cypresses
+  (22 %) and young firs (18 %). There are lumpy bushes too. Every facet is
+  shaded between the crown's shadowed and sunlit greens, and each tree is
+  sized, tipped and shaded by its spot. Near the car they are detailed, with
+  a quarter-facet stand-in beyond. Densities per 100 m: 110 conifers, 150
+  broadleaves, 140 more conifers deep in the hills, 40 bushes, 12 rocks,
+  plus tall grass (560 on the verges, 700 over the hills).
+- **Jumps** (`terrain.crests` with `level`). About every 420 m the road
+  takes the straightest stretch within 300 m (turning under 0.6 rad over the
+  hump and 6 m either side), clear of the gates, start, finish, village and
+  hairpin stacks. Failing that, it takes the straightest stretch on the
+  stage. There it is levelled to at most 2 % for a 24 m run-up, the 30 m hump
+  (0.75 m high) and a 16 m landing, the road either side held to its 12 %
+  grade outward from it. Every stage gets one to four, each with a crowd and
+  a bench either side.
+- **Crowd benches** (`CrowdBenches`, `terrain.benches`). Where the crowds
+  gather (the start, every checkpoint and jump, the finish: `CrowdSpans`)
+  the ground either side is levelled into a bench at the gravel shoulder's
+  height. It runs from 3.6 m to 14 m past the carriageway's edge, level
+  across, climbing with the road along it and 4 m past either end of the
+  crowd. It is cut back into the hill or built out over the drop, easing
+  back over 4 m beyond and 8 m along. The berm is heaped on it and the crowd
+  stands behind on the flat. A side where another stretch of road's corridor
+  or a village comes near is left as it is. Checkpoints keep 30 m clear of a
+  hairpin stack, at its foot or its top, so their crowds have a hillside of
+  their own.
+- **Groves** (`Groves`). About 45 % of the road, in runs of a few hundred
+  metres picked by a slow noise of its own, plunges through thick broadleaf
+  forest. There the oaks, chestnuts, stone pines and lindens grow 3.5 times
+  as thick by the road, up to a fifth bigger and crowding closer (canopies
+  0.7 of their spacing apart), and 260 more per 100 m fill
+  the ground out to 70 m from its edge.
+
+**Alpine.** Mountain passes under snow.
+
+- **Woods** (`SnowPineGeometry`, `AlpineConiferGeometry`, `kits/AlpineKits.ts`),
+  after the snowy sets in `context/low-poly-snowy-trees`. By spot, 60 % of
+  the pines are one of eleven tiered snow pines (now also a laden giant and
+  a white spire). 22 % are drooping-frond spruces, each whorl of bent strips
+  under a band of snow. 18 % are snow-clump firs: chunky faceted clumps on a
+  green body, white where they face the sky. One bush in four is a snowy
+  stump; every rock is a boulder under snow. A deep wood (90 per 100 m)
+  carries on up the hillsides. Bare trees and snowy broadleaves stay out:
+  they were tried and dropped.
+- **Ground.** 34 m relief, 45 % of it ridged, plus 2.4 m of knolls. It is
+  coloured by `valleyFaceColor` in snow tones (palette `meadows`):
+  blue-shadowed hollows, sunlit warm crests, wind crust in patches, grey
+  rock in beds on faces steeper than about 33°, and grit-stained snow by the
+  road, every face a little lighter or darker.
+- **Crowds** stand on benches (`terrain.benches`) at the start, the
+  checkpoints and the finish, on good ground (`standable`) between them.
 
 All open ground (not the coast, the dunes, circuits or cities, which shape
 their own) carries small bumps and hollows over the broad hills: two
@@ -195,7 +285,15 @@ nearly flat country (relief 9 m, long waves) with long flowing bends.
   groups per 100 m (`scenery.spectators`) of five or six people, no two in
   a group sharing a pose or a jacket. All stand just behind the snow banks
   facing the road, never in a building nor where another stretch of road
-  passes; the wild scatter keeps 2.2 m clear of them.
+  passes; the wild scatter keeps 2.2 m clear of them. Every stage type but
+  the circuits holds them to good ground (`standable`). The ground within
+  0.9 m of their feet is within 30 cm of level, nothing within 3 m falls more
+  than 1.4 m below them (no valley's edge, no cutting's lip), and nothing of
+  the hill rises between their eyes and a car on the road in front of them
+  and 12 m along it one way or the other. A crowd's place that fails steps
+  back 1.5 m, then 3 m, before it is given up. A group looks for good ground
+  for its ends and middle up to 10 m along the road and 5 m further back,
+  or does not turn out.
   Decoration only, no colliders.
 - **Look.** Pale sky and fog, near-white ground, dark blue-green spruce,
   dark trunks; houses under snow like the Alpine's.
@@ -609,16 +707,16 @@ the cameras.
 
 ## Surfaces
 
-| Surface | Where                                                             | Feel                                                                                                                   |
-| ------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| track   | every circuit                                                     | race asphalt: a quarter more grip than tarmac and a planted rear, so the car slides far less                           |
-| tarmac  | some Forest and Alpine stages, every Coast and Urban stage, towns | most grip, highest par speed                                                                                           |
-| gravel  | most Forest stages                                                | the reference surface                                                                                                  |
-| mud     | some Forest stages                                                | slow and slippery                                                                                                      |
-| snow    | most Alpine stages, and off road there                            | least grip, dusted asphalt look (soft lane bands: swept wheel tracks, dust between and along the edges, all wandering) |
-| sand    | every Desert stage                                                | packed piste, a little looser than gravel                                                                              |
-| dune    | off the road in the Desert                                        | soft sand, the car wallows                                                                                             |
-| grass   | off the road everywhere else                                      | heavy drag                                                                                                             |
+| Surface | Where                                        | Feel                                                                                                                   |
+| ------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| track   | every circuit                                | race asphalt: a quarter more grip than tarmac and a planted rear, so the car slides far less                           |
+| tarmac  | Greenvale, Coastal and Urban stages, towns   | most grip, highest par speed                                                                                           |
+| gravel  | Pinewood stages                              | the reference surface                                                                                                  |
+| mud     | Autumnal stages                              | slow and slippery                                                                                                      |
+| snow    | Alpine and Arctic stages, and off road there | least grip, dusted asphalt look (soft lane bands: swept wheel tracks, dust between and along the edges, all wandering) |
+| sand    | every Desert stage                           | packed piste, a little looser than gravel                                                                              |
+| dune    | off the road in the Desert                   | soft sand, the car wallows                                                                                             |
+| grass   | off the road everywhere else                 | heavy drag                                                                                                             |
 
 Tyre marks are drawn per surface into a single fading ring-buffer mesh: rubber black on
 tarmac, earth tones off it, and on snow a neutral white a shade below the lit snow, so a

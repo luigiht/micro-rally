@@ -58,7 +58,7 @@ test('two drivers share a session, and a stage opens only once both have run the
   await ada.getByLabel('Stages').selectOption('3');
   // Every stage type starts ticked; the host keeps two, which the stages take in turn.
   const types = ada.getByRole('group', { name: 'Stage types' });
-  for (const type of ['Pinewood', 'Forest', 'Coastal', 'Arctic', 'Autumnal', 'Urban', 'Circuit'])
+  for (const type of ['Pinewood', 'Greenvale', 'Coastal', 'Arctic', 'Autumnal', 'Urban', 'Circuit'])
     await types.getByLabel(type).uncheck();
   await expect(types.getByRole('checkbox', { checked: true })).toHaveCount(2);
   await ada.getByRole('button', { name: 'Create session' }).click();

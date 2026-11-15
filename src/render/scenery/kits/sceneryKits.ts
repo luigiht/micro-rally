@@ -14,7 +14,11 @@ export function sceneryKitsFor(
     stagePalette(stage.stageType),
     shadows,
     STAGE_TYPES[stage.stageType].offroad === 'snow',
-    stage.stageType === 'alpine',
+    stage.stageType === 'alpine'
+      ? 'alpine'
+      : stage.stageType === 'forest'
+        ? 'greenvale'
+        : undefined,
   );
   if (furniture) return kits;
   // Without the furniture its props are simply not drawn (their colliders stand either way).

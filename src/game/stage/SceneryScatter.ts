@@ -6,6 +6,7 @@ import {
 } from './CircuitTrackside';
 import { hashSeed, mulberry32 } from '../rng';
 import type { Obstacle } from '../vehicle/Collisions';
+import { groves } from './Groves';
 import { inOasis, oasisPads, oasisProps, planOases } from './Oases';
 import { parkedCars, parkingStretches } from './ParkingBays';
 import { streetFurniture } from './StreetFurniture';
@@ -291,7 +292,9 @@ export function scatterScenery(field: TerrainField): Prop[] {
   const meanOffset = density.meanOffset ?? MEAN_OFFSET;
   const stand = trackside ? grandstandSpot(stage, trackside) : null;
   const cornerStands = trackside ? cornerStandSpots(stage, trackside) : [];
-  const kinds: readonly [kind: PropKind, perHundred: number, deep?: boolean][] = [
+  // The deep wood spreads evenly into the distance; a grove's own broadleaves out to its reach.
+  type Layer = 'deep' | 'grove';
+  const kinds: readonly [kind: PropKind, perHundred: number, layer?: Layer][] = [
     ['spruce', density.spruces ?? 0],
     ['tree', density.trees],
     ['broadleaf', density.broadleaf],
@@ -299,15 +302,28 @@ export function scatterScenery(field: TerrainField): Prop[] {
     ['rock', density.rocks],
     // Only where a region asks for them, so no other region's draws shift.
     ...(density.saplings ? [['sapling', density.saplings] as [PropKind, number]] : []),
-    ...(density.deepWood ? [['tree', density.deepWood, true] as [PropKind, number, boolean]] : []),
+    ...(density.deepWood ? [['tree', density.deepWood, 'deep'] as [PropKind, number, Layer]] : []),
+    ...(density.groves
+      ? [['broadleaf', density.groves.deep, 'grove'] as [PropKind, number, Layer]]
+      : []),
   ];
+  const grove = density.groves ? groves(stage.seed, density.groves) : null;
 
   for (let d = 0; d < path.length; d += STEP) {
     // Slow wobble so trees clump into copses and clearings.
     const clump =
       0.35 + 1.3 * (0.5 + 0.5 * Math.sin(d * 0.011 + stage.seed * 1e-9) * Math.cos(d * 0.0047));
-    for (const [kind, perHundred, deep] of kinds) {
-      const expected = ((perHundred * STEP) / 100) * (kind === 'rock' ? 1 : clump);
+    // In a grove the broadleaves grow thicker, bigger and nearer the road, and fill the hills beside it.
+    const inGrove = grove ? grove(d) : 0;
+    for (const [kind, perHundred, layer] of kinds) {
+      const deep = layer === 'deep';
+      const thick =
+        layer === 'grove'
+          ? inGrove
+          : kind === 'broadleaf' && density.groves
+            ? 1 + (density.groves.boost - 1) * inGrove
+            : 1;
+      const expected = ((perHundred * STEP) / 100) * (kind === 'rock' ? 1 : clump) * thick;
       let n = Math.floor(expected) + (rand() < expected % 1 ? 1 : 0);
       while (n-- > 0) {
         path.sample(d + rand() * STEP, sample);
@@ -318,19 +334,23 @@ export function scatterScenery(field: TerrainField): Prop[] {
         // The deep wood spreads evenly into the distance; everything else thins out from the road.
         const offset = deep
           ? stage.halfWidth + DEEP_FROM + rand() * (MAX_OFFSET - stage.halfWidth - DEEP_FROM)
-          : Math.min(
-              MAX_OFFSET,
-              stage.halfWidth +
-                clear +
-                -Math.log(1 - rand()) * (sapling ? SAPLING_OFFSET : meanOffset),
-            );
+          : layer === 'grove'
+            ? stage.halfWidth + clear + rand() * density.groves!.reach
+            : Math.min(
+                MAX_OFFSET,
+                stage.halfWidth +
+                  clear +
+                  -Math.log(1 - rand()) * (sapling ? SAPLING_OFFSET : meanOffset),
+              );
         const x = sample.x + Math.cos(sample.heading) * offset * side;
         const z = sample.z - Math.sin(sample.heading) * offset * side;
         const scale = sapling
           ? 0.24 + rand() * 0.3
           : kind === 'rock' || kind === 'bush'
             ? 0.6 + rand() * 0.8
-            : (0.7 + rand() * 0.8) * (kind === 'tree' ? (density.treeScale ?? 1) : 1);
+            : (0.7 + rand() * 0.8) *
+              (kind === 'tree' ? (density.treeScale ?? 1) : 1) *
+              (kind === 'broadleaf' && density.groves ? 1 + density.groves.grow * inGrove : 1);
         const rotation = rand() * Math.PI * 2;
         const variant = rand() < 0.5 ? 0 : 1;
         // Keep every part of the road (including other bends) clear, and the town plateau.
@@ -371,8 +391,11 @@ export function scatterScenery(field: TerrainField): Prop[] {
           path.nearest(x, z, stage.halfWidth + ROAD_GAP + canopy * scale, hit)
         )
           continue;
-        if (canopy !== undefined && canopies.overlaps(x, z, canopy * scale, density.crowding ?? 1))
-          continue;
+        // A grove's crowns crowd closer still.
+        const crowding = density.groves
+          ? (density.crowding ?? 1) + (density.groves.crowding - (density.crowding ?? 1)) * inGrove
+          : (density.crowding ?? 1);
+        if (canopy !== undefined && canopies.overlaps(x, z, canopy * scale, crowding)) continue;
         const prop: Prop = { kind, x, y: field.heightAt(x, z), z, scale, rotation, variant };
         if (density.treeStretch && (kind === 'tree' || kind === 'broadleaf'))
           prop.stretch = density.treeStretch;
