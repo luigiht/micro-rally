@@ -56,6 +56,8 @@ const VIEW_MARGIN = 0.15;
 /** They watch the cars: the line of sight ends this high over the road. */
 const CAR_HEIGHT = 1;
 const VIEW_STEPS = 8;
+/** Spectators keep this far off a frozen river's ice. */
+const RIVER_GAP = 5;
 /** A crowd's place that fails steps back this far, once and again; a group also tries along the road. */
 const STEP_BACK = [0, 1.5, 3] as const;
 const GROUP_SHIFTS = [0, 5, -5, 10, -10] as const;
@@ -202,6 +204,8 @@ export function scatterSpectators(
     if (trackside) return true;
     const [x, z] = at(d, side, off);
     if (path.nearest(x, z, verge, hit)) return false;
+    // Nobody stands on a frozen river or at the lip of its gorge.
+    if (field.inRiver(x, z, RIVER_GAP)) return false;
     return standable(field, x, z, d);
   };
   const stand = (d: number, side: 1 | -1, off: number, variant: number): boolean => {

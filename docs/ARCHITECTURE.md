@@ -102,10 +102,16 @@ flowchart LR
   through the ordinary scatter, and `kits/SpruceKits.ts` dresses it in
   three parts (trunk, tinted foliage, snow caps) from `SpruceGeometry.ts`.
 - Alpine: its woods are `render/scenery/SnowPineGeometry.ts` (tiered snow
-  pines) and `AlpineConiferGeometry.ts` (frond spruces, snow-clump firs,
-  snowy boulders and stumps), dressed by `kits/AlpineKits.ts`; its ground is
+  pines, their silhouettes in `SnowPineSpecs.ts`) and
+  `SnowyGroundGeometry.ts` (snowy boulders and stumps), dressed by
+  `kits/AlpineKits.ts`; its ground is
   coloured by `render/terrain/valleyFaceColor.ts` from the palette's snow
-  `meadows`, and its crowds stand on `CrowdBenches`. `rallyKits` takes the
+  `meadows`, and its crowds stand on `CrowdBenches`. `game/stage/Rivers.ts`
+  plans its frozen rivers once the road is laid (`TerrainField.rivers`,
+  carved in `sample`/`deckAt`, `inRiver` for the scatters,
+  `bridgeObstacles` for `StageWorld`); `render/terrain/FrozenRiverBuilder.ts`
+  draws the ice and `render/road/StoneBridgeBuilder.ts` the bridges, and
+  `RoadBuilder` opens its verges over them. `rallyKits` takes the
   kits for the stock pine, bush, rock and shared trunk when the stage is
   Alpine (`sceneryKitsFor`); each prop's shape is picked by its spot.
   Spectators are placed by `game/stage/Spectators.ts` (crowds at the start,

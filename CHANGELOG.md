@@ -5,6 +5,21 @@ tags yet: `main` is deployed continuously, so entries are grouped by the day
 they landed. The numbered entries in [docs/DECISIONS.md](docs/DECISIONS.md)
 hold the reasoning behind each change; the numbers in brackets point there.
 
+## 2026-11-15
+
+### Changed
+
+- **Frozen rivers and stone bridges.** Every Alpine stage now crosses two
+  or three frozen rivers where the road dips lowest, each on a stone arch
+  bridge with dry-stone parapets. The rivers run on through the hills on
+  either side in rocky little gorges until they fade into the snow. [251]
+- **Alpine pines in one family.** The lumpy snow-clump firs and the
+  drooping-frond spruces are gone. The wood is now all tiered snow pines in
+  eighteen silhouettes, from squat and broad to tall needles, a bent top, a
+  wide cone and chunky faceted firs, each tree a little wider or narrower,
+  taller or shorter. It is also much thicker, by the road and up the
+  hillsides. [249, 250]
+
 ## 2026-11-14
 
 ### Changed

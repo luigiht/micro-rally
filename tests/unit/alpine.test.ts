@@ -4,16 +4,9 @@ import { STAGE_TYPES } from '@/game/stage/regions';
 import { createRoadHit } from '@/game/stage/RoadPath';
 import { createStageWorld } from '@/game/stage/StageWorld';
 import { TerrainField } from '@/game/stage/TerrainField';
-import {
-  CLUMP_SPECS,
-  FROND_SPECS,
-  frondSpruceGeometry,
-  snowClumpFirGeometry,
-  snowyBoulderGeometry,
-  snowyStumpGeometry,
-} from '@/render/scenery/AlpineConiferGeometry';
+import { snowyBoulderGeometry, snowyStumpGeometry } from '@/render/scenery/SnowyGroundGeometry';
 import { alpineKits } from '@/render/scenery/kits/AlpineKits';
-import { PINE_SPECS } from '@/render/scenery/SnowPineGeometry';
+import { PINE_SPECS, snowPineGeometry } from '@/render/scenery/SnowPineGeometry';
 import { terrainColors } from '@/render/terrain/meshTerrainChunk';
 import { valleyFaceColor, type ValleyFace } from '@/render/terrain/valleyFaceColor';
 import { stageIndexOf } from './stageIndex';
@@ -23,35 +16,28 @@ describe('Alpine woods', () => {
   const trunk = new Color('#4e3a2b');
   const box = new Box3();
 
-  it('grow frond spruces and snow-clump firs about the snow pines’ size, standing on the ground', () => {
-    const trees = [
-      ...FROND_SPECS.map((s) => frondSpruceGeometry(s, greens, trunk)),
-      ...CLUMP_SPECS.map((s) => snowClumpFirGeometry(s, greens, trunk)),
-    ];
-    for (const g of trees) {
-      box.setFromBufferAttribute(g.getAttribute('position') as never);
-      expect(Math.max(-box.min.x, box.max.x, -box.min.z, box.max.z)).toBeLessThan(2.4);
-      expect(box.max.y).toBeGreaterThan(4.5);
-      expect(box.max.y).toBeLessThan(8.5);
-      expect(box.min.y).toBeLessThanOrEqual(0);
-      // Snow and green both: some colours near white, some well below it.
-      const c = g.getAttribute('color');
-      let white = 0;
-      let green = 0;
-      for (let i = 0; i < c.count; i++) {
-        if (c.getX(i) > 0.8 && c.getZ(i) > 0.8) white++;
-        else if (c.getY(i) > c.getX(i)) green++;
-      }
-      expect(white).toBeGreaterThan(c.count * 0.1);
-      expect(green).toBeGreaterThan(c.count * 0.1);
-      g.dispose();
-    }
+  it('lay snowy boulders and stumps low on the ground', () => {
     for (const g of [snowyBoulderGeometry(new Color('#8b9098')), snowyStumpGeometry(trunk)]) {
       box.setFromBufferAttribute(g.getAttribute('position') as never);
       expect(box.max.y).toBeLessThan(1.3);
       g.dispose();
     }
-    expect(PINE_SPECS.length).toBe(11);
+  });
+
+  it('vary the tiered pines in width and height, chunky ones among them', () => {
+    const sizes = PINE_SPECS.map((spec) => {
+      const g = snowPineGeometry(spec, greens, trunk);
+      box.setFromBufferAttribute(g.getAttribute('position') as never);
+      g.dispose();
+      return { width: Math.max(box.max.x - box.min.x, box.max.z - box.min.z), height: box.max.y };
+    });
+    const widths = sizes.map((s) => s.width);
+    const heights = sizes.map((s) => s.height);
+    // From slim to broad, from squat to tall.
+    expect(Math.max(...widths)).toBeGreaterThan(Math.min(...widths) * 1.9);
+    expect(Math.max(...heights)).toBeGreaterThan(Math.min(...heights) * 1.9);
+    for (const s of sizes) expect(s.width).toBeLessThan(5.2);
+    expect(PINE_SPECS.filter((s) => s.tips !== undefined).length).toBeGreaterThanOrEqual(3);
   });
 
   it('dresses every pine, bush and rock once, and only the Alpine’s', () => {
@@ -71,8 +57,8 @@ describe('Alpine woods', () => {
       expect(taking).toHaveLength(1);
       forms.add(kits.indexOf(taking[0]!));
     }
-    // Tiered pines, frond spruces and clump firs all turn up.
-    expect(forms.size).toBeGreaterThan(10);
+    // Nearly every tiered silhouette turns up.
+    expect(forms.size).toBeGreaterThan(14);
     for (const kind of ['bush', 'rock'] as const)
       for (const p of props.slice(0, 50)) {
         const q = { ...p, kind };
@@ -85,6 +71,15 @@ describe('Alpine woods', () => {
       k.geometry.dispose();
       k.material.dispose();
     }
+  });
+});
+
+describe('Alpine wood', () => {
+  it('is a thick wood of tiered snow pines, by the road and up the hillsides', () => {
+    const w = createStageWorld(1, stageIndexOf('alpine', 1));
+    const perKm = w.props.filter((p) => p.kind === 'tree').length / (w.stage.path.length / 1000);
+    expect(perKm).toBeGreaterThan(1500);
+    expect(w.props.filter((p) => p.kind === 'broadleaf')).toHaveLength(0);
   });
 });
 

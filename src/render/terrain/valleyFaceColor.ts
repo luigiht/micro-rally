@@ -33,6 +33,8 @@ export interface ValleyFace {
   hollow: number;
   /** How close the road is: 1 on its deck, falling to 0 where the ground has blended back into the hills. */
   road: number;
+  /** How deep into a frozen river's channel (`TerrainSample.river`): its bed and the feet of its banks go to rock. */
+  river?: number;
   /** Two independent per-face hashes in [0, 1). */
   hashA: number;
   hashB: number;
@@ -108,7 +110,7 @@ export function valleyFaceColor(tones: ValleyTones, f: ValleyFace, out: number[]
   const tilt = 1 - f.ny;
   const face = smoothstep(ROCK_FROM, ROCK_TO, tilt + (tuft - 0.5) * 0.08);
   const outcrop = smoothstep(OUTCROP_FROM, ROCK_FROM, tilt) * smoothstep(0.7, 0.86, patch);
-  const rocky = Math.max(face, outcrop) * (1 - 0.6 * f.road);
+  const rocky = Math.max(face, outcrop, f.river ?? 0) * (1 - 0.6 * f.road * (1 - (f.river ?? 0)));
   if (rocky > 0) {
     const bed = f.h / BED + tuft * 0.8;
     const light = (bed - Math.floor(bed)) * 0.7 + f.hashB * 0.3;

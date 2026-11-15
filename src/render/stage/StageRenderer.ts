@@ -16,6 +16,8 @@ import { SceneryChunkManager } from '../scenery/SceneryChunkManager';
 import { terrainColors } from '../terrain/meshTerrainChunk';
 import { OasisBuilder } from '../terrain/OasisBuilder';
 import { SeaPlane } from '../terrain/SeaPlane';
+import { FrozenRiverBuilder } from '../terrain/FrozenRiverBuilder';
+import { StoneBridgeBuilder } from '../road/StoneBridgeBuilder';
 import { TerrainChunkManager } from '../terrain/TerrainChunkManager';
 import { dayTheme, type WorldTheme } from '../theme/WorldTheme';
 import { CrossingBuilder } from '../town/CrossingBuilder';
@@ -129,6 +131,9 @@ interface Surfaces {
   seawall: SeaWallBuilder | null;
   sea: SeaPlane | null;
   pools: OasisBuilder | null;
+  /** The Alpine's frozen rivers and the stone bridges over them. */
+  rivers: FrozenRiverBuilder | null;
+  bridges: StoneBridgeBuilder | null;
   kerbs: KerbBuilder | null;
   barriers: BarrierBuilder | null;
   dressing: CircuitDressingBuilder | null;
@@ -224,6 +229,8 @@ export class StageRenderer {
       seawall: field.coast ? new SeaWallBuilder(field.coast, field, theme.seawall) : null,
       sea: field.coast ? new SeaPlane(field.coast.seaLevel, theme.sea) : null,
       pools: field.oases.length > 0 ? new OasisBuilder(field.oases, theme.sea) : null,
+      rivers: field.rivers.length > 0 ? new FrozenRiverBuilder(field.rivers) : null,
+      bridges: field.rivers.length > 0 ? new StoneBridgeBuilder(stage, field, theme.seawall) : null,
       kerbs: null,
       barriers: null,
       dressing: null,
@@ -328,6 +335,8 @@ export class StageRenderer {
       s.seawall,
       s.sea,
       s.pools,
+      s.rivers,
+      s.bridges,
       s.kerbs,
       s.barriers,
       s.dressing,

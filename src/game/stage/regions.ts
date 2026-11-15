@@ -1,6 +1,7 @@
 import type { Surface } from '../vehicle/surfaces';
 import type { GroveDef } from './Groves';
 import type { LacetStyle } from './Lacets';
+import type { RiverStyle } from './Rivers';
 import type { PineForm } from './SceneryScatter';
 import type { BuildingStyle } from './Town';
 
@@ -204,6 +205,8 @@ export interface StageTypeDef {
     rugged?: number;
     /** Where the crowds gather, the ground either side of the road is levelled into benches (`CrowdBenches`). */
     benches?: boolean;
+    /** Frozen rivers the road crosses on stone bridges at its low points (`Rivers`); none when unset. */
+    rivers?: RiverStyle;
     /**
      * The ground beside the road is held within a bank's slope of every
      * stretch of it, cut above and filled below, and gives way to the hills
@@ -471,7 +474,15 @@ const ALPINE: StageTypeDef = {
     },
   },
   // Mountains with ridged crests and knolls, and crowd benches where the spectators gather.
-  terrain: { amplitude: 34, frequency: 1 / 230, ridges: 0.45, rugged: 2.4, benches: true },
+  // Frozen rivers in the valleys, two or three a stage, bridged where the road dips to them.
+  terrain: {
+    amplitude: 34,
+    frequency: 1 / 230,
+    ridges: 0.45,
+    rugged: 2.4,
+    benches: true,
+    rivers: { min: 2, halfWidth: 4, depth: 1.6, clearance: 4.5, reach: 360 },
+  },
   // Winter tyres: 35 % more grip on the snow-dusted tarmac, so the cars climb the passes instead of
   // spinning their wheels; still short of the Arctic's studs. Steering is unchanged.
   handling: { grip: 1.35, steer: 1, lock: 1 },
@@ -480,12 +491,12 @@ const ALPINE: StageTypeDef = {
   // The Arctic's crowd too: groups in winter clothes on the verges, the start and the checkpoints.
   // A dense winter wood (`AlpineKits`): tiered snow pines and snowy bushes, no broadleaves.
   scenery: {
-    trees: 118,
+    // A thick wood of tiered snow pines by the road, carrying on up the hillsides out of sight.
+    trees: 170,
     broadleaf: 0,
     bushes: 10,
     rocks: 14,
-    // The wood carries on up the hillsides out of sight.
-    deepWood: 90,
+    deepWood: 140,
     houses: 0.7,
     spectators: 2.2,
     berms: true,

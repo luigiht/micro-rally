@@ -15,6 +15,7 @@ import type { StageDef } from '@/game/stage/StageGenerator';
 import { controlBoardSkip, markerDistances, type MarkerSkip } from '@/game/stage/RoadMarkers';
 import { ROAD_LIFT, TRENCH_OUT, VERGE_WIDTH, type TerrainField } from '@/game/stage/TerrainField';
 import { halfWidthAt } from '@/game/stage/RoadWidth';
+import { bridgeSpan } from '@/game/stage/Rivers';
 import { roundaboutOpenings } from '@/game/stage/Roundabout';
 import { KERB_LIFT, townFade } from '@/game/stage/Town';
 import { routeOpenings, type Openings } from '@/game/stage/TownKerbs';
@@ -299,6 +300,8 @@ export interface Strip {
   /** A shade on the strip's colour, fixed or varying along the road (by station sample index). */
   tone?: number | ((k: number) => number);
   blendFromRoad?: boolean;
+  /** A painted edge line: it runs on across a bridge, where the verges stop. */
+  line?: boolean;
   /** A shade on each piece of its own (a city's slabs and asphalt, `SurfaceDetail`), from the half width and station there. */
   detail?: (hw: number, k: number) => number;
 }
@@ -311,6 +314,8 @@ export class RoadBuilder {
   private readonly instanced: InstancedMesh[] = [];
   private readonly verge: Color;
   private readonly scratch = { x: 0, z: 0, heading: 0 };
+  /** The road distances each bridge spans (`bridgeSpan`): open to the verges, not to the edge lines. */
+  private bridges: { from: number; to: number }[] = [];
 
   /** The theme's verge is the region's shoulder by day, so the strips match the terrain beside them. */
   constructor(
@@ -331,6 +336,15 @@ export class RoadBuilder {
       openings.left.sort((p, q) => p.from - q.from);
       openings.right.sort((p, q) => p.from - q.from);
     }
+    // Over a bridge the verges and posts give way to its masonry and parapets; the edge lines run on.
+    const bridges = field.rivers.map((r) => bridgeSpan(r));
+    if (bridges.length > 0) {
+      openings.left.push(...bridges);
+      openings.right.push(...bridges);
+      openings.left.sort((p, q) => p.from - q.from);
+      openings.right.sort((p, q) => p.from - q.from);
+    }
+    this.bridges = bridges;
     if (VERGE_WIDTH <= TRENCH_OUT) throw new Error('verge strip must cover the trench ramp');
     const roadMat = new MeshStandardMaterial({
       vertexColors: true,
@@ -440,6 +454,7 @@ export class RoadBuilder {
         color: line,
         shaded: false,
         side: 1,
+        line: true,
       },
       {
         a: (hw) => -hw + 0.35,
@@ -448,6 +463,7 @@ export class RoadBuilder {
         color: line,
         shaded: false,
         side: -1,
+        line: true,
       },
     ];
     // Snow tongues from the banks onto the carriageway where the region heaps banks. They are part
@@ -671,8 +687,9 @@ export class RoadBuilder {
       for (let k = 0; k + 1 < stations.length; k++) {
         const p = stations[k]!;
         const q = stations[k + 1]!;
-        if (strip.side !== undefined && open(strip.side, (p.d + q.d) / 2)) continue;
         const mid = (p.d + q.d) / 2;
+        const bridged = strip.line === true && this.bridges.some((b) => mid > b.from && mid < b.to);
+        if (strip.side !== undefined && open(strip.side, mid) && !bridged) continue;
         if (strip.rise !== undefined && (!town || townFade(town, mid) < 0.02)) continue;
         // A band with no width at either end (a tongue-free stretch of edge) draws nothing.
         if (
@@ -741,6 +758,10 @@ export class RoadBuilder {
   private buildMarkers(stage: StageDef, field: TerrainField): void {
     const path = stage.path;
     const skip: MarkerSkip[] = stage.town ? [[stage.town.from, stage.town.to]] : [];
+    for (const r of field.rivers) {
+      const span = bridgeSpan(r);
+      skip.push([span.from, span.to]);
+    }
     if (!stage.circuit) {
       skip.push(controlBoardSkip(stage.startDistance));
       for (const g of stage.gates) if (g.kind === 'finish') skip.push(controlBoardSkip(g.distance));

@@ -177,15 +177,18 @@ Only the Arctic also quickens the steering.
 
 **Alpine.** Mountain passes under snow.
 
-- **Woods** (`SnowPineGeometry`, `AlpineConiferGeometry`, `kits/AlpineKits.ts`),
-  after the snowy sets in `context/low-poly-snowy-trees`. By spot, 60 % of
-  the pines are one of eleven tiered snow pines (now also a laden giant and
-  a white spire). 22 % are drooping-frond spruces, each whorl of bent strips
-  under a band of snow. 18 % are snow-clump firs: chunky faceted clumps on a
-  green body, white where they face the sky. One bush in four is a snowy
-  stump; every rock is a boulder under snow. A deep wood (90 per 100 m)
-  carries on up the hillsides. Bare trees and snowy broadleaves stay out:
-  they were tried and dropped.
+- **Woods** (`SnowPineGeometry`, `SnowPineSpecs`, `SnowyGroundGeometry`,
+  `kits/AlpineKits.ts`), after the snowy sets in `context/low-poly-snowy-trees`.
+  Every pine is one of eighteen tiered snow pines, picked by its spot. Their reach
+  runs from 1 m to 2.1 m and their height from 3.4 m to 8 m: broad, tall,
+  leaning, young, laden, sparse, columnar, lopsided, squat, a laden giant, a
+  white spire, three chunky faceted firs (five or six jagged tips a tier, tiers
+  a little off centre, thick snow), a bent top, a wide cone, a needle and a
+  lightly dusted fir. Each tree is drawn 0.75–1.25× as wide and 0.8–1.25× as
+  tall by its spot. A thick wood: 170 pines per 100 m by the road and 140
+  more up the hillsides. One bush in four is a snowy stump; every rock is a
+  boulder under snow. Frond spruces, bare trees and snowy broadleaves were
+  tried and dropped.
 - **Ground.** 34 m relief, 45 % of it ridged, plus 2.4 m of knolls. It is
   coloured by `valleyFaceColor` in snow tones (palette `meadows`):
   blue-shadowed hollows, sunlit warm crests, wind crust in patches, grey
@@ -193,6 +196,31 @@ Only the Arctic also quickens the steering.
   road, every face a little lighter or darker.
 - **Crowds** stand on benches (`terrain.benches`) at the start, the
   checkpoints and the finish, on good ground (`standable`) between them.
+- **Frozen rivers and stone bridges** (`Rivers`, `terrain.rivers`). Two or
+  three a stage, laid after the road so the road never changes. Crossings
+  come at the road's deepest dips first (lowest within 30 m, ranked by how
+  far the road climbs either side within 150 m, at least 350 m apart). A
+  stage short of dips takes the stretches standing least above the road
+  near them. Crossings keep 90 m from the start and finish, 60 m from a
+  gate and 150 m from a village. From the crossing each river is traced
+  360 m both ways in 8 m steps. It sets off square to the road, then takes
+  whichever heading in a ±0.6 rad fan finds the lowest ground, with a turn
+  cost and a slow meander. It stops near any other stretch of road, a
+  village or another river, and is dropped if either side runs under
+  100 m. The ice lies 1.6 m under the ground smoothed along it, drawn down
+  over 55 m to 4.5 m under the deck at the bridge, and its last 45 m each
+  end rise into the snow. The channel is 8 m of ice on a floor 25 cm under
+  it, with banks climbing 1.5 m per metre, carved into the mesh everywhere
+  (under the road too). The wheels keep the deck on the carriageway. The
+  ice (`FrozenRiverBuilder`) is pale blue pieces, clearer blue pieces and
+  snow drifts (more at the edges); the channel's bed and bank feet are
+  grey rock. Bridges (`StoneBridgeBuilder`) span the ice and 6 m of each
+  bank, plus 3 m. They have dry-stone parapets on the deck (the coast's
+  walls, which are also colliders), faces in courses of blocks, a ring of
+  paler voussoirs, an elliptical arch from 0.35 m over the ice to 0.85 m
+  under the deck, and abutments into the banks. The road's verges and posts stop on
+  the bridge; its white edge lines run on across it. Trees, rocks, grass and houses keep
+  off the ice, and spectators keep 5 m off it.
 
 All open ground (not the coast, the dunes, circuits or cities, which shape
 their own) carries small bumps and hollows over the broad hills: two

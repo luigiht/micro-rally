@@ -130,6 +130,9 @@ export const HOUSE_COLLIDER = { radius: 2.4, spread: 1.8 } as const;
 /** A roundabout island's terrain pad lies this far under its kerb-high meshes. */
 const ISLAND_PAD_BELOW = 0.03;
 
+/** Wild scenery keeps this far off a frozen river's ice (`TerrainField.inRiver`). */
+const RIVER_CLEAR = 2.5;
+
 /** Farmhouses stay this far outside a town's footprint; wild scenery only keeps off its streets, buildings and walls. */
 const TOWN_HOUSE_CLEARANCE = 40;
 
@@ -358,6 +361,8 @@ export function scatterScenery(field: TerrainField): Prop[] {
         if (stand && Math.hypot(x - stand.x, z - stand.z) < stand.radius) continue;
         if (cornerStands.some((s) => Math.hypot(x - s.x, z - s.z) < s.radius)) continue;
         if (stage.town && townBlocks(stage.town, x, z)) continue;
+        // Nothing grows on a frozen river or right at its edge.
+        if (field.inRiver(x, z, RIVER_CLEAR)) continue;
         if (coast) {
           // Rocks anywhere above the water; scrub from the dry sand inland on anything but a cliff face;
           // trees above the beach on gentle ground that is not bare rock.
@@ -530,6 +535,7 @@ function scatterHouses(field: TerrainField): Prop[] {
     const variant = rand() < 0.5 ? 0 : 1;
     if (path.nearest(x, z, minOffset, hit)) continue;
     if (stage.town && plateauDistance(stage.town, x, z) < TOWN_HOUSE_CLEARANCE) continue;
+    if (field.inRiver(x, z, HOUSE_CLEARANCE)) continue;
     // Face the nearest stretch of road, give or take: the door is on local -z,
     // which a Y rotation of `heading ± π/2` turns back across the verge.
     path.nearest(x, z, HOUSE_MAX_OFFSET * 2, hit);

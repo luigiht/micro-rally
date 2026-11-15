@@ -13,6 +13,7 @@ import {
 } from './CircuitTrackside';
 import { Coastline } from './Coastline';
 import { benchWeight, planBenches, type Bench } from './CrowdBenches';
+import { planRivers, RiverIndex, type River, type RiverHit } from './Rivers';
 import { lacetGround } from './Lacets';
 import { type AxisPoint, CoastShape, type CoastSurface } from './CoastShape';
 import type { Oasis } from './Oases';
@@ -60,6 +61,17 @@ const BANK_SLOPE = 1.2;
 const BANK_REACH = 30;
 /** The fill floor fades in over this much inland of the shore road's line, leaving the sea cliffs alone. */
 const FILL_FADE = 8;
+/**
+ * A frozen river's channel: its floor this far under the ice, its banks
+ * climbing this much per metre out of it, its bed and the feet of its banks
+ * this far out (for the mesh's colour), carved this far past its ice at
+ * most; the road's own surface stands on its bridge this far past its edge.
+ */
+const RIVER_FLOOR = 0.25;
+const RIVER_BANK = 1.5;
+const RIVER_FEET = 4;
+const RIVER_REACH = 16;
+const BRIDGE_EDGE = 0.1;
 /** The ridges' crests are rounded over this much of the ridge noise (see `baseHeight`). */
 const RIDGE_ROUND = 0.12;
 /** A levelled jump (`crests.level`) runs up over this much before its hump and lands over this much after it. */
@@ -231,6 +243,8 @@ export interface TerrainSample {
   dry?: number;
   /** 0..1 how far into a crowd's berm: painted a lusher grass by the mesher. */
   earth?: number;
+  /** 0..1 how deep into a frozen river's channel (its bed and the feet of its banks). */
+  river?: number;
 }
 
 function smoothstep(e0: number, e1: number, x: number): number {
@@ -259,6 +273,12 @@ export class TerrainField implements TerrainQuery {
   private readonly banked: boolean;
   /** Where the crowds gather the ground beside the road is levelled into benches (`terrain.benches`). */
   private readonly benches: Bench[];
+  /** The frozen rivers the road bridges (`terrain.rivers`), carved into the ground; none elsewhere. */
+  readonly rivers: River[];
+  private readonly riverIndex: RiverIndex | null;
+  private readonly riverHit: RiverHit = { distance: 0, level: 0, fade: 0, halfWidth: 0 };
+  /** How far a river's channel rises out of the ground where it fades at its ends. */
+  private readonly riverRise: number;
   /** A ridge of snow heaped along both verges (the Arctic), as height and width; null elsewhere. */
   private readonly banks: { height: number; width: number } | null;
   private readonly embankment: { height: number; width: number; from?: number } | null;
@@ -387,6 +407,22 @@ export class TerrainField implements TerrainQuery {
           this.flatMargin + (this.banked ? COAST_BLEND : BLEND_WIDTH),
         )
       : [];
+    // Laid on the finished road, so the road never changes for them.
+    const rivers = region.terrain.rivers;
+    this.rivers = rivers
+      ? planRivers(
+          {
+            stage,
+            groundHeight: (x, z) => this.groundHeight(x, z),
+            roadHeightAt: (d) => this.roadHeightAt(d),
+            corridor: this.flatMargin + (this.banked ? COAST_BLEND : BLEND_WIDTH),
+          },
+          rivers,
+        )
+      : [];
+    this.riverRise = (rivers?.depth ?? 0) + 2;
+    this.riverIndex =
+      this.rivers.length > 0 ? new RiverIndex(this.rivers, rivers!.halfWidth + RIVER_REACH) : null;
     this.stubs = this.town ? this.buildStubs(this.town) : [];
     this.fileStubs();
     this.junctions = this.town
@@ -841,7 +877,7 @@ export class TerrainField implements TerrainQuery {
       out.height = this.applyPads(x, z, base + this.detailAt(x, z, 1));
       out.roadBlend = 0;
       out.roadDistance = Infinity;
-      return out;
+      return this.carveRiver(x, z, out);
     }
     const deck = st.deck + ROAD_LIFT;
     const hw = st.hw;
@@ -887,6 +923,37 @@ export class TerrainField implements TerrainQuery {
     out.height = out.paved ? raw : this.applyPads(x, z, raw);
     out.roadBlend = 1 - t;
     out.roadDistance = st.distance;
+    // The river runs on under a bridge: the mesh's ground is carved under the road too.
+    return this.carveRiver(x, z, out);
+  }
+
+  /**
+   * A frozen river's carved bed at (x, z): its floor a little under the
+   * ice, the banks climbing steeply out of it; at the river's faded ends the
+   * floor rises out of the ground. Infinity away from every river.
+   */
+  riverBed(x: number, z: number): number {
+    if (!this.riverIndex || !this.riverIndex.at(x, z, this.riverHit)) return Infinity;
+    const r = this.riverHit;
+    const floor = r.level - RIVER_FLOOR + (1 - r.fade) * this.riverRise;
+    return floor + Math.max(0, r.distance - r.halfWidth) * RIVER_BANK;
+  }
+
+  /** Whether (x, z) lies on a river's ice or within `margin` of it: scenery keeps off. */
+  inRiver(x: number, z: number, margin = 0): boolean {
+    if (!this.riverIndex || !this.riverIndex.at(x, z, this.riverHit)) return false;
+    const r = this.riverHit;
+    return r.fade > 0.05 && r.distance < r.halfWidth + margin;
+  }
+
+  private carveRiver(x: number, z: number, out: TerrainSample): TerrainSample {
+    out.river = 0;
+    if (!this.riverIndex) return out;
+    const bed = this.riverBed(x, z);
+    if (bed >= out.height) return out;
+    out.height = bed;
+    const r = this.riverHit;
+    out.river = 1 - smoothstep(r.halfWidth + 0.5, r.halfWidth + RIVER_FEET, r.distance);
     return out;
   }
 
@@ -948,6 +1015,15 @@ export class TerrainField implements TerrainQuery {
 
   /** The surface without the pavements' kerb lift: the deck tarmac, kerb faces and pavements are built on. */
   deckAt(x: number, z: number): number {
+    const h = this.deckGround(x, z);
+    if (!this.riverIndex) return h;
+    // On the carriageway the road stands on its bridge over any river; off it, the gorge falls away.
+    if (this.nearStreet && this.street.distance <= this.street.hw + BRIDGE_EDGE) return h;
+    return Math.min(h, this.riverBed(x, z));
+  }
+
+  /** The surface without the pavements' kerb lift or any river's gorge. */
+  private deckGround(x: number, z: number): number {
     const base = this.shapedGround(x, z);
     const st = this.street;
     this.nearStreet = this.nearestStreet(x, z, st);

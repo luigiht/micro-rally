@@ -1,23 +1,15 @@
 import { Color, IcosahedronGeometry, MeshStandardMaterial } from 'three';
 import type { StagePalette } from '@/game/stage/regions';
 import type { Prop } from '@/game/stage/SceneryScatter';
-import {
-  CLUMP_SPECS,
-  FROND_SPECS,
-  frondSpruceGeometry,
-  snowClumpFirGeometry,
-  snowyBoulderGeometry,
-  snowyStumpGeometry,
-} from '../AlpineConiferGeometry';
+import { snowyBoulderGeometry, snowyStumpGeometry } from '../SnowyGroundGeometry';
 import type { KindKit } from '../SceneryChunkManager';
 import { PINE_SPECS, snowPineGeometry } from '../SnowPineGeometry';
 import { spotHash } from '../TreeGeometry';
 
 /**
- * The Alpine's winter woods (`SnowPineGeometry`, `AlpineConiferGeometry`), in
+ * The Alpine's winter woods (`SnowPineGeometry`, `SnowyGroundGeometry`), in
  * place of the stock pine, bush and rock: each `tree`, by the prop's spot,
- * one of the eleven tiered snow pines (`TIERED`), one of the drooping-frond
- * spruces (`FRONDS`) or one of the snow-clump firs (`CLUMPS`); each bush the
+ * one of the tiered snow pines (`SnowPineSpecs`); each bush the
  * stock bush under a cap of snow, or one in four a snowy stump; each rock a
  * boulder under snow (the region plants no broadleaves). No two pines stand quite alike: each is
  * drawn a little wider or narrower, taller or shorter and tipped a few
@@ -38,8 +30,8 @@ const mat = (color: string, vertexColors = false) =>
   new MeshStandardMaterial({ color, flatShading: true, roughness: 0.9, vertexColors });
 
 /** A pine's own proportions by its spot: width and height apart, and a tilt off upright. */
-const PINE_WIDTH = [0.8, 1.2] as const;
-const PINE_HEIGHT = [0.85, 1.2] as const;
+const PINE_WIDTH = [0.75, 1.25] as const;
+const PINE_HEIGHT = [0.8, 1.25] as const;
 const PINE_TILT = 0.07;
 /** A pine's own brightness, and how far its colour leans warm or cool. */
 const PINE_SHADE = [0.9, 1.06] as const;
@@ -47,9 +39,6 @@ const PINE_CAST = 0.035;
 
 const between = ([lo, hi]: readonly [number, number], t: number) => lo + (hi - lo) * t;
 
-/** Shares of the pines: tiered, drooping-frond and snow-clump. */
-const TIERED = 0.6;
-const FRONDS = 0.22;
 /** One bush in this many is a snowy stump. */
 const STUMP_EVERY = 4;
 
@@ -73,26 +62,9 @@ function pineColour(p: Prop, out: Color) {
 export function alpineKits(palette: StagePalette, shadows: boolean): KindKit[] {
   const greens = [new Color(palette.foliage), new Color(palette.foliageAlt)] as const;
   const trunk = new Color(palette.trunk);
-  // Each pine's form by its spot: a tiered pine, a frond spruce or a clump fir, then which one.
-  const pick = (p: Prop) => {
-    const r = spotHash(p, 19);
-    const [list, from, share] =
-      r < TIERED
-        ? (['tiered', 0, TIERED] as const)
-        : r < TIERED + FRONDS
-          ? (['fronds', TIERED, FRONDS] as const)
-          : (['clumps', TIERED + FRONDS, 1 - TIERED - FRONDS] as const);
-    const count = {
-      tiered: PINE_SPECS.length,
-      fronds: FROND_SPECS.length,
-      clumps: CLUMP_SPECS.length,
-    }[list];
-    return { list, n: Math.min(count - 1, Math.floor(((r - from) / share) * count)) };
-  };
-  const pine = (list: 'tiered' | 'fronds' | 'clumps', n: number) => (p: Prop) => {
-    const f = pick(p);
-    return f.list === list && f.n === n;
-  };
+  // Each pine's silhouette by its spot.
+  const pine = (n: number) => (p: Prop) =>
+    Math.min(PINE_SPECS.length - 1, Math.floor(spotHash(p, 19) * PINE_SPECS.length)) === n;
   const stump = (p: Prop) => Math.floor(spotHash(p, 67) * STUMP_EVERY) === 0;
   const pineKit = (geometry: KindKit['geometry'], accept: (p: Prop) => boolean): KindKit => ({
     sources: ['tree'],
@@ -111,15 +83,7 @@ export function alpineKits(palette: StagePalette, shadows: boolean): KindKit[] {
   };
   const bush = (p: Prop) => !stump(p);
   return [
-    ...PINE_SPECS.map((spec, n) =>
-      pineKit(snowPineGeometry(spec, greens, trunk), pine('tiered', n)),
-    ),
-    ...FROND_SPECS.map((spec, n) =>
-      pineKit(frondSpruceGeometry(spec, greens, trunk), pine('fronds', n)),
-    ),
-    ...CLUMP_SPECS.map((spec, n) =>
-      pineKit(snowClumpFirGeometry(spec, greens, trunk), pine('clumps', n)),
-    ),
+    ...PINE_SPECS.map((spec, n) => pineKit(snowPineGeometry(spec, greens, trunk), pine(n))),
     {
       sources: ['bush'],
       geometry: new IcosahedronGeometry(BUSH_R, 0).translate(0, BUSH_Y, 0),

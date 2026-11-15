@@ -1,4 +1,7 @@
 import { BufferAttribute, BufferGeometry, Color, CylinderGeometry } from 'three';
+import type { PineSpec } from './SnowPineSpecs';
+
+export { PINE_SPECS, type PineSpec } from './SnowPineSpecs';
 
 /**
  * The Alpine's tiered snow pines, after a low-poly winter tree set (used as
@@ -12,188 +15,15 @@ import { BufferAttribute, BufferGeometry, Color, CylinderGeometry } from 'three'
  * proud of the green and turns down over it in a lip, so the two never share
  * a plane. The top tier carries a thin leader; the trunk flares at its foot.
  *
- * Eleven silhouettes, each laid out from a few numbers (`PineSpec`): how many
- * tiers, how tall, how wide at the foot and the top and how the reach falls
- * between them, how much the tiers overlap (a sparse tree shows its trunk
- * between them), how far the snow lies out, and whether the top leans or the
- * tiers sit lopsided. Each is one mesh in vertex colours: its own green from
+ * Each silhouette is laid out from a few numbers (`PineSpec`, the set in
+ * `SnowPineSpecs`): how many tiers, how tall, how wide at the foot and the
+ * top and how the reach falls between them, how much the tiers overlap (a
+ * sparse tree shows its trunk between them), how far the snow lies out,
+ * whether the top leans or the tiers sit lopsided, and for the chunky firs
+ * fewer, more jagged tips on tiers set a little off centre. Each is one mesh in vertex colours: its own green from
  * the region's two pine greens, a touch darker on the lower tiers, white
  * snow and the palette's trunk.
  */
-
-export interface PineSpec {
-  /** Salt for the tree's own branch lengths. */
-  salt: number;
-  tiers: number;
-  /** The lowest tier's foot, and the tree's point (before the leader). */
-  foot: number;
-  top: number;
-  /** The lowest and the highest tier's reach, and the curve between them (1 straight, more for a fuller middle). */
-  reach: number;
-  topReach: number;
-  fullness?: number;
-  /** A tier's height over the spacing between tiers (1.75 by default): less stands the tiers apart, each one's snowy point showing under the next. */
-  overlap?: number;
-  /** How far out along the branches the snow lies (0..1 of the way from each point to its tips). */
-  snow?: number;
-  /** The top's sideways shift, growing up the tree; and each tier's shift either side (lopsided). */
-  lean?: number;
-  sway?: number;
-  /** How far the branch tips droop, as a share of a tier's height. */
-  droop?: number;
-  /** The trunk's foot radius. */
-  trunk: number;
-  /** Where between the region's two pine greens this tree's green lies (0..1), and its brightness. */
-  green: number;
-  shade: number;
-}
-
-export const PINE_SPECS: readonly PineSpec[] = [
-  // Broad: wide, flat tiers.
-  {
-    salt: 1,
-    tiers: 4,
-    foot: 1.0,
-    top: 5.3,
-    reach: 1.85,
-    topReach: 0.62,
-    trunk: 0.27,
-    green: 0.1,
-    shade: 1,
-  },
-  // Tall and narrow.
-  {
-    salt: 2,
-    tiers: 6,
-    foot: 0.9,
-    top: 6.4,
-    reach: 1.35,
-    topReach: 0.42,
-    trunk: 0.22,
-    green: 0.55,
-    shade: 0.95,
-  },
-  // Leaning top.
-  {
-    salt: 3,
-    tiers: 4,
-    foot: 1.0,
-    top: 5.1,
-    reach: 1.55,
-    topReach: 0.55,
-    lean: 0.45,
-    trunk: 0.24,
-    green: 0.3,
-    shade: 1.05,
-  },
-  // Young: short, three tiers.
-  {
-    salt: 4,
-    tiers: 3,
-    foot: 0.6,
-    top: 3.4,
-    reach: 1.2,
-    topReach: 0.55,
-    trunk: 0.16,
-    green: 0.8,
-    shade: 1.08,
-  },
-  // Snow-laden: full tiers buried nearly to their tips, drooping.
-  {
-    salt: 5,
-    tiers: 5,
-    foot: 0.95,
-    top: 5.6,
-    reach: 1.7,
-    topReach: 0.45,
-    snow: 0.88,
-    droop: 0.2,
-    trunk: 0.25,
-    green: 0.2,
-    shade: 0.9,
-  },
-  // Sparse: tiers apart, a light dusting.
-  {
-    salt: 6,
-    tiers: 4,
-    foot: 1.4,
-    top: 5.6,
-    reach: 1.45,
-    topReach: 0.5,
-    overlap: 1.15,
-    snow: 0.58,
-    trunk: 0.2,
-    green: 0.65,
-    shade: 1,
-  },
-  // Columnar: many small tiers, slim as a spire.
-  {
-    salt: 7,
-    tiers: 7,
-    foot: 0.8,
-    top: 6.9,
-    reach: 1.0,
-    topReach: 0.34,
-    fullness: 0.7,
-    trunk: 0.2,
-    green: 0.0,
-    shade: 0.88,
-  },
-  // Lopsided: each tier shifted the other way from the last.
-  {
-    salt: 8,
-    tiers: 5,
-    foot: 1.0,
-    top: 5.7,
-    reach: 1.6,
-    topReach: 0.5,
-    sway: 0.2,
-    trunk: 0.23,
-    green: 0.45,
-    shade: 1.02,
-  },
-  // Squat: three wide tiers heavy with snow.
-  {
-    salt: 9,
-    tiers: 3,
-    foot: 0.8,
-    top: 4.0,
-    reach: 2.0,
-    topReach: 0.85,
-    snow: 0.82,
-    trunk: 0.26,
-    green: 0.9,
-    shade: 0.97,
-  },
-  // Laden giant: six broad tiers buried to their tips, drooping hard.
-  {
-    salt: 10,
-    tiers: 6,
-    foot: 1.0,
-    top: 7.2,
-    reach: 1.9,
-    topReach: 0.42,
-    snow: 0.95,
-    droop: 0.26,
-    trunk: 0.28,
-    green: 0.25,
-    shade: 0.92,
-  },
-  // White spire: eight narrow tiers all but white.
-  {
-    salt: 11,
-    tiers: 8,
-    foot: 1.1,
-    top: 7.6,
-    reach: 1.2,
-    topReach: 0.3,
-    fullness: 0.8,
-    snow: 0.93,
-    trunk: 0.21,
-    green: 0.4,
-    shade: 0.95,
-  },
-];
 
 interface Tier {
   y: number;
@@ -304,15 +134,20 @@ function tiersOf(spec: PineSpec): Tier[] {
       h: spacing * overlap,
       r,
       turn: spec.salt + i * 0.45,
-      dx: (spec.lean ?? 0) * t * t + sway * Math.cos(turnSway),
-      dz: sway * Math.sin(turnSway),
+      dx:
+        (spec.lean ?? 0) * t * t +
+        sway * Math.cos(turnSway) +
+        (spec.offset ?? 0) * jitter(spec.salt, i, 7),
+      dz: sway * Math.sin(turnSway) + (spec.offset ?? 0) * jitter(spec.salt, i, 8),
     };
   });
 }
 
 /** A tier's rim (tips and notches by turns), its point, and where the snow's edge crosses each rim spoke. */
 function tierShape(t: Tier, index: number, spec: PineSpec) {
-  const n = tipsFor(t.r);
+  const n = spec.tips ?? tipsFor(t.r);
+  const jag = spec.jag ?? TIP_JITTER;
+  const notchIn = spec.notch ?? NOTCH_IN;
   const apex: V3 = [t.dx, t.y + t.h, t.dz];
   const rim: V3[] = [];
   const edge: V3[] = [];
@@ -322,7 +157,7 @@ function tierShape(t: Tier, index: number, spec: PineSpec) {
     const tip = k % 2 === 0;
     const j = jitter(spec.salt, index, k);
     const a = t.turn + (k * Math.PI) / n + (tip ? 0 : j * 0.08);
-    const rad = tip ? t.r * (1 + TIP_JITTER * j) : t.r * NOTCH_IN * (1 + 0.06 * j);
+    const rad = tip ? t.r * (1 + jag * j) : t.r * notchIn * (1 + 0.06 * j);
     const y = tip ? t.y - t.h * droop * (1 + 0.4 * j) : t.y + t.h * NOTCH_RISE;
     const p: V3 = [t.dx + Math.cos(a) * rad, y, t.dz + Math.sin(a) * rad];
     rim.push(p);
@@ -393,7 +228,10 @@ export function snowPineGeometry(
   m.colour.copy(trunk);
   const r = spec.trunk;
   const h = spec.top * 0.75;
-  m.add(new CylinderGeometry(r * 0.6, r, h, 6).translate(0, h / 2, 0));
+  // A leaning top takes the trunk with it: tipped so its top sits under the tiers there.
+  const t = Math.max(0, (h - spec.foot) / (spec.top - spec.foot));
+  const tip = Math.atan2((spec.lean ?? 0) * t * t, h);
+  m.add(new CylinderGeometry(r * 0.6, r, h, 6).translate(0, h / 2, 0).rotateZ(-tip));
   m.add(new CylinderGeometry(r * 0.95, r * 1.45, 0.3, 6).rotateY(0.5).translate(0, 0.1, 0));
   return m.build();
 }

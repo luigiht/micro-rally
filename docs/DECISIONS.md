@@ -5004,3 +5004,76 @@ false` (an early draw-cost saving), so a tree's shadow was a floating
        16–45, finishes 95–201.
      - Saves go to v13: both types' road profiles changed, so Greenvale and
        Alpine records go.
+
+249. **2026-11-15 — Alpine pines in one family, more widths and heights.**
+     The user found the snow-clump fir (248) unlike the other pines, and
+     asked for the Alpine's trees to follow the references more closely,
+     with more variation in foliage width and height.
+     - The clump fir is gone. In its place are three **chunky tiered firs**
+       built by the same tier builder as the other pines, with new
+       `PineSpec` options. `tips` fixes the tips a tier (five or six), `jag`
+       lets a tip reach up to 0.25–0.3 further or shorter (0.12 otherwise),
+       `notch` pulls the notches in less (0.72–0.76, so a tier reads as a
+       faceted plate rather than a star), and `offset` sets each tier up to
+       0.16 m off the trunk's line. This is the faceted, offset, heavily
+       snowed look of the references.
+     - **More silhouettes.** A bent top (lean 0.9), a wide cone, a needle
+       (nine tiers, 8 m) and a lightly dusted fir join them: eighteen tiered
+       pines spanning 1–2.1 m reach and 3.4–8 m height. The specs moved to
+       `SnowPineSpecs.ts` to keep the geometry under 400 lines. A leaning
+       top now tips its trunk to stay under the tiers; the bent top's
+       straight trunk had poked out beside its crown.
+     - Shares: tiered 80 %, frond spruces 20 %. Each tree's own spread
+       widened to 0.75–1.25× in width and 0.8–1.25× in height.
+     - Tree shapes were checked on an offline contact sheet (geometry
+       dumped from a throwaway test, drawn at one scale) before the game.
+
+250. **2026-11-15 — Only tiered snow pines in the Alpine, and more of them.**
+     The user found the drooping-frond spruces (248) off and asked for more
+     of the tiered snow pines instead, and more of them on the stage. The
+     frond spruce is gone; every Alpine pine is one of the eighteen tiered
+     silhouettes (249), picked evenly by its spot. Density rose from 118 to
+     170 pines per 100 m by the road and the deep wood from 90 to 140, which
+     still holds 60 fps on the dev Mac. `AlpineConiferGeometry` kept only the
+     snowy boulder and stump, so it is now `SnowyGroundGeometry`.
+
+251. **2026-11-15 — Frozen rivers under stone arch bridges in the Alpine.**
+     The user asked for rock bridges where the road crosses frozen rivers
+     at its lowest points, at least two a stage, each river running on
+     through the scenery so it can be seen disappearing. Asked to choose,
+     they picked a stone arch bridge with parapets and fully frozen ice.
+     - **Road-first, rivers after.** The road profile comes from the
+       ground, so rivers are planned in `TerrainField`'s constructor once
+       `roadHeights` exist, from `groundHeight`, and carved with `min(height,
+bed)`. The road, its profile and every record stay as they were, so
+       there is no save bump. The mesh is carved under the road too, so the
+       gorge runs through under the bridge. `deckAt` keeps the deck within
+       the carriageway (plus 10 cm), so the wheels ride the bridge while
+       anything past its edge drops into the gorge.
+     - **Tracing.** A greedy downhill walk with a turn cost, a sine meander
+       and momentum (a fan of nine headings every 8 m) follows the valley
+       floors without a flow field; it stops rather than cross another road,
+       village or river. Dips first (prominence over 150 m either side);
+       when too few trace, the fallback is ranked by height over the lowest
+       road within 100 m, not by height overall. Ranking by height overall
+       had crossed slopes 3–4 m above a dip. On a stage whose only other
+       low is in its first or last 90 m, the second river still crosses a
+       steady descent: about 10 % of crossings over 30 test stages.
+     - **The gorge** is the ice drawn down to 4.5 m under the deck over
+       55 m either side, so every bridge has its arch's height in hand
+       whatever the ground.
+     - **Bridge** (`StoneBridgeBuilder`): parapets reuse `stoneWallParts`
+       standing on the deck, and their colliders are `bridgeObstacles` (3 m
+       boxes along both edges, 0.55 m out). The body is a per-metre
+       cross-section mesh (faces in 0.7 m courses, voussoir ring, soffit,
+       ledges by the road). The stones carry UVs and the body none, so UVs
+       are dropped to merge: the first build threw on the merge and the page
+       failed to load. The road's verges open over the span through the
+       existing `openings` and its posts are skipped there; the white edge
+       lines (`Strip.line`) run on across it (at first they stopped too,
+       and the user asked for them back).
+     - **Ice** (`FrozenRiverBuilder`): 4 bands × 2 pieces per 8 m step, pale
+       blue, clearer blue and drift white, roughness 0.3. The first colours
+       read as snow and were pushed bluer.
+     - 60 fps at the bridges on the dev Mac; planning costs 5–8 ms, and a
+       chunk at a river meshes in about 3 ms.

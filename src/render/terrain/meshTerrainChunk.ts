@@ -147,6 +147,7 @@ export function meshTerrainChunk(
   const dry = new Float32Array(n * n);
   const paved = new Float32Array(n * n);
   const earth = new Float32Array(n * n);
+  const river = new Float32Array(n * n);
   // The valley colouring wants each corner's lie: how far the bare hills there sit below their surroundings.
   const hollow = colors.valley ? new Float32Array(n * n) : null;
   const s: TerrainSample = { height: 0, roadBlend: 0, roadDistance: 0 };
@@ -161,6 +162,7 @@ export function meshTerrainChunk(
       dry[j * n + i] = s.dry ?? 0;
       paved[j * n + i] = s.paved ?? 0;
       earth[j * n + i] = s.earth ?? 0;
+      river[j * n + i] = s.river ?? 0;
     }
   }
 
@@ -181,7 +183,17 @@ export function meshTerrainChunk(
     hashB: 0,
   };
   const rgb = [0, 0, 0];
-  const valley: ValleyFace = { x: 0, z: 0, h: 0, ny: 1, hollow: 0, road: 0, hashA: 0, hashB: 0 };
+  const valley: ValleyFace = {
+    x: 0,
+    z: 0,
+    h: 0,
+    ny: 1,
+    hollow: 0,
+    road: 0,
+    river: 0,
+    hashA: 0,
+    hashB: 0,
+  };
   const emit = (
     ia: number,
     ib: number,
@@ -244,6 +256,7 @@ export function meshTerrainChunk(
       valley.ny = ny;
       valley.hollow = (hollow[ia]! + hollow[ib]! + hollow[ic]!) / 3;
       valley.road = (road[ia]! + road[ib]! + road[ic]!) / 3;
+      valley.river = Math.max(river[ia]!, river[ib]!, river[ic]!);
       valley.hashA = hash(seed * 3 + 1, cz * 7919 + cx);
       valley.hashB = hash(seed * 5 + 2, cx * 6151 - cz);
       valleyFaceColor(colors.valley, valley, rgb);
