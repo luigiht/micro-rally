@@ -99,8 +99,10 @@ flowchart LR
 - Arctic: no modules of its own. The stage type's `terrain.banks` heaps the
   snow ridges in `TerrainField.bankLift` (both the mesh sample and the
   wheels' deck), `SceneryDensity.spruces` feeds the `spruce` prop kind
-  through the ordinary scatter, and `kits/SpruceKits.ts` dresses it in
-  three parts (trunk, tinted foliage, snow caps) from `SpruceGeometry.ts`.
+  through the ordinary scatter, and `kits/SpruceKits.ts` dresses it, one
+  vertex-coloured mesh per silhouette (`SpruceSpecs.ts`) near and far,
+  from `SpruceGeometry.ts` (built with `TriangleMesh.ts`, shared with the
+  snow pines).
 - Alpine: its woods are `render/scenery/SnowPineGeometry.ts` (tiered snow
   pines, their silhouettes in `SnowPineSpecs.ts`) and
   `SnowyGroundGeometry.ts` (snowy boulders and stumps), dressed by
@@ -268,8 +270,23 @@ flowchart LR
   the car) and cuts under the 180° and 30° rules; the rig pans, follows and
   zooms each shot with frame-rate-independent damping and hard-cuts between
   them.
+- Car liveries beyond flat decals: `render/car/HullLivery.ts` paints shapes
+  given in side, top and end views onto a hull's body-coloured faces,
+  clipped to each face and stood just off it along its smoothed normals
+  (`CarHullMesh` `livery`, drawn as its own polygon-offset group); the
+  shapes are drawn with `LiveryStrips.ts` (eased curves, column strips,
+  polygons, rings, lines), with an `over` layer of details further out.
+  Densely lofted hulls (`HullLoft.ts`: monotone curves through measured
+  keyframes, stations at every break) can round their sections
+  (`HullSpec.rounding`, per-station `crown` and `bow`) and glaze screens by
+  flag (`screen`, `rail`); the Satory's and Berlinette's are
+  `SatoryShape.ts` and `BerlinetteShape.ts`. The Riviera's are drawn in
+  `RivieraLivery.ts`.
 - `StageRenderer` owns every three.js object for a stage and disposes them
-  together; chunk managers stream around the car via `ChunkStreamer`.
+  together; chunk managers stream around the car via `ChunkStreamer`: a
+  chunk loads once its nearest edge comes within range, rechecked every
+  quarter chunk the car moves, and scenery's range runs to just past the
+  fog's far end, so nothing is seen arriving.
   `CarInterior` (components/game) assembles the first-person cabin from
   `interior/interiorSpecs.ts` (per-car envelope, kit and palette) using
   `interior/InteriorParts.tsx` and `interior/InteriorDash.tsx`; the pose

@@ -221,7 +221,7 @@ export function DakarTruckBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Re
         <Box key={x} p={[x, 0.84, 3.0]} s={[0.1, 0.1, 0.14]} c={K.red} />
       ))}
       <Box p={[0, 0.78, 2.96]} s={[2.0, 0.08, 0.2]} c={K.trim} />
-      {/* Flanks: mudguards, steps, door strip, handle, door plate, sponsor plates, REPSOL letters */}
+      {/* Flanks: mudguards, steps, door strip, handle, sponsor plates, REPSOL letters */}
       {SIDES.map((side) => (
         <group key={side}>
           <ArchLip x={X_BODY * side} z={front} radius={spec.wheelRadius} c={K.orange} tube={0.07} />
@@ -231,8 +231,6 @@ export function DakarTruckBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Re
           <Box p={[1.23 * side, 2.2, 0.9]} s={[0.04, 0.8, 0.04]} c={K.steel} />
           <Box p={[flank * side, 1.45, 2.3]} s={[0.03, 1.0, 0.1]} c={K.orange} />
           <Box p={[flank * side, 1.78, 1.5]} s={[0.03, 0.05, 0.28]} c={K.orange} />
-          <Box p={[flank * side, 1.55, 1.3]} s={[0.025, 0.36, 0.36]} c={K.white} />
-          <Box p={[(flank + 0.01) * side, 1.55, 1.3]} s={[0.012, 0.1, 0.22]} c={K.navy} />
           <Box p={[flank * side, 1.15, 1.7]} s={[0.025, 0.12, 0.5]} c={K.white} />
           {PLATES.map(([y, z, h, len, rule], i) => (
             <group key={i}>

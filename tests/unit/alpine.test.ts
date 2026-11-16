@@ -139,9 +139,13 @@ describe('Alpine snowfields', () => {
             at.x + Math.cos(at.heading) * (w.stage.halfWidth + e) * side,
             at.z - Math.sin(at.heading) * (w.stage.halfWidth + e) * side,
           );
-        if (Math.abs(h(10) - deck) > 0.05) continue;
+        // Level with the road (its level a blend of the decks near it, within centimetres), and flat across.
+        if (Math.abs(h(10) - deck) > 0.15) continue;
         benched++;
-        for (const e of [8, 11, 13]) expect(h(e)).toBeCloseTo(deck, 1);
+        for (const e of [8, 11, 13]) {
+          expect(Math.abs(h(e) - deck)).toBeLessThan(0.15);
+          expect(Math.abs(h(e) - h(10))).toBeLessThan(0.08);
+        }
       }
       expect(benched).toBeGreaterThan(0);
     }

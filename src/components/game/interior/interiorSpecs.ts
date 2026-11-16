@@ -127,6 +127,31 @@ export const INTERIORS: Readonly<Record<CarId, InteriorSpec>> = {
   hatchback: HATCHBACK,
   pickup: HATCHBACK,
   monster: HATCHBACK,
+  /**
+   * Tiny rear-engined 1970s berlinette: a snug low cabin under a steep screen,
+   * black trim, a silver bar cage, three period dials, blue harness.
+   */
+  berlinette: base({
+    halfWidth: 0.66,
+    roofY: 1.34,
+    dashTopY: 0.98,
+    cowlZ: 0.82,
+    cowlY: 0.99,
+    screenTopZ: 0.35,
+    rearZ: -0.54,
+    dash: 'period',
+    palette: {
+      dash: BLACK,
+      lining: BLACK,
+      door: '#2b6cc4',
+      cage: '#b7b4ac',
+      seat: '#1f1e24',
+      seatAccent: '#2b6cc4',
+      harness: '#2b6cc4',
+      wheel: BLACK,
+      accent: '#ffd76a',
+    },
+  }),
   /** 1970s wedge: tiny low cabin, white cage, tan lining, three period dials, red harness. */
   coupe: base({
     halfWidth: 0.72,
@@ -198,15 +223,20 @@ export const INTERIORS: Readonly<Record<CarId, InteriorSpec>> = {
     },
   }),
   /** Turn-of-the-century WRC hatch: navy cage, red seats, sky-blue harness, digital dash. */
+  // A late-80s Group A five-door: a short bonnet, an upright screen, a long cabin, analogue dials.
   wrc: base({
-    halfWidth: 0.88,
-    roofY: 1.35,
-    cowlZ: 1.05,
-    cowlY: 0.82,
-    screenTopZ: 0.55,
-    rearZ: -1.25,
-    dash: 'digital',
-    lever: 'sequential',
+    halfWidth: 0.82,
+    roofY: 1.36,
+    cowlZ: 0.62,
+    cowlY: 0.94,
+    // The short cockpit brings the screen close: the binnacle sits toward it, clear of the rim,
+    // and the dash is shallower so its face meets the dials instead of burying them.
+    clusterForward: 0.14,
+    dashDepth: 0.3,
+    screenTopZ: 0.08,
+    rearZ: -1.5,
+    dash: 'analogue',
+    lever: 'h',
     palette: {
       dash: BLACK,
       lining: '#6b6a72',
@@ -282,6 +312,28 @@ export const INTERIORS: Readonly<Record<CarId, InteriorSpec>> = {
       harness: '#8dc63f',
       wheel: '#1f1e24',
       accent: '#8dc63f',
+    },
+  }),
+  /** Mid-2000s three-door WRC: red cage, black seats with blue harness, digital dash. */
+  satory: base({
+    halfWidth: 0.8,
+    roofY: 1.31,
+    cowlZ: 0.9,
+    cowlY: 0.76,
+    screenTopZ: 0.36,
+    rearZ: -1.25,
+    dash: 'digital',
+    lever: 'sequential',
+    palette: {
+      dash: BLACK,
+      lining: '#3a3944',
+      door: BLACK,
+      cage: '#d8262a',
+      seat: '#1f1e24',
+      seatAccent: '#1d3f94',
+      harness: '#1d3f94',
+      wheel: '#1f1e24',
+      accent: '#f2b81f',
     },
   }),
   /**

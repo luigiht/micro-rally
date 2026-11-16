@@ -4,7 +4,7 @@ import type { Ref } from 'react';
 import type { Group } from 'three';
 import { CAR_SPECS, type CarSpec } from '@/game/vehicle/CarSpec';
 import { wellsFor, type HullSpec } from '@/render/car/CarHull';
-import { ArchLip, Box, CAR_COLORS as C, Lamp, Roundel } from '../CarParts';
+import { ArchLip, Box, CAR_COLORS as C, Lamp } from '../CarParts';
 import { CarHullMesh } from './CarHullMesh';
 
 /** Lofted shell: orange paint, cream roof and belt stripe, glass greenhouse with B-pillar. */
@@ -130,7 +130,6 @@ export function HatchbackBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Ref
         <group key={side}>
           <ArchLip x={flank * side} z={front} radius={spec.wheelRadius} c={C.trim} />
           <ArchLip x={flank * side} z={rear} radius={spec.wheelRadius} c={C.trim} />
-          <Roundel side={side} y={0.68} z={0.05} />
           {/* Headlight, tail light */}
           <Box p={[0.5 * side, 0.6, 1.86]} s={[0.3, 0.14, 0.04]} c={C.head} glow={0.6} />
           <Box p={[0.55 * side, 0.74, -1.86]} s={[0.3, 0.14, 0.04]} c={C.tail} glow={0.5} />

@@ -155,11 +155,9 @@ export function S1CoupeBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Ref<G
       <Box p={[0.5, ROOF + 0.19, 0.0]} s={[0.02, 0.34, 0.02]} c={K.trim} r={[-0.2, 0, 0]} />
       {([1, -1] as const).map((side) => (
         <group key={side}>
-          {/* Flank: black sill blade with a yellow edge between the arches; door plate with numeral; arch lips */}
+          {/* Flank: black sill blade with a yellow edge between the arches; arch lips */}
           <Box p={[0.88 * side, 0.26, 0.02]} s={[0.1, 0.12, 1.3]} c={K.trim} />
           <Box p={[0.88 * side, 0.326, 0.02]} s={[0.1, 0.012, 1.3]} c={K.yellow} />
-          <Box p={[(X_BELT - 0.004) * side, 0.72, -0.05]} s={[0.012, 0.3, 0.32]} c={K.body} />
-          <Box p={[(X_BELT + 0.003) * side, 0.72, -0.05]} s={[0.012, 0.22, 0.05]} c={K.trim} />
           <ArchLip x={X_FLARE * side} z={front} radius={spec.wheelRadius} c={K.trim} tube={0.06} />
           <ArchLip x={X_FLARE * side} z={rear} radius={spec.wheelRadius} c={K.trim} tube={0.06} />
           {/* Intake on the rear flare's leading face */}

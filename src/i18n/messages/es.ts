@@ -351,6 +351,9 @@ export const es: Messages = {
     hatchback: {
       name: 'Rally Hatch',
     },
+    berlinette: {
+      name: 'Berlinette Dieppe',
+    },
     coupe: {
       name: 'Tricolore Coupé',
     },
@@ -371,6 +374,9 @@ export const es: Messages = {
     },
     focus: {
       name: 'Albion RS Hatch',
+    },
+    satory: {
+      name: 'Satory WRC',
     },
     dakar: {
       name: 'Sirocco Dakar Truck',

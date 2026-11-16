@@ -53,6 +53,10 @@ describe('interior specs', () => {
       // The dash has some depth and the binnacle hood stands on it, at most 5 cm proud of its face.
       expect(s.dashDepth, id).toBeGreaterThan(0.1);
       expect(hoodRearZ, id).toBeGreaterThanOrEqual(s.cowlZ - s.dashDepth - 0.05);
+      // Its dials stand clear of the dash face, not sunk into the slab behind it.
+      expect(s.cowlZ + s.clusterForward - 0.445, id).toBeLessThanOrEqual(
+        s.cowlZ - s.dashDepth + 0.005,
+      );
     }
   });
 

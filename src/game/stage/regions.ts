@@ -729,13 +729,14 @@ const ARCTIC: StageTypeDef = {
   // Long flowing bends and straights for the crests, not the Alpine's switchbacks.
   twistiness: 0.65,
   baseLength: 1900,
+  // A wood of tall spruces only: no stock pines or birches among them.
   scenery: {
-    trees: 30,
-    broadleaf: 14,
+    trees: 0,
+    broadleaf: 0,
     bushes: 8,
     rocks: 2,
     houses: 0.4,
-    spruces: 230,
+    spruces: 260,
     spectators: 2.2,
   },
   parSpeed: 16,

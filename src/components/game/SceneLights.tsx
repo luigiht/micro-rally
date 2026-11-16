@@ -1,5 +1,6 @@
 'use client';
 
+import { useThree } from '@react-three/fiber';
 import type { Ref } from 'react';
 import { type Camera, type DirectionalLight, Vector3 } from 'three';
 import type { VehiclePose } from '@/game/vehicle/interpolatePose';
@@ -19,24 +20,30 @@ const SUN_DIRECTION = [8, 14, 6] as const;
  */
 const SUN_DISTANCE = 120;
 const SHADOW_FAR = 240;
-/** Half the shadow frustum's width, metres, and the shadow map's size, texels. */
-const SHADOW_HALF = 40;
-const SHADOW_MAP = 2048;
-/** The frustum is centred this far ahead of the car, along the camera's view, where the eye looks. */
-const SHADOW_AHEAD = 22;
+/**
+ * One shadow texel covers this many metres, whatever the map's size: the
+ * biggest map the GPU takes, up to `SHADOW_MAP_MAX`, sets how far the shadows
+ * reach (a 4096 map spans 140 m, a 2048 one 70 m).
+ */
+const SHADOW_TEXEL = 140 / 4096;
+const SHADOW_MAP_MAX = 4096;
+const SHADOW_MAP_MIN = 2048;
+/** The frustum is centred this share of its half width ahead of the car, along the camera's view, where the eye looks. */
+const SHADOW_AHEAD = 0.55;
 
 const sunLength = Math.hypot(...SUN_DIRECTION);
 const sunOffset = SUN_DIRECTION.map((c) => (c / sunLength) * SUN_DISTANCE);
-const snap = new ShadowSnap(SUN_DIRECTION, (2 * SHADOW_HALF) / SHADOW_MAP);
+const snap = new ShadowSnap(SUN_DIRECTION, SHADOW_TEXEL);
 const sunTarget = new Vector3();
 const view = new Vector3();
 
 /**
  * Keep the shadow-casting sun over the stretch of road the camera looks at:
- * its 80 m frustum centred a little ahead of the car along the view (not on
- * the car, where half of it would cover road already behind), stepping in
- * whole shadow texels so shadow edges hold still. Shadows fade out toward the
- * frustum's edge (`installShadowEdgeFade`), so ones coming into it grow in.
+ * its frustum (140 m across on most GPUs) centred well ahead of the car
+ * along the view (not on the car, where half of it would cover road already
+ * behind), stepping in whole shadow texels so shadow edges hold still.
+ * Shadows fade out toward the frustum's edge (`installShadowEdgeFade`), so
+ * ones coming into it grow in, about 90 m ahead.
  */
 export function followSun(
   light: DirectionalLight,
@@ -49,7 +56,8 @@ export function followSun(
     view.y = 0;
     // Looking nearly straight down (the isometric view) leaves no horizontal direction to lead by.
     const flat = view.length();
-    if (flat > 0.2) sunTarget.addScaledVector(view, SHADOW_AHEAD / flat);
+    if (flat > 0.2)
+      sunTarget.addScaledVector(view, (light.shadow.camera.right * SHADOW_AHEAD) / flat);
   }
   snap.snap(sunTarget);
   light.position.set(
@@ -72,6 +80,9 @@ interface SceneLightsProps {
  * same light (and its shadow map) survives a theme change.
  */
 export function SceneLights({ lighting: l, sunRef }: SceneLightsProps) {
+  const maxTexture = useThree((s) => s.gl.capabilities.maxTextureSize);
+  const map = maxTexture >= SHADOW_MAP_MAX ? SHADOW_MAP_MAX : SHADOW_MAP_MIN;
+  const half = (SHADOW_TEXEL * map) / 2;
   return (
     <>
       <color attach="background" args={[l.background]} />
@@ -83,11 +94,11 @@ export function SceneLights({ lighting: l, sunRef }: SceneLightsProps) {
         color={l.sunColor}
         intensity={l.sunIntensity}
         castShadow
-        shadow-mapSize={[SHADOW_MAP, SHADOW_MAP]}
-        shadow-camera-left={-SHADOW_HALF}
-        shadow-camera-right={SHADOW_HALF}
-        shadow-camera-top={SHADOW_HALF}
-        shadow-camera-bottom={-SHADOW_HALF}
+        shadow-mapSize={[map, map]}
+        shadow-camera-left={-half}
+        shadow-camera-right={half}
+        shadow-camera-top={half}
+        shadow-camera-bottom={-half}
         shadow-camera-near={1}
         shadow-camera-far={SHADOW_FAR}
         shadow-bias={-0.0002}

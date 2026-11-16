@@ -5,110 +5,136 @@ import type { Group } from 'three';
 import { CAR_SPECS, type CarSpec } from '@/game/vehicle/CarSpec';
 import { wellsFor, type HullSpec } from '@/render/car/CarHull';
 import { WRC_STATIONS } from '@/render/car/HullShapes';
-import { ArchLip, Box, Lamp } from '../CarParts';
+import { RIVIERA_LIVERY } from '@/render/car/RivieraLivery';
+import { ArchLip, Box, Lamp, Prism } from '../CarParts';
 import { CarHullMesh } from './CarHullMesh';
 
-/** White shell with a flank of sky-blue, navy and red bands over a navy skirt; navy wing and bonnet oval. */
+/** White shell under the livery (`RivieraLivery`), black trim and glass. */
 const K = {
   body: '#f4f1ea',
-  navy: '#1f2a7a',
-  sky: '#5aa0e0',
-  red: '#e02a2a',
   trim: '#2b2a33',
-  glass: '#4d6f8c',
+  grey: '#8a8d96',
+  glass: '#3f5b73',
   head: '#fff6d0',
   tail: '#d9343a',
+  amber: '#f0931f',
   rim: '#d9d4c7',
 } as const;
 
 /**
- * Tall "new edge" hatch: sloping nose, fast windscreen far forward, high
- * roof over a long cabin, steep rear glass onto a flat, upright tailgate. The
- * stripe band runs from the sill to just under the belt, sky blue on top
- * and a double-height navy skirt at the bottom.
+ * The hull (`WRC_STATIONS`: a boxy late-80s Group A five-door after
+ * `context/lancia-delta-integrale`), white under its livery: our own shapes
+ * (`RivieraLivery`) painted onto every white face by `paintLivery`. The
+ * bonnet's louvres and the scuttle grille are the hull's own trim.
  */
 const HULL: HullSpec = {
   wells: wellsFor(CAR_SPECS.wrc),
-  colors: {
-    body: K.body,
-    trim: K.trim,
-    glass: K.glass,
-    stripe: [K.sky, K.navy, K.red, K.navy, K.navy],
-  },
-  stripeBand: [0.54, 0.2],
-  // Bonnet: navy oval in five slices, a red and a navy band either side, four vent slots at the scuttle.
+  colors: { body: K.body, trim: K.trim, glass: K.glass },
   deck: [
-    { x0: -0.18, x1: 0.18, z0: 1.2, z1: 1.27, color: K.navy },
-    { x0: -0.3, x1: 0.3, z0: 1.27, z1: 1.37, color: K.navy },
-    { x0: -0.36, x1: 0.36, z0: 1.37, z1: 1.53, color: K.navy },
-    { x0: -0.3, x1: 0.3, z0: 1.53, z1: 1.63, color: K.navy },
-    { x0: -0.18, x1: 0.18, z0: 1.63, z1: 1.7, color: K.navy },
-    { x0: 0.57, x1: 0.67, z0: 1.05, z1: 2.0, color: K.red, mirror: true },
-    { x0: 0.69, x1: 0.75, z0: 1.05, z1: 2.0, color: K.navy, mirror: true },
-    { x0: 0.04, x1: 0.16, z0: 1.08, z1: 1.16, color: K.trim, mirror: true },
-    { x0: 0.24, x1: 0.36, z0: 1.08, z1: 1.16, color: K.trim, mirror: true },
+    // Bonnet louvres either side of its middle, toward the nose.
+    ...[0, 1, 2, 3].map((k) => ({
+      x0: 0.2,
+      x1: 0.5,
+      z0: 1.48 + 0.09 * k,
+      z1: 1.53 + 0.09 * k,
+      color: K.trim,
+      mirror: true,
+    })),
+    // Scuttle grille under the screen.
+    { x0: -0.6, x1: 0.6, z0: 0.64, z1: 0.7, color: K.trim },
   ],
   stations: WRC_STATIONS,
 };
 
-/** Turn-of-the-century World Rally Car hatch. Coordinates in the root frame. `cabinRef` holds the mirrors. */
+const FLARE = 0.95;
+const ROOF_R = 1.43;
+/** The nose's face, the tail's face. */
+const NOSE = 2.0;
+const TAIL = -1.97;
+
+/** The roof spoiler's side plates: from the roof's end back over the rear screen, rising to the blade. */
+const SPOILER_PLATE: readonly (readonly [number, number])[] = [
+  [-1.46, ROOF_R - 0.02],
+  [-1.84, ROOF_R - 0.04],
+  [-1.84, ROOF_R + 0.12],
+  [-1.46, ROOF_R + 0.05],
+];
+
+/** Boxy Group A five-door. Coordinates in the root frame. `cabinRef` holds the mirrors. */
 export function WrcHatchBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Ref<Group> }) {
   const front = spec.cgToFront;
   const rear = -spec.cgToRear;
-  const flank = 0.94;
   return (
     <group position={[0, -0.1, 0]}>
-      <CarHullMesh spec={HULL} />
+      <CarHullMesh spec={HULL} livery={RIVIERA_LIVERY} />
       <group ref={cabinRef}>
         {([1, -1] as const).map((side) => (
           <group key={side}>
-            <Box p={[0.95 * side, 1.06, 0.5]} s={[0.08, 0.04, 0.04]} c={K.trim} />
-            <Box p={[1.03 * side, 1.08, 0.5]} s={[0.12, 0.12, 0.08]} c={K.navy} />
+            {/* Door mirrors on short stalks at the screen's foot */}
+            <Box p={[0.9 * side, 1.1, 0.5]} s={[0.07, 0.03, 0.05]} c={K.trim} />
+            <Box p={[0.98 * side, 1.12, 0.5]} s={[0.12, 0.1, 0.07]} c={K.body} />
           </group>
         ))}
       </group>
-      {/* Roof scoop and antenna */}
-      <Box p={[0, 1.45, 0.2]} s={[0.4, 0.07, 0.3]} c={K.navy} />
-      <Box p={[0, 1.46, 0.36]} s={[0.34, 0.05, 0.02]} c={K.trim} />
-      <Box p={[-0.5, 1.59, -0.7]} s={[0.02, 0.3, 0.02]} c={K.trim} r={[-0.3, 0, 0]} />
-      {/* Two-tier wing on the roof's trailing edge, over the top of the rear glass */}
-      <Box p={[0.5, 1.47, -1.26]} s={[0.05, 0.16, 0.22]} c={K.trim} r={[0.15, 0, 0]} />
-      <Box p={[-0.5, 1.47, -1.26]} s={[0.05, 0.16, 0.22]} c={K.trim} r={[0.15, 0, 0]} />
-      <Box p={[0, 1.55, -1.38]} s={[1.6, 0.05, 0.4]} c={K.navy} r={[-0.08, 0, 0]} shadow />
-      <Box p={[0, 1.44, -1.5]} s={[1.5, 0.04, 0.18]} c={K.navy} r={[-0.05, 0, 0]} />
-      <Box p={[0.8, 1.5, -1.4]} s={[0.04, 0.22, 0.44]} c={K.navy} />
-      <Box p={[-0.8, 1.5, -1.4]} s={[0.04, 0.22, 0.44]} c={K.navy} />
+      {/* Roof spoiler over the rear screen, its side plates, two antennas, a vent at the screen's top */}
+      <Box
+        p={[0, ROOF_R + 0.08, -1.68]}
+        s={[1.42, 0.035, 0.36]}
+        c={K.body}
+        r={[0.14, 0, 0]}
+        shadow
+      />
+      {([1, -1] as const).map((side) => (
+        <Prism key={side} x={0.71 * side} points={SPOILER_PLATE} thickness={0.03} c={K.body} />
+      ))}
+      <Box p={[0.32, ROOF_R + 0.17, -1.22]} s={[0.015, 0.34, 0.015]} c={K.trim} r={[-0.25, 0, 0]} />
+      <Box
+        p={[-0.32, ROOF_R + 0.17, -1.22]}
+        s={[0.015, 0.34, 0.015]}
+        c={K.trim}
+        r={[-0.25, 0, 0]}
+      />
+      <Box p={[0, 1.465, -0.05]} s={[0.34, 0.03, 0.16]} c={K.trim} />
       {([1, -1] as const).map((side) => (
         <group key={side}>
-          <ArchLip x={flank * side} z={front} radius={spec.wheelRadius} c={K.navy} tube={0.055} />
-          <ArchLip x={flank * side} z={rear} radius={spec.wheelRadius} c={K.navy} tube={0.055} />
-          {/* Door number plate: white square with navy header */}
-          <Box p={[0.945 * side, 0.74, 0.15]} s={[0.012, 0.36, 0.36]} c={K.body} />
-          <Box p={[0.952 * side, 0.89, 0.15]} s={[0.012, 0.06, 0.36]} c={K.navy} />
-          <Box p={[0.952 * side, 0.7, 0.15]} s={[0.012, 0.22, 0.05]} c={K.trim} />
-          {/* Swept headlamps, tall tail lamps */}
-          <Box
-            p={[0.56 * side, 0.7, 2.14]}
-            s={[0.44, 0.12, 0.04]}
-            c={K.head}
-            glow={0.6}
-            r={[0, 0, 0.25 * side]}
-          />
-          <Box p={[0.8 * side, 0.78, -2.0]} s={[0.12, 0.32, 0.04]} c={K.tail} glow={0.5} />
+          {/* Box flares' lips over both axles */}
+          <ArchLip x={FLARE * side} z={front} radius={spec.wheelRadius} c={K.body} tube={0.05} />
+          <ArchLip x={FLARE * side} z={rear} radius={spec.wheelRadius} c={K.body} tube={0.05} />
+          {/* Door handles */}
+          <Box p={[0.876 * side, 0.97, 0.18]} s={[0.012, 0.03, 0.1]} c={K.trim} />
+          <Box p={[0.876 * side, 0.97, -0.6]} s={[0.012, 0.03, 0.1]} c={K.trim} />
+          {/* Twin round headlamps each side in the black band, amber indicators in the bumper's corners */}
+          <Lamp p={[0.68 * side, 0.79, NOSE + 0.02]} radius={0.075} c={K.head} glow={0.6} />
+          <Lamp p={[0.49 * side, 0.79, NOSE + 0.02]} radius={0.075} c={K.head} glow={0.6} />
+          <Box p={[0.85 * side, 0.63, NOSE + 0.09]} s={[0.12, 0.05, 0.02]} c={K.amber} glow={0.3} />
+          {/* Side intakes either side of the bumper's mesh */}
+          <Box p={[0.74 * side, 0.54, NOSE + 0.095]} s={[0.18, 0.08, 0.02]} c={K.trim} />
+          {/* Tall tail lamps at the tailgate's corners, red over amber */}
+          <Box p={[0.68 * side, 0.88, TAIL - 0.01]} s={[0.24, 0.14, 0.03]} c={K.tail} glow={0.5} />
+          <Box p={[0.68 * side, 0.78, TAIL - 0.01]} s={[0.24, 0.06, 0.03]} c={K.amber} glow={0.3} />
         </group>
       ))}
-      {/* Nose: slim grille, bumper with a navy lip, fog lamps, splitter; tail: bumper, plate, exhaust */}
-      <Box p={[0, 0.66, 2.15]} s={[0.5, 0.08, 0.03]} c={K.trim} />
-      <Box p={[0, 0.48, 2.17]} s={[1.72, 0.18, 0.16]} c={K.body} />
-      <Box p={[0, 0.5, 2.25]} s={[0.9, 0.12, 0.02]} c={K.trim} />
-      <Box p={[0, 0.37, 2.24]} s={[1.74, 0.05, 0.12]} c={K.navy} />
-      {[-0.62, 0.62].map((x) => (
-        <Lamp key={x} p={[x, 0.5, 2.27]} radius={0.06} c={K.head} glow={0.5} />
+      {/* Nose: the black band across the face with the grille's bars between the lamps */}
+      <Box p={[0, 0.79, NOSE + 0.005]} s={[1.66, 0.18, 0.02]} c={K.trim} />
+      <Box p={[0, 0.82, NOSE + 0.02]} s={[0.66, 0.015, 0.01]} c={K.grey} />
+      <Box p={[0, 0.76, NOSE + 0.02]} s={[0.66, 0.015, 0.01]} c={K.grey} />
+      {/* Four big rally lamps on a pod across the nose */}
+      <Box p={[0, 0.97, NOSE - 0.02]} s={[1.0, 0.05, 0.1]} c={K.trim} />
+      {[-0.39, -0.13, 0.13, 0.39].map((x) => (
+        <Lamp key={x} p={[x, 1.01, NOSE + 0.03]} radius={0.095} c={K.head} glow={0.6} />
       ))}
-      <Box p={[0, 0.46, -2.03]} s={[1.72, 0.16, 0.14]} c={K.navy} />
-      <Box p={[0, 0.62, -2.01]} s={[0.46, 0.1, 0.02]} c={K.body} />
-      <mesh position={[-0.5, 0.38, -2.1]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.06, 0.06, 0.18, 8]} />
+      {/* Deep white bumper: a black mesh intake split by three bars, a black splitter */}
+      <Box p={[0, 0.56, NOSE + 0.03]} s={[1.88, 0.24, 0.12]} c={K.body} />
+      <Box p={[0, 0.54, NOSE + 0.095]} s={[1.08, 0.14, 0.02]} c={K.trim} />
+      {[-0.27, 0, 0.27].map((x) => (
+        <Box key={x} p={[x, 0.54, NOSE + 0.1]} s={[0.04, 0.14, 0.02]} c={K.body} />
+      ))}
+      <Box p={[0, 0.42, NOSE + 0.06]} s={[1.9, 0.04, 0.2]} c={K.trim} />
+      {/* Tail: the white bumper with a black lip, the exhaust on the left */}
+      <Box p={[0, 0.52, TAIL - 0.04]} s={[1.86, 0.18, 0.12]} c={K.body} />
+      <Box p={[0, 0.42, TAIL - 0.04]} s={[1.86, 0.04, 0.13]} c={K.trim} />
+      <mesh position={[-0.55, 0.4, TAIL - 0.12]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.05, 0.05, 0.16, 8]} />
         <meshStandardMaterial color={K.rim} metalness={0.5} roughness={0.4} />
       </mesh>
     </group>

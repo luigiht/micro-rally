@@ -195,7 +195,7 @@ export function SaloonBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Ref<Gr
               />
             </group>
           ))}
-          {/* Yellow swoosh up the doors, the star cluster on the rear door, door handle, and the white door plate */}
+          {/* Yellow swoosh up the doors, the star cluster on the rear door and the door handle */}
           {SWOOSH.map(([z, y, len], i) => (
             <Box key={i} p={[flankAt(y, z) * side, y, z]} s={[0.02, 0.08, len]} c={K.yellow} />
           ))}
@@ -203,12 +203,6 @@ export function SaloonBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Ref<Gr
             <Box key={i} p={[flankAt(y, z) * side, y, z]} s={[0.02, 0.07, 0.07]} c={K.yellow} />
           ))}
           <Box p={[flankAt(0.84, -0.3) * side, 0.84, -0.3]} s={[0.02, 0.03, 0.14]} c={K.trim} />
-          <Box p={[flankAt(0.73, 0.36) * side, 0.73, 0.36]} s={[0.02, 0.26, 0.3]} c={K.head} />
-          <Box
-            p={[(flankAt(0.73, 0.36) + 0.006) * side, 0.73, 0.36]}
-            s={[0.012, 0.18, 0.05]}
-            c={K.trim}
-          />
           {/* Headlamps wrapping the nose corners with amber indicators inboard; wide wrap-round tail lamps */}
           <Box p={[0.52 * side, 0.66, 2.16]} s={[0.4, 0.14, 0.06]} c={K.head} glow={0.6} />
           <Box p={[0.78 * side, 0.66, 2.08]} s={[0.06, 0.12, 0.2]} c={K.head} glow={0.4} />

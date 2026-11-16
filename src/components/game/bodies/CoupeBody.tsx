@@ -160,9 +160,7 @@ export function CoupeBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Ref<Gro
         <group key={side}>
           <ArchLip x={X_HAUNCH * side} z={front} radius={spec.wheelRadius} c={K.trim} />
           <ArchLip x={X_HAUNCH * side} z={rear} radius={spec.wheelRadius} c={K.trim} tube={0.055} />
-          {/* Door number plate; sill rubbing strip */}
-          <Box p={[(X_BELT - 0.004) * side, 0.66, 0.1]} s={[0.012, 0.3, 0.3]} c={K.white} />
-          <Box p={[(X_BELT + 0.003) * side, 0.66, 0.1]} s={[0.012, 0.22, 0.05]} c={K.trim} />
+          {/* Sill rubbing strip */}
           <Box p={[0.8 * side, 0.4, 0.1]} s={[0.04, 0.05, 1.2]} c={K.trim} />
           {/* Round tail lamps; exhaust (the nose carries only the lamp pod) */}
           <Disc p={[0.58 * side, 0.6, -1.86]} radius={0.1} depth={0.03} c={K.trim} />

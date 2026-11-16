@@ -10,9 +10,11 @@ export const CATALOG_IDS = [
   'groupb',
   's1',
   'focus',
+  'satory',
   'dakar',
   'lemans',
   'buggy',
+  'berlinette',
 ] as const;
 export type CatalogCarId = (typeof CATALOG_IDS)[number];
 
@@ -32,9 +34,11 @@ export const CAR_CATALOG: readonly CarListing[] = [
   { id: 'groupb', price: 14000 },
   { id: 's1', price: 18000 },
   { id: 'focus', price: 21000 },
+  { id: 'satory', price: 23500 },
   { id: 'dakar', price: 26000, special: true },
   { id: 'lemans', price: 29000, special: true },
   { id: 'buggy', price: 32000, special: true },
+  { id: 'berlinette', price: 35000, special: true },
 ];
 
 export function isCatalogCar(id: string): id is CatalogCarId {

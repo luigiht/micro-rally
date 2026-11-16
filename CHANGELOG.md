@@ -5,10 +5,83 @@ tags yet: `main` is deployed continuously, so entries are grouped by the day
 they landed. The numbered entries in [docs/DECISIONS.md](docs/DECISIONS.md)
 hold the reasoning behind each change; the numbers in brackets point there.
 
-## 2026-11-15
+## 2026-11-16
 
 ### Changed
 
+- **A boxier Satory WRC.** The screen stands steep and straight between
+  straight black A-pillars, the side windows sit under a level window line
+  on flat glass with less lean-in, the roof is flat with crisp front and
+  back edges, the tail panel stands upright and the nose is squarer. The
+  tail lamps are small square boxes at the corners, red over a white
+  reversing lamp, set straight on the red tail panel. The headlamps are each
+  one connected lens from the nose round onto the wing, with no gaps, and
+  the blue rear quarter's diagonal gold line runs down to the sill. The
+  orange-and-gold streak beside the rear window is gone, and the A-pillars
+  are thin black strips lying flush over the screen's edges, from the roof
+  down to the bonnet's edge, instead of triangles.
+  [265]
+- **No door numbers.** The Rally Hatch's door roundel and the white door
+  number plates on the Tricolore Coupé, Sochaux T16, Boreal Saloon,
+  Edelweiss S1, Albion RS Hatch and Sirocco Dakar Truck are gone, and so is
+  the black scoop on the Dieppe Berlinette's rear quarters. [266]
+- **Straight A-pillars on the Dieppe Berlinette.** Slim blue pillars now run
+  straight from the bonnet to the roof beside the screen, instead of
+  triangles. [267]
+
+## 2026-11-15
+
+### Added
+
+- **Two new cars in the dealership.**
+  - **Dieppe Berlinette (35 000, a Special at the end of the list):** a tiny rear-engined 1970s berlinette,
+    the lightest car in the shop and rear-drive, so its tail comes round
+    easily.
+    - Its body is a smooth, finely shaped outline measured off a side
+      photo. A bubble of a cabin under a flat, faceted roof leads to a
+      fastback with the rear glass lying on it, over flanks that bow out
+      and tuck under.
+    - The long bonnet carries leather straps and a filler cap, and runs to
+      a broad nose with four lamps across it and two yellow rally lamps on
+      chrome blades.
+    - It is all deep French blue, with its panel gaps (doors, bonnet,
+      engine lid) cut into the body.
+  - **Satory WRC (23 500):** a mid-2000s three-door World Rally Car with
+    50/50 drive, a touch stronger than the Albion.
+    - Its body is remodelled from cross-sections of a 3D reference, in
+      flat low-poly facets: a rounded nose with swept-back lamps wrapping
+      onto the wings, twin bonnet vents, a fast screen, a white roof and a
+      deep carbon rear wing. Its door gaps are cut into the body.
+    - It is red, with blue from the rear arch back and over the C-pillar
+      behind a gold line, a gold-and-orange streak along the roof's edges,
+      a blue front bumper and a red-over-blue tail.
+
+  Both have their own cockpit. [261, 262, 263, 264]
+
+### Changed
+
+- **A new Riviera WRC.** The Riviera is rebuilt as a boxy late-80s Group A
+  five-door: a blunt nose with twin round headlamps and a four-lamp rally
+  pod, a flat bonnet with louvres, a long flat roof, a steep rear screen
+  under a roof spoiler and slab sides with square box flares, in a white
+  livery: a broad red band up to the windows over level navy and sky-blue
+  pinstripes that run round the tail, red bands along the bonnet, a red rear
+  quarter and diagonal bands on the rear pillars, drawn as crisp shapes on
+  the body. The bonnet meets the sides square, the front side windows run
+  to a point beside the windscreen, and in the cockpit both dials now show
+  through the wheel. Its handling is unchanged. [254, 257, 259, 260]
+- **No more pop-in; longer shadows.** Trees and terrain now stream in
+  only beyond the far end of the fog, so nothing appears ahead as you drive.
+  Shadows reach about twice as far ahead and are a little sharper. [253]
+- **No steps beside the road.** The ground on the inside of tight bends and
+  round the crowds' levelled areas no longer jumps in a step that could
+  launch the car, on Greenvale, the Alpine and anywhere else. [253]
+- **Organic Arctic spruces.** The Arctic's tall spruces are now stacks of
+  chunky, lopsided slabs, each turned, shifted and tipped, ending in a
+  point. Most are green with snow over the tops of their tiers, about a
+  quarter are laden to the rims with a ragged dark-green band beneath, a
+  few stand on bare trunks, and very few are plain green. They are now the
+  only trees in the Arctic: its stock pines and birches are gone. [252]
 - **Frozen rivers and stone bridges.** Every Alpine stage now crosses two
   or three frozen rivers where the road dips lowest, each on a stone arch
   bridge with dry-stone parapets. The rivers run on through the hills on

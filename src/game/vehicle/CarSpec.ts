@@ -1,5 +1,6 @@
 export type CarId =
   | 'hatchback'
+  | 'berlinette'
   | 'coupe'
   | 't16'
   | 'saloon'
@@ -7,6 +8,7 @@ export type CarId =
   | 'groupb'
   | 's1'
   | 'focus'
+  | 'satory'
   | 'dakar'
   | 'lemans'
   | 'buggy'
@@ -119,6 +121,27 @@ const BASE: Omit<CarSpec, 'id'> = {
 /** Grip (tyres, cornering stiffness, stability, aero) is shared by every car in the dealership; they differ in mass, power, drag and drive split. */
 export const CAR_SPECS: Readonly<Record<CarId, CarSpec>> = {
   hatchback: { ...BASE, id: 'hatchback' },
+  /**
+   * Tiny rear-engined 1970s berlinette (its body: `BerlinetteBody`): 2.1 m
+   * wheelbase, 1.36 m track, the engine behind the rear axle, rear-drive,
+   * the lightest car in the shop and quick to rotate.
+   */
+  berlinette: {
+    ...BASE,
+    id: 'berlinette',
+    mass: 820,
+    cgToFront: 1.22,
+    cgToRear: 0.88,
+    cgHeight: 0.44,
+    trackWidth: 1.36,
+    wheelRadius: 0.29,
+    peakTorque: 240,
+    dragCoeff: 0.6,
+    frontDrive: 0,
+    yawInertiaScale: 1.15,
+    maxSteer: 0.55,
+    cabinDrop: -0.29,
+  },
   /** Low 1970s wedge: 2.16 m wheelbase, 1.5 m track, rear-drive. */
   coupe: {
     ...BASE,
@@ -194,7 +217,7 @@ export const CAR_SPECS: Readonly<Record<CarId, CarSpec>> = {
     turboDuration: 2.5,
     cabinDrop: -0.04,
   },
-  /** Turn-of-the-century World Rally Car hatch: 2.615 m wheelbase, 1.55 m track, restricted turbo, 50/50 drive. */
+  /** Late-80s Group A five-door rally hatch (its body: `WrcHatchBody`): 2.615 m wheelbase, 1.55 m track, restricted turbo, 50/50 drive. */
   wrc: {
     ...BASE,
     id: 'wrc',
@@ -249,6 +272,29 @@ export const CAR_SPECS: Readonly<Record<CarId, CarSpec>> = {
     brakeDecel: 10.5,
     yawInertiaScale: 1.55,
     turboForce: 0.28,
+    turboDuration: 3,
+    cabinDrop: -0.02,
+  },
+  /**
+   * Mid-2000s three-door World Rally Car (its body: `SatoryHatchBody`):
+   * 2.555 m wheelbase, 1.55 m track, 50/50 drive, the strongest of the
+   * modern rally hatches.
+   */
+  satory: {
+    ...BASE,
+    id: 'satory',
+    mass: 1230,
+    cgToFront: 1.28,
+    cgToRear: 1.275,
+    cgHeight: 0.47,
+    trackWidth: 1.55,
+    wheelRadius: 0.33,
+    peakTorque: 460,
+    dragCoeff: 0.68,
+    frontDrive: 0.5,
+    brakeDecel: 10.5,
+    yawInertiaScale: 1.5,
+    turboForce: 0.3,
     turboDuration: 3,
     cabinDrop: -0.02,
   },

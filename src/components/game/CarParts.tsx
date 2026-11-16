@@ -68,26 +68,6 @@ export function Box({ p, s, c, r, glow, shadow }: BoxProps) {
   );
 }
 
-/** Door roundel: cream disc with a blocky numeral built from two trim bars. */
-export function Roundel({ side, y = 0.58, z = 0.05 }: { side: 1 | -1; y?: number; z?: number }) {
-  const x = 0.875 * side;
-  return (
-    <group position={[x, y, z]}>
-      <mesh rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.22, 0.22, 0.02, 14]} />
-        <meshStandardMaterial color={CAR_COLORS.livery} flatShading />
-      </mesh>
-      <Box p={[0.012 * side, 0.1, 0]} s={[0.02, 0.05, 0.2]} c={CAR_COLORS.trim} />
-      <Box
-        p={[0.012 * side, -0.02, 0]}
-        s={[0.02, 0.22, 0.05]}
-        c={CAR_COLORS.trim}
-        r={[-0.45 * side, 0, 0]}
-      />
-    </group>
-  );
-}
-
 /** Rounded wheel-arch lip: a half torus around the axle. */
 export function ArchLip({
   x,

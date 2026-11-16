@@ -143,10 +143,8 @@ export function T16HatchBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Ref<
             tube={0.05}
           />
           <ArchLip x={X_FLARE_R * side} z={rear} radius={spec.wheelRadius} c={K.trim} tube={0.05} />
-          {/* Blue sill skirt; door number plate */}
+          {/* Blue sill skirt */}
           <Box p={[0.8 * side, 0.42, 0.12]} s={[0.1, 0.1, 1.3]} c={K.blue} />
-          <Box p={[(X_BELT - 0.004) * side, 0.86, 0.0]} s={[0.012, 0.24, 0.28]} c={K.body} />
-          <Box p={[(X_BELT + 0.003) * side, 0.86, 0.0]} s={[0.012, 0.18, 0.04]} c={K.trim} />
           {/* Rectangular headlamps either side of the grille; amber indicators below; rear lamp pairs */}
           <Box p={[0.5 * side, 0.58, 1.92]} s={[0.36, 0.14, 0.04]} c={K.head} glow={0.6} />
           <Box p={[0.56 * side, 0.46, 1.93]} s={[0.2, 0.06, 0.03]} c={K.amber} glow={0.3} />

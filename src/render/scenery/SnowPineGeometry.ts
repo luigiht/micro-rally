@@ -1,4 +1,5 @@
-import { BufferAttribute, BufferGeometry, Color, CylinderGeometry } from 'three';
+import { type BufferGeometry, Color, CylinderGeometry } from 'three';
+import { jitter, Triangles, type V3 } from './TriangleMesh';
 import type { PineSpec } from './SnowPineSpecs';
 
 export { PINE_SPECS, type PineSpec } from './SnowPineSpecs';
@@ -60,61 +61,6 @@ const REACH_JITTER = 0.07;
 /** The lowest tier's green is this much darker than the highest's. */
 const LOW_DARK = 0.1;
 const SNOW = new Color('#eef2f5');
-
-type V3 = [number, number, number];
-
-/** A stable −1..1 from integers. */
-function jitter(a: number, b: number, c: number): number {
-  const s = Math.sin(a * 127.1 + b * 311.7 + c * 74.7) * 43758.5453;
-  return (s - Math.floor(s)) * 2 - 1;
-}
-
-/** Coloured triangles, each wound to face along `facing` (a direction it should look toward). */
-class Triangles {
-  private readonly pos: number[] = [];
-  private readonly col: number[] = [];
-  colour = new Color();
-
-  tri(a: V3, b: V3, c: V3, facing: V3): void {
-    const ux = b[0] - a[0];
-    const uy = b[1] - a[1];
-    const uz = b[2] - a[2];
-    const vx = c[0] - a[0];
-    const vy = c[1] - a[1];
-    const vz = c[2] - a[2];
-    const nx = uy * vz - uz * vy;
-    const ny = uz * vx - ux * vz;
-    const nz = ux * vy - uy * vx;
-    const flip = nx * facing[0] + ny * facing[1] + nz * facing[2] < 0;
-    this.pos.push(...a, ...(flip ? c : b), ...(flip ? b : c));
-    for (let i = 0; i < 3; i++) this.col.push(this.colour.r, this.colour.g, this.colour.b);
-  }
-
-  quad(a: V3, b: V3, c: V3, d: V3, facing: V3): void {
-    this.tri(a, b, c, facing);
-    this.tri(a, c, d, facing);
-  }
-
-  /** Every triangle of `g` as it is wound, in the current colour; `g` is disposed. */
-  add(g: BufferGeometry): void {
-    const flat = g.index ? g.toNonIndexed() : g;
-    const p = flat.getAttribute('position');
-    for (let i = 0; i < p.count; i++) {
-      this.pos.push(p.getX(i), p.getY(i), p.getZ(i));
-      this.col.push(this.colour.r, this.colour.g, this.colour.b);
-    }
-    if (flat !== g) flat.dispose();
-    g.dispose();
-  }
-
-  build(): BufferGeometry {
-    const g = new BufferGeometry();
-    g.setAttribute('position', new BufferAttribute(Float32Array.from(this.pos), 3));
-    g.setAttribute('color', new BufferAttribute(Float32Array.from(this.col), 3));
-    g.computeVertexNormals();
-    return g;
-  }
-}
 
 /** The tree's tiers, laid out from its spec. */
 function tiersOf(spec: PineSpec): Tier[] {

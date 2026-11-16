@@ -36,10 +36,11 @@ import { scatterLeaves } from '@/game/stage/LeafLitter';
 import { scatterGrass } from '@/game/stage/TallGrass';
 
 export interface StageRenderOptions {
+  /** Terrain and scenery chunks stream in once their nearest edge comes within these (see `ChunkStreamer`). */
   terrainRadius: number;
   terrainResolution: number;
   sceneryRadius: number;
-  /** Scenery chunks whose centre is within this of the car draw their detailed kits (the pine wood's pines). */
+  /** Scenery chunks whose nearest edge is within this of the car draw their detailed kits (the pine wood's pines). */
   sceneryDetailRadius: number;
   shadows: boolean;
   /** Circuits: the striped kerbs and gravel traps. */
@@ -72,10 +73,14 @@ export interface StageRenderOptions {
   roadStones: boolean;
 }
 
+/** Scenery is streamed in chunks this many metres square. */
+const SCENERY_CHUNK = 96;
+
 export const DEFAULT_STAGE_RENDER: StageRenderOptions = {
   terrainRadius: 300,
   terrainResolution: 32,
-  sceneryRadius: 220,
+  // Out to past the fog's far end on every theme (see `buildScenery`).
+  sceneryRadius: 300,
   sceneryDetailRadius: 70,
   shadows: true,
   kerbs: true,
@@ -177,7 +182,7 @@ export class StageRenderer {
       { size: 64, resolution: opts.terrainResolution, radius: opts.terrainRadius },
     );
     this.group.add(this.terrain.group);
-    this.scenery = this.buildScenery();
+    this.scenery = this.buildScenery(theme.lighting.fogFar);
     this.surfaces = this.buildSurfaces(theme, world.stage.town?.city === true);
   }
 
@@ -198,15 +203,21 @@ export class StageRenderer {
     this.disposeSurfaces();
   }
 
-  private buildScenery(): SceneryChunkManager {
+  /**
+   * The props, streamed in chunks out to just past where the fog has hidden
+   * everything (`fogFar`, and the little the car moves between looks), so a
+   * chunk only ever appears where it cannot be seen arriving; never past the
+   * options' radius.
+   */
+  private buildScenery(fogFar: number): SceneryChunkManager {
     const { field, props } = this.world;
     const leaves = this.opts.leafLitter ? scatterLeaves(field, props) : [];
     const grass = this.opts.tallGrass ? scatterGrass(field, props) : [];
     const scenery = new SceneryChunkManager(
       leaves.length + grass.length > 0 ? [...props, ...leaves, ...grass] : props,
       sceneryKitsFor(this.world.stage, this.opts.shadows, this.opts.streetFurniture),
-      96,
-      this.opts.sceneryRadius,
+      SCENERY_CHUNK,
+      Math.min(this.opts.sceneryRadius, fogFar + SCENERY_CHUNK * 0.25 + 4),
       this.opts.sceneryDetailRadius,
     );
     this.group.add(scenery.group);

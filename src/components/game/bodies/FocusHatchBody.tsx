@@ -175,10 +175,6 @@ export function FocusHatchBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Re
             c={K.blue}
             tube={0.05}
           />
-          {/* Door number plate: white square with a blue header */}
-          <Box p={[(X_BODY + 0.005) * side, 0.8, 0.3]} s={[0.012, 0.26, 0.3]} c={K.body} />
-          <Box p={[(X_BODY + 0.012) * side, 0.9, 0.3]} s={[0.012, 0.06, 0.3]} c={K.blue} />
-          <Box p={[(X_BODY + 0.012) * side, 0.78, 0.3]} s={[0.012, 0.16, 0.05]} c={K.trim} />
           {/* Red tow strap and a lime fog lamp at each bumper corner */}
           <Box p={[0.45 * side, 0.46, 2.13]} s={[0.08, 0.05, 0.03]} c={K.red} />
           <Lamp p={[0.5 * side, 0.6, 2.12]} radius={0.06} c={K.lime} glow={0.3} />

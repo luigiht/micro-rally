@@ -12,7 +12,7 @@ import {
   type CircuitTrackside,
 } from './CircuitTrackside';
 import { Coastline } from './Coastline';
-import { benchWeight, planBenches, type Bench } from './CrowdBenches';
+import { BENCH_REACH, benchAcross, benchAlong, planBenches, type Bench } from './CrowdBenches';
 import { planRivers, RiverIndex, type River, type RiverHit } from './Rivers';
 import { lacetGround } from './Lacets';
 import { type AxisPoint, CoastShape, type CoastSurface } from './CoastShape';
@@ -70,7 +70,7 @@ const FILL_FADE = 8;
 const RIVER_FLOOR = 0.25;
 const RIVER_BANK = 1.5;
 const RIVER_FEET = 4;
-const RIVER_REACH = 16;
+const RIVER_REACH = 30;
 const BRIDGE_EDGE = 0.1;
 /** The ridges' crests are rounded over this much of the ridge noise (see `baseHeight`). */
 const RIDGE_ROUND = 0.12;
@@ -79,6 +79,12 @@ const RUN_UP = 24;
 const LANDING = 16;
 /** A stage that found no stretch for a levelled jump takes its straightest one, if it turns less than this. */
 const FALLBACK_TURN = 1.2;
+/** Past the flat margin the ground's deck eases into a blend of every stretch within this of the nearest, over this much (see `softDeck`). */
+const SOFT_REACH = 4;
+const SOFT_RAMP = 2;
+/** Benches' stretches of road are filed every this many metres, from this far before each to this far after. */
+const BENCH_ZONE_STEP = 8;
+const BENCH_ZONE_RAMP = 10;
 /** On a banked stage the banks ease in over this much beyond a village's plateau. */
 const TOWN_BANK_EASE = 20;
 /**
@@ -273,6 +279,24 @@ export class TerrainField implements TerrainQuery {
   private readonly banked: boolean;
   /** Where the crowds gather the ground beside the road is levelled into benches (`terrain.benches`). */
   private readonly benches: Bench[];
+  /** The stretches of road the benches lie beside, filed so a point far from every bench skips them cheaply. */
+  private readonly benchZone = new SpatialHash<Bench>(PAD_CELL);
+  /** `softDeck`'s running sums: the nearest stretch's distance, the weights, the weighted decks. */
+  private softNearest = 0;
+  private softWeight = 0;
+  private softSum = 0;
+  private readonly softVisit = (along: number, distance: number): void => {
+    const w = 1 - (distance - this.softNearest) / SOFT_REACH;
+    if (w <= 0) return;
+    this.softWeight += w * w;
+    this.softSum += w * w * this.roadHeightAt(along);
+  };
+  /** The stretches of road `benchAt` found within reach: road distance, distance, signed lateral offset. */
+  private readonly benchSeen: number[] = [];
+  private benchLevel = 0;
+  private readonly benchVisit = (along: number, distance: number, lateral: number): void => {
+    this.benchSeen.push(along, distance, lateral);
+  };
   /** The frozen rivers the road bridges (`terrain.rivers`), carved into the ground; none elsewhere. */
   readonly rivers: River[];
   private readonly riverIndex: RiverIndex | null;
@@ -421,6 +445,7 @@ export class TerrainField implements TerrainQuery {
         )
       : [];
     this.riverRise = (rivers?.depth ?? 0) + 2;
+    this.fileBenches();
     this.riverIndex =
       this.rivers.length > 0 ? new RiverIndex(this.rivers, rivers!.halfWidth + RIVER_REACH) : null;
     this.stubs = this.town ? this.buildStubs(this.town) : [];
@@ -874,12 +899,18 @@ export class TerrainField implements TerrainQuery {
     out.paved = 0;
     out.earth = this.detail.earth(x, z);
     if (!this.nearestStreet(x, z, st)) {
-      out.height = this.applyPads(x, z, base + this.detailAt(x, z, 1));
+      // A bench may reach past the road's corridor: it carries on out here.
+      const bench = this.benchAt(x, z);
+      out.height = this.applyPads(
+        x,
+        z,
+        this.benchGround(base + this.detailAt(x, z, 1 - bench), bench),
+      );
       out.roadBlend = 0;
       out.roadDistance = Infinity;
       return this.carveRiver(x, z, out);
     }
-    const deck = st.deck + ROAD_LIFT;
+    const deck = this.softDeck(x, z, st) + ROAD_LIFT;
     const hw = st.hw;
     const flat = this.flatMarginFor(st);
     if (this.town?.city) {
@@ -912,9 +943,9 @@ export class TerrainField implements TerrainQuery {
           GRAVEL_BED_RAMP,
           gravelDepth(this.trackside, this.stage.path, hw, st.along, this.hit.lateral),
         );
-    const bench = this.benchAt(st);
+    const bench = this.benchAt(x, z);
     const raw =
-      this.benchGround(st, deck + (base - deck) * t - this.embankDrop(st, t), bench) -
+      this.benchGround(deck + (base - deck) * t - this.embankDrop(st, t), bench) -
       trench +
       this.bankLift(st) +
       this.detailAt(x, z, t * (1 - bench));
@@ -933,10 +964,8 @@ export class TerrainField implements TerrainQuery {
    * floor rises out of the ground. Infinity away from every river.
    */
   riverBed(x: number, z: number): number {
-    if (!this.riverIndex || !this.riverIndex.at(x, z, this.riverHit)) return Infinity;
-    const r = this.riverHit;
-    const floor = r.level - RIVER_FLOOR + (1 - r.fade) * this.riverRise;
-    return floor + Math.max(0, r.distance - r.halfWidth) * RIVER_BANK;
+    if (!this.riverIndex) return Infinity;
+    return this.riverIndex.bedAt(x, z, RIVER_FLOOR, this.riverRise, RIVER_BANK);
   }
 
   /** Whether (x, z) lies on a river's ice or within `margin` of it: scenery keeps off. */
@@ -952,6 +981,8 @@ export class TerrainField implements TerrainQuery {
     const bed = this.riverBed(x, z);
     if (bed >= out.height) return out;
     out.height = bed;
+    // The channel's colour goes by the nearest river's line.
+    if (!this.riverIndex.at(x, z, this.riverHit)) return out;
     const r = this.riverHit;
     out.river = 1 - smoothstep(r.halfWidth + 0.5, r.halfWidth + RIVER_FEET, r.distance);
     return out;
@@ -1027,32 +1058,96 @@ export class TerrainField implements TerrainQuery {
     const base = this.shapedGround(x, z);
     const st = this.street;
     this.nearStreet = this.nearestStreet(x, z, st);
-    if (!this.nearStreet) return this.applyPads(x, z, base + this.detailAt(x, z, 1));
-    const deck = st.deck + ROAD_LIFT;
+    if (!this.nearStreet) {
+      const bench = this.benchAt(x, z);
+      return this.applyPads(x, z, this.benchGround(base + this.detailAt(x, z, 1 - bench), bench));
+    }
+    const deck = this.softDeck(x, z, st) + ROAD_LIFT;
     const flat = this.flatMarginFor(st);
     const t = smoothstep(st.hw + flat, st.hw + flat + this.blendWidth(st), st.distance);
-    const bench = this.benchAt(st);
+    const bench = this.benchAt(x, z);
     return (
       this.applyPads(
         x,
         z,
-        this.benchGround(st, deck + (base - deck) * t - this.embankDrop(st, t), bench) +
+        this.benchGround(deck + (base - deck) * t - this.embankDrop(st, t), bench) +
           this.detailAt(x, z, t * (1 - bench)),
       ) + this.bankLift(st)
     );
   }
 
-  /** How fully the ground at the last street hit lies on a crowd bench, 0..1 (the route only). */
-  private benchAt(st: StreetHit): number {
-    if (this.benches.length === 0 || st.stub) return 0;
-    return benchWeight(this.benches, st.along, this.hit.lateral, st.hw);
+  /**
+   * The deck the ground beside the road blends from: the nearest stretch's
+   * across the carriageway and its flat margin, easing over the next
+   * `SOFT_RAMP` into a blend of every stretch of road nearly as near (within
+   * `SOFT_REACH` of the nearest), weighted toward the nearest. Where the
+   * nearest stretch changes (the inside of a tight bend, between a
+   * hairpin's legs) the ground then follows without a step, instead of
+   * jumping by the difference in the two decks' heights.
+   */
+  private softDeck(x: number, z: number, st: StreetHit): number {
+    if (st.stub || this.town?.city) return st.deck;
+    const flat = this.flatMarginFor(st);
+    const s = smoothstep(st.hw + flat, st.hw + flat + SOFT_RAMP, st.distance);
+    if (s === 0) return st.deck;
+    this.softNearest = st.distance;
+    this.softWeight = 0;
+    this.softSum = 0;
+    this.stage.path.visitNear(x, z, st.distance + SOFT_REACH, this.softVisit);
+    if (this.softWeight === 0) return st.deck;
+    return st.deck + (this.softSum / this.softWeight - st.deck) * s;
   }
 
-  /** `ground` drawn `bench` of the way to a crowd bench's level: the gravel shoulder's, beside the deck there. */
-  private benchGround(st: StreetHit, ground: number, bench: number): number {
+  /** File each bench's stretch of road, sampled along it, with the bench's reach. */
+  private fileBenches(): void {
+    const at = { x: 0, z: 0, heading: 0 };
+    const reach = this.stage.halfWidth + BENCH_REACH + BENCH_ZONE_STEP;
+    for (const b of this.benches)
+      for (let d = b.from - BENCH_ZONE_RAMP; d <= b.to + BENCH_ZONE_RAMP; d += BENCH_ZONE_STEP) {
+        this.stage.path.sample(d, at);
+        this.benchZone.insert(b, at.x, at.z, reach);
+      }
+  }
+
+  /**
+   * How fully (x, z) lies on a crowd bench, 0..1, its level left in
+   * `benchLevel`. How far out it reaches goes by the distance to the road as
+   * a whole; where along it, which side and at what level are blended over
+   * every stretch within `SOFT_REACH` of the nearest, weighted toward the
+   * nearest. So where the nearest stretch changes (the inside of a tight
+   * bend) the bench neither steps nor tears, and it never reaches the
+   * carriageway of any stretch.
+   */
+  private benchAt(x: number, z: number): number {
+    if (this.benches.length === 0) return 0;
+    if (!this.benchZone.near(x, z, 0, () => true)) return 0;
+    const seen = this.benchSeen;
+    seen.length = 0;
+    this.stage.path.visitNear(x, z, this.stage.halfWidth + BENCH_REACH, this.benchVisit);
+    let nearest = Infinity;
+    for (let i = 1; i < seen.length; i += 3) nearest = Math.min(nearest, seen[i]!);
+    if (nearest === Infinity) return 0;
+    const across = benchAcross(nearest - this.stage.halfWidth);
+    if (across === 0) return 0;
+    let weights = 0;
+    let along = 0;
+    let level = 0;
+    for (let i = 0; i < seen.length; i += 3) {
+      const w = 1 - (seen[i + 1]! - nearest) / SOFT_REACH;
+      if (w <= 0) continue;
+      const p = w * w;
+      weights += p;
+      along += p * benchAlong(this.benches, seen[i]!, seen[i + 2]!);
+      level += p * this.roadHeightAt(seen[i]!);
+    }
+    this.benchLevel = level / weights + ROAD_LIFT - (this.embankment?.height ?? 0);
+    return (across * along) / weights;
+  }
+
+  /** `ground` drawn `bench` of the way to the crowd bench's level found by the last `benchAt`. */
+  private benchGround(ground: number, bench: number): number {
     if (bench === 0) return ground;
-    const level = st.deck + ROAD_LIFT - (this.embankment?.height ?? 0);
-    return ground + (level - ground) * bench;
+    return ground + (this.benchLevel - ground) * bench;
   }
 
   /**

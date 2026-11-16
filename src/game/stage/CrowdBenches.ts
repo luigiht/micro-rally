@@ -29,7 +29,9 @@ export const BENCH_IN = 3.6;
 export const BENCH_OUT = 14;
 /** Over this much it rises from the verge strip's edge, and eases back into the hill beyond its outer edge. */
 const BENCH_IN_RAMP = 0.5;
-const BENCH_BLEND = 4;
+const BENCH_BLEND = 10;
+/** No bench reaches further than this past a carriageway's edge. */
+export const BENCH_REACH = BENCH_OUT + BENCH_BLEND;
 /** It runs this much past either end of the crowd, then eases out along the road over this much. */
 const BENCH_MARGIN = 4;
 const END_RAMP = 8;
@@ -82,18 +84,8 @@ export function planBenches(
   });
 }
 
-/**
- * How fully the ground at `along` and `lateral` (from the road's centre
- * line, where the carriageway is `hw` either side) lies on a bench, 0..1.
- */
-export function benchWeight(
-  benches: readonly Bench[],
-  along: number,
-  lateral: number,
-  hw: number,
-): number {
-  const beyond = Math.abs(lateral) - hw;
-  if (beyond <= BENCH_IN - BENCH_IN_RAMP || beyond >= BENCH_OUT + BENCH_BLEND) return 0;
+/** How fully a bench runs beside the road at `along` on the `lateral` side (left when positive), 0..1. */
+export function benchAlong(benches: readonly Bench[], along: number, lateral: number): number {
   let w = 0;
   for (const b of benches) {
     if (along <= b.from - END_RAMP || along >= b.to + END_RAMP) continue;
@@ -103,9 +95,13 @@ export function benchWeight(
       smoothstep(b.from - END_RAMP, b.from, along) * (1 - smoothstep(b.to, b.to + END_RAMP, along)),
     );
   }
-  if (w === 0) return 0;
+  return w;
+}
+
+/** How fully ground `beyond` metres past the carriageway's edge lies across a bench, 0..1. */
+export function benchAcross(beyond: number): number {
+  if (beyond <= BENCH_IN - BENCH_IN_RAMP || beyond >= BENCH_OUT + BENCH_BLEND) return 0;
   return (
-    w *
     smoothstep(BENCH_IN - BENCH_IN_RAMP, BENCH_IN, beyond) *
     (1 - smoothstep(BENCH_OUT, BENCH_OUT + BENCH_BLEND, beyond))
   );

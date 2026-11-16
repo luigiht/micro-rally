@@ -5077,3 +5077,630 @@ bed)`. The road, its profile and every record stay as they were, so
        read as snow and were pushed bluer.
      - 60 fps at the bridges on the dev Mac; planning costs 5–8 ms, and a
        chunk at a river meshes in about 3 ms.
+
+252. **2026-11-15 — Arctic spruces of lopsided slabs under snow.**
+     The user found the Arctic's spruces too regular and inorganic. They
+     asked for leaf bodies like `context/low-poly-tall-snowy-trees`, more
+     realistic but still low-poly and not too pointy. The OBJ there
+     (`tree_snow.obj`) is one cylinder of eight-point rings in pairs: a short
+     vertical rim per tier, each ring's radii ranging about 2:1 round it, and
+     a snow shell shifted up over the green so a green band shows under each
+     rim. The new spruce (`SpruceGeometry`) follows that:
+     - **Tiers.** Each tier is a slab: a rim of eight points whose reaches
+       stray ±18–22 % (and one side up to 35 % shorter on the lopsided
+       tree), drooping at their tips, no notches (a blunt polygon, not a
+       star). The rim is a short thick edge, the top is domed through a mid
+       ring, and the underside closes to the trunk. Each tier is shifted,
+       turned and tipped by up to 0.1 slope, and its reach strays ±13 % from
+       the taper.
+     - **Snow.** A cap a few centimetres proud of the top along its
+       profile, each point reaching its own share of the way out. Where both
+       ends of a rim edge are snowed it hangs 30–75 % of the rim's thickness
+       down it, so the green band is ragged. There is no cap at `snow: 0`.
+     - **Mix.** Asked whether to keep bare spruces, the user first chose to
+       keep some (two of seven silhouettes, about a quarter; before, half
+       were bare). On seeing it they asked for barely any bare, then for
+       most trees to look like a green one with snow over the inner part of
+       each tier's top. Silhouettes now carry a `share`: 68 % are green with
+       snow caps reaching 50–75 % of the way out (`snow` 0.5–0.75), 26 % are
+       laden to their rims (a laden twin of the full tree, and the
+       high-crowned one), and 6 % are plain.
+     - **The top.** The old snowed 1.4 m cone tip first became a 0.45 m
+       blunt stub, which the user found odd ("tiny cones"). Now the top tier
+       is drawn 1.8 times as tall, so the tree ends in its own point.
+     - One vertex-coloured mesh per silhouette (the old kit was three parts
+       tinted per variant), picked by spot. A far stand-in has five points a
+       rim, no mid ring, no hanging snow, no stubs or foot flare: about 40 %
+       of the near triangles. Near trees run 600–900 triangles (the old
+       about 600). 60 fps holds on the dev Mac at 230 spruces per 100 m.
+     - `Triangles` and `jitter` moved from `SnowPineGeometry` to
+       `TriangleMesh.ts`, shared by both.
+     - **Spruces only.** The user asked for every other tree out of the
+       Arctic: the stock cone pines (30 per 100 m) and the pale birches (14)
+       are gone, and the spruces rose from 230 to 260 per 100 m so the wall
+       stays as thick. Bushes and rocks stay.
+
+253. **2026-11-15 — No pop-in, wider shadows, and no steps beside the road.**
+     The user saw trees pop in ahead and asked for better shadows. Then,
+     mid-task, they asked to remove a step beside Greenvale's tight bends
+     that launched the car.
+     - **Pop-in.** Daytime fog runs from 70 m to 260 m (dusk 45–230 m).
+       Scenery streamed in 96 m chunks whose centre lay within 220 m + 72 m,
+       rechecked only when the car crossed into a new chunk. A chunk could
+       therefore arrive with trees 130 m away, under barely 30 % fog.
+       `ChunkStreamer` now loads a chunk once its nearest edge is within
+       range, rechecks every quarter chunk the car moves, and drops chunks
+       half a chunk past range. The scenery's range is the fog's far end
+       plus that quarter chunk and 4 m, capped by the options (300 m by
+       default, 150 m in software), so every chunk arrives fully fogged.
+       Terrain uses the same streamer at 300 m, past the fog everywhere.
+       The near/far tree swap at 70 m was left alone: the stand-ins keep
+       their silhouettes.
+     - **Shadows.** The sun's shadow frustum was 80 m across on a 2048 map,
+       centred 22 m ahead, so tree shadows grew in about 40 m ahead. One
+       texel is now fixed at 140/4096 m (3.4 cm, sharper than the old
+       3.9 cm). The map is 4096 where the GPU takes it, so the frustum is
+       140 m across and centred 0.55 of its half width ahead (38 m); the
+       edge fade then grows shadows in about 90 m ahead. A GPU limited to
+       2048 gets a 70 m frustum, about as before. `followSun` reads the
+       reach from the light's own shadow camera.
+     - **Cost** at five probe spots (debug overlay): triangles +4–21 %,
+       draw calls +9–27 %, still 60 fps on the dev Mac.
+     - **Steps beside the road.** The terrain blended from the deck of the
+       nearest stretch of road. On the inside of a tight bend the nearest
+       stretch flips from one arm to the other, so the deck under the blend
+       jumped: 0.9–1.3 m steps 6–10 m out on the Alpine, where the blend
+       runs 16 m. On Greenvale (9 m blend) the steps came from the crowd
+       benches, which followed the nearest stretch's road distance: 0.5–0.9 m
+       steps at the start and checkpoints. Fixes:
+       - **Soft deck.** Past the flat margin the deck eases over 2 m into a
+         blend of every stretch within 4 m of the nearest, weighted
+         (1 − Δ/4)² toward it (`softDeck`). On the carriageway and its
+         margin it is still exactly the nearest deck, so the road surface
+         is unchanged.
+       - **Benches.** A bench's reach goes by the distance to the road as a
+         whole; where along it, which side and the level are blended the
+         same way (`benchAt`, `benchAlong`, `benchAcross`). A first try
+         blended the whole weight per stretch, and the carriageway beside a
+         bench sank to shoulder height: a neighbouring stretch's own
+         distance put the road inside the bench. Benches now also carry on
+         past the road's corridor, and their outer edge eases over 10 m
+         (was 4) into the hill.
+       - **Rivers.** The frozen river's bed is the lowest over every
+         segment in reach, not the nearest (`RiverIndex.bedAt`), and carves
+         out to 30 m.
+       - `RoadPath.visitNear` now passes the signed lateral offset.
+     - **Test.** `groundSteps.test.ts` walks out from the road at every
+       8 m on Greenvale and Alpine stages. A steep quarter-metre is split
+       into slivers, and a sliver changing over 15 cm is a step. Before the
+       fix it found 63; now none. Steep but continuous banks (up to about
+       1.6 at a cutting or a bench's edge) remain; a car run wide into one
+       still climbs it.
+     - Stage builds take 10–35 ms longer and terrain meshing about 10 %
+       more.
+
+254. **2026-11-15 — The Riviera WRC rebuilt as a late-80s Group A five-door.**
+     The user found the Riviera's body random and asked for it rebuilt to
+     match the Group A hatch in `context/lancia-delta-integrale` (photos and
+     the 3D renders from the two model pages they linked; references only,
+     no model files used).
+     - **Shape** (`HullShapes.WRC_STATIONS`, 16 stations). A blunt upright
+       nose (z 2.0, 0.9 m) under a flat bonnet climbing to the scuttle
+       (0.62, 1.02), a fairly upright screen to the roof (z 0.08), a long flat
+       roof (1.45 to 1.43 m), and a steep rear screen (−1.5 to −1.84) over a
+       short tailgate (−1.97). Slab sides (0.87 skin, 0.85 belt) with square
+       box flares (0.95), stepped out over both axles in 4 cm from the sill to
+       the belt. A black B-pillar at −0.44/−0.36 (`sidePaint`) and a broad
+       C-pillar. 4.0 m long, 1.9 m over the flares, 1.35 m tall: the
+       reference's 0.35 height to length.
+     - **The car's axles and handling are unchanged** (2.615 m wheelbase,
+       1.55 m track): the body is drawn round them, overhangs 0.7 and 0.66 m.
+     - **Parts** (`WrcHatchBody`):
+       - a black band across the nose with twin round headlamps each side
+         and the grille's bars;
+       - a four-lamp rally pod across the nose;
+       - a deep white bumper with a black mesh intake split by three bars,
+         side intakes, amber corner lamps and a black splitter;
+       - louvred bonnet vents and a scuttle grille;
+       - mirrors on stalks, door handles, a number plate on the front door;
+       - a roof spoiler with side plates over the rear screen, two antennas
+         and a roof vent;
+       - tall red-over-amber tail lamps, a plate recess, the rear bumper
+         and an exhaust;
+       - white lips on the flares.
+     - **Livery.** White, a sky/navy/red band set low along the doors and
+       the bonnet's edges, red over the C-pillars and the rear screen's
+       flanks. No maker's or sponsor's names, marks or logos (project rule
+       9); the name stays Riviera WRC.
+     - **Cabin** (`interiorSpecs.wrc`) to the new greenhouse:
+       - cowl 0.62 at 0.94, screen top 0.08, roof 1.36, rear −1.5, walls 0.82;
+       - analogue dials and an H-pattern lever;
+       - the binnacle 14 cm toward the screen so the rim clears its hood in
+         the shorter cockpit.
+     - The city's parked cars share the stations, so the parked Rivieras take
+       the new shape in plain paint.
+     - Checked on the dealership turntable (ten frames round the car) and in
+       the chase, interior and cinematic views.
+
+255. **2026-11-15 — The Riviera's flank livery sweeps and arches.**
+     The user asked for the Riviera's side stripes to follow the reference
+     livery's arrangement: bands sweeping along the flanks and arching over
+     the rear wheel under a red field. The hull's own stripes (`stripeBand`)
+     only run level at fixed depths under the belt, so a new builder lays
+     them separately.
+     - **`FlankLivery`.** Each band has its own lower and upper edge as
+       curves along the car. It is laid as a skin 6 mm proud of the hull, on
+       the flank (sill top to belt) or a painted pillar (belt to roof edge).
+       The flank and pillar are read from the stations exactly as the hull
+       lofts them (linear between stations, across each from edge to edge),
+       sampled every 4 cm and at every station, so the skin bends where the
+       hull does. Bands are clipped to their surface and kept 2 cm clear of
+       the wheel arches. Output is a `HullMesh`, drawn by the same
+       `VertexColorMesh`. Samples closer than a millimetre are merged: a
+       float drift between a 4 cm step and a station made zero-width
+       slivers.
+     - **The Riviera's livery** (`WrcHatchBody`). The four navy and sky-blue
+       bands (15 cm) hang under one top edge. That edge is a line through
+       points (0.78 m at the nose, 1.0 at the front door, peaking at 1.02 at
+       the B-pillar, diving to 0.7 ahead of the rear wheel, back to 0.8 at
+       the tail), lifted over each wheel by a circle round the axle (arch
+       radius + 5 cm + the set's depth). The two are blended with a smooth
+       max (6 cm), so the set wraps each arch without being cut by it. A
+       first build without the wrap clipped the lower bands over both
+       wheels. Red fields sit over the set: from the front door's back edge
+       to the tail, the leading edge rising diagonally (the rear door's upper
+       half and the quarter over the arch), and along the front fender's
+       top. Two diagonal bands climb the red C-pillar. The front door's
+       number board moved down into the white under the bands. Still no
+       names, logos or marks; the colours are ours.
+
+256. **2026-11-15 — The Riviera's side stripes simplified.** Lifting the
+     bands over each wheel (255) left a big white hump of flare between
+     each arch and the bands, and the user found the stripes cut into
+     pieces. Now one set (red, navy, sky blue, navy; 15 cm) runs the whole
+     length in one gentle line: 0.89 m at the nose, 1.0 along the doors,
+     0.95 at the tail. Its foot stays 2 cm over the arches' lips (0.78), so
+     nothing breaks it. The arch wrap and the separate front red field are
+     gone. The red block behind the B-pillar (up to 20 cm over the set,
+     capped by the belt) and the C-pillar diagonals stay. `FlankLivery` is
+     unchanged.
+     Then the user asked for the lines straight, and the part by the back
+     window white:
+     - The set now runs level, its top at 0.92 m, the highest the bonnet's
+       edge at the nose (0.9–0.93) allows. Its foot sits at 0.8, just over
+       the arches' lips, so the set slims to 12 cm (red 3, navy 3.5, sky 3,
+       navy 2.5).
+     - The red over the C-pillars and the rear screen's flanks, and the two
+       diagonal bands there, are gone.
+     - The red block on the rear door (up to 30 cm over the set, capped by
+       the belt) stays.
+
+257. **2026-11-15 — The Riviera WRC goes plain white for now.** The user
+     scrapped the livery work (255, 256) and asked for the Riviera fully
+     white until they upload an image to map a new one from. Removed:
+     - the flank bands and the red rear block;
+     - the bonnet's edge bands and the door number board;
+     - the number plate's black recess on the tail (at their request).
+
+     `FlankLivery` (and its test) went with the livery rather than stay
+     unused; decision 255 describes it if a new livery needs bands along the
+     flanks again. The body's own trim stays: bonnet louvres, scuttle
+     grille, door handles, the black nose band, lamps, bumpers, spoiler and
+     antennas.
+
+258. **2026-11-15 — The Riviera's livery baked from a CC-BY model (superseded by 259).** The
+     user supplied a low-poly model of the reference car with its livery
+     (`context/lancia-delta-integrale/livery`: "Lancia Delta Integrale Low
+     poly" by Xzal, CC-BY-4.0, a 4096² texture atlas) and asked for the
+     livery from it.
+     - **Bake** (`scripts/bake-wrc-livery.mjs`, offline; ImageMagick for the
+       PNGs). The model's body (no wheels, mirrors, spoiler or glass parts)
+       is put in the hull's frame: its axles onto the hull's (z 1.3 and
+       −1.315), its axle height onto 0.33, its roof onto 1.45, its half width
+       onto the flares' 0.95. A z-buffered software rasteriser then draws it
+       textured from five sides at 128 px/m: left, right, top, front, back.
+       The views are posterised to five colours (body grey to white, red,
+       sky blue, near-black) and packed into a 1024² atlas,
+       `public/textures/riviera-livery.png` (11 KB).
+     - **Runtime** (`HullLivery.liveryUVs`, pure). Each face painted in the
+       body colour takes UVs by planar projection from the view it faces
+       most (sideways to the flank on its side, up to the top, along the car
+       to the front or back). Every other face (trim, glass, wells,
+       underside, decals, lamp lenses) samples a white block and keeps its
+       own colour. `CarHullMesh` takes an optional `livery`, loads the atlas
+       per mesh (disposed on unmount, the hull plain until it arrives) and
+       multiplies it over the vertex colours. Other cars are untouched.
+     - **Why bake, not import the model:** the body stays procedural (the
+       Riviera's shape, axles, flares and cabin from 254). Only the
+       livery's colours come across, mapped to our shape by alignment.
+       Where the two bodies differ (pillar positions, arch radii), the
+       livery follows the model's lines.
+     - **Licence.** Project rule 9 forbids external copyrighted assets and
+       lists CC0 only. This is a CC-BY-4.0 derivative used at the user's
+       direction, so the credit line required by the licence is in
+       `CREDITS.md` (it must also travel with any public release's credits).
+       The atlas carries the stripes and colours only; the model's "POLY
+       RACING" banner sits on its glass, which we don't texture.
+
+259. **2026-11-15 — The Riviera's livery as our own shapes.** The baked
+     livery (258) looked pixelated: a 128 px/m image on a car seen close.
+     It also didn't match the body: the model's window line sat 8–10 cm below
+     ours and its windscreen 15 cm further back. A second pass baked
+     the model into traced vector shapes and warped it onto our lines
+     (axles, windscreen base, the window line measured column by column,
+     telling its 63-grey glass from its 45-grey stripe black). The user
+     still found it off, and asked for our own interpretation of the
+     references. So:
+     - **`HullLivery.paintLivery`** (kept from that pass) takes a livery as
+       coloured triangles in three views: left and right flanks (z, y) and
+       the top (z, x). Every body-coloured hull face is projected into the
+       view it faces most, every overlapping livery triangle is clipped to
+       it (Sutherland–Hodgman), and the pieces are laid back onto the face
+       3 mm proud by barycentric lifting, wound as the face. Edges are exact
+       at any distance. Trim, glass, wells, caps and lamp lenses are left
+       alone. It runs once per hull build, memoised in `CarHullMesh`.
+     - **`RivieraLivery`, hand-drawn after `context/lancia-delta-integrale`
+       (references only).**
+       - Flanks: a 15 cm set (red 6, navy 3.5, sky 3, navy 2.5 cm) under
+         one eased top edge, 0.865 m at the nose, 1.02 along the doors,
+         dipping to 0.955 over the rear wheel, its foot always over the
+         arches' lips.
+       - Rear: a red field over the set from z −0.42 back, its leading edge
+         climbing 1.7 per metre to 1.5 m. On the C-pillar, navy, sky and
+         navy diagonals fall toward the tail (crossing y 1.0 at z −1.55 to
+         −1.76, 1.15 per metre), with white behind them.
+       - Bonnet: the set along each edge, red outermost.
+
+       Everything is laid in 4 cm strips cut at the colours' edges, so
+       nothing overlaps.
+
+     - The bake script, the model's data and its CC-BY credit are gone:
+       nothing of the model is used. No names, logos or marks.
+
+260. **2026-11-15 — The Riviera's livery joined up, its bonnet squared, its
+     cockpit cleared.** These are follow-ups to 259, from the user's
+     turntable and cockpit feedback.
+     - **The painter.**
+       - **End panels:** `paintLivery` takes optional `front` and `back`
+         views (x, y) for the faces turned along the car.
+       - **Flare steps:** a face turned at least 0.3 to the side (its
+         normal's x) takes its flank's view even when it faces more along
+         the car. Those are the steps where a flare stands out of the body,
+         and they belong to the flank's livery, not the nose's or the
+         tail's.
+       - **Depth:** pieces stand 5 mm off the hull along its normals
+         smoothed over its corners, not each face's own normal. Where two
+         faces meet at an angle their pieces still meet edge to edge, so
+         the hairline slivers of white at the creases are gone.
+       - **Distance:** at 5 mm, and drawn as their own material group with
+         a polygon offset as well, they no longer fight the white under
+         them from afar. Laying them flat on the faces with only a polygon
+         offset was tried first, and it fought at a chase distance.
+     - **The Riviera.**
+       - **Flank pinstripes:** navy, sky and navy lie straight and level
+         along the whole car, at 0.875 to 0.785 m, just over the arches'
+         lips.
+       - **Red:** it fills from the pinstripes up to the old set's top, and
+         from the rear door forward on up to the belt, so no white shows
+         under the windows or at the bonnet's edge.
+       - **Tail:** the same bands run straight across the tail panel (the
+         new `back` view), joining the two sides.
+     - **Hull (`WRC_STATIONS`).**
+       - **Bonnet:** its stations take `xBelt` equal to their width, so the
+         bonnet meets the flanks square instead of overhanging a flank that
+         leaned in under it.
+       - **Nose:** it is now as wide as the flares (0.95), with no taper
+         from 1.9 to the nose.
+       - **Front window:** a new `HullStation.sideGlass` glazes the side
+         band where the roof meets the belt at one end. The front door's
+         glass now runs on beside the windscreen to a point, where a white
+         A-pillar triangle used to be.
+     - **Cockpit:** the WRC's binnacle sat 14 cm toward the screen
+       (`clusterForward`) in a 40 cm-deep dash, which sank its dials 9 cm
+       into the slab. Its dash is now 30 cm deep, so the face meets the
+       dials. The interior test now requires every car's dial face to stand
+       clear of its dash face.
+
+261. **2026-11-15 — Two new cars: the Dieppe Berlinette and the Satory WRC.**
+     The user asked for two cars inspired by the photos in
+     `context/alpine-a110-rally` and `context/citroen-xsara`, following what
+     the Riviera taught (decisions 254 to 260).
+     - **References only.** We used the photos for shape and colour and no
+       names, logos or marks. The Xsara folder also holds a downloaded model
+       licensed CC-BY-NC-SA-4.0. Its no-commercial and share-alike terms
+       rule it out, so nothing of it is used, and there is no credit to
+       carry.
+     - **Both are lofted hulls with shape liveries.** That is the Riviera's
+       pipeline: `CarHull` stations, then `HullLivery.paintLivery`.
+       - The bonnets meet the flanks square (`xBelt` at full width).
+       - The front side glass runs to a point beside the screen
+         (`sideGlass`).
+       - Every stripe is laid in columns from one edge function, so bands
+         never part.
+     - **Shared livery helpers.** The Riviera's eased curve, column strips
+       and merge moved to `render/car/LiveryStrips.ts` (with a `disc` for
+       roundels), and all three liveries use them.
+     - **`berlinette` (2 500, between the starter hatch and the coupé).**
+       - **Chassis:** 820 kg, rear-drive, 2.1 m wheelbase with the centre
+         of mass 0.88 m ahead of the rear axle, low yaw inertia (1.15) and
+         240 Nm. It is the lightest and most tail-happy car in the shop.
+       - **Domes:** the bonnet and engine lid have their roof only 4.5 cm
+         over the belt, under the 5 cm cabin threshold, and a shoulder
+         crease rolls the edge in to a narrower crown.
+       - **Cabin:** its stations put the shoulder high and out, so the glass
+         bulges.
+       - **Rear glass:** the hull glazes a screen only where the roof meets
+         the belt, so the upper rear glass on the fastback is a glass deck
+         decal over the roof, continuing the screen below it.
+       - **Livery:** all blue with a white door roundel.
+       - **Cockpit:** short, so its wheel comes back to z 0.18 to clear the
+         binnacle.
+     - **`satory` (23 500, between the Albion and the Dakar truck).**
+       - **Chassis:** 1230 kg, 2.555 m wheelbase, 50/50 drive and 460 Nm.
+       - **Hull:** a three-door with one long door, box flares over both
+         axles, swept-back lamps as glowing deck decals on the nose's
+         shoulders, and a tall wing on the hatch.
+       - **Livery:** on a red shell, a blue skirt whose edge is level along
+         the doors, eases up 1 m over the rear quarter (a smoothstep from
+         z −0.3 to −1.5) and rises gently to the bumper. A gold and a white
+         streak ride that edge, fading in from the rear door. The tail and
+         the hatch lip are all blue (`back` and `top` views), the nose blue
+         under the grille (`front`), and the roof white (`colors.roof`).
+
+262. **2026-11-15 — The Berlinette and the Satory measured and detailed.**
+     The user asked for both new cars to be more detailed and closer to the
+     references, past plain low poly if needed.
+     - **Measured, not guessed.** Each car's side view is read off a
+       metric grid laid over a reference photo, scaled from its wheelbase
+       and set on its axles: the Xsara's clean side elevation and the
+       A110's side photo. Plan widths come from the other photos and the
+       real widths.
+       - **The Xsara's model:** the folder's 3D model is CC-BY-NC-SA-4.0.
+         Its no-commercial and share-alike terms rule out using its
+         geometry, so nothing of it is used: no mesh, no textures and no
+         numbers measured off it.
+       - **The A110:** its folder has photos only.
+     - **`HullLoft.loft`.** It samples stations every 5–6 cm, plus at
+       every key and break, from a few keyframes per car. Each dimension
+       runs on a monotone cubic (Fritsch–Carlson), so noses and tails round
+       off without bulging past a key. A `flags(z0, z1)` callback marks
+       each segment's glass, screens and pillars.
+     - **Hull additions (`CarHull`).** Everything new is off by default,
+       so existing hulls are unchanged, and the hull tests still pass.
+       - **`HullSpec.rounding`:**
+         - extra points from the belt to the roof edge, along a blend of
+           the straight line and an elliptical quarter (`fullness`), so
+           glass and shoulders roll in;
+         - points across the roof rising by each station's `crown`
+           (negative dips the bonnet between proud wings);
+         - extra flank points bowed out by each station's `bow`.
+       - **Deck decals:** they need a flat top, and the builder throws if
+         both are given.
+       - **`HullStation.screen`:** it glazes a top band whatever the roof
+         does, because a densely lofted screen spans many segments that
+         both count as cabin.
+       - **`HullStation.rail`:** it paints the band under the roof edge (a
+         black or body-coloured A-pillar).
+     - **Livery details as a second layer.** `LiveryShapes.over` is
+       painted like the livery, 10 mm off the hull instead of 5. Lamps,
+       panel gaps, grilles, intakes, vents, straps, handles and filler caps
+       can then overlap the colour bands without fighting them. Its helpers
+       are `rect`, `poly`, `ring`, `line` and `trace` in `LiveryStrips`.
+       Lamps that wrap a corner (the Satory's headlamps onto the wings, its
+       tail lamps round the tail) are drawn in each view they show in, and
+       the painter puts each part on the faces that view owns.
+     - **Shape files.** Each car's hull spec moved to a pure module
+       (`SatoryShape.ts`, `BerlinetteShape.ts`), so tests can build it.
+       The tests check length, width and roof height against the
+       references, and that the liveries land on their own hulls.
+     - **Cost.** About 7 000 hull triangles each and 11–15 000 with the
+       livery, built once per car in about 35 ms (the Riviera paints to
+       11 000). That's fine for the player's car and the one opponent.
+
+263. **2026-11-15 — The Berlinette as a Special, in plain blue.**
+     - **Livery:** at the user's request the door roundel is gone. The
+       Berlinette is all one blue under its details layer.
+     - **Dealership:** it moves to the end of the list as a fourth Special
+       at 35 000, after the buggy. That keeps prices rising along the list
+       and the one-offs together at its end, as the garage test requires.
+     - **Handling:** unchanged.
+     - **Panel gaps:** the user wanted grooves in the body, not painted
+       lines, so the details layer's gap lines are gone. Each gap is now cut
+       into the hull.
+       - **Door edges:** a station at each edge, 12 mm wide, steps the flank
+         in by 8 mm from the sill to the window.
+       - **Across the top:** at the ends of the bonnet and the engine lid, a
+         station drops the roof by 8 mm. The dip fades out down the
+         shoulders.
+       - **Along the top:** a new `HullRounding.groove` sinks one profile
+         point at half-width 0.42 by 8 mm where z is within the lids'
+         spans. Its points are carried at every station, so the facets stay
+         matched.
+     - **Roof:** the user wanted it flatter and more low-poly.
+       - **Crown:** cut to 3–4.5 cm from up to 10.5 cm. The roof edge rises
+         to keep the height (1.155 m at the crest).
+       - **Facets:** two across the roof and two in the roll from the
+         window line, instead of four each, with the window roll halfway to
+         elliptical (`fullness` 0.5).
+       - **Stations:** every 8 cm instead of 5.
+     - **Tail lamps:** the back-view and side-view red shapes now run past
+       the tail panel's corner, so the lamps join round it with no body
+       colour between them.
+
+264. **2026-11-15 — The Satory remodelled from the Xsara's 3D model.** The
+     user asked for the Satory to be remodelled from the 3D files in
+     `context/citroen-xsara`, kept low-poly and flat, with a livery that
+     matches the references and is drawn as geometry.
+     - **The licence.** The model is CC BY-NC-SA 4.0. Decision 262 left it
+       unused for that reason, and the user has now asked for it.
+       - **How it is used:** for measuring only. A scratch script (not in
+         the repo) read its glTF, scaled it to the 2.555 m wheelbase off the
+         road wheels, and took cross-sections every 10 cm (half-widths at
+         fixed heights, the centre-line top, the side glass's foot and
+         top).
+       - **What came off it:** the outlines of its lamp lenses, bonnet
+         vents, mirrors and wing, and its livery texture's colour regions.
+       - **What ships:** none of its mesh or textures. The hull is still our
+         own loft through about twenty keys, and the livery is our own
+         shapes.
+       - **Credit:** `CREDITS.md` names the author and the licence. Whether
+         measurements count as an adaptation under its share-alike and
+         non-commercial terms needs settling before any commercial release
+         (the iOS and Android builds). Replacing the keys with ones measured
+         off photos (decision 262's) would remove the question.
+     - **Hull (`SatoryShape`).**
+       - **Doors:** 0.85 m half-width, tucked in to 0.80 at the sill.
+       - **Flares:** 0.88–0.89 over both axles.
+       - **Side glass:** its foot dips from 0.96 m at the rear quarter to
+         0.82 at the A-pillar, and its top sits at 1.29 m, 0.55 out.
+       - **Roof:** crowned to 1.37 m.
+       - **Screen and hatch:** the screen runs from z 0.27 to the cowl at
+         0.92, and the hatch glass from −1.9 to the roof's end at −1.27.
+       - **Bonnet:** falls between raised wings to a nose 0.43 m at z 2.12.
+       - **Facets:** two across the roof, two in the window roll, one extra
+         up the flank, with stations every 8 cm, all flat-shaded. The
+         door's edges are grooves, as on the Berlinette (decision 263).
+     - **Livery (`SatoryLivery`), read off the model's texture.**
+       - **Rear quarter:** blue behind a diagonal from the rear arch's top
+         (z −1.37, 0.70 m) to the window's foot (z −1.12, 0.93 m), a gold
+         line along it.
+       - **C-pillar:** blue up to a gold-and-orange streak under the roof's
+         edge.
+       - **Roof:** white (now painted by the livery, since the hull's roof
+         is body colour), with the streak along its edges over the rear
+         quarter and by the A-pillars.
+       - **Bumpers:** the front is blue under a gold line at 0.46 m, and
+         the tail is red over a gold line and blue below 0.64 m.
+       - **Details layer:**
+         - the headlamps in side, front and top views, the tail lamps in
+           side and back views, all outlines traced off the model's lenses;
+         - the bonnet's twin vents;
+         - the grille slot, the big intake and the side intakes;
+         - the door handle and the plate recess.
+     - **Fittings.**
+       - **Wing:** end plates and a deep carbon blade, prisms from the
+         model's outlines.
+       - **Mirrors:** sit where the model's do, with their glass facing
+         back.
+       - **Underneath:** the splitter, skirts and diffuser are lowered to
+         the measured floor (0.13 m).
+     - **Cockpit:** follows the new cowl (z 0.92), roof and hatch.
+     - **Follow-up: the blue's edge.** The edge read off the texture left
+       an irregular block by the rear arch. It now follows the side
+       elevation instead.
+       - **Shape:** straight up the rear arch's front edge (z −0.9) to its
+         top (0.62 m), then diagonally to the quarter window's foot (z
+         −1.28, 0.98 m).
+       - **Lines:** a gold line, then a white one, run along the diagonal.
+     - **Follow-up: solid lamps.** `LiveryShapes.solids` paints a region
+       bounded by side, front and top outlines at once, clipped in 3D
+       (Sutherland–Hodgman against each outline edge's plane). A lamp
+       wrapping a corner is then one shape across faces of different
+       views.
+       - **Tail lamps:** they use it.
+       - **Headlamps:** tried as a solid, but the lens came out cropped
+         where our nose stands proud of the model's. At the user's request
+         they keep the earlier per-view outlines.
+     - **Follow-up: colours over the roof.** In the top view, everything
+       behind the roof (z < −1.3) is blue, so the C-pillars' upward faces
+       beside the hatch glass match the blue below them. The roof is white
+       out to its edges between the two streaks, so the whole roof reads
+       white.
+     - **Follow-up: roof, tail and tail lamps.**
+       - **Roof:** the gold-and-orange edge streaks are gone, and the roof
+         is white out to its edges (the C-pillars keep their streak).
+       - **Tail colours:** the C-pillars' faces turned back beside the
+         hatch glass fall in the tail view, which painted them red above
+         the gold line. The red now stops at the tail panel's top (1.0 m),
+         with blue above.
+       - **Tail lamps:** a quarter bigger than the model's and 10 cm
+         further in. The side outline is moved back 10 cm to reach our
+         sloping tail panel, and the lens is a brighter red (`#ff5a3c`) so
+         it reads against the red panel.
+
+265. **2026-11-16 — A boxier Satory.** The user asked for the Satory to be
+     more boxy, above all its windscreen pillars, side windows and tail
+     lamps. The hull keeps its reference length, width and flares; the
+     cabin and tail are redrawn square.
+     - **Screen and A-pillars:** the screen now runs from z 0.36 to the
+       cowl at 0.9 (was 0.27 to 0.92), about 50° instead of 31°, on one
+       straight line. The roof's half-width holds at 0.63 to its front edge
+       and widens only to 0.7 at the cowl, so the black pillars are straight
+       in plan as well as in side view.
+     - **Crisp creases from a smooth loft:** `HullLoft`'s monotone cubic
+       gives a key between a flat run and a slope a zero tangent, which
+       rounds every crease. Short keys a few centimetres either side of the
+       roof's front and back edges (and the tail panel's top) keep that
+       rounding to a few centimetres, with no new loft feature.
+     - **Side windows:** a level window line (0.92 at the back to 0.88 at
+       the screen, was 0.96 to 0.82), the roof's half-width 0.63 against a
+       belt at 0.8 (less tumblehome), and `rounding.fullness` 0.5 → 0.08 so
+       each side's glass is one flat plane. The roof crown drops to 3.5 cm.
+     - **Tail:** the tail panel stands nearly upright (a key at z −1.99)
+       and is square in plan (0.76 at the bumper's back, was 0.66). The
+       lamps are two `solids` each side, a red stop lamp over a white
+       reversing lamp, boxes 0.7–0.88 m high from 0.6 m out to the corner,
+       wrapping onto the flank to z −1.95, straight on the red tail panel
+       (black housings round them were tried and dropped at the user's
+       request, with the lamps made smaller). The traced lamp outlines and
+       their `reshape` helper are gone.
+     - **Cockpit:** the interior spec follows the new roof (1.31), screen
+       top (0.36), cowl (0.9) and roof end (−1.25).
+     - **Headlamps as solids:** the per-view headlamp outlines (side,
+       front, top), traced off the model, no longer met on the squarer
+       nose: the faces at the corner fell outside the outline of the view
+       they belong to, so the lens broke into pieces with red slivers
+       between them. Each headlamp is now one `solids` region fitted to our
+       nose (a teardrop seen from the front, its foot slanting up and back
+       from the side, the whole corner from above), so it is one connected
+       lens across the nose, the bonnet's edge and the wing. Decision 264
+       kept the traced outlines because a solid traced off the model came
+       out cropped; this one is fitted to our hull instead.
+     - **The rear quarter's diagonal to the sill:** the blue's leading edge
+       used to run diagonally from the quarter window's foot to the rear
+       arch's top and then drop straight down the arch's front edge, so the
+       gold-and-white line stopped at the arch with red under it. At the
+       user's request the diagonal carries on at the same slope to the
+       bottom of the car (it meets the sill near z −0.38, by the door's rear
+       edge), with the blue and both lines under it all the way.
+     - **No C-pillar streak:** at the user's request the gold-and-orange
+       streak under the roof's edge beside the hatch glass is gone; the
+       C-pillar is blue right up to the roof's edge (the `ORANGE` layer and
+       the `PILLAR_TOP` edge it followed are removed).
+     - **A-pillars as flush strips:** the pillar was the black `rail` on
+       the upper side band beside the screen, and that band shrinks to
+       nothing at the cowl, so each pillar was a triangle. A round tube
+       along the edge came next, but it stood proud of the glass and its
+       ends read as detached at the roof and the bonnet. The side band there
+       is now all glass, and `PillarStrip` builds a thin strip folded over
+       the corner (4.5 cm onto the screen and 4.5 cm down the side glass,
+       8 mm proud, its section following each station's first top and side
+       facets) along `SATORY_A_PILLAR`, the stations from the roof's front
+       edge (z 0.36) to the cowl at the bonnet's edge (z 0.9). The roof's
+       white paint now runs to z 0.36, so the pillar meets white, not a red
+       sliver.
+
+266. **2026-11-16 — No door numbers.** The user asked to take the number
+     decals off the cars: the Rally Hatch's cream door roundel with its
+     numeral, and the white door plate with a dark numeral bar (or a header)
+     on the Tricolore Coupé, Sochaux T16, Boreal Saloon, Edelweiss S1,
+     Albion RS Hatch and Sirocco Dakar Truck's cab door. They are removed;
+     the now-unused `Roundel` part is deleted from `CarParts`. The Dakar's
+     sponsor plates on the cargo box stay (they are not door numbers).
+     - **The Berlinette's rear-quarter scoop:** the black scoop painted on
+       each rear quarter ahead of the rear wheel is gone, at the user's
+       request. (Side number plates from the user's own pixel numerals were
+       tried on every car the same day and taken back off at the user's
+       request; nothing of them remains.)
+
+267. **2026-11-16 — The Berlinette's A-pillars as flush strips.** The
+     Berlinette had the Satory's old problem: its A-pillar was a
+     body-coloured `rail` on the side band beside the screen, a triangle
+     that tapered to nothing at the cowl, so it did not read as joining the
+     bonnet to the roof. It now uses the same `PillarStrip` as the Satory
+     (decision 265): the side band is all glass and a slim body-coloured
+     strip (3 cm onto each glass, 6 mm proud) runs along
+     `BERLINETTE_A_PILLAR` from the roof's front edge to the bonnet's edge.
+     - `PillarStrip` follows a roof `groove` (the Berlinette's lid edges),
+       whose extra points move the first roof facet the strip lies on.
+     - Both bodies draw their strips with one `PillarMesh` in `CarHullMesh`.

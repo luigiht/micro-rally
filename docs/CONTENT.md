@@ -163,8 +163,11 @@ Only the Arctic also quickens the steering.
   height. It runs from 3.6 m to 14 m past the carriageway's edge, level
   across, climbing with the road along it and 4 m past either end of the
   crowd. It is cut back into the hill or built out over the drop, easing
-  back over 4 m beyond and 8 m along. The berm is heaped on it and the crowd
-  stands behind on the flat. A side where another stretch of road's corridor
+  back over 10 m beyond and 8 m along. How far out it reaches goes by the
+  distance to the road as a whole; where along the road it lies, which side
+  and at what level are blended over every stretch nearly as near, so on the
+  inside of a tight bend it never steps. The berm is heaped on it and the
+  crowd stands behind on the flat. A side where another stretch of road's corridor
   or a village comes near is left as it is. Checkpoints keep 30 m clear of a
   hairpin stack, at its foot or its top, so their crowds have a hillside of
   their own.
@@ -259,16 +262,26 @@ nearly flat country (relief 9 m, long waves) with long flowing bends.
   Autumnal's), so the ground falls away past the edges and the banks sit
   on it, their crests 0.55 m over the carriageway and the ground beyond
   0.3 m below it.
-- **Forest wall.** Tall spruces (`spruce`: a thin trunk the whole height
-  carrying eight or nine irregular whorls of foliage from just above the snow, each an octagonal
-  truncated cone of its own width and depth set a little off the axis, with
-  gaps between them where the trunk shows, to a tip near 14 m, after the
-  low-poly snowy pine kept as a reference in `context/environment` and the
-  photographs; 0.7–1.5× scale) stand about 230 per 100 m right behind the
-  banks, with a few ordinary pines, bare pale birches, bushes and rocks
-  between. Two silhouettes: every other one (the even variants) carries
-  snow, a white sleeve round each whorl's top, a snowed tip and a drift
-  round the foot; the odd ones are bare and shaped differently.
+- **Forest wall.** Tall spruces (`spruce`, `SpruceGeometry`, `SpruceSpecs`,
+  after `context/low-poly-tall-snowy-trees`; 12–14.5 m at scale 1,
+  0.7–1.5× scale) stand about 260 per 100 m right behind the banks, with
+  only bushes and rocks between: no other trees. Each tier
+  is a thick slab, not a cone. Its rim has eight points, each its own reach
+  (one side shorter on a lopsided tree), so the outline is blunt and
+  lopsided; the rim stands a short edge thick with its points drooping, and
+  the top is gently domed through a mid ring. Every tier sits a little off
+  the trunk's line, turned and tipped. Snow lies as a shell over the tops: on
+  laden trees out to the rims and hanging down them by a different depth at
+  each point, so a ragged dark-green band shows beneath; on most trees over
+  the inner part of each tier's top, its outer edge and rim green. The top
+  tier is drawn taller, so the tree ends in a point. The trunk bends a
+  little and flares at its foot. Eight silhouettes, picked by spot in their
+  shares: green with snow on the tops (full 25 %, slim 20 %, lopsided 18 %,
+  gappy and dusted 5 %), laden to the rims (16 %, and the high-crowned one
+  on a bare trunk with stubs of old branches, 10 %), and two plain green
+  ones (3 % each). Each is drawn 0.85–1.15× as wide, 0.9–1.12× as tall and a
+  shade lighter or darker by its spot. Near the car each tree is detailed;
+  beyond 70 m a stand-in with five points a rim takes its place.
 - **Crests.** About every 190 m, where the road runs straight and level
   for 36 m and no gate, start or village is near, a raised cosine hump
   1.1 m high over 36 m is added to the road profile (`terrain.crests`,
@@ -688,19 +701,21 @@ bumpers. Liveries are colour-blocked originals. Each car also has its own
 interior (`components/game/interior/interiorSpecs.ts`): cabin envelope,
 dashboard kit and palette.
 
-| id          | Name                  | Shape (measured from reference)         | Mass    | Body file            |
-| ----------- | --------------------- | --------------------------------------- | ------- | -------------------- |
-| `hatchback` | Rally Hatch           | Chunky 1990s hatch, orange over cream   | 1000 kg | `HatchbackBody.tsx`  |
-| `coupe`     | Tricolore Coupé       | Stratos-shaped Group 4 wedge            | 980 kg  | `CoupeBody.tsx`      |
-| `t16`       | Sochaux T16           | 205 T16-style Group B hatch             | 940 kg  | `T16HatchBody.tsx`   |
-| `saloon`    | Boreal Saloon         | Impreza S6 WRC-shaped saloon            | 1230 kg | `SaloonBody.tsx`     |
-| `wrc`       | Riviera WRC           | Mid-2000s WRC hatch                     | 1230 kg | `WrcHatchBody.tsx`   |
-| `groupb`    | Tempesta Group B      | Group B monster with box flares         | 960 kg  | `GroupBBody.tsx`     |
-| `s1`        | Edelweiss S1          | Sport Quattro S1 E2-shaped coupé        | 1090 kg | `S1CoupeBody.tsx`    |
-| `focus`     | Albion RS Hatch       | First-gen Focus hatch in works WRC trim | 1230 kg | `FocusHatchBody.tsx` |
-| `dakar`     | Sirocco Dakar Truck   | Rally-raid truck, twice a car's size    | 2600 kg | `DakarTruckBody.tsx` |
-| `lemans`    | Mulsanne LM Prototype | 917K-shaped 1970 Le Mans coupé          | 800 kg  | `LeMansBody.tsx`     |
-| `buggy`     | Toro Dakar Buggy      | SMG-style two-wheel-drive raid buggy    | 1450 kg | `BuggyBody.tsx`      |
+| id           | Name                  | Shape (measured from reference)            | Mass    | Body file             |
+| ------------ | --------------------- | ------------------------------------------ | ------- | --------------------- |
+| `hatchback`  | Rally Hatch           | Chunky 1990s hatch, orange over cream      | 1000 kg | `HatchbackBody.tsx`   |
+| `berlinette` | Dieppe Berlinette     | A110-style berlinette, lofted from a photo | 820 kg  | `BerlinetteBody.tsx`  |
+| `coupe`      | Tricolore Coupé       | Stratos-shaped Group 4 wedge               | 980 kg  | `CoupeBody.tsx`       |
+| `t16`        | Sochaux T16           | 205 T16-style Group B hatch                | 940 kg  | `T16HatchBody.tsx`    |
+| `saloon`     | Boreal Saloon         | Impreza S6 WRC-shaped saloon               | 1230 kg | `SaloonBody.tsx`      |
+| `wrc`        | Riviera WRC           | Late-80s Group A five-door hatch           | 1230 kg | `WrcHatchBody.tsx`    |
+| `groupb`     | Tempesta Group B      | Group B monster with box flares            | 960 kg  | `GroupBBody.tsx`      |
+| `s1`         | Edelweiss S1          | Sport Quattro S1 E2-shaped coupé           | 1090 kg | `S1CoupeBody.tsx`     |
+| `focus`      | Albion RS Hatch       | First-gen Focus hatch in works WRC trim    | 1230 kg | `FocusHatchBody.tsx`  |
+| `satory`     | Satory WRC            | Xsara-style WRC hatch, lofted from a photo | 1230 kg | `SatoryHatchBody.tsx` |
+| `dakar`      | Sirocco Dakar Truck   | Rally-raid truck, twice a car's size       | 2600 kg | `DakarTruckBody.tsx`  |
+| `lemans`     | Mulsanne LM Prototype | 917K-shaped 1970 Le Mans coupé             | 800 kg  | `LeMansBody.tsx`      |
+| `buggy`      | Toro Dakar Buggy      | SMG-style two-wheel-drive raid buggy       | 1450 kg | `BuggyBody.tsx`       |
 
 The buggy's mudguards are not part of its hull: `render/car/FenderShell.ts`
 lofts a thick half-ring shell around each axle from an outline of

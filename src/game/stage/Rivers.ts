@@ -328,6 +328,30 @@ export class RiverIndex {
     });
     return best !== Infinity;
   }
+
+  /**
+   * The lowest carved bed over every river segment within `reach` of (x, z):
+   * each segment's floor (`floor` under its ice, raised by `rise` where it
+   * fades) plus `bank` per metre past its half width. Taken over all of them,
+   * not the nearest, so where two stretches of a winding river come close
+   * the bed has no step between them. Infinity away from every river.
+   */
+  bedAt(x: number, z: number, floor: number, rise: number, bank: number): number {
+    let bed = Infinity;
+    this.grid.near(x, z, 0, (s) => {
+      const dx = s.b.x - s.a.x;
+      const dz = s.b.z - s.a.z;
+      const len2 = dx * dx + dz * dz;
+      let t = len2 > 0 ? ((x - s.a.x) * dx + (z - s.a.z) * dz) / len2 : 0;
+      t = t < 0 ? 0 : t > 1 ? 1 : t;
+      const d = Math.hypot(x - (s.a.x + dx * t), z - (s.a.z + dz * t));
+      if (d > this.reach) return;
+      const level = s.a.level + (s.b.level - s.a.level) * t;
+      const fade = s.a.fade + (s.b.fade - s.a.fade) * t;
+      bed = Math.min(bed, level - floor + (1 - fade) * rise + Math.max(0, d - s.halfWidth) * bank);
+    });
+    return bed;
+  }
 }
 
 /** A bridge's parapets stand this far past the carriageway's edge (their middle), this thick, and run this far past the span at each end. */

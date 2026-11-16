@@ -51,6 +51,45 @@ export interface HullStation {
   sidePaint?: string;
   /** The glass faces from this station to the next (side glass, or the screen where the roof meets the belt). */
   glass?: boolean;
+  /**
+   * With `glass` where the roof meets the belt at one end: the side band glazed too, a
+   * triangular window against the screen instead of a painted pillar.
+   */
+  sideGlass?: boolean;
+  /** The top band from this station to the next is glazed (a screen) whatever the roof does; for densely lofted screens. */
+  screen?: boolean;
+  /** Paint for the outermost side band, the one under the roof edge, from this station to the next: a pillar or a window frame. */
+  rail?: string;
+  /** How far the middle of the roof (the centre line) stands over its edge, m; negative dips it. Needs `HullRounding.top`. */
+  crown?: number;
+  /** How far the flank bows out halfway between the sill and the belt, m. Needs `HullRounding.lower`. */
+  bow?: number;
+}
+
+/**
+ * Rounder sections than the plain planes, for hulls lofted from measured
+ * references: extra profile points, the same count at every station.
+ */
+export interface HullRounding {
+  /** Facets from the belt to the roof edge, rolling in along an elliptical quarter (`fullness` of the way from the straight line). */
+  upper?: number;
+  /** 0 = the straight line from the belt to the roof edge, 1 = a full elliptical quarter. */
+  fullness?: number;
+  /** Facets across the roof from its edge to the centre line, rising (or dipping) by each station's `crown`. */
+  top?: number;
+  /** Extra facets up the flank under the stripe band, bowed out by each station's `bow`. */
+  lower?: number;
+  /**
+   * A groove along the car in the roof's surface at half-width `x` (both sides), `depth` deep and
+   * `width` across, cut where `z` is within one of `spans` (a bonnet's or a lid's edge); the profile
+   * carries its points everywhere so the facets stay matched. Needs `top`.
+   */
+  groove?: {
+    x: number;
+    depth: number;
+    width: number;
+    spans: readonly (readonly [number, number])[];
+  };
 }
 
 export interface HullColors {
@@ -91,6 +130,8 @@ export interface HullSpec {
   capDecals?: readonly CapDecal[];
   /** Carry the stripe bands across the end caps (nose and tail) instead of painting them body colour. */
   wrapStripes?: boolean;
+  /** Rounder sections; replaces the `shoulder` crease where `upper` is set. Deck decals need a flat top (no `top`). */
+  rounding?: HullRounding;
 }
 
 export interface HullMesh {
@@ -100,6 +141,11 @@ export interface HullMesh {
   colors: Float32Array;
   /** Vertex index where the glowing faces start (drawn unlit); the vertex count when there are none. */
   glowStart: number;
+  /**
+   * Vertex index where a livery painted over the hull starts (it runs to `glowStart`): pieces
+   * just proud of the faces, drawn pulled toward the eye in depth as well. Omitted = none.
+   */
+  liveryStart?: number;
 }
 
 /** Wheel wells matching a car's axles and tyres, with clearance. */
@@ -181,6 +227,8 @@ function interpolate(stations: readonly HullStation[], z: number): HullStation {
     xBelt: lerp(a.xBelt ?? a.xBody, b.xBelt ?? b.xBody, t),
     shoulder: lerp(shoulderOf(a).y, shoulderOf(b).y, t),
     xShoulder: lerp(shoulderOf(a).x, shoulderOf(b).x, t),
+    crown: lerp(a.crown ?? 0, b.crown ?? 0, t),
+    bow: lerp(a.bow ?? 0, b.bow ?? 0, t),
     sidePaint: a.sidePaint,
   };
 }
@@ -230,26 +278,36 @@ function profile(
   stripes: number,
   band: readonly [number, number],
   shoulders: boolean,
+  round: HullRounding = {},
 ): { pts: V2[]; kinds: Band[] } {
   const inner = Math.min(xInner, s.xSill);
   const sillTop = Math.max(s.sill, s.low);
   const stripeLo = Math.max(s.belt - band[0], sillTop);
   const stripeHi = Math.max(s.belt - band[1], stripeLo);
-  // The flank leans from xBody at the sill top to xBelt at the belt.
+  // The flank leans from xBody at the sill top to xBelt at the belt, bowed out between them.
   const xBelt = s.xBelt ?? s.xBody;
-  const flank = (y: number) =>
-    s.belt <= sillTop
-      ? xBelt
-      : lerp(s.xBody, xBelt, Math.min(1, Math.max(0, (y - sillTop) / (s.belt - sillTop))));
+  const bow = s.bow ?? 0;
+  const flank = (y: number) => {
+    if (s.belt <= sillTop) return xBelt;
+    const t = Math.min(1, Math.max(0, (y - sillTop) / (s.belt - sillTop)));
+    return lerp(s.xBody, xBelt, t) + bow * Math.sin(Math.PI * t);
+  };
   const pts: V2[] = [
     [0, s.floor],
     [inner, s.floor],
     [inner, s.low],
     [s.xSill, s.low],
     [s.xBody, sillTop],
-    [flank(stripeLo), stripeLo],
   ];
-  const kinds: Band[] = ['trim', 'trim', 'trim', 'trim', 'body'];
+  const kinds: Band[] = ['trim', 'trim', 'trim', 'trim'];
+  const lower = round.lower ?? 0;
+  for (let k = 1; k <= lower; k++) {
+    const y = sillTop + ((stripeLo - sillTop) * k) / (lower + 1);
+    pts.push([flank(y), y]);
+    kinds.push('body');
+  }
+  pts.push([flank(stripeLo), stripeLo]);
+  kinds.push('body');
   for (let k = 0; k < stripes; k++) {
     const y = stripeLo + ((stripeHi - stripeLo) * (k + 1)) / stripes;
     pts.push([flank(y), y]);
@@ -258,13 +316,56 @@ function profile(
   }
   pts.push([xBelt, Math.max(s.belt, stripeHi)]);
   kinds.push('body');
-  if (shoulders) {
+  const belt = Math.max(s.belt, stripeHi);
+  if (round.upper) {
+    // From the belt up and in to the roof edge: between the straight line and an elliptical quarter.
+    const full = round.fullness ?? 1;
+    for (let k = 1; k < round.upper; k++) {
+      const t = k / round.upper;
+      const th = (t * Math.PI) / 2;
+      const lx = lerp(xBelt, s.xRoof, t);
+      const ly = lerp(belt, s.roof, t);
+      const ex = s.xRoof + (xBelt - s.xRoof) * Math.cos(th);
+      const ey = belt + (s.roof - belt) * Math.sin(th);
+      pts.push([lerp(lx, ex, full), Math.max(belt, lerp(ly, ey, full))]);
+      kinds.push('side');
+    }
+  } else if (shoulders) {
     const sh = shoulderOf(s);
     pts.push([sh.x, Math.max(sh.y, s.belt)]);
     kinds.push('side');
   }
-  pts.push([s.xRoof, s.roof], [0, s.roof]);
-  kinds.push('side', 'top');
+  pts.push([s.xRoof, s.roof]);
+  kinds.push('side');
+  const top = round.top ?? 1;
+  const crown = s.crown ?? 0;
+  const surface = (x: number) => s.roof + crown * (1 - (x / s.xRoof) ** 2);
+  const g = round.groove;
+  if (g) {
+    // Edge → a point between → the groove (its outer lip, floor, inner lip) → the rest to the centre,
+    // each placed relative to the last so the order holds however narrow the roof gets.
+    const gx = Math.min(g.x, s.xRoof * 0.8);
+    const w = Math.min(g.width / 2, gx * 0.2);
+    const cut = g.spans.some(([a, b]) => s.z >= a - 1e-6 && s.z <= b + 1e-6) ? g.depth : 0;
+    const xs = [(s.xRoof + gx + w) / 2, gx + w, gx, gx - w];
+    for (const x of xs) {
+      pts.push([x, surface(x) - (x === gx ? cut : 0)]);
+      kinds.push('top');
+    }
+    for (let k = 1; k < top; k++) {
+      const x = (gx - w) * (1 - k / top);
+      pts.push([x, surface(x)]);
+      kinds.push('top');
+    }
+  } else {
+    for (let k = 1; k < top; k++) {
+      const x = s.xRoof * (1 - k / top);
+      pts.push([x, surface(x)]);
+      kinds.push('top');
+    }
+  }
+  pts.push([0, s.roof + crown]);
+  kinds.push('top');
   return { pts, kinds };
 }
 
@@ -344,7 +445,11 @@ export function buildCarHull(input: HullSpec): HullMesh {
   const sideDecals = spec.sideDecals ?? [];
   const capDecals = spec.capDecals ?? [];
   const shoulders = spec.stations.some((u) => u.shoulder !== undefined);
-  const profiles = st.map((s) => profile(s, xInner, Math.max(1, stripes.length), band, shoulders));
+  if (spec.rounding?.top && (spec.deck?.length ?? 0) > 0)
+    throw new Error('Deck decals need a flat top: no rounding.top');
+  const profiles = st.map((s) =>
+    profile(s, xInner, Math.max(1, stripes.length), band, shoulders, spec.rounding),
+  );
   const bands = profiles[0]!.kinds.length;
   const users = spec.stations;
   const isCabin = (u: HullStation) => u.roof > u.belt + CABIN_MIN_HEIGHT;
@@ -362,17 +467,27 @@ export function buildCarHull(input: HullSpec): HullMesh {
     const cabin1 = isCabin(b);
     // Side glass needs a greenhouse at both ends; where the roof meets the belt
     // (screen and rear window) the slanted side band is a pillar, so painted.
-    const side = flagged && cabin0 && cabin1 ? 'glass' : 'paint';
+    const side = flagged && ((cabin0 && cabin1) || a.sideGlass) ? 'glass' : 'paint';
     // The top band is the roof over the cabin, and the windscreen / rear glass
     // where the roof meets the belt on one side of the segment only.
-    const top = cabin0 && cabin1 ? 'roof' : flagged && cabin0 !== cabin1 ? 'glass' : 'paint';
+    const top = a.screen
+      ? 'glass'
+      : cabin0 && cabin1
+        ? 'roof'
+        : flagged && cabin0 !== cabin1
+          ? 'glass'
+          : 'paint';
+    // The outermost side band (under the roof edge) may carry a rail's paint: a pillar or a frame.
+    const railBand = profiles[i]!.kinds.lastIndexOf('side');
     const zMid = (z0 + z1) / 2;
     for (let k = 0; k < bands; k++) {
       const kind = profiles[i]!.kinds[k]!;
       const base =
-        kind === 'side' && side === 'paint' && a.sidePaint
-          ? a.sidePaint
-          : bandColor(spec.colors, stripes, kind, side, top);
+        kind === 'side' && a.rail && k === railBand
+          ? a.rail
+          : kind === 'side' && side === 'paint' && a.sidePaint
+            ? a.sidePaint
+            : bandColor(spec.colors, stripes, kind, side, top);
       const color = rgb(base);
       const n0 = edgeNormal(p0, k);
       const n1 = edgeNormal(p1, k);

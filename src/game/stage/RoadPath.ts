@@ -178,7 +178,8 @@ export class RoadPath {
     x: number,
     z: number,
     maxDist: number,
-    visit: (along: number, distance: number) => void,
+    /** `lateral` is the signed offset, positive to the left of travel (as `nearest` reports it). */
+    visit: (along: number, distance: number, lateral: number) => void,
   ): void {
     const c0x = Math.floor((x - maxDist) / CELL);
     const c1x = Math.floor((x + maxDist) / CELL);
@@ -201,7 +202,11 @@ export class RoadPath {
           const px = x - (ax + dx * t);
           const pz = z - (az + dz * t);
           const d2 = px * px + pz * pz;
-          if (d2 <= max2) visit((i + t) * this.spacing, Math.sqrt(d2));
+          if (d2 <= max2) {
+            const len = Math.sqrt(len2);
+            const side = len > 0 && px * dz - pz * dx < 0 ? -1 : 1;
+            visit((i + t) * this.spacing, Math.sqrt(d2), side * Math.sqrt(d2));
+          }
         }
       }
     }
