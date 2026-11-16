@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { CAR_CATALOG, carPrice, carStats, isCatalogCar } from '@/game/economy/cars';
+import {
+  CAR_CATALOG,
+  DEALERSHIP_CARS,
+  carPrice,
+  carStats,
+  isCatalogCar,
+} from '@/game/economy/cars';
 import {
   applyUpgrades,
   nextUpgradePrice,
@@ -104,6 +110,12 @@ describe('cars', () => {
       'buggy',
       'berlinette',
     ]);
+  });
+
+  it('keeps the Satory WRC in the catalog but out of the dealership', () => {
+    expect(isCatalogCar('satory')).toBe(true);
+    expect(DEALERSHIP_CARS.map((c) => c.id)).not.toContain('satory');
+    expect(DEALERSHIP_CARS).toEqual(CAR_CATALOG.filter((c) => c.id !== 'satory'));
   });
 });
 

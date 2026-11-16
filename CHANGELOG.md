@@ -9,6 +9,10 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Changed
 
+- **The Satory WRC is off sale for now.** The dealership no longer lists
+  it. The car stays in the game's code, and a save that already owns it
+  keeps it [268].
+
 - **A boxier Satory WRC.** The screen stands steep and straight between
   straight black A-pillars, the side windows sit under a level window line
   on flat glass with less lean-in, the roof is flat with crisp front and

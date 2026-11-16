@@ -5704,3 +5704,11 @@ bed)`. The road, its profile and every record stay as they were, so
      - `PillarStrip` follows a roof `groove` (the Berlinette's lid edges),
        whose extra points move the first roof facet the strip lies on.
      - Both bodies draw their strips with one `PillarMesh` in `CarHullMesh`.
+
+268. **2026-11-16 — The Satory WRC hidden from the dealership.** At the
+     user's request the Satory is withheld from sale without being removed.
+     Its `CAR_CATALOG` listing carries `hidden: true` and the dealership
+     reads `DEALERSHIP_CARS` (the catalog minus hidden listings). It stays
+     in `CATALOG_IDS`, so saves and multiplayer sessions that name it still
+     validate, and its specs, model and livery are untouched. Clearing the
+     flag puts it back on sale.

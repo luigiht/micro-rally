@@ -23,6 +23,8 @@ export interface CarListing {
   price: number;
   /** Shown with a "Special" tag in the dealership: a one-off outside the rally-car ladder. */
   special?: boolean;
+  /** Kept in the code (specs, model, saves that own it) but not offered in the dealership. */
+  hidden?: boolean;
 }
 
 export const CAR_CATALOG: readonly CarListing[] = [
@@ -34,12 +36,15 @@ export const CAR_CATALOG: readonly CarListing[] = [
   { id: 'groupb', price: 14000 },
   { id: 's1', price: 18000 },
   { id: 'focus', price: 21000 },
-  { id: 'satory', price: 23500 },
+  { id: 'satory', price: 23500, hidden: true },
   { id: 'dakar', price: 26000, special: true },
   { id: 'lemans', price: 29000, special: true },
   { id: 'buggy', price: 32000, special: true },
   { id: 'berlinette', price: 35000, special: true },
 ];
+
+/** The listings the garage dealership shows, in showroom order. */
+export const DEALERSHIP_CARS: readonly CarListing[] = CAR_CATALOG.filter((c) => !c.hidden);
 
 export function isCatalogCar(id: string): id is CatalogCarId {
   return (CATALOG_IDS as readonly string[]).includes(id);
