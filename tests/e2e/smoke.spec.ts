@@ -1,6 +1,10 @@
 import { expect, test } from '@playwright/test';
 import { CANVAS, chooseSinglePlayer, startGame } from './helpers';
 
+// The stage builds and counts down before the clock runs: ~5 s locally, over 10 s on CI's
+// software WebGL.
+const CLOCK_START = 30_000;
+
 test('the splash screen boots, then Drive starts the game', async ({ page }) => {
   await page.goto('/');
   await expect(page).toHaveTitle(/Micro Rally/);
@@ -30,7 +34,7 @@ test('a stage counts down, then the clock runs', async ({ page }) => {
   await startGame(page);
   const timer = page.getByTestId('stage-timer');
   await expect(timer).toHaveText('0:00.00');
-  await expect(timer).not.toHaveText('0:00.00', { timeout: 10_000 });
+  await expect(timer).not.toHaveText('0:00.00', { timeout: CLOCK_START });
 });
 
 test('the Game button shows stage info and the driver, Esc closes it', async ({ page }) => {
@@ -61,7 +65,7 @@ test('the Game panel lists the stages so far and drives one from the list', asyn
 test('Restart stage in the Game panel puts the clock back to zero', async ({ page }) => {
   await startGame(page);
   const timer = page.getByTestId('stage-timer');
-  await expect(timer).not.toHaveText('0:00.00', { timeout: 10_000 });
+  await expect(timer).not.toHaveText('0:00.00', { timeout: CLOCK_START });
   await page.getByRole('button', { name: 'Game' }).click();
   await page.getByRole('button', { name: 'Restart stage' }).click();
   await expect(page.getByRole('dialog')).toBeHidden();
@@ -85,7 +89,7 @@ test('the progress bar fills as the car drives down the stage', async ({ page })
   await startGame(page);
   const bar = page.getByRole('progressbar', { name: 'Stage progress' });
   await expect(bar).toHaveAttribute('aria-valuenow', '0');
-  await expect(page.getByTestId('stage-timer')).not.toHaveText('0:00.00', { timeout: 10_000 });
+  await expect(page.getByTestId('stage-timer')).not.toHaveText('0:00.00', { timeout: CLOCK_START });
   // Software rendering on CI runs the sim slowly, so hold the throttle until the bar moves.
   await page.keyboard.down('KeyW');
   await expect
