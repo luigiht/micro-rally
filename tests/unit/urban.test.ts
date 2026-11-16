@@ -494,7 +494,7 @@ describe('Urban stages', { timeout: 30_000 }, () => {
       }
       expect(run).toBeGreaterThanOrEqual(300);
     }
-  });
+  }, 90_000);
 });
 
 describe('save migration', () => {

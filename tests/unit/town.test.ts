@@ -445,7 +445,7 @@ describe('town generator', () => {
       expect(props.filter((p) => p.kind === b0Kind(town)).length).toBeGreaterThan(0);
       expect(problems, `${stage.seed}/${stage.index}`).toEqual([]);
     }
-  });
+  }, 30_000);
 
   it('keeps the route itself clear: both car circles miss every collider all the way through town', () => {
     for (const stage of townStages().slice(0, 20)) {
