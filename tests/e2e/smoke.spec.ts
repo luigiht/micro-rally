@@ -86,6 +86,8 @@ test('Settings lists the controls and switches the language', async ({ page }) =
 });
 
 test('the progress bar fills as the car drives down the stage', async ({ page }) => {
+  // Starting the game and the clock eat most of the default 30 s on CI's software WebGL.
+  test.setTimeout(90_000);
   await startGame(page);
   const bar = page.getByRole('progressbar', { name: 'Stage progress' });
   await expect(bar).toHaveAttribute('aria-valuenow', '0');
@@ -93,7 +95,7 @@ test('the progress bar fills as the car drives down the stage', async ({ page })
   // Software rendering on CI runs the sim slowly, so hold the throttle until the bar moves.
   await page.keyboard.down('KeyW');
   await expect
-    .poll(async () => Number(await bar.getAttribute('data-progress')), { timeout: 30_000 })
+    .poll(async () => Number(await bar.getAttribute('data-progress')), { timeout: 50_000 })
     .toBeGreaterThan(0.002);
   await page.keyboard.up('KeyW');
 });
