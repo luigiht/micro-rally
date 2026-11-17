@@ -19,7 +19,7 @@ import {
 import { roadSeparation } from './roadSeparation';
 import { stageIndexOf } from './stageIndex';
 import { generateStage, stageBrief, stageHasTown, stageTypeAt } from '@/game/stage/StageGenerator';
-import { StageRun, TREE_PENALTY_SECONDS } from '@/game/stage/StageRun';
+import { MAX_JUMP_AIR, MIN_JUMP_AIR, StageRun, TREE_PENALTY_SECONDS } from '@/game/stage/StageRun';
 import {
   ROAD_BED_DROP,
   ROAD_LIFT,
@@ -459,6 +459,24 @@ describe('StageRun', () => {
     expect(run.totalTime).toBeCloseTo(10 + TREE_PENALTY_SECONDS);
     expect(run.splits).toHaveLength(stage.gates.length);
     expect(run.repairCost).toBeGreaterThan(0);
+  });
+
+  it('counts air time over jumps, ignoring bumps and capping each jump', () => {
+    const run = new StageRun(generateStage(5, 0));
+    const fly = (seconds: number) => {
+      for (let t = 0; t < seconds - 1e-9; t += 0.01) run.onAir(false, 0.01);
+      run.onAir(true, 0.01);
+    };
+    fly(1); // still in the countdown: nothing counts
+    run.tick(3);
+    fly(0.8);
+    fly(MIN_JUMP_AIR / 2); // a bump
+    fly(MAX_JUMP_AIR + 4); // off a cliff
+    run.onAir(false, 0.5);
+    run.cancelAir(); // reset to a checkpoint mid-air
+    run.onAir(true, 0.01);
+    expect(run.jumps).toBe(2);
+    expect(run.airTime).toBeCloseTo(0.8 + MAX_JUMP_AIR, 1);
   });
 });
 

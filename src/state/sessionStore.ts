@@ -188,10 +188,10 @@ async function send(run: ResultInput): Promise<boolean> {
 }
 
 /** Count the finished run of the stage being driven: the first finish is the one that counts. */
-export function submitRun(time: number, splits: readonly number[]): void {
+export function submitRun(time: number, splits: readonly number[], airTime: number): void {
   const { driving, upload } = useSessionStore.getState();
   if (driving === null || upload !== 'idle') return;
-  void send({ stageIndex: driving, time, splits: [...splits] });
+  void send({ stageIndex: driving, time, splits: [...splits], airTime });
 }
 
 /** Send the run again after a failed upload. */
@@ -203,7 +203,7 @@ export function retryUpload(): void {
 export async function retireStage(): Promise<boolean> {
   const { driving } = useSessionStore.getState();
   if (driving === null) return false;
-  const sent = await send({ stageIndex: driving, time: null, splits: [] });
+  const sent = await send({ stageIndex: driving, time: null, splits: [], airTime: 0 });
   if (sent) backToLobby();
   return sent;
 }

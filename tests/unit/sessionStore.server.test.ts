@@ -157,12 +157,13 @@ describe('SupabaseSessionStore', () => {
     expect(await store.create(session)).toBe(false);
     expect(await store.addPlayer('ABCD2345', guest)).toBe(true);
     expect(await store.addPlayer('ABCD2345', { ...guest, id: 'p-third' })).toBe(false);
-    const run = { stageIndex: 0, playerId: 'p-guest', time: null, splits: [] };
+    const run = { stageIndex: 0, playerId: 'p-guest', time: 99, splits: [], airTime: 1.5 };
     expect(await store.addResult('ABCD2345', run)).toBe(true);
     expect(await store.addResult('ABCD2345', run)).toBe(false);
 
     const read = await store.read('ABCD2345');
     expect(read).toEqual({ ...session, players: [host, guest], results: [run] });
+    expect(db.tables.session_results![0]).toMatchObject({ time: 99, air_time: 1.5 });
     expect(db.tables.sessions![0]).toMatchObject({
       stage_types: ['alpine', 'circuit'],
       car_id: null,

@@ -56,7 +56,9 @@ here as of 2 November 2026.
 - **Points per stage.** Pace: 1000 × the prize curve against par (300 at
   double par, 1000 at par, 1250 at 20 % under). Once both have run the
   stage: +300 for the faster driver and +50 for each section between
-  checkpoints a driver was faster on. A retirement scores 0, and a tie
+  checkpoints a driver was faster on. Air time: +50 per second in the air
+  over jumps, counted with pace as soon as the run is in (the run sends it;
+  the server refuses more than a quarter of the time). A retirement scores 0, and a tie
   gives neither driver the win. Points shown before both have run a stage
   are marked provisional. After the last stage, the higher total wins the
   session, or it is a draw.
@@ -75,12 +77,17 @@ here as of 2 November 2026.
 3. **Penalties.** Hitting a tree, rock, house or wall at 3 m/s or more costs
    2 s and a $25 repair fee, at most once a second. Off the road the car
    drags through grass (or snow in the Alps).
-4. **Reset.** `R`, or the back-to-checkpoint button beside Pause on touch
+4. **Air time.** Each spell off the ground of at least 0.3 s counts as a
+   jump when the car lands (or crosses the finish in the air); bumps and
+   crests below that earn nothing, and one jump counts at most 3 s, so a
+   cliff can't be farmed. A reset mid-air drops the spell.
+5. **Reset.** `R`, or the back-to-checkpoint button beside Pause on touch
    devices, respawns 6 m past the last checkpoint passed (or at the start),
    facing down the road. The stage clock keeps running.
-5. **Finish.** The result panel shows the time, par, previous best, prize
-   money and repairs, with Drive it again, Watch replay and Next stage.
-6. **Replay.** The run is recorded every physics step from GO until three
+6. **Finish.** The result panel shows the time, the hit penalties inside
+   it (how many hits and the seconds they added), par, previous best, prize
+   money, air time and its bonus, and repairs, with Drive it again, Watch replay and Next stage.
+7. **Replay.** The run is recorded every physics step from GO until three
    seconds past the finish, tyre scrub included. During the replay the car
    follows the recording, the clock, checkpoints and progress bar replay
    with it, the tyre marks are laid again as the car passes (braking
@@ -112,7 +119,11 @@ the last sector board or lap line passed.
   gravel 1.15, sand 1.2, mud 1.3, snow 1.35) × pace factor × (1 + 0.25 per
   loop).
   The pace factor rises to +25 % for beating par by 20 % and falls to a 0.3
-  floor at double par. Repair fees are deducted at the finish. A stage of
+  floor at double par. Penalty seconds are part of the time the pace factor
+  reads. Repair fees are deducted at the finish.
+- **Air bonus** = $50 per second in the air over jumps × (1 + 0.25 per
+  loop), paid on top of the prize. A stage with three Greenvale jumps adds
+  a little over $100. A stage of
   the usual 1.5–2 km pays about $1500 at par.
 - **Records.** The best time and splits per stage are kept in the save; a new
   record is called out on the result panel.

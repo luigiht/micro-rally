@@ -142,7 +142,7 @@ export const es: Messages = {
         },
         {
           title: 'Conduce, reinicia y repite',
-          body: 'Cada tramo empieza y termina bajo un pórtico a cuadros, con paneles rojos que marcan la salida (un cronómetro) y la meta (una bandera a cuadros). Pasa los controles en orden y llega a la meta. Las superficies fuera de la carretera te frenan; los golpes fuertes añaden tiempo y reparaciones. Pulsa R, o el botón de volver al control junto a Pausa en pantallas táctiles, para volver al último control. Puedes repetir las carreras terminadas.',
+          body: 'Cada tramo empieza y termina bajo un pórtico a cuadros, con paneles rojos que marcan la salida (un cronómetro) y la meta (una bandera a cuadros). Pasa los controles en orden y llega a la meta. Las superficies fuera de la carretera te frenan; cada golpe fuerte añade 2 segundos y reparaciones, y el tiempo en el aire en los saltos paga un bonus además del premio. Pulsa R, o el botón de volver al control junto a Pausa en pantallas táctiles, para volver al último control. Puedes repetir las carreras terminadas.',
         },
         {
           title: 'Superficies y agarre',
@@ -158,7 +158,7 @@ export const es: Messages = {
         },
         {
           title: 'Multijugador',
-          body: 'Elige Multijugador en la pantalla de inicio para competir con un amigo. Uno crea una sesión de 3, 6 o 9 tramos, marcando los tipos de tramo que recorre por turnos, y comparte su ID de sesión o el enlace. Cada uno elige su coche en la sala antes de su primer tramo y lo conserva toda la sesión. Corred cada tramo cuando queráis; el siguiente se abre cuando ambos habéis terminado. Mientras estéis los dos en el mismo tramo, veréis el coche del otro en la carretera, con un segundo de retraso, y la inicial del otro piloto junto a la barra de progreso. Los puntos salen de vuestro ritmo frente al tiempo de referencia, más bonificaciones por ganar el tramo y por cada sector más rápido.',
+          body: 'Elige Multijugador en la pantalla de inicio para competir con un amigo. Uno crea una sesión de 3, 6 o 9 tramos, marcando los tipos de tramo que recorre por turnos, y comparte su ID de sesión o el enlace. Cada uno elige su coche en la sala antes de su primer tramo y lo conserva toda la sesión. Corred cada tramo cuando queráis; el siguiente se abre cuando ambos habéis terminado. Mientras estéis los dos en el mismo tramo, veréis el coche del otro en la carretera, con un segundo de retraso, y la inicial del otro piloto junto a la barra de progreso. Los puntos salen de vuestro ritmo frente al tiempo de referencia, más puntos por cada segundo en el aire en los saltos y bonificaciones por ganar el tramo y por cada sector más rápido.',
         },
       ],
       controlsTitle: 'Controles',
@@ -569,6 +569,7 @@ export const es: Messages = {
     uploadFailed: 'No se pudo enviar tu tiempo.',
     uploadRetry: 'Reintentar',
     pace: 'Ritmo',
+    air: 'Tiempo en el aire ({s})',
     win: 'Victoria de tramo',
     sectors: 'Sectores ganados',
     stagePoints: 'Puntos del tramo',
@@ -585,6 +586,9 @@ export const es: Messages = {
     bestLap: 'Mejor vuelta',
     raceTitle: 'Carrera completada',
     penalties: '+{s}s de penalización',
+    penaltiesIncluded: 'Penalización por golpes ×{n}',
+    airTime: 'Tiempo en el aire',
+    airBonus: 'Bonus por saltos',
     money: 'Dinero',
     resultTitle: 'Tramo completado',
     time: 'Tiempo',

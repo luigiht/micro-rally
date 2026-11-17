@@ -137,7 +137,7 @@ export const en = {
         },
         {
           title: 'Drive, reset and replay',
-          body: 'Each stage starts and finishes under a chequered gantry, with red boards marking the start (a stopwatch) and the finish (a chequered flag). Pass the checkpoints in order and reach the finish. Off-road surfaces slow you down, while hard impacts add time and repair costs. R, or the back-to-checkpoint button next to Pause on touchscreens, returns you to the last checkpoint. Finished runs can be replayed.',
+          body: 'Each stage starts and finishes under a chequered gantry, with red boards marking the start (a stopwatch) and the finish (a chequered flag). Pass the checkpoints in order and reach the finish. Off-road surfaces slow you down, while hard impacts add 2 seconds each and repair costs, while time in the air over jumps pays an air bonus on top of the prize. R, or the back-to-checkpoint button next to Pause on touchscreens, returns you to the last checkpoint. Finished runs can be replayed.',
         },
         {
           title: 'Surfaces and grip',
@@ -153,7 +153,7 @@ export const en = {
         },
         {
           title: 'Multiplayer',
-          body: 'Pick Multiplayer on the start screen to race a friend. One of you creates a session of 3, 6 or 9 stages, ticking the stage types it cycles through, and shares its Session ID or link. Each of you picks a car in the lobby before your first stage and keeps it for the whole session. Drive each stage whenever you like; the next one opens once you have both finished. While you are both on the same stage, you see each other’s car on the road, about a second behind, and the other driver’s initial beside the progress bar. Points come from your pace against par, plus bonuses for the stage win and for each faster section.',
+          body: 'Pick Multiplayer on the start screen to race a friend. One of you creates a session of 3, 6 or 9 stages, ticking the stage types it cycles through, and shares its Session ID or link. Each of you picks a car in the lobby before your first stage and keeps it for the whole session. Drive each stage whenever you like; the next one opens once you have both finished. While you are both on the same stage, you see each other’s car on the road, about a second behind, and the other driver’s initial beside the progress bar. Points come from your pace against par, plus points for every second in the air over jumps and bonuses for the stage win and for each faster section.',
         },
       ],
       controlsTitle: 'Controls',
@@ -549,6 +549,7 @@ export const en = {
     uploadFailed: 'Your time couldn’t be sent.',
     uploadRetry: 'Try again',
     pace: 'Pace',
+    air: 'Air time ({s})',
     win: 'Stage win',
     sectors: 'Section wins',
     stagePoints: 'Stage points',
@@ -565,6 +566,9 @@ export const en = {
     bestLap: 'Best lap',
     raceTitle: 'Race complete',
     penalties: '+{s}s penalties',
+    penaltiesIncluded: 'Hit penalties ×{n}',
+    airTime: 'Air time',
+    airBonus: 'Air bonus',
     money: 'Money',
     resultTitle: 'Stage complete',
     time: 'Time',

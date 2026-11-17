@@ -2,7 +2,8 @@
 
 import { SESSION_SEATS, type SessionResult } from '@/game/multiplayer/Session';
 import { scoreStage } from '@/game/multiplayer/SessionScore';
-import { fill, formatTime } from '@/i18n/format';
+import { penaltyRows } from '@/components/hud/resultRows';
+import { fill, formatSeconds, formatTime } from '@/i18n/format';
 import { useMessages } from '@/i18n/useMessages';
 import type { StageResult } from '@/state/gameStore';
 import { backToLobby, retryUpload, useSessionStore } from '@/state/sessionStore';
@@ -11,8 +12,8 @@ import { useUiStore } from '@/state/uiStore';
 import { useSessionPolling } from './sessionHooks';
 
 /**
- * Multiplayer's stage result: this run's time against par and the other
- * driver's, the points it earns (pace at once; the stage and section wins
+ * Multiplayer's stage result: this run's time (with its penalties) against
+ * par and the other driver's, the points it earns (pace and air time at once; the stage and section wins
  * once both have run it) and whether the time has reached the server. No
  * second try: the first finish is the one that counts.
  */
@@ -32,6 +33,7 @@ export function SessionResultPanel({ result }: { result: StageResult }) {
     playerId: me,
     time: result.time,
     splits: result.splits,
+    airTime: result.airTime,
   };
   const scored = counted ? stageResults : [...stageResults, local];
   const points = scoreStage(scored, result.parTime).get(me);
@@ -42,12 +44,18 @@ export function SessionResultPanel({ result }: { result: StageResult }) {
 
   const rows: [string, string][] = [
     [m.stage.time, formatTime(result.time)],
+    ...penaltyRows(result, m),
     [m.stage.par, formatTime(result.parTime)],
   ];
   // The other driver's time sits with the times; while they haven't run it, a line of its own below.
   if (other && theirs)
     rows.push([other.name, theirs.time === null ? m.session.retired : formatTime(theirs.time)]);
   rows.push([m.session.pace, fill(m.session.points, { n: points?.pace ?? 0 })]);
+  if (points && points.air > 0)
+    rows.push([
+      fill(m.session.air, { s: formatSeconds(result.airTime) }),
+      fill(m.session.points, { n: points.air }),
+    ]);
   if (complete && points) {
     rows.push([m.session.win, fill(m.session.points, { n: points.win })]);
     rows.push([m.session.sectors, fill(m.session.points, { n: points.sectors })]);

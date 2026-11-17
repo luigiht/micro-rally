@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { paceFactor, PRIZE_PER_KM, stagePrize } from '@/game/economy/prize';
+import {
+  AIR_BONUS_PER_SECOND,
+  airBonus,
+  paceFactor,
+  PRIZE_PER_KM,
+  stagePrize,
+} from '@/game/economy/prize';
 
 const base = { lengthM: 2000, surface: 'gravel' as const, parTime: 120, loop: 0 };
 
@@ -26,5 +32,13 @@ describe('prize formula', () => {
     expect(stagePrize({ ...base, time: 120, loop: 1 })).toBe(Math.round(plain * 1.25));
     expect(stagePrize({ ...base, time: 120, sponsorBonus: 0.1 })).toBe(Math.round(plain * 1.1));
     expect(stagePrize({ ...base, time: 120, lucky: true })).toBe(plain * 5);
+  });
+});
+
+describe('air bonus', () => {
+  it('pays per second in the air, growing 25% per loop', () => {
+    expect(airBonus(0, 0)).toBe(0);
+    expect(airBonus(2, 0)).toBe(2 * AIR_BONUS_PER_SECOND);
+    expect(airBonus(2, 2)).toBe(Math.round(2 * AIR_BONUS_PER_SECOND * 1.5));
   });
 });

@@ -51,6 +51,12 @@ describe('stageWindow', () => {
   it('widens to include the stage being driven', () => {
     expect(stageWindow(20, 3, 0, 6)).toEqual({ start: 3, hidden: 3 });
   });
+
+  it('uncovers a page on every press while an old stage is being driven', () => {
+    expect(stageWindow(27, 15, 0, 4)).toEqual({ start: 15, hidden: 15 });
+    expect(stageWindow(27, 15, 4, 4)).toEqual({ start: 11, hidden: 11 });
+    expect(stageWindow(27, 15, 8, 4)).toEqual({ start: 7, hidden: 7 });
+  });
 });
 
 describe('gameStore.driveStage', () => {
@@ -63,6 +69,10 @@ describe('gameStore.driveStage', () => {
         time: 100,
         splits: [],
         prize: 10,
+        penalties: 0,
+        hits: 0,
+        airTime: 0,
+        airBonus: 0,
         repairCost: 0,
         parTime: 90,
       });

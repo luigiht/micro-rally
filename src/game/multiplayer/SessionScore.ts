@@ -7,16 +7,20 @@ export const PACE_POINTS = 1000;
 export const STAGE_WIN_POINTS = 300;
 /** Per section between checkpoints where a driver was faster. */
 export const SECTOR_WIN_POINTS = 50;
+/** Per second in the air over the stage's jumps: a big jump is worth about a section win. */
+export const AIR_POINTS_PER_SECOND = 50;
 
 export interface StagePoints {
   pace: number;
+  /** For time in the air; counts as soon as the run is in, like pace. */
+  air: number;
   /** STAGE_WIN_POINTS or 0; settled only once every seat has a result. */
   win: number;
   sectors: number;
   total: number;
 }
 
-const ZERO: Readonly<StagePoints> = { pace: 0, win: 0, sectors: 0, total: 0 };
+const ZERO: Readonly<StagePoints> = { pace: 0, air: 0, win: 0, sectors: 0, total: 0 };
 
 /** Time between consecutive splits, the first measured from the start. */
 function sectorTimes(splits: readonly number[]): number[] {
@@ -24,8 +28,8 @@ function sectorTimes(splits: readonly number[]): number[] {
 }
 
 /**
- * Points for one stage, per player with a result. Pace counts as soon as a
- * run is in; the stage win and section wins wait until every seat has run,
+ * Points for one stage, per player with a result. Pace and air time count
+ * as soon as a run is in; the stage win and section wins wait until every seat has run,
  * so a lone finisher sees provisional points. A retirement scores nothing
  * and wins nothing; ties share nothing.
  */
@@ -35,8 +39,13 @@ export function scoreStage(
 ): Map<string, StagePoints> {
   const out = new Map<string, StagePoints>();
   for (const r of results) {
-    const pace = r.time === null ? 0 : Math.round(PACE_POINTS * paceFactor(r.time, parTime));
-    out.set(r.playerId, { ...ZERO, pace, total: pace });
+    if (r.time === null) {
+      out.set(r.playerId, { ...ZERO });
+      continue;
+    }
+    const pace = Math.round(PACE_POINTS * paceFactor(r.time, parTime));
+    const air = Math.round(AIR_POINTS_PER_SECOND * Math.max(0, r.airTime ?? 0));
+    out.set(r.playerId, { ...ZERO, pace, air, total: pace + air });
   }
   if (results.length < SESSION_SEATS) return out;
 

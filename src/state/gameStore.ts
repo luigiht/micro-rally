@@ -17,6 +17,12 @@ export interface StageResult {
   time: number;
   splits: number[];
   prize: number;
+  /** Seconds added to `time` for hits, and how many hits. */
+  penalties: number;
+  hits: number;
+  /** Seconds in the air over the stage's jumps, and the cash they paid on top of the prize. */
+  airTime: number;
+  airBonus: number;
   repairCost: number;
   parTime: number;
   newRecord: boolean;
@@ -96,7 +102,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
     const prev = get().records[r.stageIndex];
     const newRecord = !prev || r.time < prev.best;
     set((s) => ({
-      money: Math.max(0, s.money + r.prize - r.repairCost),
+      money: Math.max(0, s.money + r.prize + r.airBonus - r.repairCost),
       records: newRecord
         ? { ...s.records, [r.stageIndex]: { best: r.time, splits: r.splits } }
         : s.records,

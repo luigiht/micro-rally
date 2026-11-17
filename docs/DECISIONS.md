@@ -5712,3 +5712,26 @@ bed)`. The road, its profile and every record stay as they were, so
      in `CATALOG_IDS`, so saves and multiplayer sessions that name it still
      validate, and its specs, model and livery are untouched. Clearing the
      flag puts it back on sale.
+
+269. **2026-11-17 — Penalties on the result, and an air-time bonus.** The
+     user asked for the scoring to add the penalty seconds and a bonus for
+     seconds in the air over jumps. Penalties were already in the scored
+     time (`StageRun.totalTime` = driving time + 2 s per hit, which the
+     prize's pace factor and multiplayer pace points both read) but the
+     result panels showed only the total; both now list "Hit penalties ×n
+     +Xs" under the time (`resultRows.ts`).
+     - **Air time is a separate bonus, not time off the clock** (the user's
+       pick): records, stage wins and section wins stay about pace.
+       `StageRun.onAir` counts spells of ≥ 0.3 s (`MIN_JUMP_AIR`), each
+       capped at 3 s (`MAX_JUMP_AIR`) so a cliff can't be farmed; a reset
+       drops a spell in progress.
+     - Single player: `airBonus` = $50/s × (1 + 0.25 per loop), on top of
+       the prize, not multiplied by its pace factor.
+     - Multiplayer: +50 points per second (`AIR_POINTS_PER_SECOND`),
+       counted with pace as soon as a run is in. The run sends `airTime`;
+       `checkResult` refuses a negative one, one over a quarter of the
+       time (`MAX_AIR_SHARE`), or any on a retirement. It is optional on
+       the wire and in storage, so older clients and runs counted before
+       this score none. Migration `20261117120000_session_air_time.sql`
+       (column `session_results.air_time`) must run on the Supabase
+       project before this deploys: the session select names the column.
