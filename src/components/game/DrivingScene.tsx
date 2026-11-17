@@ -10,6 +10,7 @@ import { calendarSlot, cycleSlot, type StageSlot } from '@/game/stage/StageGener
 import { createStageWorld } from '@/game/stage/StageWorld';
 import { TEST_TRACK, testTrackTerrain } from '@/game/stage/TestTrack';
 import type { VehiclePose } from '@/game/vehicle/interpolatePose';
+import { DEV_AUTOPILOT_KMH } from '@/lib/autopilotFlag';
 import { isSoftwareRenderer, rendererName } from '@/lib/gpu';
 import {
   DEFAULT_STAGE_RENDER,
@@ -17,6 +18,7 @@ import {
   StageRenderer,
 } from '@/render/stage/StageRenderer';
 import { dayTheme, flatTheme } from '@/render/theme/WorldTheme';
+import { useAutopilotStore } from '@/state/autopilotStore';
 import { useGameStore } from '@/state/gameStore';
 import { getLiveRelay } from '@/state/opponentStore';
 import { opponentOf, useSessionStore } from '@/state/sessionStore';
@@ -51,18 +53,6 @@ const DEV_SPAWN: number | 'town' | null = (() => {
   return Number.isFinite(d) && d > 0 ? d : null;
 })();
 
-/**
- * Development aid: `?autopilot` lets the car drive itself down the stage (for
- * recordings), at up to `?autopilot=<km/h>` (108 by default). Off in production.
- */
-const DEV_AUTOPILOT: number | null = (() => {
-  if (process.env.NODE_ENV === 'production' || typeof window === 'undefined') return null;
-  const raw = new URLSearchParams(window.location.search).get('autopilot');
-  if (raw === null) return null;
-  const kmh = Number(raw);
-  return (Number.isFinite(kmh) && kmh > 0 ? kmh : 108) / 3.6;
-})();
-
 /** Development aid: `?shot=<kind>` holds the cinematic camera on one shot kind (for recordings). */
 if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined') {
   const kind = new URLSearchParams(window.location.search).get('shot');
@@ -87,6 +77,9 @@ function StageDrive({
     [gameSeed, stageIndex, slot],
   );
   const drive = useMemo<DriveWorld>(() => {
+    // The launcher's demo run sets the speed; otherwise `?autopilot` with a career game.
+    const demo = useAutopilotStore.getState();
+    const autopilotKmh = demo.running ? demo.kmh : DEV_AUTOPILOT_KMH;
     const at =
       DEV_SPAWN === 'town' ? Math.max(0, (world.stage.town?.from ?? 120) - 120) : DEV_SPAWN;
     let spawn = world.stage.spawn;
@@ -102,7 +95,7 @@ function StageDrive({
       ...(world.trams ? { trams: world.trams } : {}),
       stage: world.stage,
       ...(at !== null && at > 0 ? { startAlong: at } : {}),
-      ...(DEV_AUTOPILOT !== null ? { autopilot: DEV_AUTOPILOT } : {}),
+      ...(autopilotKmh !== null ? { autopilot: autopilotKmh / 3.6 } : {}),
     };
   }, [world]);
   const group = useRef<Group>(null);

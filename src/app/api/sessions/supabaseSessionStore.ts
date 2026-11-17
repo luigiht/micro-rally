@@ -1,6 +1,11 @@
-import { isCatalogCar, type CatalogCarId } from '@/game/economy/cars';
+import type { CatalogCarId } from '@/game/economy/cars';
 import { isValidGameId } from '@/game/save/GameId';
-import { isSessionLength, sessionStageTypes, type SessionResult } from '@/game/multiplayer/Session';
+import {
+  isSessionLength,
+  sessionStageTypes,
+  storedSessionCar,
+  type SessionResult,
+} from '@/game/multiplayer/Session';
 import type { SessionStore, StoredPlayer, StoredSession } from './sessionStore';
 
 interface PlayerRow {
@@ -39,6 +44,12 @@ const SELECT =
   'session_players(seat,player_id,name,token_hash,car_id),' +
   'session_results(stage_index,player_id,time,splits,air_time)';
 
+/** A stored car as an optional field: absent when unset or unknown, a retired one's replacement. */
+function carField(raw: string | null): { carId?: CatalogCarId } {
+  const carId = storedSessionCar(raw);
+  return carId ? { carId } : {};
+}
+
 function fromRow(row: SessionRow): StoredSession | null {
   if (!isSessionLength(row.stage_count)) return null;
   const stageTypes = row.stage_types ? sessionStageTypes(row.stage_types) : undefined;
@@ -48,13 +59,13 @@ function fromRow(row: SessionRow): StoredSession | null {
     seed: Number(row.seed),
     stageCount: row.stage_count,
     ...(stageTypes ? { stageTypes } : {}),
-    ...(row.car_id && isCatalogCar(row.car_id) ? { carId: row.car_id } : {}),
+    ...carField(row.car_id),
     createdAt: Date.parse(row.created_at),
     players: row.session_players.map((p) => ({
       id: p.player_id,
       name: p.name,
       seat: p.seat,
-      ...(p.car_id && isCatalogCar(p.car_id) ? { carId: p.car_id } : {}),
+      ...carField(p.car_id),
       tokenHash: p.token_hash,
     })),
     results: row.session_results.map((r) => ({

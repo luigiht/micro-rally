@@ -5,6 +5,7 @@ import { formatGameId } from '@/game/save/GameId';
 import { fill, formatTime } from '@/i18n/format';
 import { useMessages } from '@/i18n/useMessages';
 import { writeGameParam } from '@/lib/save/gameUrl';
+import { useAutopilotStore } from '@/state/autopilotStore';
 import { useGameStore } from '@/state/gameStore';
 import { useSaveStore } from '@/state/saveStore';
 import { useStageHudStore } from '@/state/stageHudStore';
@@ -38,6 +39,7 @@ function exitGame() {
   ui.stopReplay();
   writeGameParam(null);
   useGameStore.getState().leaveGame();
+  useAutopilotStore.setState({ running: false });
 }
 
 /** The Game panel: this stage, every stage so far, and the driver's name + Game ID. */

@@ -372,9 +372,6 @@ export const it: Messages = {
     focus: {
       name: 'Albion RS Hatch',
     },
-    satory: {
-      name: 'Satory WRC',
-    },
     dakar: {
       name: 'Sirocco Dakar Truck',
     },
@@ -497,6 +494,22 @@ export const it: Messages = {
     slip: 'Deriva posteriore',
     yes: 'sì',
     no: 'no',
+  },
+  autopilot: {
+    title: 'Pilota automatico',
+    hint: 'Scegli un’auto e un tipo di prova: l’auto guida da sola, prova dopo prova. Non viene salvato nulla.',
+    car: 'Auto',
+    stageType: 'Tipo di prova',
+    speed: 'Velocità massima',
+    kmh: '{n} km/h',
+    start: 'Avvia',
+    restart: 'Riavvia',
+    change: 'Cambia',
+    cancel: 'Annulla',
+    stop: 'Ferma',
+    hide: 'Nascondi',
+    hideHint: 'P nasconde o mostra questa finestra',
+    summary: '{car} · {type} · {kmh} km/h',
   },
   surfaces: {
     tarmac: 'Asfalto',

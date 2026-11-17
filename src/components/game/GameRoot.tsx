@@ -1,6 +1,8 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { AutopilotLauncher, AutopilotWindow } from '@/components/autopilot/AutopilotWindow';
+import { useAutopilotLoop, useAutopilotWindowKey } from '@/components/autopilot/useAutopilotLoop';
 import { useMessages } from '@/i18n/useMessages';
 import { DebugOverlay } from '@/components/hud/DebugOverlay';
 import { HudToolbar } from '@/components/hud/HudToolbar';
@@ -10,6 +12,7 @@ import { StageProgress } from '@/components/hud/StageProgress';
 import { TouchControls } from '@/components/hud/TouchControls';
 import { SessionLobby } from '@/components/multiplayer/SessionLobby';
 import { SplashScreen } from '@/components/splash/SplashScreen';
+import { useAutopilotStore } from '@/state/autopilotStore';
 import { useGameStore } from '@/state/gameStore';
 import { useSessionStore } from '@/state/sessionStore';
 import { useUiStore } from '@/state/uiStore';
@@ -69,11 +72,38 @@ function SessionDriveShell() {
   return <DriveView session />;
 }
 
+/**
+ * `?autopilot`'s demo: the picked car drives itself through stage after
+ * stage of the picked type. No Game ID, so nothing is saved; the window
+ * stays in the corner to change the run or stop it, hidden with the HUD (H).
+ */
+function AutopilotShell() {
+  useAutopilotLoop();
+  useAutopilotWindowKey();
+  // H hides the window with the rest of the HUD; Hide or P hides only the window, for recordings.
+  const hudHidden = useUiStore((s) => s.hudHidden);
+  const windowHidden = useAutopilotStore((s) => s.windowHidden);
+  return (
+    <>
+      <DriveView />
+      {!hudHidden && !windowHidden && <AutopilotWindow />}
+    </>
+  );
+}
+
 export function GameRoot() {
+  const demo = useAutopilotStore((s) => s.running);
   const solo = useGameStore((s) => s.gameId !== null);
   const sessionScreen = useSessionStore((s) => (s.session ? s.screen : null));
+  if (demo) return <AutopilotShell />;
   if (solo) return <GameShell />;
   if (sessionScreen === 'drive') return <SessionDriveShell />;
   if (sessionScreen === 'lobby') return <SessionLobby />;
-  return <SplashScreen />;
+  // With `?autopilot`, the launcher floats over the start screen; Continue still drives the career on autopilot.
+  return (
+    <>
+      <SplashScreen />
+      <AutopilotLauncher />
+    </>
+  );
 }

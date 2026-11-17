@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type KeyboardEvent } from 'react';
-import { DEALERSHIP_CARS, carStats } from '@/game/economy/cars';
+import { CAR_CATALOG, carStats } from '@/game/economy/cars';
 import { CAR_SPECS } from '@/game/vehicle/CarSpec';
 import { formatMoney } from '@/i18n/format';
 import { useMessages } from '@/i18n/useMessages';
@@ -31,18 +31,17 @@ export function GarageDealership() {
   const [index, setIndex] = useState(() =>
     Math.max(
       0,
-      DEALERSHIP_CARS.findIndex((c) => c.id === active),
+      CAR_CATALOG.findIndex((c) => c.id === active),
     ),
   );
-  const car = DEALERSHIP_CARS[index]!;
+  const car = CAR_CATALOG[index]!;
   const spec = CAR_SPECS[car.id];
   const text = m.cars[car.id];
   const stats = carStats(spec);
   const isOwned = owned.includes(car.id);
   const inUse = active === car.id;
   const affordable = car.price <= money;
-  const step = (d: number) =>
-    setIndex((i) => (i + d + DEALERSHIP_CARS.length) % DEALERSHIP_CARS.length);
+  const step = (d: number) => setIndex((i) => (i + d + CAR_CATALOG.length) % CAR_CATALOG.length);
   const onKey = (e: KeyboardEvent<HTMLElement>) => {
     if (e.key === 'ArrowRight') step(1);
     else if (e.key === 'ArrowLeft') step(-1);
@@ -83,7 +82,7 @@ export function GarageDealership() {
           <PixelIcon name="right" />
         </button>
         <div className="col-start-2 row-start-2 flex justify-center gap-2">
-          {DEALERSHIP_CARS.map((c, i) => (
+          {CAR_CATALOG.map((c, i) => (
             <button
               key={c.id}
               type="button"

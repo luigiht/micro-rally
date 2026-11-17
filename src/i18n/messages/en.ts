@@ -364,9 +364,6 @@ export const en = {
     focus: {
       name: 'Albion RS Hatch',
     },
-    satory: {
-      name: 'Satory WRC',
-    },
     dakar: {
       name: 'Sirocco Dakar Truck',
     },
@@ -478,6 +475,22 @@ export const en = {
     slip: 'Rear slip',
     yes: 'yes',
     no: 'no',
+  },
+  autopilot: {
+    title: 'Autopilot',
+    hint: 'Pick a car and a stage type: the car drives itself, stage after stage. Nothing is saved.',
+    car: 'Car',
+    stageType: 'Stage type',
+    speed: 'Top speed',
+    kmh: '{n} km/h',
+    start: 'Start',
+    restart: 'Restart',
+    change: 'Change',
+    cancel: 'Cancel',
+    stop: 'Stop',
+    hide: 'Hide',
+    hideHint: 'P hides or shows this window',
+    summary: '{car} · {type} · {kmh} km/h',
   },
   surfaces: {
     tarmac: 'Tarmac',

@@ -10,7 +10,6 @@ export const CATALOG_IDS = [
   'groupb',
   's1',
   'focus',
-  'satory',
   'dakar',
   'lemans',
   'buggy',
@@ -23,8 +22,6 @@ export interface CarListing {
   price: number;
   /** Shown with a "Special" tag in the dealership: a one-off outside the rally-car ladder. */
   special?: boolean;
-  /** Kept in the code (specs, model, saves that own it) but not offered in the dealership. */
-  hidden?: boolean;
 }
 
 export const CAR_CATALOG: readonly CarListing[] = [
@@ -36,15 +33,28 @@ export const CAR_CATALOG: readonly CarListing[] = [
   { id: 'groupb', price: 14000 },
   { id: 's1', price: 18000 },
   { id: 'focus', price: 21000 },
-  { id: 'satory', price: 23500, hidden: true },
   { id: 'dakar', price: 26000, special: true },
   { id: 'lemans', price: 29000, special: true },
   { id: 'buggy', price: 32000, special: true },
   { id: 'berlinette', price: 35000, special: true },
 ];
 
-/** The listings the garage dealership shows, in showroom order. */
-export const DEALERSHIP_CARS: readonly CarListing[] = CAR_CATALOG.filter((c) => !c.hidden);
+/**
+ * Cars taken out of the game. Their ids can still turn up in saves and
+ * multiplayer sessions from before: a save that owned one gets its price
+ * back, and a session seat that picked one drives `replacement` instead.
+ *
+ * - `satory`, the Satory WRC (a mid-2000s three-door World Rally Car):
+ *   hidden from the dealership in decision 268, removed in decision 271.
+ *   Its spec (`CarSpec.ts`), hull (`render/car/SatoryShape.ts`), livery
+ *   (`render/car/SatoryLivery.ts`), body (`bodies/SatoryHatchBody.tsx`),
+ *   interior and names last live in commit ee331c7.
+ */
+export const RETIRED_CARS: Readonly<
+  Record<string, { readonly refund: number; readonly replacement: CatalogCarId }>
+> = {
+  satory: { refund: 23500, replacement: 'wrc' },
+};
 
 export function isCatalogCar(id: string): id is CatalogCarId {
   return (CATALOG_IDS as readonly string[]).includes(id);

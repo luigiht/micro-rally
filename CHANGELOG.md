@@ -7,6 +7,12 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ## 2026-11-17
 
+### Removed
+
+- **The Satory WRC is gone.** It no longer appears anywhere in the game.
+  A save that owned it gets its $23,500 back, and a multiplayer driver who
+  picked it now drives the Riviera WRC [271].
+
 ### Added
 
 - **Air time pays.** Every second in the air over a jump pays an air bonus

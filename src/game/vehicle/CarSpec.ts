@@ -8,7 +8,6 @@ export type CarId =
   | 'groupb'
   | 's1'
   | 'focus'
-  | 'satory'
   | 'dakar'
   | 'lemans'
   | 'buggy'
@@ -272,29 +271,6 @@ export const CAR_SPECS: Readonly<Record<CarId, CarSpec>> = {
     brakeDecel: 10.5,
     yawInertiaScale: 1.55,
     turboForce: 0.28,
-    turboDuration: 3,
-    cabinDrop: -0.02,
-  },
-  /**
-   * Mid-2000s three-door World Rally Car (its body: `SatoryHatchBody`):
-   * 2.555 m wheelbase, 1.55 m track, 50/50 drive, the strongest of the
-   * modern rally hatches.
-   */
-  satory: {
-    ...BASE,
-    id: 'satory',
-    mass: 1230,
-    cgToFront: 1.28,
-    cgToRear: 1.275,
-    cgHeight: 0.47,
-    trackWidth: 1.55,
-    wheelRadius: 0.33,
-    peakTorque: 460,
-    dragCoeff: 0.68,
-    frontDrive: 0.5,
-    brakeDecel: 10.5,
-    yawInertiaScale: 1.5,
-    turboForce: 0.3,
     turboDuration: 3,
     cabinDrop: -0.02,
   },

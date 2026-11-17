@@ -1,4 +1,4 @@
-import { isCatalogCar, type CatalogCarId } from '../economy/cars';
+import { isCatalogCar, RETIRED_CARS, type CatalogCarId } from '../economy/cars';
 import { isValidGameId } from '../save/GameId';
 import { sanitizeDriverName } from '../save/SaveFile';
 import { RALLY_CYCLE, type StageTypeId } from '../stage/regions';
@@ -205,6 +205,12 @@ export function sessionCar(raw: unknown): CatalogCarId | null {
   return typeof raw === 'string' && isCatalogCar(raw) ? raw : null;
 }
 
+/** A car stored on a session: a pickable one, or a retired one's replacement (see `RETIRED_CARS`). */
+export function storedSessionCar(raw: unknown): CatalogCarId | null {
+  if (typeof raw === 'string' && RETIRED_CARS[raw]) return RETIRED_CARS[raw].replacement;
+  return sessionCar(raw);
+}
+
 /** A name for the session's scoreboard: trimmed and capped like a driver name; empty when unusable. */
 export function sessionDriverName(raw: unknown): string {
   return typeof raw === 'string' ? sanitizeDriverName(raw) : '';
@@ -213,7 +219,7 @@ export function sessionDriverName(raw: unknown): string {
 function parsePlayer(raw: unknown): SessionPlayer | null {
   if (!isRecord(raw)) return null;
   const { id, name, seat } = raw;
-  const carId = raw.carId === null ? null : sessionCar(raw.carId);
+  const carId = raw.carId === null ? null : storedSessionCar(raw.carId);
   if (typeof id !== 'string' || typeof name !== 'string' || !Number.isInteger(seat)) return null;
   if (carId === null && raw.carId !== null) return null;
   return { id, name, seat: seat as number, carId };

@@ -6,10 +6,12 @@ import {
   parseSessionView,
   SESSION_STAGE_TYPES,
   sessionBrief,
+  sessionCar,
   sessionOver,
   sessionStage,
   sessionStageTypes,
   stageToDrive,
+  storedSessionCar,
   type SessionResult,
   type SessionView,
 } from '@/game/multiplayer/Session';
@@ -114,6 +116,15 @@ describe('checkResult', () => {
     expect(at(100, -1)).toBe('invalid_air_time');
     expect(at(100, 100 * MAX_AIR_SHARE + 1)).toBe('invalid_air_time');
     expect(at(null, 2)).toBe('invalid_air_time');
+  });
+});
+
+describe('retired cars', () => {
+  it('stand in a replacement for a stored retired car, and can no longer be picked', () => {
+    expect(storedSessionCar('satory')).toBe('wrc');
+    expect(storedSessionCar('buggy')).toBe('buggy');
+    expect(storedSessionCar('nope')).toBeNull();
+    expect(sessionCar('satory')).toBeNull();
   });
 });
 

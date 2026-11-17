@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { buildCarHull, type HullSpec } from '@/render/car/CarHull';
 import { loft, monotone } from '@/render/car/HullLoft';
 import { BERLINETTE_HULL } from '@/render/car/BerlinetteShape';
-import { SATORY_HULL } from '@/render/car/SatoryShape';
 
 describe('hull loft', () => {
   it('runs a monotone curve through its keys without overshooting them', () => {
@@ -41,8 +40,8 @@ describe('hull loft', () => {
   });
 
   it('rounds sections with extra profile points and keeps a flat hull as it was', () => {
-    const flat: HullSpec = { ...SATORY_HULL, rounding: undefined };
-    const round = buildCarHull(SATORY_HULL);
+    const flat: HullSpec = { ...BERLINETTE_HULL, rounding: undefined };
+    const round = buildCarHull(BERLINETTE_HULL);
     const plain = buildCarHull(flat);
     expect(round.positions.length).toBeGreaterThan(plain.positions.length * 1.2);
     // The (lightly) crowned roof stands over its edge: the highest point is on the centre line.
@@ -55,10 +54,10 @@ describe('hull loft', () => {
       }
     }
     expect(Math.abs(topX)).toBeLessThan(1e-6);
-    expect(top).toBeGreaterThan(1.33);
+    expect(top).toBeGreaterThan(1.13);
   });
 
-  it('measures both new cars to their references', () => {
+  it('measures the Berlinette to its reference', () => {
     const extent = (hull: HullSpec) => {
       const m = buildCarHull(hull);
       const r = { z0: Infinity, z1: -Infinity, x: 0, y: 0 };
@@ -70,9 +69,6 @@ describe('hull loft', () => {
       }
       return r;
     };
-    const satory = extent(SATORY_HULL);
-    expect(satory.z1 - satory.z0).toBeCloseTo(4.17, 1);
-    expect(satory.x * 2).toBeCloseTo(1.8, 1);
     const berlinette = extent(BERLINETTE_HULL);
     expect(berlinette.z1 - berlinette.z0).toBeCloseTo(3.75, 1);
     expect(berlinette.x * 2).toBeCloseTo(1.58, 1);
