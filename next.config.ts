@@ -17,6 +17,7 @@ const nextConfig: NextConfig = {
   env: { NEXT_PUBLIC_BUILD_ID: BUILD_ID },
   poweredByHeader: false,
   transpilePackages: ['three'],
+  experimental: { agentUpgrade: 'security' },
   async headers() {
     return [{ source: '/:path*', headers: SECURITY_HEADERS }];
   },
