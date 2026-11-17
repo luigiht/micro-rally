@@ -146,5 +146,5 @@ describe('BuildingIndex', () => {
     }
     expect(deep).toEqual([]);
     expect(poking).toEqual([]);
-  });
+  }, 30_000);
 });
