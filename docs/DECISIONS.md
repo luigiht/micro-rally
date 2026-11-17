@@ -5735,3 +5735,48 @@ bed)`. The road, its profile and every record stay as they were, so
        this score none. Migration `20261117120000_session_air_time.sql`
        (column `session_results.air_time`) must run on the Supabase
        project before this deploys: the session select names the column.
+
+270. **2026-11-17 — An autopilot launcher for demos.** At the user's
+     request, `?autopilot` also opens a small window over the start screen
+     to pick a car, a stage type and a top speed, and then drives on its
+     own, stage after stage.
+     - The demo is a game with no Game ID, like a multiplayer stage
+       (`useAutopilotStore.start` sets the game store the way
+       `driveSessionStage` does), so nothing is saved; `stageTypes` holds
+       the one picked type, so `cycleSlot` makes every index that type,
+       cities and circuits included. Each start draws a new seed.
+     - `useAutopilotLoop` calls `nextStage` 4 s after each finish, waiting
+       while a panel or the replay is open.
+     - It stays a development aid: `DEV_AUTOPILOT_KMH` (moved to
+       `lib/autopilotFlag.ts`) is null in production, as before. The window
+       mounts after hydration (`AutopilotLauncher`), since the server can't
+       see the flag. Continue on the start screen keeps the old behaviour,
+       the career on autopilot, which the video recorder relies on.
+     - The window hides with the HUD (H), and on its own with its Hide
+       button or P (`windowHidden`, `useAutopilotWindowKey`) so recordings
+       keep the HUD without it. P is a dev-only key, handled in the demo
+       shell rather than `KeyboardControls`.
+
+271. **2026-11-17 — The Satory WRC removed from the game.** At the user's
+     request the Satory, hidden from the dealership in decision 268, is
+     taken out entirely so it shows nowhere: not in the splash's demo
+     drive, the multiplayer lobby's car picker or the autopilot launcher,
+     which all list `CATALOG_IDS`.
+     - Gone: its id from `CATALOG_IDS`, `CAR_CATALOG` and `CarId`, its spec,
+       `SatoryShape.ts`, `SatoryLivery.ts`, `SatoryHatchBody.tsx`, its
+       interior and its names in the three dictionaries. With no hidden car
+       left, `CarListing.hidden` and `DEALERSHIP_CARS` went too; the
+       dealership lists `CAR_CATALOG`.
+     - Kept as a reference: `RETIRED_CARS` in `cars.ts` names the car, the
+       decisions and commit ee331c7, which last holds all of its code.
+     - Saves: `parseSaveFile` drops an owned retired car (as it drops any
+       unknown id) and adds its $23,500 price to the money, once, since the
+       parsed save no longer owns it; a driver in it is put in the Rally
+       Hatch.
+     - Sessions: a seat stored with it reads as the Riviera WRC
+       (`storedSessionCar`), so sessions that picked it still load and
+       drive; it can't be picked any more (`sessionCar`).
+     - The Xsara reference model's credit left `CREDITS.md`, as nothing
+       that ships is measured from it now; the model stays in the untracked
+       `context/` folder. Tests that used the Satory's hull (pillar strip,
+       rounding, loft) use the Berlinette's.

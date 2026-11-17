@@ -1,5 +1,5 @@
 import { sanitizeUpgrades, type UpgradeLevels } from '../economy/upgrades';
-import { isCatalogCar, type CatalogCarId } from '../economy/cars';
+import { isCatalogCar, RETIRED_CARS, type CatalogCarId } from '../economy/cars';
 import { stageSlot, type StageTypeId } from '../stage/regions';
 import { isValidGameId } from './GameId';
 
@@ -295,12 +295,17 @@ function parseCurrent(raw: Record<string, unknown>): SaveFile | null {
     typeof raw.carId === 'string' && isCatalogCar(raw.carId) && owned.includes(raw.carId)
       ? raw.carId
       : 'hatchback';
+  // A car taken out of the game is dropped from the garage above and its price paid back, once.
+  const refund = [...new Set(raw.ownedCars)].reduce<number>(
+    (sum, c) => sum + (typeof c === 'string' ? (RETIRED_CARS[c]?.refund ?? 0) : 0),
+    0,
+  );
   return {
     version: SAVE_VERSION,
     gameId: raw.gameId,
     driverName: sanitizeDriverName(raw.driverName),
     gameSeed: raw.gameSeed >>> 0,
-    money: Math.max(0, Math.round(raw.money)),
+    money: Math.max(0, Math.round(raw.money)) + refund,
     stageIndex: Math.max(0, Math.floor(raw.stageIndex)),
     records,
     carId,

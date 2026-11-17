@@ -375,9 +375,6 @@ export const es: Messages = {
     focus: {
       name: 'Albion RS Hatch',
     },
-    satory: {
-      name: 'Satory WRC',
-    },
     dakar: {
       name: 'Sirocco Dakar Truck',
     },
@@ -497,6 +494,22 @@ export const es: Messages = {
     slip: 'Deriva trasera',
     yes: 'sí',
     no: 'no',
+  },
+  autopilot: {
+    title: 'Piloto automático',
+    hint: 'Elige un coche y un tipo de tramo: el coche conduce solo, tramo tras tramo. No se guarda nada.',
+    car: 'Coche',
+    stageType: 'Tipo de tramo',
+    speed: 'Velocidad máxima',
+    kmh: '{n} km/h',
+    start: 'Empezar',
+    restart: 'Reiniciar',
+    change: 'Cambiar',
+    cancel: 'Cancelar',
+    stop: 'Parar',
+    hide: 'Ocultar',
+    hideHint: 'P oculta o muestra esta ventana',
+    summary: '{car} · {type} · {kmh} km/h',
   },
   surfaces: {
     tarmac: 'Asfalto',

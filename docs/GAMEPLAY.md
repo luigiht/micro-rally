@@ -326,7 +326,16 @@ palette (ink on paper, with the rally orange for emphasis only).
   checkpoints behind the spawn counted as passed, so a finish can be reached
   quickly; `/?spawn=town` starts 120 m before the stage's town.
 - `/?autopilot[=<km/h>]` lets the car drive the stage itself (pure-pursuit
-  steering, speed read from the bends ahead and the surface's grip), and
+  steering, speed read from the bends ahead and the surface's grip). It also
+  puts a small Autopilot window over the start screen: pick a car (any in
+  the catalogue), a stage type (the rally types, City or
+  Circuit) and a top speed, and Start drives an unsaved demo on fresh roads,
+  moving on to the next stage of that type 4 s after each finish (it waits
+  while a panel or the replay is open). While it runs, the window folds to
+  a summary with Change (Restart draws new roads), Stop and Hide; Hide or P
+  tucks the window away while the rest of the HUD stays (for recordings),
+  P brings it back, and H hides it with the HUD. Continue on the
+  start screen still drives the saved career on autopilot. And
   `/?shot=<kind>` holds the cinematic camera on one shot kind; the video
   recorder in `my-video/scripts/record.mjs` uses both. All of these are
   ignored in production builds.

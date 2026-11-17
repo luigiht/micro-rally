@@ -68,6 +68,16 @@ describe('SaveFile', () => {
     expect(sanitizeDriverName('x'.repeat(40))).toHaveLength(24);
   });
 
+  it('pays back a retired car once and puts its driver back in the Rally Hatch', () => {
+    const owner = { ...VALID, carId: 'satory', ownedCars: ['hatchback', 'wrc', 'satory'] };
+    const s = parseSaveFile(JSON.parse(JSON.stringify(owner)))!;
+    expect(s.money).toBe(VALID.money + 23500);
+    expect(s.ownedCars).toEqual(['hatchback', 'wrc']);
+    expect(s.carId).toBe('hatchback');
+    // The parsed save no longer owns it, so loading it again pays nothing more.
+    expect(parseSaveFile(JSON.parse(JSON.stringify(s)))!.money).toBe(s.money);
+  });
+
   it('picks the newest save', () => {
     const older = { ...VALID, updatedAt: 1 };
     const newer = { ...VALID, updatedAt: 2 };

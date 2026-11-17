@@ -279,8 +279,7 @@ flowchart LR
   Densely lofted hulls (`HullLoft.ts`: monotone curves through measured
   keyframes, stations at every break) can round their sections
   (`HullSpec.rounding`, per-station `crown` and `bow`) and glaze screens by
-  flag (`screen`, `rail`); the Satory's and Berlinette's are
-  `SatoryShape.ts` and `BerlinetteShape.ts`. The Riviera's are drawn in
+  flag (`screen`, `rail`); the Berlinette's is `BerlinetteShape.ts`. The Riviera's are drawn in
   `RivieraLivery.ts`.
 - `StageRenderer` owns every three.js object for a stage and disposes them
   together; chunk managers stream around the car via `ChunkStreamer`: a

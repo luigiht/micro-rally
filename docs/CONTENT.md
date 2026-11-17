@@ -701,21 +701,20 @@ bumpers. Liveries are colour-blocked originals. Each car also has its own
 interior (`components/game/interior/interiorSpecs.ts`): cabin envelope,
 dashboard kit and palette.
 
-| id           | Name                  | Shape (measured from reference)            | Mass    | Body file             |
-| ------------ | --------------------- | ------------------------------------------ | ------- | --------------------- |
-| `hatchback`  | Rally Hatch           | Chunky 1990s hatch, orange over cream      | 1000 kg | `HatchbackBody.tsx`   |
-| `berlinette` | Dieppe Berlinette     | A110-style berlinette, lofted from a photo | 820 kg  | `BerlinetteBody.tsx`  |
-| `coupe`      | Tricolore Coupé       | Stratos-shaped Group 4 wedge               | 980 kg  | `CoupeBody.tsx`       |
-| `t16`        | Sochaux T16           | 205 T16-style Group B hatch                | 940 kg  | `T16HatchBody.tsx`    |
-| `saloon`     | Boreal Saloon         | Impreza S6 WRC-shaped saloon               | 1230 kg | `SaloonBody.tsx`      |
-| `wrc`        | Riviera WRC           | Late-80s Group A five-door hatch           | 1230 kg | `WrcHatchBody.tsx`    |
-| `groupb`     | Tempesta Group B      | Group B monster with box flares            | 960 kg  | `GroupBBody.tsx`      |
-| `s1`         | Edelweiss S1          | Sport Quattro S1 E2-shaped coupé           | 1090 kg | `S1CoupeBody.tsx`     |
-| `focus`      | Albion RS Hatch       | First-gen Focus hatch in works WRC trim    | 1230 kg | `FocusHatchBody.tsx`  |
-| `satory`     | Satory WRC            | Xsara-style WRC hatch, lofted from a photo | 1230 kg | `SatoryHatchBody.tsx` |
-| `dakar`      | Sirocco Dakar Truck   | Rally-raid truck, twice a car's size       | 2600 kg | `DakarTruckBody.tsx`  |
-| `lemans`     | Mulsanne LM Prototype | 917K-shaped 1970 Le Mans coupé             | 800 kg  | `LeMansBody.tsx`      |
-| `buggy`      | Toro Dakar Buggy      | SMG-style two-wheel-drive raid buggy       | 1450 kg | `BuggyBody.tsx`       |
+| id           | Name                  | Shape (measured from reference)            | Mass    | Body file            |
+| ------------ | --------------------- | ------------------------------------------ | ------- | -------------------- |
+| `hatchback`  | Rally Hatch           | Chunky 1990s hatch, orange over cream      | 1000 kg | `HatchbackBody.tsx`  |
+| `berlinette` | Dieppe Berlinette     | A110-style berlinette, lofted from a photo | 820 kg  | `BerlinetteBody.tsx` |
+| `coupe`      | Tricolore Coupé       | Stratos-shaped Group 4 wedge               | 980 kg  | `CoupeBody.tsx`      |
+| `t16`        | Sochaux T16           | 205 T16-style Group B hatch                | 940 kg  | `T16HatchBody.tsx`   |
+| `saloon`     | Boreal Saloon         | Impreza S6 WRC-shaped saloon               | 1230 kg | `SaloonBody.tsx`     |
+| `wrc`        | Riviera WRC           | Late-80s Group A five-door hatch           | 1230 kg | `WrcHatchBody.tsx`   |
+| `groupb`     | Tempesta Group B      | Group B monster with box flares            | 960 kg  | `GroupBBody.tsx`     |
+| `s1`         | Edelweiss S1          | Sport Quattro S1 E2-shaped coupé           | 1090 kg | `S1CoupeBody.tsx`    |
+| `focus`      | Albion RS Hatch       | First-gen Focus hatch in works WRC trim    | 1230 kg | `FocusHatchBody.tsx` |
+| `dakar`      | Sirocco Dakar Truck   | Rally-raid truck, twice a car's size       | 2600 kg | `DakarTruckBody.tsx` |
+| `lemans`     | Mulsanne LM Prototype | 917K-shaped 1970 Le Mans coupé             | 800 kg  | `LeMansBody.tsx`     |
+| `buggy`      | Toro Dakar Buggy      | SMG-style two-wheel-drive raid buggy       | 1450 kg | `BuggyBody.tsx`      |
 
 The buggy's mudguards are not part of its hull: `render/car/FenderShell.ts`
 lofts a thick half-ring shell around each axle from an outline of

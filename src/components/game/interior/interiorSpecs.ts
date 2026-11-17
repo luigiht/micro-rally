@@ -314,28 +314,6 @@ export const INTERIORS: Readonly<Record<CarId, InteriorSpec>> = {
       accent: '#8dc63f',
     },
   }),
-  /** Mid-2000s three-door WRC: red cage, black seats with blue harness, digital dash. */
-  satory: base({
-    halfWidth: 0.8,
-    roofY: 1.31,
-    cowlZ: 0.9,
-    cowlY: 0.76,
-    screenTopZ: 0.36,
-    rearZ: -1.25,
-    dash: 'digital',
-    lever: 'sequential',
-    palette: {
-      dash: BLACK,
-      lining: '#3a3944',
-      door: BLACK,
-      cage: '#d8262a',
-      seat: '#1f1e24',
-      seatAccent: '#1d3f94',
-      harness: '#1d3f94',
-      wheel: '#1f1e24',
-      accent: '#f2b81f',
-    },
-  }),
   /**
    * Rally-raid truck: cab-over layout with the driver 0.8 m behind the screen
    * and 0.74 m above a floor the seats stand over on pedestals, a dark deep

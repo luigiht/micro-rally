@@ -6,8 +6,6 @@ import { WRC_STATIONS } from '@/render/car/HullShapes';
 import { BERLINETTE_LIVERY } from '@/render/car/BerlinetteLivery';
 import { BERLINETTE_HULL } from '@/render/car/BerlinetteShape';
 import { RIVIERA_LIVERY } from '@/render/car/RivieraLivery';
-import { SATORY_LIVERY } from '@/render/car/SatoryLivery';
-import { SATORY_HULL } from '@/render/car/SatoryShape';
 
 const SPEC: HullSpec = {
   wells: wellsFor(CAR_SPECS.wrc),
@@ -113,11 +111,7 @@ describe('hull livery', () => {
     return out;
   };
 
-  it("paints the Satory's tail panel across and leaves the Berlinette's doors plain blue", () => {
-    // The Satory's blue (linear red channel ≈ 0.013) covers the tail panel from side to side.
-    const tail = pieces(SATORY_LIVERY, SATORY_HULL).filter((f) => f.z < -1.98 && f.r < 0.05);
-    expect(tail.some((f) => f.x > 0.5)).toBe(true);
-    expect(tail.some((f) => f.x < -0.5)).toBe(true);
+  it("leaves the Berlinette's doors plain blue", () => {
     // The Berlinette's doors carry only their details (gaps, handles): no pale roundel.
     const doors = pieces(BERLINETTE_LIVERY, BERLINETTE_HULL).filter(
       (f) => f.z > -0.2 && f.z < 0.75 && Math.abs(f.x) > 0.6,

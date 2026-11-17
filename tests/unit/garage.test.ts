@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CAR_CATALOG,
-  DEALERSHIP_CARS,
-  carPrice,
-  carStats,
-  isCatalogCar,
-} from '@/game/economy/cars';
+import { CAR_CATALOG, RETIRED_CARS, carPrice, carStats, isCatalogCar } from '@/game/economy/cars';
 import {
   applyUpgrades,
   nextUpgradePrice,
@@ -88,7 +82,6 @@ describe('cars', () => {
       'groupb',
       's1',
       'focus',
-      'satory',
       'dakar',
       'lemans',
       'buggy',
@@ -112,10 +105,9 @@ describe('cars', () => {
     ]);
   });
 
-  it('keeps the Satory WRC in the catalog but out of the dealership', () => {
-    expect(isCatalogCar('satory')).toBe(true);
-    expect(DEALERSHIP_CARS.map((c) => c.id)).not.toContain('satory');
-    expect(DEALERSHIP_CARS).toEqual(CAR_CATALOG.filter((c) => c.id !== 'satory'));
+  it('has taken the Satory WRC out of the game, refunding it and standing in for it', () => {
+    expect(isCatalogCar('satory')).toBe(false);
+    expect(RETIRED_CARS.satory).toEqual({ refund: 23500, replacement: 'wrc' });
   });
 });
 
