@@ -17,6 +17,8 @@ interface ResultRow {
   player_id: string;
   time: number | null;
   splits: unknown;
+  /** Seconds in the air; 0 on runs counted before it was sent. */
+  air_time: number;
 }
 
 interface SessionRow {
@@ -35,7 +37,7 @@ interface SessionRow {
 const SELECT =
   'id,seed,stage_count,car_id,stage_types,created_at,' +
   'session_players(seat,player_id,name,token_hash,car_id),' +
-  'session_results(stage_index,player_id,time,splits)';
+  'session_results(stage_index,player_id,time,splits,air_time)';
 
 function fromRow(row: SessionRow): StoredSession | null {
   if (!isSessionLength(row.stage_count)) return null;
@@ -60,6 +62,7 @@ function fromRow(row: SessionRow): StoredSession | null {
       playerId: r.player_id,
       time: r.time,
       splits: Array.isArray(r.splits) ? (r.splits as number[]) : [],
+      airTime: Number(r.air_time) || 0,
     })),
   };
 }
@@ -165,6 +168,7 @@ export class SupabaseSessionStore implements SessionStore {
       player_id: r.playerId,
       time: r.time,
       splits: r.splits,
+      air_time: r.airTime ?? 0,
     });
   }
 }

@@ -108,6 +108,10 @@ describe('gameStore persistence', () => {
       time: 90,
       splits: [30, 60],
       prize: 400,
+      penalties: 0,
+      hits: 0,
+      airTime: 2,
+      airBonus: 100,
       repairCost: 50,
       parTime: 100,
     });
@@ -115,7 +119,7 @@ describe('gameStore persistence', () => {
     expect(snap).toMatchObject({
       gameId: 'ABCD2345',
       driverName: 'Ada',
-      money: 350,
+      money: 450,
       updatedAt: 123,
     });
     expect(snap.records[0]!.best).toBe(90);
@@ -124,7 +128,7 @@ describe('gameStore persistence', () => {
     expect(useGameStore.getState().gameId).toBeNull();
     useGameStore.getState().loadGame(snap, 'Grace');
     const s = useGameStore.getState();
-    expect(s.money).toBe(350);
+    expect(s.money).toBe(450);
     expect(s.driverName).toBe('Grace');
     expect(s.gameSeed).toBe(snap.gameSeed);
   });

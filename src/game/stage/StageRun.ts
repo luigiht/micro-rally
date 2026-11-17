@@ -12,6 +12,10 @@ export const REPAIR_FEE = 25;
 const HIT_SPEED = 3;
 const HIT_COOLDOWN = 1;
 const RESPAWN_BACKOFF = 6;
+/** Shorter spells off the ground are bumps and crests, not jumps, and earn no air time. */
+export const MIN_JUMP_AIR = 0.3;
+/** Most air time one jump can earn, so driving off a cliff can't farm the bonus. */
+export const MAX_JUMP_AIR = 3;
 
 /** Stage timing state machine: countdown → running → finished. Advanced in fixed sim steps. */
 export class StageRun {
@@ -22,6 +26,9 @@ export class StageRun {
   penalties = 0;
   repairCost = 0;
   hits = 0;
+  /** Seconds airborne over the jumps counted so far (see `MIN_JUMP_AIR`, `MAX_JUMP_AIR`). */
+  airTime = 0;
+  jumps = 0;
   readonly splits: number[] = [];
   /** Driving time (no penalties) at each gate passed: a replay's clock, to know which lap it is on. */
   readonly passTimes: number[] = [];
@@ -29,6 +36,8 @@ export class StageRun {
   private skipped = 0;
   private readonly tracker: CheckpointTracker;
   private hitCooldown = 0;
+  /** The airborne spell in progress, seconds. */
+  private spell = 0;
   private readonly sample: RoadSample = { x: 0, z: 0, heading: 0 };
   private readonly hit: RoadHit = createRoadHit();
   private progressValue = 0;
@@ -147,9 +156,35 @@ export class StageRun {
     if (gate >= 0) {
       this.splits.push(this.totalTime);
       this.passTimes.push(this.time);
-      if (this.tracker.finished) this.phase = 'finished';
+      if (this.tracker.finished) {
+        this.land();
+        this.phase = 'finished';
+      }
     }
     return gate;
+  }
+
+  /**
+   * Feed each sim step's ground contact while running. A spell off the ground
+   * counts as a jump when the car lands (or crosses the finish in the air).
+   */
+  onAir(grounded: boolean, dt: number): void {
+    if (this.phase !== 'running') return;
+    if (grounded) this.land();
+    else this.spell += dt;
+  }
+
+  private land(): void {
+    if (this.spell >= MIN_JUMP_AIR) {
+      this.airTime += Math.min(this.spell, MAX_JUMP_AIR);
+      this.jumps++;
+    }
+    this.spell = 0;
+  }
+
+  /** A reset to the last checkpoint is not a jump: the spell in progress is dropped. */
+  cancelAir(): void {
+    this.spell = 0;
   }
 
   /** Returns true when the impact counts as a hit (time penalty + repair fee). */

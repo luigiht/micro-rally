@@ -5,6 +5,27 @@ tags yet: `main` is deployed continuously, so entries are grouped by the day
 they landed. The numbered entries in [docs/DECISIONS.md](docs/DECISIONS.md)
 hold the reasoning behind each change; the numbers in brackets point there.
 
+## 2026-11-17
+
+### Added
+
+- **Air time pays.** Every second in the air over a jump pays an air bonus
+  on top of the prize ($50 a second, growing with each loop), and scores
+  50 points a second in multiplayer. Bumps don't count, and one jump counts
+  at most 3 seconds [269].
+
+### Changed
+
+- **Penalties on the result.** The result panels list the hit penalties
+  inside your time, with how many hits and the seconds they added [269].
+
+### Fixed
+
+- **"Show more" in the stage list works on the first press.** While an
+  older stage was being driven, the first presses uncovered nothing; each
+  press now adds the next stages below the ones shown. The link also has a
+  taller click area and a pointer cursor.
+
 ## 2026-11-16
 
 ### Changed

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { SessionResult, SessionView } from '@/game/multiplayer/Session';
 import {
+  AIR_POINTS_PER_SECOND,
   PACE_POINTS,
   SECTOR_WIN_POINTS,
   STAGE_WIN_POINTS,
@@ -19,10 +20,24 @@ const r = (
 describe('scoreStage', () => {
   it('pays pace points from the prize curve as soon as a run is in', () => {
     const solo = scoreStage([r('a', 100)], 100).get('a')!;
-    expect(solo).toEqual({ pace: PACE_POINTS, win: 0, sectors: 0, total: PACE_POINTS });
+    expect(solo).toEqual({
+      pace: PACE_POINTS,
+      air: 0,
+      win: 0,
+      sectors: 0,
+      total: PACE_POINTS,
+    });
     // 20 % under par is the curve's +25 % ceiling; double par its 0.3 floor.
     expect(scoreStage([r('a', 80)], 100).get('a')!.pace).toBe(1250);
     expect(scoreStage([r('a', 200)], 100).get('a')!.pace).toBe(300);
+  });
+
+  it('adds air-time points to the total as soon as a run is in', () => {
+    const solo = scoreStage([{ ...r('a', 100), airTime: 2.4 }], 100).get('a')!;
+    expect(solo.air).toBe(Math.round(2.4 * AIR_POINTS_PER_SECOND));
+    expect(solo.total).toBe(PACE_POINTS + solo.air);
+    // A result counted before air time was sent scores none.
+    expect(scoreStage([r('a', 100)], 100).get('a')!.air).toBe(0);
   });
 
   it('settles the stage win and section wins once both have run', () => {
@@ -39,7 +54,7 @@ describe('scoreStage', () => {
 
   it('gives a retirement nothing and the other driver the win', () => {
     const points = scoreStage([r('a', null), r('b', 150, [70, 150])], 100);
-    expect(points.get('a')).toEqual({ pace: 0, win: 0, sectors: 0, total: 0 });
+    expect(points.get('a')).toEqual({ pace: 0, air: 0, win: 0, sectors: 0, total: 0 });
     expect(points.get('b')!.win).toBe(STAGE_WIN_POINTS);
     expect(points.get('b')!.sectors).toBe(0);
   });

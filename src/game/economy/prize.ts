@@ -61,3 +61,16 @@ export function stagePrize(p: PrizeInput): number {
     (p.circuit ? CIRCUIT_PRIZE_FACTOR : 1);
   return Math.round(base * (1 + (p.sponsorBonus ?? 0)) * (p.lucky ? 5 : 1));
 }
+
+/**
+ * Cash per second in the air over a stage's jumps, at the first loop. A
+ * Greenvale jump keeps the car up for half a second to a second, so a stage
+ * with three of them adds a little over $100 to a prize of about $1500:
+ * worth flying for, never worth slowing down for.
+ */
+export const AIR_BONUS_PER_SECOND = 50;
+
+/** The air-time bonus, growing with the loop like the prize (+25% per loop). */
+export function airBonus(airTime: number, loop: number): number {
+  return Math.round(AIR_BONUS_PER_SECOND * Math.max(0, airTime) * (1 + 0.25 * loop));
+}

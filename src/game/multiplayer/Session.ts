@@ -29,6 +29,8 @@ export const MIN_PAR_SHARE = 0.25;
 export const MAX_STAGE_TIME = 3600;
 /** More checkpoint splits than any stage has. */
 const MAX_SPLITS = 64;
+/** Most air time a run may claim: a share of its time no stage's jumps come near. */
+export const MAX_AIR_SHARE = 0.25;
 
 export interface SessionPlayer {
   id: string;
@@ -44,6 +46,8 @@ export interface SessionResult {
   playerId: string;
   time: number | null;
   splits: number[];
+  /** Seconds in the air over the stage's jumps; absent (0) on runs counted before it was sent. */
+  airTime?: number;
 }
 
 /** Everything a driver in the session may see; secrets stay on the server. */
@@ -67,6 +71,8 @@ export interface ResultInput {
   stageIndex: number;
   time: number | null;
   splits: number[];
+  /** Seconds in the air over the stage's jumps; an absent one counts as 0. */
+  airTime?: number;
 }
 
 export function isSessionLength(n: unknown): n is SessionLength {
@@ -131,12 +137,13 @@ export function stageToDrive(
 }
 
 export type ResultProblem =
-  'over' | 'not_current' | 'duplicate' | 'invalid_time' | 'invalid_splits';
+  'over' | 'not_current' | 'duplicate' | 'invalid_time' | 'invalid_splits' | 'invalid_air_time';
 
 /**
  * Why a submitted run can't count, or null when it can: it must be for the
  * session's current stage, the first run this player sends for it, a
- * plausible time against par, and splits that climb to no more than the time.
+ * plausible time against par, splits that climb to no more than the time,
+ * and air time no more than `MAX_AIR_SHARE` of the time (none on a retirement).
  */
 export function checkResult(
   view: Pick<SessionView, 'results' | 'stageCount'>,
@@ -148,7 +155,10 @@ export function checkResult(
   if (stage >= view.stageCount) return 'over';
   if (input.stageIndex !== stage) return 'not_current';
   if (resultFor(view, stage, playerId)) return 'duplicate';
-  if (input.time === null) return input.splits.length === 0 ? null : 'invalid_splits';
+  if (input.time === null) {
+    if (input.splits.length > 0) return 'invalid_splits';
+    return (input.airTime ?? 0) === 0 ? null : 'invalid_air_time';
+  }
   if (
     !Number.isFinite(input.time) ||
     input.time < parTime * MIN_PAR_SHARE ||
@@ -161,6 +171,8 @@ export function checkResult(
     if (!Number.isFinite(s) || s < prev || s > input.time + 1e-6) return 'invalid_splits';
     prev = s;
   }
+  const air = input.airTime ?? 0;
+  if (air < 0 || air > input.time * MAX_AIR_SHARE) return 'invalid_air_time';
   return null;
 }
 
@@ -172,14 +184,20 @@ function finite(v: unknown): v is number {
   return typeof v === 'number' && Number.isFinite(v);
 }
 
-/** Validate a submitted run body; null when malformed. */
+/** Validate a submitted run body; null when malformed. An older client sends no air time, which counts as none. */
 export function parseResultInput(raw: unknown): ResultInput | null {
   if (!isRecord(raw)) return null;
-  const { stageIndex, time, splits } = raw;
+  const { stageIndex, time, splits, airTime } = raw;
   if (!Number.isInteger(stageIndex) || (stageIndex as number) < 0) return null;
   if (time !== null && !finite(time)) return null;
   if (!Array.isArray(splits) || !splits.every(finite)) return null;
-  return { stageIndex: stageIndex as number, time: time as number | null, splits };
+  if (airTime !== undefined && !finite(airTime)) return null;
+  return {
+    stageIndex: stageIndex as number,
+    time: time as number | null,
+    splits,
+    ...(airTime !== undefined ? { airTime } : {}),
+  };
 }
 
 /** A car a driver may pick for a session: any in the catalogue, as nothing is bought. */

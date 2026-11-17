@@ -25,8 +25,10 @@ export interface StageWindow {
 }
 
 /**
- * Which of stages 0..count-1 to list: the newest `pageSize` plus `revealed`
- * earlier ones, widened so `focus` (the stage being driven) is always visible.
+ * Which of stages 0..count-1 to list: the newest `pageSize`, widened so
+ * `focus` (the stage being driven) is always visible, plus `revealed` earlier
+ * ones below that. Revealing counts from the widened window, so every "show
+ * more" press uncovers stages even when an old stage is being driven.
  */
 export function stageWindow(
   count: number,
@@ -34,6 +36,6 @@ export function stageWindow(
   revealed: number,
   pageSize: number,
 ): StageWindow {
-  const start = Math.max(0, Math.min(count - pageSize - revealed, focus));
+  const start = Math.max(0, Math.min(count - pageSize, focus) - revealed);
   return { start, hidden: start };
 }

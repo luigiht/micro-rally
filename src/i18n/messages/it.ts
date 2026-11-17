@@ -142,7 +142,7 @@ export const it: Messages = {
         },
         {
           title: 'Guida, riparti e rivedi',
-          body: 'Ogni prova parte e arriva sotto un portale a scacchi, con cartelli rossi che segnano la partenza (un cronometro) e l’arrivo (una bandiera a scacchi). Supera i checkpoint in ordine e raggiungi il traguardo. Fuori strada perdi velocità; gli urti forti aggiungono tempo e costi di riparazione. Premi R, o il pulsante per tornare al checkpoint accanto a Pausa sui touchscreen, per tornare all’ultimo checkpoint. Le gare concluse si possono rivedere.',
+          body: 'Ogni prova parte e arriva sotto un portale a scacchi, con cartelli rossi che segnano la partenza (un cronometro) e l’arrivo (una bandiera a scacchi). Supera i checkpoint in ordine e raggiungi il traguardo. Fuori strada perdi velocità; ogni urto forte aggiunge 2 secondi e costi di riparazione, mentre il tempo in volo sui salti paga un bonus oltre al premio. Premi R, o il pulsante per tornare al checkpoint accanto a Pausa sui touchscreen, per tornare all’ultimo checkpoint. Le gare concluse si possono rivedere.',
         },
         {
           title: 'Fondi e aderenza',
@@ -158,7 +158,7 @@ export const it: Messages = {
         },
         {
           title: 'Multigiocatore',
-          body: 'Scegli Multigiocatore nella schermata iniziale per sfidare un amico. Uno di voi crea una sessione di 3, 6 o 9 prove, spuntando i tipi di prova che percorre a turno, e condivide l’ID sessione o il link. Ognuno sceglie l’auto nella lobby prima della sua prima prova e la tiene per tutta la sessione. Correte ogni prova quando volete; la successiva si apre quando avete finito entrambi. Mentre siete entrambi sulla stessa prova, vedete l’auto dell’altro sulla strada, con circa un secondo di ritardo, e l’iniziale dell’altro pilota accanto alla barra di avanzamento. I punti vengono dal ritmo rispetto al tempo di riferimento, più bonus per la vittoria di prova e per ogni settore più veloce.',
+          body: 'Scegli Multigiocatore nella schermata iniziale per sfidare un amico. Uno di voi crea una sessione di 3, 6 o 9 prove, spuntando i tipi di prova che percorre a turno, e condivide l’ID sessione o il link. Ognuno sceglie l’auto nella lobby prima della sua prima prova e la tiene per tutta la sessione. Correte ogni prova quando volete; la successiva si apre quando avete finito entrambi. Mentre siete entrambi sulla stessa prova, vedete l’auto dell’altro sulla strada, con circa un secondo di ritardo, e l’iniziale dell’altro pilota accanto alla barra di avanzamento. I punti vengono dal ritmo rispetto al tempo di riferimento, più punti per ogni secondo in volo sui salti e bonus per la vittoria di prova e per ogni settore più veloce.',
         },
       ],
       controlsTitle: 'Comandi',
@@ -569,6 +569,7 @@ export const it: Messages = {
     uploadFailed: 'Impossibile inviare il tuo tempo.',
     uploadRetry: 'Riprova',
     pace: 'Ritmo',
+    air: 'Tempo in volo ({s})',
     win: 'Vittoria di prova',
     sectors: 'Settori vinti',
     stagePoints: 'Punti della prova',
@@ -585,6 +586,9 @@ export const it: Messages = {
     bestLap: 'Giro più veloce',
     raceTitle: 'Gara completata',
     penalties: '+{s}s di penalità',
+    penaltiesIncluded: 'Penalità per urti ×{n}',
+    airTime: 'Tempo in volo',
+    airBonus: 'Bonus salti',
     money: 'Soldi',
     resultTitle: 'Prova completata',
     time: 'Tempo',

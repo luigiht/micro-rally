@@ -60,9 +60,14 @@ function opensLeft(item: HTMLElement): boolean {
   return r.left + r.width / 2 > l.left + l.width / 2;
 }
 
-/** Quiet text link for uncovering older stages; deliberately not a pixel button. */
+/**
+ * Quiet text link for uncovering older stages; deliberately not a pixel button.
+ * The 10px text alone is a 15px-tall target, so padding grows the hit area to
+ * the stage buttons' 36px height without changing how it looks.
+ */
 const SHOW_MORE =
-  'self-center font-pixel text-[10px] text-ink/70 underline underline-offset-4 hover:text-rally focus-visible:text-rally';
+  '-ml-2 inline-flex min-h-9 cursor-pointer items-center px-2 font-pixel text-[10px] text-ink/70 ' +
+  'underline underline-offset-4 hover:text-rally focus-visible:text-rally';
 
 /**
  * Every stage reached so far, newest first, as a row of wrapping buttons:

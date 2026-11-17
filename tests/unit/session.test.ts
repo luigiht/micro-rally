@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  MAX_AIR_SHARE,
   checkResult,
   parseResultInput,
   parseSessionView,
@@ -104,15 +105,31 @@ describe('checkResult', () => {
       'invalid_splits',
     );
   });
+
+  it('accepts plausible air time and refuses the rest', () => {
+    const v = view();
+    const at = (time: number | null, airTime: number) =>
+      checkResult(v, 'a', { stageIndex: 0, time, splits: [], airTime }, par);
+    expect(at(100, 3.5)).toBeNull();
+    expect(at(100, -1)).toBe('invalid_air_time');
+    expect(at(100, 100 * MAX_AIR_SHARE + 1)).toBe('invalid_air_time');
+    expect(at(null, 2)).toBe('invalid_air_time');
+  });
 });
 
 describe('parsing', () => {
   it('reads a result body and refuses malformed ones', () => {
-    expect(parseResultInput({ stageIndex: 2, time: 99.5, splits: [1, 2] })).toEqual({
+    expect(parseResultInput({ stageIndex: 2, time: 99.5, splits: [1, 2], airTime: 1.5 })).toEqual({
       stageIndex: 2,
       time: 99.5,
       splits: [1, 2],
+      airTime: 1.5,
     });
+    // An older client sends no air time, which counts as none.
+    expect(parseResultInput({ stageIndex: 2, time: 99.5, splits: [] })).not.toHaveProperty(
+      'airTime',
+    );
+    expect(parseResultInput({ stageIndex: 0, time: 1, splits: [], airTime: 'x' })).toBeNull();
     expect(parseResultInput({ stageIndex: 0, time: null, splits: [] })?.time).toBeNull();
     expect(parseResultInput({ stageIndex: -1, time: 1, splits: [] })).toBeNull();
     expect(parseResultInput({ stageIndex: 0, time: '1', splits: [] })).toBeNull();

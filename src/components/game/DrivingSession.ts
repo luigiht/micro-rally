@@ -1,5 +1,5 @@
 import type { PerspectiveCamera } from 'three';
-import { stagePrize } from '@/game/economy/prize';
+import { airBonus, stagePrize } from '@/game/economy/prize';
 import { FixedStepper } from '@/game/loop/FixedStepper';
 import { type ReplayMarks, ReplayTrack } from '@/game/replay/ReplayTrack';
 import { StageRun } from '@/game/stage/StageRun';
@@ -116,6 +116,7 @@ export class DrivingSession {
       impact = Math.max(impact, resolveBoxCollisions(s, boxes));
     }
     if (impact > 0) run?.onImpact(impact);
+    run?.onAir(s.grounded, dt);
     run?.onMove(px, pz, s.x, s.z);
     this.recordStep(run, dt);
   };
@@ -335,6 +336,7 @@ export class DrivingSession {
   resetCar(): void {
     const pose = this.run ? this.run.respawnPose(this.respawn) : this.world.spawn;
     this.sim.reset(pose, this.world.terrain);
+    this.run?.cancelAir();
     this.stepper.reset();
     this.needsSnap = true;
   }
@@ -356,6 +358,10 @@ export class DrivingSession {
       time: run.totalTime,
       splits: [...run.splits],
       prize,
+      penalties: run.penalties,
+      hits: run.hits,
+      airTime: run.airTime,
+      airBonus: airBonus(run.airTime, stage.loop),
       repairCost: run.repairCost,
       parTime: stage.parTime,
     });

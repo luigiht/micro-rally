@@ -11,6 +11,11 @@ export function formatTime(seconds: number): string {
   return `${m}:${rest.toFixed(2).padStart(5, '0')}`;
 }
 
+/** A short span such as air time or a penalty, to a tenth: "2.4s". */
+export function formatSeconds(seconds: number): string {
+  return `${Math.max(0, seconds).toFixed(1)}s`;
+}
+
 export function formatMoney(amount: number, locale: string): string {
   return `$${Math.round(amount).toLocaleString(locale)}`;
 }

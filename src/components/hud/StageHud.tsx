@@ -1,6 +1,6 @@
 'use client';
 
-import { fill, formatMoney, formatTime } from '@/i18n/format';
+import { fill, formatMoney, formatSeconds, formatTime } from '@/i18n/format';
 import { useMessages } from '@/i18n/useMessages';
 import { useGameStore, type StageResult } from '@/state/gameStore';
 import { useSettingsStore } from '@/state/settingsStore';
@@ -9,6 +9,7 @@ import { useUiStore } from '@/state/uiStore';
 import { SessionResultPanel } from '@/components/multiplayer/SessionResultPanel';
 import { PaceNoteCallout } from './PaceNoteCallout';
 import { PixelIcon } from './PixelIcon';
+import { penaltyRows } from './resultRows';
 
 function Countdown() {
   const m = useMessages();
@@ -37,11 +38,15 @@ function ResultPanel({ result }: { result: StageResult }) {
   const bestLap = useStageHudStore((s) => s.bestLap);
   const rows: [string, string][] = [
     [m.stage.time, formatTime(result.time)],
+    ...penaltyRows(result, m),
     [m.stage.par, formatTime(result.parTime)],
-    [m.stage.prize, formatMoney(result.prize, locale)],
   ];
-  if (result.previousBest !== null)
-    rows.splice(2, 0, [m.stage.best, formatTime(result.previousBest)]);
+  if (result.previousBest !== null) rows.push([m.stage.best, formatTime(result.previousBest)]);
+  rows.push([m.stage.prize, formatMoney(result.prize, locale)]);
+  if (result.airTime > 0) {
+    rows.push([m.stage.airTime, formatSeconds(result.airTime)]);
+    rows.push([m.stage.airBonus, `+${formatMoney(result.airBonus, locale)}`]);
+  }
   // A circuit race lists each lap under the total, then the fastest.
   if (laps.length > 0) {
     const lapRows: [string, string][] = laps.map((t, i) => [
