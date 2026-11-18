@@ -337,10 +337,11 @@ flowchart LR
 - `next.config.ts` redirects `/` with a game query (`game`, `session`,
   `autopilot`, `spawn`, `shot`, `track`) to `/game`, keeping the query, so
   links from before the move still work; `/landing` redirects to `/`.
-- The manifest starts the installed app at `/game` (its `id` stays `/`). An
-  inline script at the top of the landing page sends a home-screen launch
-  (`display-mode: standalone`/`fullscreen`, or iOS `navigator.standalone`)
-  that still lands on `/` on to `/game` before the page paints.
+- The manifest starts the installed app at `/game` (its `id` stays `/`). A
+  `beforeInteractive` inline script in the root layout sends a home-screen
+  launch (`display-mode: standalone`/`fullscreen`, or iOS
+  `navigator.standalone`) that still lands on `/` on to `/game` before the
+  page paints.
 
 ## Updates for open windows
 

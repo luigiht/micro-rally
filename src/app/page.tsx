@@ -38,18 +38,9 @@ export const metadata: Metadata = {
   alternates: { canonical: '/' },
 };
 
-/**
- * Launched from a home screen, go straight to the game: installs made before
- * the game moved to `/game` still start at `/`, and some browsers keep the
- * page they were added from. Inline and first in the body, so it runs before
- * the page paints.
- */
-const STANDALONE_TO_GAME = `if(matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches||navigator.standalone===true)location.replace('/game'+location.search+location.hash)`;
-
 export default function Landing() {
   return (
     <div className={`${display.variable} ${pixel.variable}`}>
-      <script dangerouslySetInnerHTML={{ __html: STANDALONE_TO_GAME }} />
       <LandingPage />
     </div>
   );

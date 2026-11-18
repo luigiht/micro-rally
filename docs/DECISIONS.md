@@ -5961,9 +5961,11 @@ bed)`. The road, its profile and every record stay as they were, so
        browsers treat existing installs as the same app and update them
        instead of offering a second one.
      - Installs made before the move (and iOS, which may keep the page it
-       was added from) still start at `/`. A few bytes of inline script,
-       first in the landing page's body, send a home-screen launch on to
-       `/game`, keeping any query, before anything paints. A server
+       was added from) still start at `/`. A few bytes of inline script send
+       a home-screen launch on to `/game`, keeping any query, before
+       anything paints. (Since moved to the root layout as a
+       `next/script` `beforeInteractive` script gated on `/`: React warned
+       about a plain `<script>` rendered inside the page.) A server
        redirect can't do it, because the request doesn't say how the page
        was opened.
      - Old links name `/` with a query: saved games (`?game=`), multiplayer

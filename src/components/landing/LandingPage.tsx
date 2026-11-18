@@ -188,10 +188,8 @@ export function LandingPage() {
                 <div className="step-icon">
                   <Icon name={STEP_ICONS[i]!} w={28} h={28} />
                 </div>
-                <span className="step-number">{twoDigits(i + 1)}</span>
                 <h3>{step.title}</h3>
                 <p>{step.text}</p>
-                <i />
               </article>
             ))}
           </div>

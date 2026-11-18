@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Analytics } from '@vercel/analytics/next';
 import { DM_Sans } from 'next/font/google';
 import localFont from 'next/font/local';
+import Script from 'next/script';
 import { en } from '@/i18n/messages/en';
 import { AUTHOR, SITE_URL } from '@/lib/site';
 import { UpdatePrompt } from '@/components/update/UpdatePrompt';
@@ -145,10 +146,22 @@ const JSON_LD = {
   ],
 };
 
+/**
+ * Launched from a home screen onto the landing page, go straight to the game:
+ * installs made before the game moved to `/game` still start at `/`, and some
+ * browsers keep the page they were added from. `beforeInteractive` puts it in
+ * the server HTML ahead of the page's own scripts, so it runs before the page
+ * paints; React warns about a plain `<script>` rendered inside the page.
+ */
+const STANDALONE_TO_GAME = `if(location.pathname==='/'&&(matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches||navigator.standalone===true))location.replace('/game'+location.search+location.hash)`;
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${pixelFont.variable} ${bodyFont.variable}`}>
       <body className="font-sans antialiased">
+        <Script id="standalone-to-game" strategy="beforeInteractive">
+          {STANDALONE_TO_GAME}
+        </Script>
         {children}
         <UpdatePrompt />
         <Analytics />

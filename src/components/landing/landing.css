@@ -289,8 +289,8 @@
   min-height: 330px;
   padding: 28px;
   overflow: hidden;
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.18);
+  background: #ebe4cf;
+  box-shadow: 8px 8px 0 0 rgb(43 42 51 / 0.35);
 }
 .landing-page .step-icon {
   width: 56px;
@@ -305,16 +305,6 @@
   width: 28px;
   height: 28px;
 }
-.landing-page .step-number {
-  position: absolute;
-  top: 20px;
-  right: 24px;
-  color: var(--paper-deep);
-  font-family: var(--landing-pixelfont);
-  -webkit-font-smoothing: none;
-  font-size: 58px;
-  line-height: 87px;
-}
 .landing-page .step-card h3 {
   margin-top: 72px;
   font-family: var(--landing-heading);
@@ -327,14 +317,6 @@
   color: var(--muted);
   font-size: 16px;
   line-height: 25.6px;
-}
-.landing-page .step-card > i {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 28%;
-  height: 5px;
-  background: var(--orange);
 }
 .landing-page .worlds {
   padding: 135px 0 80px;
@@ -583,7 +565,7 @@
 }
 .landing-page .camera-section {
   background: #dfd7c0;
-  border-block: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
 }
 .landing-page .camera-layout {
   min-height: 720px;
