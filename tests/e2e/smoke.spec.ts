@@ -6,7 +6,7 @@ import { CANVAS, chooseSinglePlayer, startGame } from './helpers';
 const CLOCK_START = 30_000;
 
 test('the splash screen boots, then Drive starts the game', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/game');
   await expect(page).toHaveTitle(/Micro Rally/);
   await expect(page.getByRole('heading', { name: 'Micro Rally' })).toBeVisible();
   await expect(page.locator(CANVAS)).toHaveCount(0);
@@ -18,7 +18,7 @@ test('the splash screen boots, then Drive starts the game', async ({ page }) => 
 });
 
 test('holding W accelerates the car on the test track', async ({ page }) => {
-  await startGame(page, '/?track=test');
+  await startGame(page, '/game?track=test');
   const readout = page.getByTestId('speed-readout');
   await expect(readout).toBeVisible();
   await page.waitForTimeout(500);
@@ -38,7 +38,7 @@ test('a stage counts down, then the clock runs', async ({ page }) => {
 });
 
 test('the Game button shows stage info and the driver, Esc closes it', async ({ page }) => {
-  await startGame(page, '/', { name: 'Ada' });
+  await startGame(page, '/game', { name: 'Ada' });
   await page.getByRole('button', { name: 'Game' }).click();
   const dialog = page.getByRole('dialog', { name: 'Game' });
   await expect(dialog).toBeVisible();
@@ -103,7 +103,7 @@ test('the progress bar fills as the car drives down the stage', async ({ page })
 test('the page ships a favicon, Apple icon, Open Graph image and Twitter card', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/game');
   await expect(page).toHaveTitle('Micro Rally');
   expect(await page.locator('link[rel="icon"]').count()).toBeGreaterThan(0);
   await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveCount(1);
@@ -126,7 +126,7 @@ test('the page ships a favicon, Apple icon, Open Graph image and Twitter card', 
 test('the Game ID help is a small dialog, and the footer links and language work', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/game');
   await chooseSinglePlayer(page);
   await page.getByRole('button', { name: 'About the Game ID' }).click();
   const dialog = page.getByRole('dialog', { name: 'Game ID' });

@@ -5780,3 +5780,238 @@ bed)`. The road, its profile and every record stay as they were, so
        that ships is measured from it now; the model stays in the untracked
        `context/` folder. Tests that used the Satory's hull (pillar strip,
        rounding, loft) use the Berlinette's.
+
+272. **2026-11-17 — A landing page at /landing.** The user asked for the
+     Figma Make design in `context/landing-page` to become part of the app,
+     reachable only by navigating to `/landing`.
+     - Ported, not embedded: the Vite + React export became
+       `components/landing` (`LandingPage`, `LandingGarage`,
+       `LandingCameras`, `landingContent`) under `app/landing/page.tsx`.
+       Its stylesheet was generated into `landing.css` with every rule
+       prefixed by `.landing-page` (`body` and `:root` map onto that root),
+       so none of it reaches the game; the uniform prefix keeps the
+       design's relative specificity. A short "fixes" block at its end
+       holds the changes on top of the design.
+     - Fonts: DM Sans and Fugaz One through `next/font/google`, self-hosted
+       at build (DM Sans moved to the root layout in decision 273), instead of the export's `static.figma.com` faces (the
+       unused Noto faces were dropped). Credited in `CREDITS.md`.
+     - Assets: the files the page uses, copied to `public/landing` with
+       descriptive names; the 2.4 MB hero became a 137 KB WebP. The
+       camera section shows the user's four screenshots from
+       `context/landing-page/cameras` (1600 px WebPs, about 70 KB each),
+       stacked in the frame and crossfaded by tab, in place of the design's
+       single image zoomed per view. The caption's "Press C to switch camera"
+       hint was removed at the user's request (its strings and icon too):
+       the caption keeps only the arrows, on the right, and is hidden on
+       phones, which hide the arrows.
+     - The controls section opens with the controls (`LandingControls`: a
+       "Simple controls / Deep driving" heading and intro, then every
+       control) and the camera views follow below a rule, read from the same `controls` and
+       `controlsTouch` lists as the game's Settings panel so it can't drift
+       from the game, with a Desktop / Mobile toggle that starts on Mobile
+       on touchscreens (`pointer: coarse`). Arrow characters in both lists (↑ ↓ ← →,
+       ◀ ▶ ▼ ▲) are drawn with the game's own pad icons (`PixelIcon` up,
+       down, left, right), one size and centred in their key box beside the
+       letters; the character stays for screen readers.
+     - The nav's section links and "See how it plays" are DM Sans, at the
+       design's semi-bold and bold; only Play keeps the pixel face there.
+     - The camera tab names are DM Sans (bold); only their "01"–"04"
+       numbers keep the pixel face.
+     - The three Play buttons (nav, hero, closing call) are the game's own
+       orange button: the `pixel-btn` class from `globals.css`, with the
+       landing rules for them cut to layout only, and one override
+       (`a.pixel-btn` keeps its paper text, as the unlayered landing
+       stylesheet's `a { color: inherit }` would beat it). All carry the
+       white arrow; the dark and large arrow icons were dropped.
+     - The footer is all body text, links included (regular DM Sans),
+       overriding the pixel face its links shared with the nav.
+       Under its tagline sits "© <year> Micro Rally · Privacy", from the
+       start screen footer's own strings (`footer.copyright`,
+       `footer.privacy`), the link going to `/privacy`.
+       Its links are Gameplay, Worlds, Controls and Play.
+     - The closing line has no punctuation ("Ready when / you are driver"),
+       at the user's request, in all three languages. Images go
+       through `next/image` (lint forbids bare `<img>`).
+     - The hero plays the user's gameplay clip
+       (`context/landing-page/micro-rally-intro-video.mov`, 75 MB HEVC with
+       audio) as `public/landing/hero.mp4`: H.264 High, 1280×834, capped at
+       30 fps, 1.6 Mbps, no audio, moov first for fast start, 7.7 MB. It
+       was encoded with a small AVFoundation script (ffmpeg isn't
+       installed, and `avconvert`'s presets came out at 57–81 MB); 1.6 Mbps
+       kept the trees crisper in motion than 1.2 Mbps (5.8 MB). `HeroVideo`
+       lays it over the still image, muted, looping and inline, and fades
+       it in only once it plays, so a browser that can't play it keeps the
+       image; phones (≤ 620 px), reduced motion and data saver never
+       request it. Only H.264 MP4 is shipped, which every current browser
+       plays; a WebM or AV1 version would need ffmpeg.
+     - Text lives in `landing` in the three dictionaries (translated to
+       Spanish and Italian); stage and car names come from the game's own
+       `stageTypes` and `cars`, and the garage's stat bars from `carStats`
+       rather than the design's fixed numbers. The garage showcase is plain darker
+       cream (#e3dbc4), without the design's faint grid texture.
+     - Play links to `/`. Nothing links to the page, it is left out of the
+       sitemap and its metadata asks for `noindex, nofollow`.
+     - The nav is level: the design tilted it 0.95°, leaving its content
+       crooked (the ticker keeps its tilt). On desktop it follows the
+       user's mockup: logo left, section links centred in the window, Play
+       right, on a paper box 36 px below the top that runs from 28 px
+       before the logo to 28 px past Play, with the hero showing around it. On phones its backing is a full-width band (it
+       had bled past the right edge there).
+     - The nav floats: `position: fixed`, so it stays at the top of the
+       window while the page scrolls, and its paper box carries the Play
+       button's hard drop shadow (8 px, ink at 35%). The sections its links
+       reach carry a `scroll-margin-top` (172 px on desktop, 92 px on
+       phones) so they stop below it.
+     - Scrolled past 24 px, the nav turns compact and wide (`scrolled`, set
+       by a passive scroll listener that only re-renders on crossing the
+       threshold): on desktop 72 px tall, 12 px from the top, its box the
+       window's width less 16 px a side, the logo 104 px. Eased over
+       0.25 s; the global reduced-motion rule cuts the transitions. Phones
+       keep the nav as it is at the top while scrolling: a full-width band
+       ending at the nav's bottom edge (the design's extra 20 px below it
+       trimmed), with a compact Play button beside the menu button.
+     - The nav logo has no drop shadow (its filter is removed from
+       `logo-nav.svg`; the footer logo keeps its own) and is a little
+       larger, 132 px wide (108 px on phones), scaling to its box: the old
+       phone box was narrower than the image and cropped it.
+     - Fixed from the design: the nav's rotated backing bled 70 px past the
+       right edge on phones (the nav is absolutely positioned, so the
+       shell's `overflow: hidden` didn't clip it); the worlds heading's
+       two-column rule outranked the narrow-screen stacking rule; both
+       arrows used the same "next" icon.
+     - `context/` (already ignored by git and Prettier) is now excluded
+       from TypeScript and ESLint too, as the export's Vite files broke
+       `pnpm typecheck`.
+     - Headings (h1, h2 and the step cards' h3s) use CS Matbold Pixel,
+       at the user's request: the demo file they supplied, through
+       `next/font/local` (`--landing-pixel`) without its generated Arial
+       fallback, so the stack falls to Fugaz One. The demo has only A–Z,
+       a–z and space, so digits, punctuation and Spanish and Italian
+       accents render in Fugaz One; the card numbers stay in Fugaz One
+       throughout. It is © Craft Supply Co. with all rights reserved, an
+       exception to rule 9 that needs their licence before it ships.
+     - Headings have no letter spacing and a 70% line height at every
+       width (one rule at the end of `landing.css`, overriding the design's
+       per-width pixel line heights).
+     - Everything that is neither body text nor a heading (the nav's Play, Play buttons, the ticker, kickers, labels, numbers, tabs, car
+       names, and the stage cards' titles, at 14 px to fit) uses the game's
+       own pixel face, Press Start 2P
+       (`--landing-pixelfont`, from the root layout's `--font-pixel-face`);
+       paragraphs stay in DM Sans. Fugaz One is now only the fallback for
+       glyphs the heading face lacks. The ticker was sized down for the
+       wider face and crops on the right only when it still overflows.
+
+273. **2026-11-17 — DM Sans as the game's body face.** At the user's request
+     the game's body text uses DM Sans, as the landing page does, instead of
+     the system's rounded sans (`ui-rounded`, SF Pro Rounded), which only
+     some platforms had. The root layout loads it once through
+     `next/font/google` (Latin, with its optical-size axis) as
+     `--font-body-face`; `--font-sans` in `globals.css` leads with it, so
+     every `font-sans` use follows. The pixel face is untouched. The landing
+     page stopped loading its own copy: its `--landing-sans` points at the
+     same variable.
+
+274. **2026-11-18 — The landing garage turns the game's own cars.** The
+     design export's car renders were filed under the wrong names (the
+     Albion RS hatch was the Dakar truck, the Dakar the Le Mans prototype,
+     the Group B the S1) and had none for the Group B or the Berlinette. At
+     the user's request the garage section now shows every car in the
+     dealership, in its order, turning live: `LandingCarStage` puts the
+     game's `CarModel` on a turntable in one shared R3F canvas, framed like
+     the dealership's `CarPreview` (camera back by `bodyScale`, 1.15× farther
+     for the squarer stage). It spins by itself, can be dragged with mouse or
+     touch (with a little momentum; `touch-action: pan-y` keeps vertical
+     swipes scrolling the page) and turns with the left and right arrow keys
+     when focused. Under reduced motion it holds still until moved.
+     - three.js and the models load through `next/dynamic` only when the
+       section comes within 400 px of the viewport, and the canvas stops
+       drawing (`frameloop="never"`) while the section is off screen.
+     - Each car's still (`car-<id>.png`, 676 × 511) was rendered from this
+       stage at its starting angle, so the still is the stage's poster
+       until the first frame is drawn, and it stays put if WebGL can't
+       start.
+     - The thumbnail strip is gone; the car name and arrows sit in a footer
+       under the stage instead of over it. The "Drag to turn" hint is a
+       solid colour anchored from the left: a translucent or right-aligned
+       label over the canvas lost the pixel font's 1 px stems.
+     - The stage-types section dropped its fixed 969 px height and its
+       bottom padding went from 120 to 80 px, which took the space under
+       the stage cards from 224 px to 80 px on desktop.
+
+275. **2026-11-18 — Landing FAQs, and "Stages" in the nav.** At the user's
+     request the landing page has an FAQ section between the final call to
+     play and the footer. It leads with two visitor questions of its own
+     (`landing.faq.items`: is it free, what you need) and then lists the
+     About page's FAQs (`about.faqs`) as they are, so the two pages can't
+     drift apart. The questions are native `<details>` disclosures, which
+     work with the keyboard and screen readers without any script. The nav
+     link to the stage types now reads "Stages" ("Tramos", "Prove", the
+     game's own words) instead of "The world", and the footer's "Worlds"
+     link to the same section matches it.
+     The camera views became a sub-part of the controls section: their
+     heading is an `h3` ("Four seats, one perspective", from
+     `landing.cameras.title`) styled like "All the controls", and they follow
+     the controls list 64 px below with no rule between them.
+
+276. **2026-11-18 — The landing page at `/`, the game at `/game`.** At the
+     user's request the landing page became the site's front page and the
+     game moved to `/game`; every Play link goes there. Installed copies
+     must open the game, never the landing page:
+     - The manifest's `start_url` is `/game`. Its `id` stays `/`, so
+       browsers treat existing installs as the same app and update them
+       instead of offering a second one.
+     - Installs made before the move (and iOS, which may keep the page it
+       was added from) still start at `/`. A few bytes of inline script,
+       first in the landing page's body, send a home-screen launch on to
+       `/game`, keeping any query, before anything paints. A server
+       redirect can't do it, because the request doesn't say how the page
+       was opened.
+     - Old links name `/` with a query: saved games (`?game=`), multiplayer
+       invites (`?session=`) and the dev switches. `next.config.ts`
+       redirects `/` to `/game` when one of those keys is present (a 307,
+       so it stays easy to change), and Next keeps the query string. New
+       invites are built as `/game?session=`. `/landing` redirects to `/`
+       permanently.
+     - The landing page is now indexed with `/` as its canonical URL; the
+       game page sets its own canonical `/game` and joins the sitemap.
+     - `tests/e2e/landing.spec.ts` covers Play, the old links, a home-screen
+       launch at `/` and the manifest; the other specs now open `/game`
+       (the multiplayer joins still use `/?session=`, so they cover the
+       redirect too).
+
+277. **2026-11-18 — The landing page on phones.** An audit at 320, 375,
+     430, 768 and 1024 px wide, and on a phone held sideways (844 × 390),
+     found no sideways overflow, so the work went into touch and short
+     screens. All of it is in one block at the end of `landing.css`:
+     - At 950 px and below, everything tappable is at least 44 px: the menu
+       button, the nav's Play (40 px plus its drop shadow), "See how it
+       plays", the menu's links (48 px rows), the garage arrows, the
+       controls' Desktop / Mobile toggle and the footer's links. Links
+       inside the footer's sentences get vertical padding, which enlarges
+       the tap area without moving the text.
+     - The phone menu closes on Escape (focus goes back to the menu
+       button) and on a tap outside the nav (`useDismiss` in
+       `LandingPage`).
+     - Short and not wide (`max-width: 950px` and `max-height: 500px`, a
+       phone held sideways): the nav drops from 92 to 60 px, its menu
+       scrolls when it can't fit, the hero sizes to its words instead of
+       805 px, and the garage stage is 280 px tall, so the car, its name and
+       its arrows fit on one screen.
+     - The garage's ground disc keeps its size: its edge is the curved hill
+       in the design and in the cars' stills, so a wide frame shows it as an
+       oval rather than losing the hill.
+       Phones held upright keep the full-width nav band while scrolling, as
+       decided earlier.
+       The stage rail now runs to both edges of the window instead of
+       stopping at the content column: negative margins of `50% − 50vw` and
+       matching padding and scroll padding. The first card still lines up
+       with the heading, the last one with the content's right edge when
+       scrolled to the end, and the page doesn't scroll sideways (the root
+       clips it).
+       On phones (620 px and below) the garage's car stage starts at the top
+       of its frame, so the stats and "Drag to turn" sit on the stage's sky
+       instead of a beige band. The camera stands 1.3× back (1.15× elsewhere)
+       and aims higher there (`PHONE_FRAME`, `PHONE_LOOK_AT_HEIGHT` in
+       `LandingCarStage`), which sets every car, the truck included, below
+       the stats. The still under it is the desktop render, so until the
+       first 3D frame the car shows a little larger.

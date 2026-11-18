@@ -32,7 +32,7 @@ export function PrivacyPolicy() {
           </a>
           .
         </p>
-        <Link href="/" className="pixel-btn mt-8 inline-block">
+        <Link href="/game" className="pixel-btn mt-8 inline-block">
           {m.privacy.back}
         </Link>
       </article>

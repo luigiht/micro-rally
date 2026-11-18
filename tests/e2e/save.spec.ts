@@ -4,7 +4,7 @@ import { CANVAS, chooseSinglePlayer, randomGameId, startGame } from './helpers';
 const ID_SHAPE = /^[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}$/;
 
 test('a new game gets an ID, saves online, and a reload offers Continue', async ({ page }) => {
-  await startGame(page, '/', { name: 'Ada' });
+  await startGame(page, '/game', { name: 'Ada' });
   await page.getByRole('button', { name: 'Game' }).click();
   const dialog = page.getByRole('dialog', { name: 'Game' });
   const shownId = (await dialog.getByTestId('game-id').innerText()).trim();
@@ -55,7 +55,7 @@ test('a save uploaded through the API resumes from the splash with its name and 
   const get = await request.get(`/api/games/${gameId}`);
   expect(await get.json()).toMatchObject({ gameId, money: 1234, driverName: 'Remote Rally' });
 
-  await startGame(page, '/', { name: '', gameId });
+  await startGame(page, '/game', { name: '', gameId });
   await expect(page.getByTestId('money')).toHaveText(/1,234/);
   await page.getByRole('button', { name: 'Game' }).click();
   await expect(page.getByRole('dialog').getByTestId('driver-name')).toHaveText('Remote Rally');
@@ -70,7 +70,7 @@ test('the API rejects malformed saves and unknown IDs', async ({ request }) => {
 });
 
 test('an unknown pasted ID is refused; clearing it starts a new game', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/game');
   await chooseSinglePlayer(page);
   await page.getByLabel('Driver name').fill('Ada');
   await page.getByLabel('Game ID', { exact: true }).fill(randomGameId());
@@ -104,7 +104,7 @@ test('the Garage sells upgrades and the coupé, and the purchase is saved', asyn
     },
   });
   expect(put.ok()).toBeTruthy();
-  await startGame(page, '/', { name: '', gameId });
+  await startGame(page, '/game', { name: '', gameId });
 
   await page.getByRole('button', { name: 'Garage' }).click();
   const dialog = page.getByRole('dialog', { name: 'Garage' });

@@ -1,0 +1,1558 @@
+/*
+ * The /landing page, ported from the Figma Make design in
+ * context/landing-page. Every rule is scoped under .landing-page so none of
+ * it reaches the game; the fonts come from next/font (--landing-sans,
+ * --landing-display, --landing-pixel for headings) instead of Figma's
+ * font server.
+ */
+.landing-page {
+  --paper: #f3eddc;
+  --paper-deep: #e4dcc5;
+  --ink: #252525;
+  --muted: #6e6a61;
+  --orange: #f05a2b;
+  --green: #244f38;
+  --line: rgba(37, 37, 37, 0.16);
+  /* DM Sans, loaded once by the root layout for the whole game. */
+  --landing-sans: var(--font-body-face, 'DM Sans');
+  /* Headings: the pixel face, which has only A–Z, a–z and space; digits,
+     punctuation and accented letters fall back to Fugaz One. */
+  --landing-heading: var(--landing-pixel), var(--landing-display), Impact, sans-serif;
+  /* Everything that isn't body text or a heading: the game's own pixel face
+     (Press Start 2P, loaded by the root layout). */
+  --landing-pixelfont: var(--font-pixel-face, 'Press Start 2P'), ui-monospace, monospace;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html:has(.landing-page) {
+    scroll-behavior: smooth;
+  }
+}
+.landing-page {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--landing-sans), sans-serif;
+  font-weight: 400;
+  font-variation-settings: 'opsz' 14;
+}
+.landing-page a {
+  color: inherit;
+}
+.landing-page button,
+.landing-page a {
+  -webkit-tap-highlight-color: transparent;
+}
+.landing-page button {
+  font: inherit;
+}
+.landing-page h1,
+.landing-page h2,
+.landing-page h3,
+.landing-page p {
+  margin: 0;
+}
+.landing-page .page-shell {
+  min-height: 100dvh;
+  overflow: hidden;
+  background: var(--paper);
+}
+.landing-page .content-section {
+  width: min(calc(100% - 100px), 1180px);
+  margin-inline: auto;
+}
+.landing-page .nav {
+  position: absolute;
+  z-index: 20;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%) rotate(0.95deg);
+  width: min(calc(100% - 108px), 1180px);
+  height: 92px;
+  display: flex;
+  align-items: center;
+  gap: 40px;
+}
+.landing-page .nav:before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: -30px -70px -20px;
+  background: var(--paper);
+  transform: rotate(-0.95deg);
+}
+.landing-page .nav-logo {
+  width: 112px;
+  height: 49px;
+  overflow: hidden;
+}
+.landing-page .nav-logo img {
+  display: block;
+}
+.landing-page .nav-links {
+  margin-left: auto;
+  display: flex;
+  gap: 34px;
+}
+.landing-page .nav-links a,
+.landing-page footer a {
+  font-family: var(--landing-pixelfont);
+  font-weight: 400;
+  -webkit-font-smoothing: none;
+  font-size: 14px;
+  text-decoration: none;
+}
+.landing-page .nav-play {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.landing-page .nav-play img {
+  width: 16px;
+  height: 16px;
+}
+.landing-page .menu-toggle {
+  display: none;
+}
+.landing-page .hero {
+  position: relative;
+  height: 805px;
+  min-height: 760px;
+  padding: 150px max(50px, calc((100vw - 1180px) / 2)) 75px;
+  overflow: hidden;
+}
+.landing-page .hero-backdrop {
+  position: absolute;
+  height: 816px;
+  left: calc(50% - 318px);
+  top: -11px;
+  width: 1214px;
+}
+.landing-page .hero-backdrop:after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(103deg, var(--paper) 16.22%, rgba(243, 237, 220, 0) 50.42%);
+}
+.landing-page .hero-backdrop img {
+  width: 100%;
+  height: 97.08%;
+  object-fit: cover;
+}
+.landing-page .hero-copy {
+  position: relative;
+  z-index: 2;
+  width: 500px;
+  height: 559px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.landing-page .hero h1,
+.landing-page .section-heading h2,
+.landing-page .garage-copy h2,
+.landing-page .final-cta h2 {
+  font-family: var(--landing-heading);
+  text-transform: uppercase;
+  letter-spacing: -0.04em;
+}
+.landing-page .hero h1 {
+  padding-top: 25px;
+  font-size: 89.6px;
+  line-height: 70px;
+}
+.landing-page .hero h1 span,
+.landing-page .hero h1 strong {
+  display: block;
+}
+.landing-page .hero h1 strong {
+  color: var(--orange);
+  font-weight: 400;
+}
+.landing-page .hero-copy > p {
+  width: 500px;
+  padding-top: 30px;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 29.7px;
+}
+.landing-page .hero-actions {
+  height: 88px;
+  padding-top: 34px;
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+.landing-page .play-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-decoration: none;
+}
+.landing-page .play-button img {
+  width: 16px;
+  height: 16px;
+}
+.landing-page .see-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--landing-pixelfont);
+  font-weight: 400;
+  -webkit-font-smoothing: none;
+  font-size: 16px;
+  text-decoration: none;
+}
+.landing-page .see-link img {
+  width: 13.17px;
+  height: 9.83px;
+  transform: rotate(90deg);
+}
+.landing-page .ticker {
+  position: relative;
+  z-index: 5;
+  height: 54px;
+  margin-top: -50px;
+  margin-inline: -5px;
+  padding: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  transform: rotate(-1deg);
+  background: var(--ink);
+  color: var(--paper);
+  white-space: nowrap;
+}
+.landing-page .ticker span {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  font-family: var(--landing-pixelfont);
+  font-weight: 400;
+  -webkit-font-smoothing: none;
+  font-size: 13px;
+  letter-spacing: 1.56px;
+  text-transform: uppercase;
+}
+.landing-page .ticker b {
+  color: var(--orange);
+  font-family: var(--landing-pixelfont);
+  font-weight: 400;
+  -webkit-font-smoothing: none;
+  font-size: 9px;
+}
+.landing-page .gameplay {
+  padding: 104px 0 100px;
+}
+.landing-page .section-heading {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr;
+  align-items: center;
+  gap: 40px;
+}
+.landing-page .section-heading h2,
+.landing-page .garage-copy h2,
+.landing-page .final-cta h2 {
+  font-size: 64px;
+  line-height: 50px;
+  font-weight: 400;
+}
+.landing-page .section-heading h2 span,
+.landing-page .section-heading h2 strong,
+.landing-page .garage-copy h2 span,
+.landing-page .garage-copy h2 strong {
+  display: block;
+}
+.landing-page .section-heading h2 strong,
+.landing-page .garage-copy h2 strong {
+  color: var(--orange);
+  font-weight: 400;
+}
+.landing-page .section-heading > p,
+.landing-page .garage-copy > p,
+.landing-page .camera-copy > p {
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 28.9px;
+}
+.landing-page .steps {
+  margin-top: 70px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+.landing-page .step-card {
+  position: relative;
+  min-height: 330px;
+  padding: 28px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.18);
+}
+.landing-page .step-icon {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  background: var(--orange);
+  border: 2px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+.landing-page .step-icon img {
+  width: 28px;
+  height: 28px;
+}
+.landing-page .step-number {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  color: var(--paper-deep);
+  font-family: var(--landing-pixelfont);
+  -webkit-font-smoothing: none;
+  font-size: 58px;
+  line-height: 87px;
+}
+.landing-page .step-card h3 {
+  margin-top: 72px;
+  font-family: var(--landing-heading);
+  font-size: 24px;
+  line-height: 36px;
+  text-transform: uppercase;
+}
+.landing-page .step-card p {
+  margin-top: 13px;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 25.6px;
+}
+.landing-page .step-card > i {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 28%;
+  height: 5px;
+  background: var(--orange);
+}
+.landing-page .worlds {
+  padding: 135px 0 80px;
+  background: var(--green);
+  color: var(--paper);
+}
+.landing-page .section-heading.light {
+  grid-template-columns: 1.55fr 1fr;
+}
+.landing-page .section-heading.light > p {
+  color: #b9c9ba;
+}
+.landing-page .stage-rail {
+  margin-top: 70px;
+  padding-bottom: 18px;
+  display: grid;
+  grid-template-columns: repeat(8, 240px);
+  gap: 16px;
+  overflow-x: auto;
+  scrollbar-color: var(--orange) transparent;
+}
+.landing-page .stage-card {
+  height: 432px;
+  background: #f1ebd9;
+  color: var(--ink);
+  border: 2px solid #172e22;
+  box-shadow: 6px 6px 0 #172e22;
+}
+.landing-page .stage-image {
+  width: 100%;
+  height: 310px;
+  display: block;
+  object-fit: cover;
+}
+.landing-page .stage-meta {
+  position: relative;
+  min-height: 118px;
+  padding: 18px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+}
+.landing-page .stage-meta > span {
+  color: var(--orange);
+  font-family: var(--landing-pixelfont);
+  -webkit-font-smoothing: none;
+  font-size: 16px;
+}
+.landing-page .stage-meta h3 {
+  font-family: var(--landing-pixelfont);
+  font-weight: 400;
+  -webkit-font-smoothing: none;
+  font-size: 14px;
+  line-height: 30px;
+  text-transform: uppercase;
+}
+.landing-page .stage-meta p {
+  padding-top: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+.landing-page .stage-meta > b {
+  position: absolute;
+  right: 14px;
+  top: -15px;
+  padding: 6px 8px;
+  background: var(--ink);
+  color: white;
+  font-family: var(--landing-pixelfont);
+  font-weight: 400;
+  -webkit-font-smoothing: none;
+  font-size: 9px;
+  line-height: 13.5px;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+}
+.landing-page .garage {
+  padding: 100px 0;
+  display: grid;
+  grid-template-columns: 594px 486px;
+  column-gap: 100px;
+  row-gap: 22px;
+}
+.landing-page .garage-showcase {
+  position: relative;
+  grid-column: 1;
+  grid-row: 1;
+  overflow: hidden;
+  /* The stage and its still sit absolutely in the top 438 px; the footer flows under them. */
+  padding: 456px 24px 20px;
+  background: #e3dbc4;
+  border: 2px solid var(--ink);
+  box-shadow: 10px 10px 0 var(--ink);
+}
+.landing-page .specs {
+  position: absolute;
+  z-index: 2;
+  top: 25px;
+  left: 25px;
+  width: 140px;
+  display: grid;
+  gap: 30px;
+  pointer-events: none;
+}
+.landing-page .spec span {
+  display: block;
+  font-family: var(--landing-pixelfont);
+  font-weight: 400;
+  -webkit-font-smoothing: none;
+  font-size: 10px;
+  line-height: 15px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+.landing-page .spec i {
+  display: block;
+  height: 5px;
+  margin-top: 5px;
+  background: rgba(37, 37, 37, 0.18);
+}
+.landing-page .spec b {
+  display: block;
+  height: 100%;
+  background: var(--orange);
+}
+.landing-page .active-car {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  top: 22px;
+  width: calc(100% - 40px);
+  height: 416px;
+  object-fit: cover;
+  filter: drop-shadow(9px 12px 0 rgba(37, 37, 37, 0.12));
+}
+.landing-page .car-stage {
+  position: absolute;
+  z-index: 1;
+  left: 20px;
+  top: 22px;
+  width: calc(100% - 40px);
+  height: 416px;
+  cursor: grab;
+  /* Vertical swipes still scroll the page on touch; sideways ones turn the car. */
+  touch-action: pan-y;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  filter: drop-shadow(9px 12px 0 rgba(37, 37, 37, 0.12));
+}
+.landing-page .car-stage:active {
+  cursor: grabbing;
+}
+.landing-page .car-stage:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: 3px;
+}
+.landing-page .garage-showcase.live .car-stage {
+  opacity: 1;
+}
+.landing-page .garage-showcase.live .active-car {
+  visibility: hidden;
+  transition: visibility 0s 0.35s;
+}
+.landing-page .turn-hint {
+  position: absolute;
+  z-index: 2;
+  top: 30px;
+  /* Anchored from the left, on a whole pixel: right-aligned, the pixel font's 1 px strokes fall between pixels. */
+  left: calc(100% - 192px);
+  pointer-events: none;
+  font-family: var(--landing-pixelfont);
+  font-weight: 400;
+  -webkit-font-smoothing: none;
+  font-size: 10px;
+  line-height: 15px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  /* A solid colour, not opacity: a translucent layer over the canvas loses the pixel font's 1 px stems. */
+  color: #7d796c;
+}
+.landing-page .car-footer {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+}
+.landing-page .car-name {
+  display: flex;
+  flex-direction: column;
+}
+.landing-page .car-name span {
+  color: var(--orange);
+  font-family: var(--landing-pixelfont);
+  font-weight: 400;
+  -webkit-font-smoothing: none;
+  font-size: 10px;
+  line-height: 15px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+.landing-page .car-name strong {
+  padding-top: 3px;
+  font-family: var(--landing-pixelfont);
+  -webkit-font-smoothing: none;
+  font-size: 18px;
+  text-transform: uppercase;
+}
+.landing-page .car-controls {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.landing-page .car-controls button,
+.landing-page .camera-caption button {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  cursor: pointer;
+}
+.landing-page .car-controls button img,
+.landing-page .camera-caption button img {
+  width: 20px;
+  height: 20px;
+}
+.landing-page .car-controls span {
+  font-family: var(--landing-pixelfont);
+  -webkit-font-smoothing: none;
+  font-size: 10px;
+}
+.landing-page .garage-copy {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+}
+.landing-page .garage-copy > p {
+  padding-top: 25px;
+}
+.landing-page .camera-section {
+  background: #dfd7c0;
+  border-block: 1px solid var(--line);
+}
+.landing-page .camera-layout {
+  min-height: 720px;
+  padding: 100px 0;
+  display: grid;
+  grid-template-columns: 436px 654px;
+  gap: 90px;
+  align-items: center;
+}
+.landing-page .camera-copy h3 {
+  font-family: var(--landing-pixelfont);
+  -webkit-font-smoothing: none;
+  font-size: 14px;
+  line-height: 20px;
+  text-transform: uppercase;
+}
+.landing-page .camera-copy > p {
+  margin-top: 0;
+  padding-top: 16px;
+}
+.landing-page .camera-tabs {
+  margin-top: 35px;
+  border-top: 1px solid var(--line);
+}
+.landing-page .camera-tabs button {
+  width: 100%;
+  height: 55px;
+  padding: 15px 8px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-family: var(--landing-pixelfont);
+  font-weight: 400;
+  -webkit-font-smoothing: none;
+  font-size: 16px;
+  cursor: pointer;
+  text-align: left;
+}
+.landing-page .camera-tabs button span {
+  color: #aaa28f;
+  font-family: var(--landing-pixelfont);
+  -webkit-font-smoothing: none;
+  font-size: 12px;
+}
+.landing-page .camera-tabs button.active {
+  padding-left: 18px;
+  color: var(--orange);
+}
+.landing-page .camera-tabs button.active span {
+  color: var(--orange);
+}
+.landing-page .camera-frame {
+  position: relative;
+  height: 346px;
+  overflow: hidden;
+  border: 3px solid var(--ink);
+  box-shadow: 10px 10px 0 var(--ink);
+  background: var(--ink);
+}
+.landing-page .camera-frame img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.landing-page .camera-frame img.active {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-page .camera-frame img {
+    transition: none;
+  }
+}
+.landing-page .camera-caption {
+  height: 50px;
+  padding-top: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.96px;
+  text-transform: uppercase;
+}
+.landing-page .camera-caption > span {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.landing-page .camera-caption > span img {
+  width: 18px;
+  height: 18px;
+}
+.landing-page .camera-caption > div {
+  display: flex;
+  gap: 10px;
+}
+.landing-page kbd {
+  padding: 3px 7px;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  box-shadow: 2px 2px 0 var(--ink);
+  color: var(--ink);
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 800;
+}
+.landing-page .feature-strip {
+  background: var(--orange);
+  color: white;
+}
+.landing-page .feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+.landing-page .feature {
+  min-height: 150px;
+  padding: 35px;
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  column-gap: 16px;
+  align-content: center;
+  border-right: 1px solid rgba(255, 255, 255, 0.28);
+}
+.landing-page .feature:first-child {
+  border-left: 1px solid rgba(255, 255, 255, 0.28);
+}
+.landing-page .feature > img {
+  width: 24px;
+  height: 24px;
+  grid-row: span 2;
+}
+.landing-page .feature strong {
+  font-family: var(--landing-pixelfont);
+  font-weight: 400;
+  -webkit-font-smoothing: none;
+  font-size: 13px;
+  line-height: 19.5px;
+  letter-spacing: 1.04px;
+  text-transform: uppercase;
+}
+.landing-page .feature span {
+  margin-top: 5px;
+  color: #ffe2d8;
+  font-size: 12px;
+  line-height: 18px;
+}
+.landing-page .final-cta {
+  padding: 50px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--ink);
+  text-align: center;
+}
+.landing-page .final-cta > span {
+  color: var(--orange);
+  font-family: var(--landing-pixelfont);
+  font-weight: 400;
+  -webkit-font-smoothing: none;
+  font-size: 12px;
+  line-height: 18px;
+  letter-spacing: 1.92px;
+  text-transform: uppercase;
+}
+.landing-page .final-cta h2 {
+  padding-top: 18px;
+  color: #dfd7c0;
+}
+.landing-page .final-cta p {
+  padding: 22px 0 32px;
+  color: #bcb8ae;
+  font-size: 17px;
+  line-height: 25.5px;
+}
+.landing-page footer {
+  min-height: 170px;
+  padding: 35px max(50px, calc((100vw - 1180px) / 2));
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-items: center;
+  gap: 30px;
+  background: #171717;
+  color: #aaa;
+}
+.landing-page .footer-logo {
+  width: 120px;
+  height: 53px;
+}
+.landing-page .footer-logo img {
+  display: block;
+}
+.landing-page footer p {
+  text-align: center;
+  font-size: 12px;
+}
+.landing-page footer p a {
+  font-family: var(--landing-pixelfont);
+  font-weight: 400;
+  -webkit-font-smoothing: none;
+  font-size: 14px;
+  text-decoration: underline;
+}
+.landing-page footer > div {
+  display: flex;
+  justify-content: flex-end;
+  gap: 25px;
+}
+@media (max-width: 950px) {
+  .landing-page .content-section {
+    width: min(calc(100% - 48px), 1180px);
+  }
+  .landing-page .nav {
+    width: calc(100% - 48px);
+  }
+  .landing-page .menu-toggle {
+    display: grid;
+    gap: 4px;
+    margin-left: auto;
+    padding: 8px;
+    background: none;
+    border: 0;
+  }
+  .landing-page .menu-toggle span {
+    width: 23px;
+    height: 2px;
+    background: var(--ink);
+  }
+  .landing-page .nav-links {
+    position: absolute;
+    display: none;
+    top: 82px;
+    left: 0;
+    right: 0;
+    padding: 16px;
+    flex-direction: column;
+    background: var(--paper);
+    border: 2px solid var(--ink);
+    box-shadow: 4px 4px 0 var(--ink);
+  }
+  .landing-page .nav-links.open {
+    display: flex;
+  }
+  .landing-page .nav-play {
+    display: none;
+  }
+  .landing-page .hero {
+    padding-inline: 24px;
+  }
+  .landing-page .hero-backdrop {
+    left: 21%;
+    opacity: 0.72;
+  }
+  .landing-page .section-heading {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  .landing-page .steps {
+    grid-template-columns: 1fr;
+  }
+  .landing-page .garage {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .landing-page .garage-showcase {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .landing-page .garage-copy {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .landing-page .camera-layout {
+    grid-template-columns: 1fr;
+    gap: 50px;
+  }
+  .landing-page .feature-grid {
+    grid-template-columns: 1fr;
+  }
+  .landing-page .feature {
+    border-left: 1px solid rgba(255, 255, 255, 0.28);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.28);
+  }
+}
+@media (max-width: 620px) {
+  .landing-page .content-section {
+    width: calc(100% - 32px);
+  }
+  .landing-page .nav {
+    width: calc(100% - 32px);
+    height: 76px;
+  }
+  .landing-page .nav-logo {
+    width: 92px;
+    height: auto;
+  }
+  .landing-page .hero {
+    height: 720px;
+    min-height: 0;
+    padding-top: 115px;
+  }
+  .landing-page .hero-backdrop {
+    left: 5%;
+    height: 720px;
+    width: 900px;
+  }
+  .landing-page .hero-backdrop:after {
+    background: linear-gradient(100deg, var(--paper) 20%, rgba(243, 237, 220, 0.2) 70%);
+  }
+  .landing-page .hero-copy {
+    width: 100%;
+    height: auto;
+    padding-top: 130px;
+  }
+  .landing-page .hero h1 {
+    font-size: 58px;
+    line-height: 50px;
+  }
+  .landing-page .hero-copy > p {
+    width: 100%;
+    font-size: 16px;
+    line-height: 26px;
+  }
+  .landing-page .hero-actions {
+    height: auto;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .landing-page .ticker {
+    justify-content: flex-start;
+    overflow: hidden;
+  }
+  .landing-page .gameplay {
+    padding-block: 90px;
+  }
+  .landing-page .section-heading h2,
+  .landing-page .garage-copy h2,
+  .landing-page .final-cta h2 {
+    font-size: 43px;
+    line-height: 39px;
+  }
+  .landing-page .stage-rail {
+    margin-top: 50px;
+  }
+  .landing-page .garage {
+    padding-block: 80px;
+  }
+  .landing-page .garage-showcase {
+    padding: 309px 14px 14px;
+  }
+  .landing-page .active-car,
+  .landing-page .car-stage {
+    left: 0;
+    top: 55px;
+    width: 100%;
+    height: 240px;
+  }
+  .landing-page .turn-hint {
+    top: 18px;
+    left: calc(100% - 142px);
+  }
+  .landing-page .specs {
+    top: 15px;
+    left: 15px;
+    width: 90px;
+    gap: 12px;
+  }
+  .landing-page .car-name strong {
+    max-width: 170px;
+    font-size: 14px;
+  }
+  .landing-page .car-controls span {
+    display: none;
+  }
+  .landing-page .camera-layout {
+    padding-block: 80px;
+  }
+  .landing-page .camera-frame {
+    height: 230px;
+    box-shadow: 7px 7px 0 var(--ink);
+  }
+  .landing-page .camera-caption > span {
+    font-size: 10px;
+  }
+  .landing-page .camera-caption > div {
+    display: none;
+  }
+  .landing-page .feature {
+    padding: 28px 22px;
+  }
+  .landing-page footer {
+    grid-template-columns: 1fr;
+    padding: 42px 24px;
+    text-align: center;
+  }
+  .landing-page .footer-logo {
+    margin: auto;
+  }
+  .landing-page footer > div {
+    justify-content: center;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  @media (prefers-reduced-motion: no-preference) {
+    html:has(.landing-page) {
+      scroll-behavior: auto;
+    }
+  }
+}
+
+/* Fixes on top of the ported design. */
+
+/* The nav is absolutely positioned, so .page-shell's overflow didn't clip
+   its rotated backing, which bled 70 px past the right edge on phones. As
+   the nav's containing block, the page root clips it (and the nav still
+   sits at the top, where the root starts). */
+.landing-page {
+  position: relative;
+  overflow-x: clip;
+}
+
+/* The design's previous and next arrows are the same icon; mirror the first. */
+.landing-page .flip {
+  transform: scaleX(-1);
+}
+
+/* The worlds heading's two-column rule outranked the narrow-screen one that
+   stacks every other section heading, squeezing its text into a sliver. */
+@media (max-width: 950px) {
+  .landing-page .section-heading.light {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Headings: no tracking and a 70% line height, at every width. Last in the
+   file with the same specificity, so it outranks the design's per-width
+   pixel line heights. */
+.landing-page .hero h1,
+.landing-page .section-heading h2,
+.landing-page .garage-copy h2,
+.landing-page .final-cta h2,
+.landing-page .step-card h3 {
+  letter-spacing: 0;
+  line-height: 0.7;
+}
+
+/* The pixel face is far wider than the design's, so the ticker is sized down
+   to fit across a desktop window again; where it still can't (narrow
+   laptops, and phones by design), it crops on the right only. */
+.landing-page .ticker,
+.landing-page .ticker span {
+  gap: 24px;
+}
+.landing-page .ticker {
+  justify-content: safe center;
+}
+.landing-page .ticker span {
+  font-size: 10px;
+  letter-spacing: 0;
+}
+
+/* The controls open the controls section, with a Desktop / Mobile toggle;
+   the camera views follow straight on, with no rule between. */
+.landing-page .controls-panel + .camera-layout {
+  min-height: 0;
+  padding-top: 64px;
+}
+.landing-page .controls-panel {
+  padding-top: 104px;
+}
+.landing-page .controls-head {
+  margin-top: 56px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.landing-page .controls-head h3 {
+  font-family: var(--landing-pixelfont);
+  -webkit-font-smoothing: none;
+  font-size: 14px;
+  line-height: 20px;
+  text-transform: uppercase;
+}
+.landing-page .controls-toggle {
+  display: inline-flex;
+  border: 2px solid var(--ink);
+  background: var(--paper);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.landing-page .controls-toggle button {
+  padding: 11px 16px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--landing-pixelfont);
+  -webkit-font-smoothing: none;
+  font-size: 10px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.landing-page .controls-toggle button + button {
+  border-left: 2px solid var(--ink);
+}
+.landing-page .controls-toggle button.active {
+  background: var(--orange);
+  color: var(--paper);
+}
+.landing-page .controls-list {
+  margin: 28px 0 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 48px;
+}
+.landing-page .control-row {
+  padding: 14px 0;
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 1px solid var(--line);
+}
+.landing-page .control-row kbd {
+  display: inline-block;
+  padding: 6px 8px;
+  font-family: var(--landing-pixelfont);
+  -webkit-font-smoothing: none;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 14px;
+}
+.landing-page .control-row dd {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 20px;
+}
+@media (max-width: 950px) {
+  .landing-page .controls-panel {
+    padding-top: 80px;
+  }
+  .landing-page .controls-list {
+    grid-template-columns: 1fr;
+  }
+  .landing-page .control-row {
+    grid-template-columns: 150px 1fr;
+  }
+}
+
+/* The footer is all body text: DM Sans at its regular weight, links included. */
+.landing-page footer,
+.landing-page footer a,
+.landing-page footer p a {
+  font-family: var(--landing-sans), sans-serif;
+  font-weight: 400;
+  -webkit-font-smoothing: auto;
+}
+
+/* The nav's section links and "See how it plays" are DM Sans, at the
+   design's semi-bold and bold; the Play buttons keep the pixel face. */
+.landing-page .nav-links a,
+.landing-page .see-link {
+  font-family: var(--landing-sans), sans-serif;
+  -webkit-font-smoothing: auto;
+}
+.landing-page .nav-links a {
+  font-weight: 600;
+}
+.landing-page .see-link {
+  font-weight: 700;
+}
+
+/* The Play buttons are the game's own orange button (globals.css
+   .pixel-btn); this stylesheet is unlayered, so its "a { color: inherit }"
+   would otherwise beat the button's paper text. */
+.landing-page a.pixel-btn {
+  color: var(--color-paper);
+}
+
+/* The nav's paper backing spans the whole window: it only reached 70 px past
+   the nav, so on wide screens the hero showed at both ends. The nav is
+   centred, so 50% − 50vw lands on the window's edges (plus a little for the
+   tilt); the page root's overflow clip stops it from scrolling sideways. */
+.landing-page .nav:before {
+  left: calc(50% - 50vw - 16px);
+  right: calc(50% - 50vw - 16px);
+}
+
+/* The nav sits level: the design tilted it 0.95° (counter-rotating only its
+   backing), which left the logo, links and Play button crooked. */
+.landing-page .nav {
+  transform: translateX(-50%);
+}
+.landing-page .nav:before {
+  transform: none;
+}
+
+/* The nav logo, without its drop shadow (removed from logo-nav.svg) and a
+   little larger; the image scales to its box at every width. */
+.landing-page .nav-logo {
+  width: 132px;
+  height: auto;
+}
+.landing-page .nav-logo img {
+  width: 100%;
+  height: auto;
+}
+@media (max-width: 620px) {
+  .landing-page .nav-logo {
+    width: 108px;
+  }
+}
+
+/* Desktop nav, as the user's mockup: logo left, section links centred in
+   the window, Play right, on a paper box set 36 px below the top that runs
+   from just before the logo to just past Play, so the hero shows around
+   it. (Phones keep the full-width band above.) */
+@media (min-width: 951px) {
+  .landing-page .nav {
+    top: 36px;
+    height: 112px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+  }
+  .landing-page .nav:before {
+    inset: 0 -28px;
+  }
+  .landing-page .nav-logo {
+    justify-self: start;
+  }
+  .landing-page .nav-links {
+    margin-left: 0;
+    justify-self: center;
+  }
+  .landing-page .nav-play {
+    justify-self: end;
+  }
+}
+
+/* The nav floats: fixed to the window, so it stays with the reader as the
+   page scrolls, its paper box carrying the Play button's hard drop shadow.
+   Sections reached from its links stop below it rather than under it. */
+.landing-page .nav {
+  position: fixed;
+}
+.landing-page .nav:before {
+  box-shadow: 8px 8px 0 0 rgb(43 42 51 / 0.35);
+}
+.landing-page :is(#gameplay, #worlds, #garage, #controls) {
+  scroll-margin-top: 172px;
+}
+@media (max-width: 950px) {
+  .landing-page :is(#gameplay, #worlds, #garage, #controls) {
+    scroll-margin-top: 92px;
+  }
+}
+
+/* Scrolled, the floating desktop nav turns compact and wide: shorter, closer
+   to the top, its box running the window's width less 16 px from the
+   browser's frame. Eased; the global reduced-motion rule cuts the
+   transitions. */
+.landing-page .nav {
+  transition:
+    top 0.25s ease,
+    height 0.25s ease;
+}
+.landing-page .nav:before {
+  transition:
+    inset 0.25s ease,
+    left 0.25s ease,
+    right 0.25s ease,
+    top 0.25s ease,
+    bottom 0.25s ease;
+}
+.landing-page .nav-logo {
+  transition: width 0.25s ease;
+}
+@media (min-width: 951px) {
+  .landing-page .nav.scrolled {
+    top: 12px;
+    height: 72px;
+  }
+  .landing-page .nav.scrolled:before {
+    inset: 0 calc(50% - 50vw + 16px);
+  }
+  .landing-page .nav.scrolled .nav-logo {
+    width: 104px;
+  }
+}
+/* Phones keep the nav as it is at the top while scrolling: a full-width
+   band that ends at the nav's own bottom edge (the design's 20 px of extra
+   paper below it is trimmed), with a compact Play button beside the menu
+   button. */
+@media (max-width: 950px) {
+  .landing-page .nav:before {
+    bottom: 0;
+  }
+  .landing-page .nav-play {
+    display: inline-flex;
+    order: 2;
+    margin-left: auto;
+    padding: 8px 12px;
+    font-size: 10px;
+  }
+  .landing-page .nav-play img {
+    width: 12px;
+    height: 12px;
+  }
+  .landing-page .menu-toggle {
+    order: 3;
+    margin-left: 4px;
+  }
+}
+
+/* Under the footer's tagline: the copyright year and the privacy page. */
+.landing-page .footer-legal {
+  display: block;
+  margin-top: 8px;
+  color: #8a8a8a;
+  font-size: 12px;
+}
+.landing-page .footer-legal a {
+  font-size: 12px;
+}
+
+/* The camera caption holds only the previous / next arrows now (its
+   "Press C to switch camera" hint was removed); they stay on the right. */
+.landing-page .camera-caption {
+  justify-content: flex-end;
+}
+@media (max-width: 620px) {
+  /* Phones hide the arrows too, so the caption would be an empty strip. */
+  .landing-page .camera-caption {
+    display: none;
+  }
+}
+
+/* Arrow keys drawn with the game's own pad icons (desktop and touch): all
+   one size, centred in their key box beside any letters. */
+.landing-page .control-row kbd.control-icons {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 8px;
+}
+.landing-page .control-row .control-text {
+  white-space: pre;
+}
+.landing-page .control-row .control-icon svg {
+  display: block;
+  width: 12px;
+  height: 12px;
+}
+
+/* Camera tab names in DM Sans (the design's bold); only their numbers keep
+   the pixel face. */
+.landing-page .camera-tabs button {
+  font-family: var(--landing-sans), sans-serif;
+  font-weight: 700;
+  -webkit-font-smoothing: auto;
+}
+.landing-page .camera-tabs button span {
+  font-family: var(--landing-pixelfont);
+  font-weight: 400;
+  -webkit-font-smoothing: none;
+}
+
+/* The hero's video sits over the still image, framed the same, and fades in
+   once playing; the backdrop's paper gradient (its ::after) stays on top. */
+.landing-page .hero-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 97.08%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+.landing-page .hero-video.playing {
+  opacity: 1;
+}
+
+/* FAQs: between the final call to play and the footer, on the page's paper.
+   Native <details>; the marker is a pixel + that turns to − when open. */
+.landing-page .faq {
+  padding: 100px 0;
+  background: var(--paper);
+}
+.landing-page .faq-list {
+  margin-top: 50px;
+}
+.landing-page .faq-list details {
+  border-bottom: 1px solid var(--line);
+}
+.landing-page .faq-list summary {
+  position: relative;
+  padding: 22px 48px 22px 0;
+  list-style: none;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 26px;
+}
+.landing-page .faq-list summary::-webkit-details-marker {
+  display: none;
+}
+.landing-page .faq-list summary::after {
+  content: '+';
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  color: var(--orange);
+  font-family: var(--landing-pixelfont);
+  font-weight: 400;
+  -webkit-font-smoothing: none;
+  font-size: 16px;
+}
+.landing-page .faq-list details[open] summary::after {
+  content: '−';
+}
+.landing-page .faq-list summary:hover {
+  color: var(--orange);
+}
+.landing-page .faq-list summary:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: 2px;
+}
+.landing-page .faq-list details p {
+  max-width: 760px;
+  padding: 0 48px 24px 0;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 26px;
+}
+@media (max-width: 620px) {
+  .landing-page .faq {
+    padding: 80px 0;
+  }
+  .landing-page .faq-list {
+    margin-top: 36px;
+  }
+  .landing-page .faq-list summary {
+    font-size: 16px;
+    line-height: 24px;
+  }
+  .landing-page .faq-list details p {
+    padding-right: 0;
+    font-size: 15px;
+  }
+}
+
+/* Phones and tablets: everything tappable is at least 44 px high (the
+   menu button, the nav's Play, "See how it plays", the menu's and the
+   footer's links), without changing how the page looks. Inline links in
+   the footer's text grow their hit area with padding, not their line. */
+@media (max-width: 950px) {
+  .landing-page .menu-toggle {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    place-content: center;
+    justify-items: center;
+  }
+  .landing-page .nav-play {
+    min-height: 40px;
+  }
+  .landing-page .nav-links {
+    gap: 0;
+    padding-block: 8px;
+  }
+  .landing-page .nav-links a {
+    display: flex;
+    align-items: center;
+    min-height: 48px;
+    padding-inline: 4px;
+  }
+  .landing-page .see-link {
+    min-height: 44px;
+  }
+  .landing-page .car-controls button {
+    width: 44px;
+    height: 44px;
+  }
+  .landing-page .controls-toggle button {
+    min-height: 44px;
+  }
+  .landing-page footer > div {
+    flex-wrap: wrap;
+    gap: 0 8px;
+  }
+  .landing-page footer > div a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding-inline: 8px;
+  }
+  .landing-page footer p a {
+    padding-block: 12px;
+  }
+}
+
+/* A phone held sideways (short and not wide): the nav shrinks so it takes a
+   sixth of the screen rather than a quarter, its menu scrolls if it can't
+   fit, the hero sizes to its words, and the garage's car fits on screen
+   with its name and arrows. */
+@media (max-width: 950px) and (max-height: 500px) {
+  .landing-page .nav {
+    height: 60px;
+  }
+  .landing-page .nav-logo {
+    width: 84px;
+  }
+  .landing-page .nav-links {
+    top: 64px;
+    max-height: calc(100dvh - 80px);
+    overflow-y: auto;
+  }
+  .landing-page :is(#gameplay, #worlds, #garage, #controls) {
+    scroll-margin-top: 68px;
+  }
+  .landing-page .hero {
+    height: auto;
+    min-height: 0;
+    padding-top: 92px;
+    padding-bottom: 56px;
+  }
+  .landing-page .hero-copy {
+    height: auto;
+    padding-top: 0;
+  }
+  .landing-page .hero h1 {
+    font-size: 56px;
+  }
+  .landing-page .garage-showcase {
+    padding-top: 320px;
+  }
+  .landing-page .active-car,
+  .landing-page .car-stage {
+    top: 22px;
+    height: 280px;
+  }
+}
+
+/* The stage rail runs to both edges of the window rather than stopping at
+   the content column: its margins pull it out to the window's edges and
+   matching padding (also its scroll padding) keeps the first and last cards
+   lined up with the page's content. The page root clips sideways overflow,
+   so a classic scrollbar's width doesn't scroll the page. */
+.landing-page .stage-rail {
+  margin-inline: calc(50% - 50vw);
+  padding-inline: calc(50vw - 50%);
+  scroll-padding-inline: calc(50vw - 50%);
+}
+
+/* Phones: the garage's car stage (and its still) starts at the top of the
+   frame, so the stats and "Drag to turn" sit on the stage's sky rather than
+   on a beige band above it. It ends where it did, 295 px down. */
+@media (max-width: 620px) {
+  .landing-page .active-car,
+  .landing-page .car-stage {
+    top: 0;
+    height: 295px;
+  }
+}

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Analytics } from '@vercel/analytics/next';
+import { DM_Sans } from 'next/font/google';
 import localFont from 'next/font/local';
 import { en } from '@/i18n/messages/en';
 import { AUTHOR, SITE_URL } from '@/lib/site';
@@ -18,6 +19,18 @@ const pixelFont = localFont({
   style: 'normal',
   display: 'swap',
   variable: '--font-pixel-face',
+});
+
+/**
+ * The body face, DM Sans (as on the landing page), self-hosted by next/font
+ * at build time. Latin covers the three languages; its optical-size axis
+ * keeps small HUD text crisp.
+ */
+const bodyFont = DM_Sans({
+  subsets: ['latin'],
+  axes: ['opsz'],
+  display: 'swap',
+  variable: '--font-body-face',
 });
 
 const KEYWORDS = [
@@ -134,7 +147,7 @@ const JSON_LD = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={pixelFont.variable}>
+    <html lang="en" className={`${pixelFont.variable} ${bodyFont.variable}`}>
       <body className="font-sans antialiased">
         {children}
         <UpdatePrompt />

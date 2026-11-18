@@ -7,8 +7,9 @@ export default function manifest(): MetadataRoute.Manifest {
     name: en.meta.title,
     short_name: en.meta.title,
     description: en.meta.description,
+    // The id stays '/', so installs from before the game moved to /game remain the same app.
     id: '/',
-    start_url: '/',
+    start_url: '/game',
     scope: '/',
     display: 'standalone',
     // Not locked: the splash and menus read fine upright, and the player turns the phone to drive.

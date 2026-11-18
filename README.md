@@ -71,7 +71,7 @@ another device.
 
 ```sh
 pnpm install
-pnpm dev          # http://localhost:3000
+pnpm dev          # http://localhost:3000 (landing page; the game is at /game)
 pnpm check        # typecheck + lint + unit tests + build
 pnpm test:e2e     # Playwright suite (desktop + phone landscape)
 pnpm brand        # re-render icons (192/512/Apple) and the Open Graph image from assets/

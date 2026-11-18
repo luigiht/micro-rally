@@ -18,7 +18,7 @@ export async function chooseSinglePlayer(page: Page): Promise<void> {
 /** Get through the splash screen into a running game. */
 export async function startGame(
   page: Page,
-  path = '/',
+  path = '/game',
   opts: { name?: string; gameId?: string } = {},
 ): Promise<void> {
   await page.goto(path);

@@ -151,7 +151,7 @@ pattern used throughout the project:
    `micro-rally:save:<GAME ID>`, with the `gameSeed`, `stageIndex`, `carId`
    and `ownedCars` you want. Game IDs are eight Crockford base32 characters
    (digits and letters except I, L, O and U).
-2. Open `http://localhost:3000/` with a development flag if useful:
+2. Open `http://localhost:3000/game` (the game; `/` is the landing page) with a development flag if useful:
    `?spawn=<metres>` to start part-way along the stage (checkpoints behind
    the spawn count as passed, so `?spawn=` a few metres before the finish
    lets you finish in seconds), `?spawn=town` for the town, `?track=test`

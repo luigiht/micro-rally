@@ -134,7 +134,7 @@ export function AboutContent() {
           )}
         </section>
 
-        <Link href="/" className="pixel-btn mt-8 inline-block">
+        <Link href="/game" className="pixel-btn mt-8 inline-block">
           {m.about.back}
         </Link>
       </article>

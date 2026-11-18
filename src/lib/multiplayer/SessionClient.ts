@@ -180,5 +180,5 @@ export function writeSessionParam(id: string | null): void {
 
 /** A link that opens the splash on this session's join form. */
 export function sessionLink(id: string, origin: string): string {
-  return `${origin}/?${PARAM}=${id}`;
+  return `${origin}/game?${PARAM}=${id}`;
 }

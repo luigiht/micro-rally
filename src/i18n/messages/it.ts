@@ -495,6 +495,179 @@ export const it: Messages = {
     yes: 'sì',
     no: 'no',
   },
+  landing: {
+    title: 'Micro Rally — Auto piccola. Emozione enorme.',
+    description:
+      'Micro Rally è un accogliente gioco di rally low-poly per il browser. Guida prove procedurali, potenzia la tua auto e gioca gratis.',
+    nav: {
+      label: 'Navigazione principale',
+      home: 'Home di Micro Rally',
+      toggle: 'Mostra o nascondi la navigazione',
+      gameplay: 'Come si gioca',
+      world: 'Prove',
+      garage: 'Garage',
+      controls: 'Comandi',
+    },
+    play: 'Gioca',
+    hero: {
+      top: 'Auto piccola',
+      bottom: 'Emozione enorme',
+      body: 'Un accogliente gioco di rally low-poly dove ogni curva è nuova. Guida su strade generate proceduralmente, guadagnati i potenziamenti e costruisci un garage da mostrare.',
+      see: 'Guarda come si gioca',
+    },
+    tickerLabel: 'In evidenza',
+    ticker: [
+      'Prove di rally',
+      'Garage da 11 auto',
+      'Carriera in solitaria',
+      'Rally in due',
+      'Quattro telecamere',
+      'Fatto per il browser',
+    ],
+    gameplay: {
+      top: 'Facile da iniziare',
+      bottom: 'Difficile da lasciare',
+      body: 'Micro Rally è arcade, ma non usa e getta. I comandi si imparano in fretta; limare un altro secondo su una prova fangosa è ciò che ti resta addosso.',
+      steps: [
+        {
+          title: 'Scegli una prova',
+          text: 'Dai rettilinei innevati dell’Artico alle rotatorie di città, ogni percorso nasce da un seme e resta equo a ogni tentativo.',
+        },
+        {
+          title: 'Trova il ritmo',
+          text: 'Frena tardi, tira il freno a mano, passa ogni checkpoint e cerca una traiettoria più pulita contro il tuo miglior tempo.',
+        },
+        {
+          title: 'Costruisci il garage',
+          text: 'Porta a casa i premi, regola sette sistemi di prestazione e fatti strada tra undici macchine molto diverse.',
+        },
+      ],
+    },
+    worlds: {
+      top: 'Ogni strada racconta',
+      bottom: 'una storia diversa',
+      body: 'Cambia l’aderenza. Cambia il paesaggio. Dovrebbe cambiare anche il tuo piano. Ogni prova è deterministica, così la strada resta la stessa mentre tu migliori.',
+      alt: 'Prova di rally low-poly {name}',
+      stages: {
+        pinewood: {
+          note: 'Sassi smossi. Pini fitti.',
+          surface: 'Ghiaia',
+        },
+        arctic: {
+          note: 'Muri di neve. Dossi in pieno.',
+          surface: 'Neve',
+        },
+        alpine: {
+          note: 'Pini ghiacciati. Curve strette.',
+          surface: 'Neve',
+        },
+        coastal: {
+          note: 'Strade a strapiombo. Tornanti in serie.',
+          surface: 'Asfalto',
+        },
+        urban: {
+          note: 'Binari del tram. Rotatorie strette.',
+          surface: 'Asfalto',
+        },
+        desert: {
+          note: 'Dune. Palme. Oasi.',
+          surface: 'Sabbia',
+        },
+        forest: {
+          note: 'Strade veloci. Colline verdi.',
+          surface: 'Asfalto',
+        },
+        circuit: {
+          note: 'Cordoli. Vie di fuga in ghiaia. Tre giri.',
+          surface: 'Pista',
+        },
+      },
+    },
+    garage: {
+      top: 'Parti umile',
+      bottom: 'Arriva leggenda',
+      body: 'Inizia con la Rally Hatch gratuita. Vinci premi, poi passa ai mostri del Gruppo B, alle icone del WRC, a un camion della Dakar… o a un prototipo di Le Mans rasoterra.',
+      prev: 'Veicolo precedente',
+      next: 'Veicolo successivo',
+      alt: '{name}, veicolo da rally low-poly',
+      turn: 'Trascina per ruotare',
+      stage:
+        '{name}, in rotazione in 3D. Trascinala, o usa le frecce sinistra e destra, per ruotarla tu.',
+      types: {
+        hatchback: 'La prima',
+        coupe: 'Gruppo 4',
+        t16: 'Gruppo B',
+        saloon: 'Berlina WRC',
+        wrc: 'Compatta WRC',
+        lemans: 'Prototipo endurance',
+        groupb: 'Mostro del Gruppo B',
+        berlinette: 'Berlinetta Gruppo 4',
+        s1: 'Coupé del Gruppo B',
+        focus: 'Compatta WRC',
+        dakar: 'Rally raid',
+        buggy: 'Rally raid',
+      },
+    },
+    cameras: {
+      title: 'Quattro posti, un punto di vista',
+      body: 'Insegui l’auto, siediti al volante, leggi la strada dall’alto o lascia che una telecamera televisiva trasformi la tua prova in un servizio.',
+      tabsLabel: 'Viste telecamera',
+      names: ['Inseguimento', 'Abitacolo', 'Isometrica', 'Cinematica'],
+      alt: 'Vista telecamera {name} di Micro Rally',
+      prev: 'Telecamera precedente',
+      next: 'Telecamera successiva',
+    },
+    controls: {
+      top: 'Comandi semplici',
+      bottom: 'Guida profonda',
+      body: 'Acceleratore, freno, sterzo e freno a mano: non serve altro, il resto è tempismo. Gioca con la tastiera o direttamente sul touchscreen del telefono.',
+      title: 'Tutti i comandi',
+      label: 'Comandi per',
+      desktop: 'Computer',
+      mobile: 'Mobile',
+    },
+    features: [
+      {
+        title: 'Tutto procedurale',
+        text: 'Mondi, auto e prove costruiti nel codice.',
+      },
+      {
+        title: 'Rally con un amico',
+        text: 'Stesse strade, a caccia del tempo migliore.',
+      },
+      {
+        title: 'Sempre un’altra prova',
+        text: 'Arrivano strade più lunghe e curve più strette.',
+      },
+    ],
+    cta: {
+      kicker: 'La prova ti aspetta',
+      line1: 'Quando vuoi',
+      line2: 'pilota',
+      body: 'Gratis. Niente da installare. Solo tu, la strada e un’altra prova.',
+    },
+    faq: {
+      top: 'Domande',
+      bottom: 'Risposte',
+      body: 'In breve: è gratis, gira nel browser e il tuo ID partita conserva i progressi.',
+      items: [
+        {
+          question: 'È gratis?',
+          answer:
+            'Sì. Micro Rally è gratuito e si gioca nel browser, senza installare nulla. Auto e potenziamenti si comprano con i premi vinti sulla strada.',
+        },
+        {
+          question: 'Cosa serve per giocare?',
+          answer:
+            'Un browser moderno su computer, tablet o telefono. Guidi con la tastiera o, sui touchscreen, con i comandi sullo schermo. Su telefoni e tablet puoi anche installarlo nella schermata Home.',
+        },
+      ],
+    },
+    footer: {
+      by: 'Un accogliente gioco di rally low-poly di',
+      worlds: 'Prove',
+    },
+  },
   autopilot: {
     title: 'Pilota automatico',
     hint: 'Scegli un’auto e un tipo di prova: l’auto guida da sola, prova dopo prova. Non viene salvato nulla.',

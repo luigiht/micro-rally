@@ -181,7 +181,7 @@ export function FeedbackForm() {
             {m.feedback.privacy}
           </Link>
         </p>
-        <Link href="/" className="pixel-btn mt-8 inline-block">
+        <Link href="/game" className="pixel-btn mt-8 inline-block">
           {m.feedback.back}
         </Link>
       </article>

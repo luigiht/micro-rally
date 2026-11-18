@@ -13,7 +13,7 @@ test.afterEach(async () => {
 });
 
 /** A fresh browser (own storage) on the splash, through the Multiplayer choice. */
-async function multiplayerPage(browser: Browser, path = '/'): Promise<Page> {
+async function multiplayerPage(browser: Browser, path = '/game'): Promise<Page> {
   const context = await browser.newContext();
   contexts.push(context);
   const page = await context.newPage();

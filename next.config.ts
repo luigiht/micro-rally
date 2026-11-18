@@ -12,12 +12,30 @@ const SECURITY_HEADERS = [
 const BUILD_ID =
   process.env.VERCEL_DEPLOYMENT_ID ?? process.env.VERCEL_GIT_COMMIT_SHA ?? `local-${Date.now()}`;
 
+/**
+ * The game moved from `/` to `/game`. Links made before then (a saved game,
+ * a multiplayer invite, the demo and test switches) still name `/`, so `/`
+ * with any of those passes on to the game with its query string intact.
+ */
+const GAME_PARAMS = ['game', 'session', 'autopilot', 'spawn', 'shot', 'track'];
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   env: { NEXT_PUBLIC_BUILD_ID: BUILD_ID },
   poweredByHeader: false,
   transpilePackages: ['three'],
   experimental: { agentUpgrade: 'security' },
+  async redirects() {
+    return [
+      ...GAME_PARAMS.map((key) => ({
+        source: '/',
+        has: [{ type: 'query' as const, key }],
+        destination: '/game',
+        permanent: false,
+      })),
+      { source: '/landing', destination: '/', permanent: true },
+    ];
+  },
   async headers() {
     return [{ source: '/:path*', headers: SECURITY_HEADERS }];
   },

@@ -13,7 +13,7 @@ test.describe('install prompt on an Android browser', () => {
   test('appears once the browser offers to install, Not now hides it for a fortnight', async ({
     page,
   }) => {
-    await page.goto('/');
+    await page.goto('/game');
     await expect(page.getByRole('button', { name: 'Single player' })).toBeVisible();
     await expect(page.getByTestId('install-prompt')).toHaveCount(0);
     // Headless Chromium never raises the event on its own; stand in for it.
@@ -34,7 +34,7 @@ test.describe('install prompt on an iPhone', () => {
   test.use(phone('iPhone 13'));
 
   test('explains Share → Add to Home Screen without an Install button', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/game');
     const prompt = page.getByTestId('install-prompt');
     await expect(prompt).toHaveAttribute('data-platform', 'ios');
     await expect(prompt).toContainText('Add to Home Screen');
@@ -47,7 +47,7 @@ test.describe('install prompt on an iPhone', () => {
       Object.defineProperty(navigator, 'standalone', { get: () => true });
     });
     const page = await context.newPage();
-    await page.goto('/');
+    await page.goto('/game');
     await expect(page.getByRole('button', { name: 'Single player' })).toBeVisible();
     await expect(page.getByTestId('install-prompt')).toHaveCount(0);
     await context.close();
@@ -55,7 +55,7 @@ test.describe('install prompt on an iPhone', () => {
 });
 
 test('a desktop pointer is never asked to install', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/game');
   await expect(page.getByRole('button', { name: 'Single player' })).toBeVisible();
   await page.evaluate(() => window.dispatchEvent(new Event('beforeinstallprompt')));
   await expect(page.getByTestId('install-prompt')).toHaveCount(0);

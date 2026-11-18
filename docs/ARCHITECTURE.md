@@ -329,6 +329,19 @@ flowchart LR
   on Vercel without Supabase (the API answers 503 and saves stay on the
   device). See `docs/DEPLOY.md`.
 
+## Routes
+
+- `/` is the landing page (`app/page.tsx`, `components/landing`); `/game`
+  is the game (`app/game/page.tsx`, `GameRoot`). About, Privacy and
+  Feedback link back to `/game`.
+- `next.config.ts` redirects `/` with a game query (`game`, `session`,
+  `autopilot`, `spawn`, `shot`, `track`) to `/game`, keeping the query, so
+  links from before the move still work; `/landing` redirects to `/`.
+- The manifest starts the installed app at `/game` (its `id` stays `/`). An
+  inline script at the top of the landing page sends a home-screen launch
+  (`display-mode: standalone`/`fullscreen`, or iOS `navigator.standalone`)
+  that still lands on `/` on to `/game` before the page paints.
+
 ## Updates for open windows
 
 - Each build is stamped with `NEXT_PUBLIC_BUILD_ID` in `next.config.ts`

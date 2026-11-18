@@ -5,7 +5,27 @@ tags yet: `main` is deployed continuously, so entries are grouped by the day
 they landed. The numbered entries in [docs/DECISIONS.md](docs/DECISIONS.md)
 hold the reasoning behind each change; the numbers in brackets point there.
 
+## 2026-11-18
+
+### Added
+
+- **A front page.** The site now opens on a page that shows what Micro Rally
+  is: a gameplay video, the stage types, every car turning in 3D (drag to
+  spin it), the controls, the cameras and FAQs. Play takes you to the game,
+  which now lives at `/game` [274, 275, 276].
+
+### Changed
+
+- **The installed app opens straight into the game.** Home-screen installs,
+  old and new, skip the front page. Saved-game and multiplayer links from
+  before the move still open the game [276].
+
 ## 2026-11-17
+
+### Changed
+
+- **A new body font.** Text across the game now uses DM Sans, the same on
+  every device, while titles and buttons keep the pixel font [273].
 
 ### Removed
 

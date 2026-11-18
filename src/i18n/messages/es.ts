@@ -495,6 +495,179 @@ export const es: Messages = {
     yes: 'sí',
     no: 'no',
   },
+  landing: {
+    title: 'Micro Rally — Coche pequeño. Emoción enorme.',
+    description:
+      'Micro Rally es un acogedor juego de rally low-poly para tu navegador. Conduce tramos procedurales, mejora tu coche y juega gratis.',
+    nav: {
+      label: 'Navegación principal',
+      home: 'Inicio de Micro Rally',
+      toggle: 'Mostrar u ocultar la navegación',
+      gameplay: 'Cómo se juega',
+      world: 'Tramos',
+      garage: 'Garaje',
+      controls: 'Controles',
+    },
+    play: 'Jugar',
+    hero: {
+      top: 'Coche pequeño',
+      bottom: 'Emoción enorme',
+      body: 'Un acogedor juego de rally low-poly donde cada curva es nueva. Conduce por carreteras generadas proceduralmente, gánate tus mejoras y monta un garaje digno de presumir.',
+      see: 'Mira cómo se juega',
+    },
+    tickerLabel: 'Lo más destacado',
+    ticker: [
+      'Tramos de rally',
+      'Garaje de 11 coches',
+      'Carrera en solitario',
+      'Rally para dos',
+      'Cuatro cámaras',
+      'Hecho para el navegador',
+    ],
+    gameplay: {
+      top: 'Fácil de empezar',
+      bottom: 'Difícil de dejar',
+      body: 'Micro Rally es arcade, pero no de usar y tirar. Los controles se aprenden enseguida; arañar otro segundo en un tramo embarrado es lo que te engancha.',
+      steps: [
+        {
+          title: 'Elige un tramo',
+          text: 'De las rectas nevadas del Ártico a las rotondas de la ciudad, cada ruta sale de una semilla y es igual de justa en cada intento.',
+        },
+        {
+          title: 'Encuentra el ritmo',
+          text: 'Frena tarde, tira del freno de mano, pasa por cada control y busca una trazada más limpia contra tu mejor tiempo.',
+        },
+        {
+          title: 'Monta tu garaje',
+          text: 'Llévate el premio en metálico, ajusta siete sistemas de rendimiento y abre camino entre once máquinas muy distintas.',
+        },
+      ],
+    },
+    worlds: {
+      top: 'Cada carretera cuenta',
+      bottom: 'una historia distinta',
+      body: 'Cambia el agarre. Cambia el paisaje. Tu plan también debería. Cada tramo es determinista, así que la carretera no cambia mientras tú mejoras.',
+      alt: 'Tramo de rally low-poly {name}',
+      stages: {
+        pinewood: {
+          note: 'Piedras sueltas. Pinos densos.',
+          surface: 'Grava',
+        },
+        arctic: {
+          note: 'Bancos de nieve. Cambios de rasante a fondo.',
+          surface: 'Nieve',
+        },
+        alpine: {
+          note: 'Pinos helados. Curvas cerradas.',
+          surface: 'Nieve',
+        },
+        coastal: {
+          note: 'Carreteras de acantilado. Horquillas encadenadas.',
+          surface: 'Asfalto',
+        },
+        urban: {
+          note: 'Vías de tranvía. Rotondas cerradas.',
+          surface: 'Asfalto',
+        },
+        desert: {
+          note: 'Dunas. Palmeras. Oasis.',
+          surface: 'Arena',
+        },
+        forest: {
+          note: 'Carreteras rápidas. Colinas verdes.',
+          surface: 'Asfalto',
+        },
+        circuit: {
+          note: 'Pianos. Escapatorias de grava. Tres vueltas.',
+          surface: 'Circuito',
+        },
+      },
+    },
+    garage: {
+      top: 'Empieza humilde',
+      bottom: 'Acaba siendo leyenda',
+      body: 'Empieza con el Rally Hatch gratuito. Gana premios y pasa a monstruos del Grupo B, iconos del WRC, un camión del Dakar… o un prototipo de Le Mans a ras de suelo.',
+      prev: 'Vehículo anterior',
+      next: 'Vehículo siguiente',
+      alt: '{name}, vehículo de rally low-poly',
+      turn: 'Arrastra para girar',
+      stage:
+        '{name}, girando en 3D. Arrástralo, o usa las flechas izquierda y derecha, para girarlo tú.',
+      types: {
+        hatchback: 'El primero',
+        coupe: 'Grupo 4',
+        t16: 'Grupo B',
+        saloon: 'Berlina WRC',
+        wrc: 'Compacto WRC',
+        lemans: 'Prototipo de resistencia',
+        groupb: 'Monstruo del Grupo B',
+        berlinette: 'Berlinette Grupo 4',
+        s1: 'Coupé del Grupo B',
+        focus: 'Compacto WRC',
+        dakar: 'Rally raid',
+        buggy: 'Rally raid',
+      },
+    },
+    cameras: {
+      title: 'Cuatro asientos, una perspectiva',
+      body: 'Persigue el coche, siéntate al volante, lee la carretera desde arriba o deja que una cámara de televisión convierta tu tramo en un resumen.',
+      tabsLabel: 'Vistas de cámara',
+      names: ['Persecución', 'Interior', 'Isométrica', 'Cinemática'],
+      alt: 'Vista de cámara {name} de Micro Rally',
+      prev: 'Cámara anterior',
+      next: 'Cámara siguiente',
+    },
+    controls: {
+      top: 'Controles sencillos',
+      bottom: 'Conducción profunda',
+      body: 'Acelerador, freno, dirección y freno de mano es todo lo que necesitas; el resto es cuestión de tiempo. Juega con teclado o directamente en la pantalla táctil del móvil.',
+      title: 'Todos los controles',
+      label: 'Controles para',
+      desktop: 'Ordenador',
+      mobile: 'Móvil',
+    },
+    features: [
+      {
+        title: 'Totalmente procedural',
+        text: 'Mundos, coches y tramos hechos con código.',
+      },
+      {
+        title: 'Rally con un amigo',
+        text: 'Mismas carreteras, a por el mejor tiempo.',
+      },
+      {
+        title: 'Siempre otro tramo',
+        text: 'Llegan carreteras más largas y curvas más cerradas.',
+      },
+    ],
+    cta: {
+      kicker: 'El tramo te espera',
+      line1: 'Cuando quieras',
+      line2: 'piloto',
+      body: 'Gratis. Sin instalar nada. Solo tú, la carretera y una vuelta más.',
+    },
+    faq: {
+      top: 'Preguntas',
+      bottom: 'Respuestas',
+      body: 'En resumen: es gratis, funciona en tu navegador y tu ID de partida guarda tu progreso.',
+      items: [
+        {
+          question: '¿Es gratis?',
+          answer:
+            'Sí. Micro Rally es gratis y se juega en el navegador, sin instalar nada. Los coches y las mejoras se compran con los premios que ganas en la carretera.',
+        },
+        {
+          question: '¿Qué necesito para jugar?',
+          answer:
+            'Un navegador moderno en un ordenador, una tableta o un móvil. Conduce con el teclado o, en pantallas táctiles, con los controles en pantalla. En móviles y tabletas también puedes instalarlo en la pantalla de inicio.',
+        },
+      ],
+    },
+    footer: {
+      by: 'Un acogedor juego de rally low-poly de',
+      worlds: 'Tramos',
+    },
+  },
   autopilot: {
     title: 'Piloto automático',
     hint: 'Elige un coche y un tipo de tramo: el coche conduce solo, tramo tras tramo. No se guarda nada.',

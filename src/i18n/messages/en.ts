@@ -476,6 +476,179 @@ export const en = {
     yes: 'yes',
     no: 'no',
   },
+  landing: {
+    title: 'Micro Rally — Tiny car. Huge rush.',
+    description:
+      'Micro Rally is a cozy low-poly rally game for your browser. Drive procedural stages, upgrade your car and play free.',
+    nav: {
+      label: 'Main navigation',
+      home: 'Micro Rally home',
+      toggle: 'Toggle navigation',
+      gameplay: 'Gameplay',
+      world: 'Stages',
+      garage: 'Garage',
+      controls: 'Controls',
+    },
+    play: 'Play',
+    hero: {
+      top: 'Tiny car',
+      bottom: 'Huge rush',
+      body: 'A cozy low-poly rally game where every bend is new. Drive procedurally generated roads, earn your upgrades and build a garage worth showing off.',
+      see: 'See how it plays',
+    },
+    tickerLabel: 'Game highlights',
+    ticker: [
+      'Rally stages',
+      '11-car garage',
+      'Solo career',
+      'Two-player rally',
+      'Four cameras',
+      'Built for the browser',
+    ],
+    gameplay: {
+      top: 'Easy to start',
+      bottom: 'Hard to put down',
+      body: 'Micro Rally is arcade-friendly, not throwaway. The controls are quick to learn; shaving another second off a muddy stage is the part that stays with you.',
+      steps: [
+        {
+          title: 'Pick a stage',
+          text: 'From snowy Arctic straights to city roundabouts, every route is generated from a seed and stays fair on every retry.',
+        },
+        {
+          title: 'Find the flow',
+          text: 'Brake late, flick the handbrake, thread every checkpoint and chase a cleaner line against your own best time.',
+        },
+        {
+          title: 'Build your garage',
+          text: 'Bring home prize money, tune seven performance systems and work your way through eleven very different machines.',
+        },
+      ],
+    },
+    worlds: {
+      top: 'Every road tells',
+      bottom: 'a different story',
+      body: 'Grip changes. Scenery changes. Your plan should too. Every stage is deterministic, so the road stays the same while you get better.',
+      alt: 'Low-poly {name} rally stage',
+      stages: {
+        pinewood: {
+          note: 'Loose stones. Dense pines.',
+          surface: 'Gravel',
+        },
+        arctic: {
+          note: 'Snowbanks. Flat-out crests.',
+          surface: 'Snow',
+        },
+        alpine: {
+          note: 'Frosted pines. Sharp bends.',
+          surface: 'Snow',
+        },
+        coastal: {
+          note: 'Cliff roads. Stacked hairpins.',
+          surface: 'Tarmac',
+        },
+        urban: {
+          note: 'Tramlines. Tight roundabouts.',
+          surface: 'Tarmac',
+        },
+        desert: {
+          note: 'Dunes. Palms. Oases.',
+          surface: 'Sand',
+        },
+        forest: {
+          note: 'Fast roads. Green hills.',
+          surface: 'Tarmac',
+        },
+        circuit: {
+          note: 'Kerbs. Gravel traps. Three laps.',
+          surface: 'Track',
+        },
+      },
+    },
+    garage: {
+      top: 'Start humble',
+      bottom: 'Finish legendary',
+      body: 'Begin in the free Rally Hatch. Win prize money, then move into Group B monsters, WRC icons, a Dakar truck—or a low-slung Le Mans prototype.',
+      prev: 'Previous vehicle',
+      next: 'Next vehicle',
+      alt: '{name} low-poly rally vehicle',
+      turn: 'Drag to turn',
+      stage:
+        '{name}, turning in 3D. Drag it, or use the left and right arrow keys, to turn it yourself.',
+      types: {
+        hatchback: 'The starter',
+        coupe: 'Group 4',
+        t16: 'Group B',
+        saloon: 'WRC saloon',
+        wrc: 'WRC hatch',
+        lemans: 'Endurance prototype',
+        groupb: 'Group B monster',
+        berlinette: 'Group 4 berlinette',
+        s1: 'Group B coupé',
+        focus: 'WRC hatch',
+        dakar: 'Rally raid',
+        buggy: 'Rally raid',
+      },
+    },
+    cameras: {
+      title: 'Four seats, one perspective',
+      body: 'Chase the car, sit behind the wheel, read the road from above, or let a broadcast camera turn your run into a highlight reel.',
+      tabsLabel: 'Camera views',
+      names: ['Chase', 'Interior', 'Isometric', 'Cinematic'],
+      alt: 'Micro Rally {name} camera view',
+      prev: 'Previous camera',
+      next: 'Next camera',
+    },
+    controls: {
+      top: 'Simple controls',
+      bottom: 'Deep driving',
+      body: 'Throttle, brake, steering and a handbrake are all it takes; the rest is timing. Play on a keyboard, or right on your phone’s touchscreen.',
+      title: 'All the controls',
+      label: 'Controls for',
+      desktop: 'Desktop',
+      mobile: 'Mobile',
+    },
+    features: [
+      {
+        title: 'Purely procedural',
+        text: 'Worlds, cars and stages built in code.',
+      },
+      {
+        title: 'Rally with a friend',
+        text: 'Race the same roads, chase the faster time.',
+      },
+      {
+        title: 'Always another stage',
+        text: 'Longer roads and tighter bends keep coming.',
+      },
+    ],
+    cta: {
+      kicker: 'The stage is waiting',
+      line1: 'Ready when',
+      line2: 'you are driver',
+      body: 'Free. No install. Just you, the road, and one more run.',
+    },
+    faq: {
+      top: 'Questions',
+      bottom: 'Answered',
+      body: 'The short version: it is free, it runs in your browser, and your Game ID keeps your progress.',
+      items: [
+        {
+          question: 'Is it free?',
+          answer:
+            'Yes. Micro Rally is free to play in your browser, with nothing to install. Cars and upgrades are bought with the prize money you win on the road.',
+        },
+        {
+          question: 'What do I need to play?',
+          answer:
+            'A modern browser on a computer, tablet or phone. Drive with the keyboard, or with the on-screen pads on a touchscreen. Phones and tablets can also install it to the home screen.',
+        },
+      ],
+    },
+    footer: {
+      by: 'A cozy, low-poly rally game by',
+      worlds: 'Stages',
+    },
+  },
   autopilot: {
     title: 'Autopilot',
     hint: 'Pick a car and a stage type: the car drives itself, stage after stage. Nothing is saved.',

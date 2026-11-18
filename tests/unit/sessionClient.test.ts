@@ -121,7 +121,7 @@ describe('session links', () => {
     expect(readSessionParam('?session=abcd-2345')).toBe('ABCD2345');
     expect(readSessionParam('?session=nope')).toBeNull();
     expect(sessionLink('ABCD2345', 'https://micro.rally')).toBe(
-      'https://micro.rally/?session=ABCD2345',
+      'https://micro.rally/game?session=ABCD2345',
     );
   });
 });

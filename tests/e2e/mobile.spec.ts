@@ -57,7 +57,7 @@ test('phone landscape: HUD pieces do not overlap and touch pads are shown', asyn
 });
 
 test('holding the on-screen gas pedal drives the car', async ({ page }) => {
-  await startGame(page, '/?track=test');
+  await startGame(page, '/game?track=test');
   const readout = page.getByTestId('speed-readout');
   await page.waitForTimeout(500);
   const gas = await box(page.getByRole('button', { name: 'Gas' }));
@@ -73,7 +73,7 @@ test('holding the on-screen gas pedal drives the car', async ({ page }) => {
 test('the toolbar’s back-to-checkpoint button puts the car back at rest, like R', async ({
   page,
 }) => {
-  await startGame(page, '/?track=test');
+  await startGame(page, '/game?track=test');
   const readout = page.getByTestId('speed-readout');
   const speedNow = async () => Number((await readout.innerText()).match(/\d+/)?.[0]);
   await page.waitForTimeout(500);
@@ -126,7 +126,7 @@ test('phone landscape: checkpoints and money share a row of icons, the pace note
     },
   });
   expect(put.ok(), await put.text()).toBeTruthy();
-  await startGame(page, '/', { name: '', gameId });
+  await startGame(page, '/game', { name: '', gameId });
   const turbo = await box(page.getByRole('button', { name: 'Turbo' }));
   const left = await box(page.getByRole('button', { name: 'Steer left' }));
   // Over steer-left.
