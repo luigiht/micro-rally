@@ -7,10 +7,12 @@ import {
   STAGE_TYPES,
   stageSlot,
   STAGES_PER_LOOP,
+  type StageTypeDef,
   type StageTypeId,
   type Weather,
   reliefAmplitude,
 } from './regions';
+import { planSurfaceSpans, type SurfaceSpan } from './SurfaceSpans';
 import { generateCircuit, type CircuitLayout } from './CircuitGenerator';
 import {
   CIRCUIT_HALF_WIDTH,
@@ -132,6 +134,8 @@ export interface StageDef extends StageBrief {
   circuit?: CircuitInfo;
   /** The hairpin stacks the road climbs (`Lacets`), where the region lays them; the ground steps up across each. */
   lacets?: StageLacet[];
+  /** Where the road changes surface along its length (`SurfaceSpans`), on stage types that do; `surface` throughout elsewhere. */
+  surfaces?: SurfaceSpan[];
 }
 
 /** The stage's slot (`stageSlot`: a city, a circuit or the rally mix) and its difficulty loop, which steps on its own cadence. */
@@ -315,6 +319,24 @@ function lacetSpans(path: RoadPath, lacets: readonly Lacet[]): StageLacet[] {
   return lacets.map((l) => ({ ...l, from: along(l.entry), to: along(l.exit) }));
 }
 
+/**
+ * Seconds a decent run spends between the start and finish lines at the
+ * type's par speed, each stretch at its own surface's pace where the road
+ * changes surface (`SurfaceSpans`, drawn from the seed and length alone).
+ */
+function drivingTime(def: StageTypeDef, seed: number, length: number): number {
+  const own = length / (def.parSpeed * SURFACE_PAR[def.surface]);
+  if (!def.surfaceSpans) return own;
+  const from = START_DISTANCE;
+  const to = START_DISTANCE + length;
+  let time = 0;
+  for (const s of planSurfaceSpans(seed, length, def.surface, def.surfaceSpans)) {
+    const run = Math.min(to, s.to) - Math.max(from, s.from);
+    if (run > 0) time += run / (def.parSpeed * SURFACE_PAR[s.surface]);
+  }
+  return time;
+}
+
 /** Draws the brief in RNG order; `generateStage` continues with the same stream. */
 function drawBrief(
   rand: () => number,
@@ -344,7 +366,7 @@ function drawBrief(
     : Math.round(def.baseLength * (1 + 0.25 * loop) * (0.85 + jitter * 0.3));
   const parTime = layout
     ? Math.round(length / (def.parSpeed * SURFACE_PAR[surface])) + STANDING_START_SECONDS
-    : Math.round(length / (def.parSpeed * SURFACE_PAR[surface])) + (town ? TOWN_PAR_SECONDS : 0);
+    : Math.round(drivingTime(def, seed, length)) + (town ? TOWN_PAR_SECONDS : 0);
   return {
     seed,
     index,
@@ -502,5 +524,8 @@ export function generateStage(
     ...(town ? { town } : {}),
     ...(widths ? { widths } : {}),
     ...(stacks.length > 0 ? { lacets: stacks } : {}),
+    ...(def.surfaceSpans
+      ? { surfaces: planSurfaceSpans(seed, length, def.surface, def.surfaceSpans) }
+      : {}),
   };
 }

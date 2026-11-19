@@ -47,6 +47,10 @@ export function wornCarriageway(strips: Strip[], carriageway: Strip, path: RoadP
     1,
     ...Array.from({ length: MAX_BANDS }, (_, i): Strip => ({
       ...carriageway,
+      // Each band its own share of any cover (mud tracked onto the tarmac lies in patches across the road).
+      ...(carriageway.cover
+        ? { cover: (k: number, hw: number) => carriageway.cover!(k, hw, i) }
+        : {}),
       a: (hw, k) => dustBand(hw, i, k)?.a ?? hw,
       b: (hw, k) => dustBand(hw, i, k)?.b ?? hw,
       detail: (hw, k) => wornTone(hw, i, k, bendAt(path, k)),

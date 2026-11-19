@@ -245,7 +245,8 @@ describe('garage in the store', () => {
       money: 10,
       stageIndex: 20,
       // 0 Forest (surface now fixed), 4 Coast → Arctic, 8 Alpine → city, 9 and 19 circuits,
-      // 13 Arctic stays comparable, 27 Alpine is dropped now its surface is fixed to snow.
+      // 13 Arctic stays comparable until Lakeland joins the mix (v14) and makes it a Coastal,
+      // 27 Alpine is dropped now its surface is fixed to snow.
       records: { 0: rec, 4: rec, 8: rec, 9: rec, 13: rec, 19: rec, 27: rec },
       carId: 'hatchback',
       ownedCars: ['hatchback'],
@@ -257,7 +258,7 @@ describe('garage in the store', () => {
       Object.keys(save.records)
         .map(Number)
         .sort((a, b) => a - b),
-    ).toEqual([9, 13, 19]);
+    ).toEqual([9, 19]);
   });
 
   it('shares one grip setup across the dealership', () => {

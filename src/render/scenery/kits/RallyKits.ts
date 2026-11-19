@@ -14,6 +14,7 @@ import type { Prop, PropKind } from '@/game/stage/SceneryScatter';
 import type { BuildingStyle } from '@/game/stage/Town';
 import { buildingRoofGeometry, buildingWallsGeometry } from '../BuildingGeometry';
 import { houseRoofGeometry, houseWallsGeometry } from '../HouseGeometry';
+import { swedishHouseRoofGeometry, swedishHouseWallsGeometry } from '../SwedishHouseGeometry';
 import { buildingPlantersGeometry } from '../PlanterGeometry';
 import { canopyGeometry, foliageGeometry } from '../TreeGeometry';
 import { autumnKits } from './AutumnKits';
@@ -240,22 +241,30 @@ function mat(color: string, vertexColors = false): MeshStandardMaterial {
  * and the town's street furniture. `snow` (alpine) puts the houses under snow;
  * `woods` names a region that plants its own woods, trunks and all, for the
  * stock pines, broadleaves and bushes: the Alpine's winter woods
- * (`AlpineKits`, no broadleaves) or the Greenvale's Riviera woods (`GreenvaleKits`).
+ * (`AlpineKits`, no broadleaves) or the Greenvale's Riviera woods (`GreenvaleKits`),
+ * or the Lakeland's mixed woods: its detailed pines (`PineKits`) among the
+ * Greenvale's broadleaf shapes and bushes in its own summer greens.
  */
 export function rallyKits(
   palette: StagePalette,
   shadows: boolean,
   snow: boolean,
-  woods?: 'alpine' | 'greenvale',
+  woods?: 'alpine' | 'greenvale' | 'lakeland',
 ): KindKit[] {
   const pine = [new Color(palette.foliage), new Color(palette.foliageAlt)] as const;
   const leaf = [new Color(palette.canopy), new Color(palette.canopyAlt)] as const;
-  const walls = snow
-    ? ([new Color('#e9e6dd'), new Color('#cfc3a8')] as const)
-    : ([new Color('#efe6cf'), new Color('#d9b26b')] as const);
-  const roofs = snow
-    ? ([new Color('#eef2f5'), new Color('#e4e9ee')] as const)
-    : ([new Color('#b5523c'), new Color('#4a5160')] as const);
+  // Farmhouses: the region's own where it has them (the Lakeland's Falu red), else render and terracotta.
+  const own = palette.houses;
+  const walls = own
+    ? ([new Color(own.walls[0]), new Color(own.walls[1])] as const)
+    : snow
+      ? ([new Color('#e9e6dd'), new Color('#cfc3a8')] as const)
+      : ([new Color('#efe6cf'), new Color('#d9b26b')] as const);
+  const roofs = own
+    ? ([new Color(own.roofs[0]), new Color(own.roofs[1])] as const)
+    : snow
+      ? ([new Color('#eef2f5'), new Color('#e4e9ee')] as const)
+      : ([new Color('#b5523c'), new Color('#4a5160')] as const);
   // Town buildings: warmer render than the farmhouses, slate or terracotta roofs, all under snow in alpine towns.
   const townWalls = snow
     ? ([new Color('#e6e2d8'), new Color('#d3c6ad')] as const)
@@ -280,7 +289,12 @@ export function rallyKits(
       ? alpineKits(palette, shadows)
       : woods === 'greenvale'
         ? greenvaleKits(palette, shadows)
-        : null;
+        : woods === 'lakeland'
+          ? [
+              ...pineKits(palette.pines ?? [palette.foliage], shadows),
+              ...greenvaleKits(palette, shadows).filter((k) => !k.sources.includes('tree')),
+            ]
+          : null;
   return [
     ...(ownWoods ?? [
       ...(palette.pines
@@ -377,22 +391,46 @@ export function rallyKits(
             },
           } satisfies KindKit,
         ]),
-    {
-      sources: ['house'],
-      geometry: houseWallsGeometry(),
-      material: mat('#ffffff', true),
-      tint: walls,
-      castShadow: shadows,
-      vertexColors: true,
-    },
-    {
-      sources: ['house'],
-      geometry: houseRoofGeometry(),
-      material: mat('#ffffff', true),
-      tint: roofs,
-      castShadow: shadows,
-      vertexColors: true,
-    },
+    // The Lakeland's Swedish farmhouses keep their white trim: one baked geometry per colour pair.
+    ...(woods === 'lakeland' && own
+      ? ([0, 1] as const).flatMap((v): KindKit[] => [
+          {
+            sources: ['house'],
+            geometry: swedishHouseWallsGeometry(new Color(own.walls[v])),
+            material: mat('#ffffff', true),
+            tint: null,
+            castShadow: shadows,
+            vertexColors: true,
+            accept: (p) => p.variant % 2 === v,
+          },
+          {
+            sources: ['house'],
+            geometry: swedishHouseRoofGeometry(new Color(own.roofs[v])),
+            material: mat('#ffffff', true),
+            tint: null,
+            castShadow: shadows,
+            vertexColors: true,
+            accept: (p) => p.variant % 2 === v,
+          },
+        ])
+      : ([
+          {
+            sources: ['house'],
+            geometry: houseWallsGeometry(),
+            material: mat('#ffffff', true),
+            tint: walls,
+            castShadow: shadows,
+            vertexColors: true,
+          },
+          {
+            sources: ['house'],
+            geometry: houseRoofGeometry(),
+            material: mat('#ffffff', true),
+            tint: roofs,
+            castShadow: shadows,
+            vertexColors: true,
+          },
+        ] satisfies KindKit[])),
     // Town buildings: walls and roofs tinted per variant like the houses, in four footprints,
     // and untinted flower boxes under the windows of the houses and shops.
     ...BUILDING_STYLES.flatMap((style): KindKit[] => {

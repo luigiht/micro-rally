@@ -20,6 +20,8 @@ export interface ValleyTones {
   rockDark: Rgb;
   rockLight: Rgb;
   earth: Rgb;
+  /** Lake shores' pebbles; unset, a shore (`ValleyFace.river`) is rock like a river's bed. */
+  shore?: Rgb;
 }
 
 export interface ValleyFace {
@@ -110,7 +112,10 @@ export function valleyFaceColor(tones: ValleyTones, f: ValleyFace, out: number[]
   const tilt = 1 - f.ny;
   const face = smoothstep(ROCK_FROM, ROCK_TO, tilt + (tuft - 0.5) * 0.08);
   const outcrop = smoothstep(OUTCROP_FROM, ROCK_FROM, tilt) * smoothstep(0.7, 0.86, patch);
-  const rocky = Math.max(face, outcrop, f.river ?? 0) * (1 - 0.6 * f.road * (1 - (f.river ?? 0)));
+  const river = tones.shore ? 0 : (f.river ?? 0);
+  // A lake's bank is pebbles, not rock, even where it is steep.
+  const bank = tones.shore ? 1 - 0.85 * (f.river ?? 0) : 1;
+  const rocky = Math.max(face, outcrop, river) * (1 - 0.6 * f.road * (1 - river)) * bank;
   if (rocky > 0) {
     const bed = f.h / BED + tuft * 0.8;
     const light = (bed - Math.floor(bed)) * 0.7 + f.hashB * 0.3;
@@ -120,6 +125,18 @@ export function valleyFaceColor(tones: ValleyTones, f: ValleyFace, out: number[]
     mix(GREY, tones.rock, smoothstep(0, 0.45, light));
     mix(GREY, tones.rockLight, smoothstep(0.55, 1, light));
     mix(out, GREY, rocky);
+  }
+  if (tones.shore && f.river) {
+    // A lake's pebbly shore: pale and dry up the bank, darker and wet down at the water, each face
+    // a stone of its own shade, so the bank runs into the water without a line.
+    const wet = smoothstep(0.55, 1, f.river);
+    const stone = 0.86 + 0.28 * f.hashB;
+    GREY[0] = tones.shore[0] * stone;
+    GREY[1] = tones.shore[1] * stone;
+    GREY[2] = tones.shore[2] * stone;
+    mix(GREY, tones.rockDark, 0.55 * wet);
+    // Up the bank the pebbles thin into the grass face by face, with no line.
+    mix(out, GREY, smoothstep(0.1, 0.75, f.river + (f.hashA - 0.5) * 0.4));
   }
   const k = 1 + (f.hashA - 0.5) * 2 * FACET;
   out[0]! *= k;

@@ -1,8 +1,10 @@
 import type { Surface } from '../vehicle/surfaces';
 import type { GroveDef } from './Groves';
 import type { LacetStyle } from './Lacets';
+import type { LakeStyle } from './Lakes';
 import type { RiverStyle } from './Rivers';
 import type { PineForm } from './SceneryScatter';
+import type { SurfaceSpanStyle } from './SurfaceSpans';
 import type { BuildingStyle } from './Town';
 
 export type StageTypeId =
@@ -14,7 +16,8 @@ export type StageTypeId =
   | 'forest'
   | 'urban'
   | 'coastal'
-  | 'desert';
+  | 'desert'
+  | 'lakeland';
 export type Weather = 'clear' | 'overcast' | 'rain' | 'night';
 
 export interface StagePalette {
@@ -56,6 +59,19 @@ export interface StagePalette {
     rockDark: string;
     rockLight: string;
     earth: string;
+    /** Lake shores' pebbles (the Lakeland's), dry over the waterline and darker wet at it; unset, a shore is rock. */
+    shore?: string;
+  };
+  /**
+   * How far the road's dirt shoulder eases into the ground, in shares of
+   * the corridor's blend, ragged face by face in shades of dirt and earth;
+   * unset, the shoulder ends crisply right by the road.
+   */
+  vergeBlend?: number;
+  /** The farmhouses' walls and roofs, two tints each, where they differ from the stock render and terracotta. */
+  houses?: {
+    walls: readonly [string, string];
+    roofs: readonly [string, string];
   };
 }
 
@@ -214,8 +230,16 @@ export interface StageTypeDef {
      */
     banked?: boolean;
   };
-  /** How the car handles here, as multipliers on the sim's grip, steering rate and steering lock; 1 each when unset. */
-  handling?: { grip: number; steer: number; lock: number };
+  /**
+   * How the car handles here, as multipliers on the sim's grip, steering rate and steering lock; 1 each when unset.
+   * `surfaceGrip` multiplies the grip again on the surfaces it names only (the Lakeland's mud tyres).
+   */
+  handling?: {
+    grip: number;
+    steer: number;
+    lock: number;
+    surfaceGrip?: Readonly<Partial<Record<Surface, number>>>;
+  };
   /** Road curviness: about 1 for a winding road, more for one that bends harder and oftener. */
   twistiness: number;
   /** Share of the open road's bends that run straight instead (0.2 when unset). */
@@ -232,6 +256,12 @@ export interface StageTypeDef {
   parSpeed: number;
   /** Some of its stages run after sunset (every `DUSK_EVERY`th): a twilight sky, little light, the car's lamps lit. */
   dusk?: boolean;
+  /** The road changes surface along its length (`SurfaceSpans`): stretches of `surface` and of another. */
+  surfaceSpans?: SurfaceSpanStyle;
+  /** Lakes in the valleys, beside the road and bridged by it (`Lakes`); none when unset. */
+  lakes?: LakeStyle;
+  /** A high summer sun: stronger, warmer light than the stock day. */
+  sunny?: boolean;
 }
 
 const FOREST_PALETTE: StagePalette = {
@@ -744,6 +774,113 @@ const ARCTIC: StageTypeDef = {
   towns: false,
 };
 
+/**
+ * Lakeland: Swedish summer. Rounded wooded mountains over long lakes; the
+ * road rolls over the shoulders of the hills and spends most of its length
+ * winding along the lakes, now and then crossing one on a long bridge (`Lakes`). A
+ * single-track road as narrow as the Autumnal's, in stretches of worn
+ * tarmac and of mud lane (`SurfaceSpans`), the bridges always tarmac. Pine
+ * woods with birches among them, tall grass, Falu-red farmhouses, and a high,
+ * bright sun.
+ */
+const LAKELAND: StageTypeDef = {
+  id: 'lakeland',
+  seedKey: 'lakeland',
+  surface: 'tarmac',
+  offroad: 'grass',
+  weathers: [['clear', 1]],
+  sunny: true,
+  palette: {
+    sky: '#bfe0f2',
+    fog: '#cfe6f0',
+    // Heath and dry earth more than meadow: brown-olive ground with green in the hollows.
+    grassLow: '#6b7f3f',
+    grassHigh: '#9c9258',
+    rock: '#8a8d8c',
+    shoulder: '#8e7650',
+    foliage: '#22492f',
+    foliageAlt: '#2c5636',
+    // Oaks, lindens and birches: deep summer greens.
+    canopy: '#335a28',
+    canopyAlt: '#45652c',
+    trunk: '#4e3a28',
+    boulder: '#8f9290',
+    // Spruce and pine greens, deep to sunlit.
+    pines: ['#18392a', '#1f4430', '#264d33', '#2e5937', '#3a653d'],
+    meadows: {
+      lush: '#4d6e34',
+      meadow: '#76763f',
+      sunlit: '#a79a62',
+      olive: '#857246',
+      rockDark: '#686c6b',
+      rockLight: '#b0b3ae',
+      earth: '#7f6243',
+      shore: '#9a9384',
+    },
+    vergeBlend: 0.55,
+    // Falu red walls and grey sheet-metal roofs (the white trim is the Swedish house's own,
+    // `SwedishHouseGeometry`).
+    houses: {
+      walls: ['#9a2a1e', '#86231a'],
+      roofs: ['#7f878d', '#6c747a'],
+    },
+  },
+  // Low, rounded hills rather than Greenvale's sharp ridges: little climbing, wide valley floors
+  // for the lakes.
+  terrain: {
+    amplitude: 18,
+    frequency: 1 / 360,
+    ridges: 0.15,
+    rugged: 1.2,
+    banked: true,
+    benches: true,
+    // The Autumnal's built-up lane: the ground falls away across the verges, tarmac and mud alike.
+    embankment: { height: 0.55, width: 2.4 },
+  },
+  // Mud tyres on the mud stretches only, gripping nearly as well as on gravel-free tarmac: the mud
+  // is a firm farm track, not the Autumnal's slither. Tarmac grips as it always does.
+  handling: { grip: 1, steer: 1, lock: 1, surfaceGrip: { mud: 1.6 } },
+  // Flowing bends round the lakes, no hairpin stacks.
+  twistiness: 1,
+  straights: 0.15,
+  wornTarmac: true,
+  // A single-track lane, as narrow as the Autumnal's.
+  roadHalfWidth: 3,
+  // Short mud stretches between long tarmac ones.
+  surfaceSpans: { alt: 'mud', main: [380, 700], other: [100, 200] },
+  lakes: { lakeside: 15, bridges: 1, water: '#2f7fa8' },
+  baseLength: 1900,
+  // Mixed woods: pines of every build (tall, full, sparse, young) spaced by their reach, among
+  // oaks, chestnuts, lindens and stone pines and round bushes (`RallyKits`' Lakeland woods), tall
+  // grass over the hillsides, farmhouses dotted about.
+  scenery: {
+    trees: 230,
+    broadleaf: 120,
+    bushes: 40,
+    rocks: 10,
+    // Generous: red farmhouses all over, though sites too sloped for a house are skipped.
+    houses: 5,
+    // Ordinary-sized trees: no towering pines.
+    treeScale: 0.9,
+    clearance: 2.4,
+    meanOffset: 14,
+    // Full, young and sparse pines, none of the Pinewood's tall build, not even beside the road.
+    pineWood: {
+      reach: { full: 2.6, tall: 2.35, sparse: 1.8, young: 2 },
+      mix: { full: 0.5, tall: 0, young: 0.3, sparse: 0.2 },
+      roadside: 0,
+    },
+    deepWood: 170,
+    crowding: 1,
+    saplings: 60,
+    grass: 420,
+    meadow: 600,
+  },
+  parSpeed: 14,
+  // Open country: farmhouses on the hillsides, no villages on the road.
+  towns: false,
+};
+
 export const STAGE_TYPES: Readonly<Record<StageTypeId, StageTypeDef>> = {
   arctic: ARCTIC,
   circuit: CIRCUIT,
@@ -754,6 +891,7 @@ export const STAGE_TYPES: Readonly<Record<StageTypeId, StageTypeDef>> = {
   urban: URBAN,
   coastal: COAST,
   desert: DESERT,
+  lakeland: LAKELAND,
 };
 
 /**
@@ -783,8 +921,9 @@ export function isCircuitStage(index: number): boolean {
 
 /**
  * The rally stages between the cities and circuits, in turn: Pinewood,
- * Alpine, Forest, Coastal, Arctic, Autumnal, Desert. No type runs twice in a
- * row, round the wrap too, and stage 1 remains Pinewood as before.
+ * Alpine, Forest, Coastal, Arctic, Autumnal, Desert, Lakeland. No type runs
+ * twice in a row, round the wrap too, and stage 1 remains Pinewood as before.
+ * Lakeland came last (save v14) so the first seven rally stages kept theirs.
  */
 export const RALLY_CYCLE: readonly StageTypeId[] = [
   'pinewood',
@@ -794,6 +933,7 @@ export const RALLY_CYCLE: readonly StageTypeId[] = [
   'arctic',
   'autumnal',
   'desert',
+  'lakeland',
 ];
 
 /** How many cities and circuits come before `index`. */

@@ -15,6 +15,8 @@ import { Coastline } from './Coastline';
 import { BENCH_REACH, benchAcross, benchAlong, planBenches, type Bench } from './CrowdBenches';
 import { planRivers, RiverIndex, type River, type RiverHit } from './Rivers';
 import { lacetGround } from './Lacets';
+import { DECK_OUT, lakeAt, lakeGround, lakeShore, planLakes, type Lake } from './Lakes';
+import { overlaySpans, surfaceAlong, type SurfaceSpan } from './SurfaceSpans';
 import { type AxisPoint, CoastShape, type CoastSurface } from './CoastShape';
 import type { Oasis } from './Oases';
 import { STAGE_TYPES, reliefAmplitude } from './regions';
@@ -303,6 +305,13 @@ export class TerrainField implements TerrainQuery {
   private readonly riverHit: RiverHit = { distance: 0, level: 0, fade: 0, halfWidth: 0 };
   /** How far a river's channel rises out of the ground where it fades at its ends. */
   private readonly riverRise: number;
+  /** The lakes beside the road and under its bridges (`terrain.lakes`), carved into the ground; none elsewhere. */
+  readonly lakes: Lake[];
+  /**
+   * Where the road changes surface (`StageDef.surfaces`), with every lake
+   * bridge laid over them as tarmac; null where the road is one surface.
+   */
+  readonly surfaceRuns: SurfaceSpan[] | null;
   /** A ridge of snow heaped along both verges (the Arctic), as height and width; null elsewhere. */
   private readonly banks: { height: number; width: number } | null;
   private readonly embankment: { height: number; width: number; from?: number } | null;
@@ -445,6 +454,25 @@ export class TerrainField implements TerrainQuery {
         )
       : [];
     this.riverRise = (rivers?.depth ?? 0) + 2;
+    this.lakes = region.lakes
+      ? planLakes(
+          {
+            stage,
+            groundHeight: (x, z) => this.groundHeight(x, z),
+            roadHeightAt: (d) => this.roadHeightAt(d),
+            corridor: this.flatMargin + (this.banked ? COAST_BLEND : BLEND_WIDTH),
+          },
+          region.lakes,
+          stage.loop,
+        )
+      : [];
+    this.surfaceRuns = stage.surfaces
+      ? overlaySpans(
+          stage.surfaces,
+          this.lakes.flatMap((l) => (l.bridge ? [l.bridge] : [])),
+          'tarmac',
+        )
+      : null;
     this.fileBenches();
     this.riverIndex =
       this.rivers.length > 0 ? new RiverIndex(this.rivers, rivers!.halfWidth + RIVER_REACH) : null;
@@ -908,7 +936,7 @@ export class TerrainField implements TerrainQuery {
       );
       out.roadBlend = 0;
       out.roadDistance = Infinity;
-      return this.carveRiver(x, z, out);
+      return this.carveLakes(x, z, this.carveRiver(x, z, out));
     }
     const deck = this.softDeck(x, z, st) + ROAD_LIFT;
     const hw = st.hw;
@@ -954,8 +982,8 @@ export class TerrainField implements TerrainQuery {
     out.height = out.paved ? raw : this.applyPads(x, z, raw);
     out.roadBlend = 1 - t;
     out.roadDistance = st.distance;
-    // The river runs on under a bridge: the mesh's ground is carved under the road too.
-    return this.carveRiver(x, z, out);
+    // The river runs on under a bridge, and so does a lake: the mesh's ground is carved under the road too.
+    return this.carveLakes(x, z, this.carveRiver(x, z, out));
   }
 
   /**
@@ -973,6 +1001,27 @@ export class TerrainField implements TerrainQuery {
     if (!this.riverIndex || !this.riverIndex.at(x, z, this.riverHit)) return false;
     const r = this.riverHit;
     return r.fade > 0.05 && r.distance < r.halfWidth + margin;
+  }
+
+  /** How far past the carriageway's edge the deck carries the wheels at road distance `along`. */
+  private deckReach(along: number): number {
+    for (const l of this.lakes)
+      if (l.bridge && along >= l.bridge.from && along <= l.bridge.to) return DECK_OUT;
+    return BRIDGE_EDGE;
+  }
+
+  /** Whether (x, z) lies in a lake or within `margin` of its shore: scenery keeps off. */
+  inLake(x: number, z: number, margin = 0): boolean {
+    return this.lakes.length > 0 && lakeAt(this.lakes, x, z, margin) !== null;
+  }
+
+  /** The lakes' beds and shores carved into the ground, the waterline's pebbles painted as a river bed's rock. */
+  private carveLakes(x: number, z: number, out: TerrainSample): TerrainSample {
+    if (this.lakes.length === 0) return out;
+    out.height = lakeGround(this.lakes, x, z, out.height);
+    const shore = lakeShore(this.lakes, x, z);
+    if (shore > (out.river ?? 0)) out.river = shore;
+    return out;
   }
 
   private carveRiver(x: number, z: number, out: TerrainSample): TerrainSample {
@@ -1047,10 +1096,16 @@ export class TerrainField implements TerrainQuery {
   /** The surface without the pavements' kerb lift: the deck tarmac, kerb faces and pavements are built on. */
   deckAt(x: number, z: number): number {
     const h = this.deckGround(x, z);
-    if (!this.riverIndex) return h;
-    // On the carriageway the road stands on its bridge over any river; off it, the gorge falls away.
-    if (this.nearStreet && this.street.distance <= this.street.hw + BRIDGE_EDGE) return h;
-    return Math.min(h, this.riverBed(x, z));
+    if (!this.riverIndex && this.lakes.length === 0) return h;
+    // On the carriageway the road stands on its bridge over any river or lake (on a lake bridge out
+    // to the deck's edge past the rails); off it, the gorge falls away and the lake shelves down.
+    if (
+      this.nearStreet &&
+      this.street.distance <= this.street.hw + this.deckReach(this.street.along)
+    )
+      return h;
+    const ground = this.riverIndex ? Math.min(h, this.riverBed(x, z)) : h;
+    return this.lakes.length > 0 ? lakeGround(this.lakes, x, z, ground) : ground;
   }
 
   /** The surface without the pavements' kerb lift or any river's gorge. */
@@ -1208,7 +1263,7 @@ export class TerrainField implements TerrainQuery {
     ) {
       return town && this.hit.along >= town.from && this.hit.along <= town.to
         ? 'tarmac'
-        : this.stage.surface;
+        : this.roadSurfaceAt(this.hit.along);
     }
     if (
       this.stubs.length > 0 &&
@@ -1217,7 +1272,14 @@ export class TerrainField implements TerrainQuery {
     )
       return 'tarmac';
     if (town && this.onPavement(x, z)) return 'tarmac';
+    // In a lake past its first metre the car wallows, as in soft sand.
+    if (this.lakes.length > 0 && lakeAt(this.lakes, x, z, -1)) return 'dune';
     return this.offroad;
+  }
+
+  /** The carriageway's surface at road distance `along` outside a town: the stretch's, a bridge's tarmac, or the stage's. */
+  roadSurfaceAt(along: number): Surface {
+    return this.surfaceRuns ? surfaceAlong(this.surfaceRuns, along) : this.stage.surface;
   }
 
   /** True on a town pavement: the kerb-high band outside a street's carriageway or a junction's surface, where the town has faded in. */

@@ -17,6 +17,7 @@ import { useGameStore } from '@/state/gameStore';
 import { useSessionStore } from '@/state/sessionStore';
 import { useUiStore } from '@/state/uiStore';
 import { useAutosave } from './useAutosave';
+import { useFocusRingGate } from './useFocusRingGate';
 import { useSessionLive } from './useSessionLive';
 import { useSessionRunUpload } from './useSessionRunUpload';
 
@@ -92,6 +93,7 @@ function AutopilotShell() {
 }
 
 export function GameRoot() {
+  useFocusRingGate();
   const demo = useAutopilotStore((s) => s.running);
   const solo = useGameStore((s) => s.gameId !== null);
   const sessionScreen = useSessionStore((s) => (s.session ? s.screen : null));

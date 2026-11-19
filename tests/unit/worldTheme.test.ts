@@ -12,6 +12,7 @@ import {
 import { themeColor, themeGlow, themeHex } from '@/render/theme/themeColor';
 import {
   COAST_HEMI,
+  SUNNY_LIGHT,
   dayTheme,
   DUSK_LIGHTING,
   flatTheme,
@@ -46,6 +47,8 @@ describe('WorldTheme', () => {
         hemiIntensity: 1.9,
         sunColor: '#ffffff',
         sunIntensity: 2.6,
+        // A sunny type (Lakeland) brightens the sun and the sky fill over the stock day.
+        ...(region.sunny ? SUNNY_LIGHT : {}),
       });
       expect(t.road.surfaces).toBe(ROAD_COLORS);
       expect(t.road.surface).toBeNull();

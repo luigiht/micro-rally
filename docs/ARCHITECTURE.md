@@ -159,6 +159,15 @@ flowchart LR
   a `RutProfile` per surface: depth, tones, and for gravel a fade that lets
   the traces come and go). `GravelStones.ts` strews instanced pebbles on a
   gravel road in 100 m pieces, behind `StageRenderOptions.roadStones`.
+- Lakeland (`game/stage/Lakes.ts`, `SurfaceSpans.ts`): `planLakes` lays
+  lakes beside the road and under its bridges once the road is laid
+  (`TerrainField.lakes`, carved in `sample`/`deckAt` by `lakeGround`,
+  `inLake` for the scatters, `lakeBridgeObstacles` for `StageWorld`);
+  `planSurfaceSpans` draws its tarmac and mud stretches (`StageDef.surfaces`,
+  bridges laid over them in `TerrainField.surfaceRuns`, read by
+  `surfaceAt` and `RoadBuilder` through `render/road/RoadStretches.ts`).
+  `render/terrain/LakeBuilder.ts` draws the water and
+  `render/road/LakeBridgeBuilder.ts` the bridges.
 - Desert (`game/stage/Oases.ts`): `TerrainField.duneHeight` is the dune sea;
   `planOases` picks level hollows off the road from the stage seed,
   `scatterScenery` sinks them as pads and rings them with palms, and the

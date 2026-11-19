@@ -86,23 +86,91 @@ Each stage type has one fixed surface. The type selects the world, palette,
 scenery and handling; the surface remains the vehicle and road-rendering
 input.
 
-| Stage type | Surface | Character                                                                                                                                                                                                                            |
-| ---------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Arctic     | snow    | near-white snow, spruce walls, bare birches, dusk stages                                                                                                                                                                             |
-| Circuit    | track   | parkland racing, kerbs and gravel traps                                                                                                                                                                                              |
-| Autumnal   | mud     | tall mixed autumn woods, fallen leaves, crowds, ruts                                                                                                                                                                                 |
-| Pinewood   | gravel  | faint wheel traces and loose stones on the gravel, a dense pine wood, curved trunks, tall bare-trunked pines and saplings on the verges, tall grass on the verges and the hills, no round bushes, the wood running into the distance |
-| Alpine     | snow    | a varied winter wood (tiered snow pines, frond spruces, snow-clump firs, stumps), snowfields and rock faces, crowd benches                                                                                                           |
-| Greenvale  | tarmac  | Riviera mountain road: hairpin stacks, mixed woods, rock cuttings                                                                                                                                                                    |
-| Urban      | tarmac  | a city from start to finish                                                                                                                                                                                                          |
-| Coastal    | tarmac  | limestone cliffs, beach and sea                                                                                                                                                                                                      |
-| Desert     | sand    | dunes, palms and oases                                                                                                                                                                                                               |
+| Stage type | Surface        | Character                                                                                                                                                                                                                            |
+| ---------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Arctic     | snow           | near-white snow, spruce walls, bare birches, dusk stages                                                                                                                                                                             |
+| Circuit    | track          | parkland racing, kerbs and gravel traps                                                                                                                                                                                              |
+| Autumnal   | mud            | tall mixed autumn woods, fallen leaves, crowds, ruts                                                                                                                                                                                 |
+| Pinewood   | gravel         | faint wheel traces and loose stones on the gravel, a dense pine wood, curved trunks, tall bare-trunked pines and saplings on the verges, tall grass on the verges and the hills, no round bushes, the wood running into the distance |
+| Alpine     | snow           | a varied winter wood (tiered snow pines, frond spruces, snow-clump firs, stumps), snowfields and rock faces, crowd benches                                                                                                           |
+| Greenvale  | tarmac         | Riviera mountain road: hairpin stacks, mixed woods, rock cuttings                                                                                                                                                                    |
+| Urban      | tarmac         | a city from start to finish                                                                                                                                                                                                          |
+| Coastal    | tarmac         | limestone cliffs, beach and sea                                                                                                                                                                                                      |
+| Desert     | sand           | dunes, palms and oases                                                                                                                                                                                                               |
+| Lakeland   | tarmac and mud | big wooded mountains, long lakes beside the road and under long concrete bridges, pines and birches, Falu-red farmhouses, a high summer sun                                                                                          |
 
 Three types grip harder than their surface alone (`handling.grip`, read
 into the sim's `gripScale`): the Arctic's studded tyres 1.45×, the
 Alpine's winter tyres 1.35× and the Autumnal's mud tyres 1.3×. That lets
 the cars climb the snow and mud hills instead of spinning their wheels.
-Only the Arctic also quickens the steering.
+Only the Arctic also quickens the steering. Lakeland's mud tyres are
+`handling.surfaceGrip` (`{ mud: 1.6 }`, the sim's `SimEnv.surfaceGrip`): 1.6×
+on its mud stretches, tarmac as ever.
+
+## Lakeland
+
+Swedish summer (`LAKELAND` in `regions.ts`, last in `RALLY_CYCLE`).
+
+- **Hills.** Low, rounded hills (amplitude 18, wavelength 360 m, 15%
+  ridged), banked to the road, crowd benches, no hairpin stacks: about
+  14–24 m of climbing over a stage, flowing bends (twistiness 1).
+- **Road.** A 6 m lane (`roadHalfWidth: 3`) on the Autumnal's low bank, in
+  stretches of worn tarmac and of mud lane (`SurfaceSpans`: tarmac 380–700 m,
+  mud 100–200 m, tarmac through the start and the finish), drawn from the
+  stage seed and length alone so `stageBrief` prices the par stretch by
+  stretch. `TerrainField.surfaceRuns` lays the bridges over them as tarmac;
+  `surfaceAt` and the road ribbon (`RoadStretches`: pieces break at each
+  change, mud tracked ~30 m onto the tarmac in ragged per-lane tongues, solid at the join, the tarmac within 40 m of the mud drawn with the mud's own ruts, flat and shading as thick as the spill lies, so they run on across the join stripe for stripe, the worn tarmac easing in over 25 m past that; the edge lines fade into the mud over the last 26 m) both read it. Posts stand along
+  the tarmac only.
+- **Lakes** (`Lakes.ts`), planned once the road is laid, so it never
+  changes. Up to fifteen lakeside lakes, laid one after another along the
+  road (60 m apart at least), fill valley floors beside low stretches of
+  road. On a bend (the road turning over 0.35 rad within 90 m either side)
+  a lake fills the bend's inside, so the road sweeps round its edge; on a
+  straight it lies on the lower side. The near shore keeps 11 m past the
+  carriageway's edge (`SIDE_SHORE`: the verge, then the 7 m rim). The water
+  lies 1.2 m under the lowest road within 60 m, and every shore stops short
+  of any road within 45 m that stands less than 0.8 m over the water
+  (`lowRoadTest`), so no water ever stands over a road beside it. A third to
+  two thirds of the road runs within 20 m of water, most of it within 45 m; one bridge lake a stage (two from the third loop)
+  straddles a low, straight-ish stretch, the water 4.5 m under the lowest
+  deck, and is not laid if its shore would reach the road anywhere but its
+  bridge. Wheels ride the deck out to the slab's edge past the rails
+  (`DECK_OUT`). Each is star-shaped: a wobbly ellipse cast as
+  64 rays from its centre, each cut back where it nears another stretch of
+  road or another lake, nears low road, or climbs out of the valley. The bed shelves 4 m
+  under the water; the shore stands 0.4 m over it; where the valley falls
+  away past the shore a levee holds the water. In the water the car wallows
+  (`dune`).
+- **Bridges** (`render/road/LakeBridgeBuilder.ts`): a concrete beam deck on
+  piers every ~18 m, abutments into the banks and white steel guard rails,
+  which are the colliders (`lakeBridgeObstacles`).
+- **Water** (`render/terrain/LakeBuilder.ts`): a flat-shaded fan per lake in
+  rings, a touch deeper toward the middle and paling into grey-green
+  shallows over the outer rings. The bed drops away right at the shore
+  (easing out to 4 m), so the waterline follows the shore's outline. The
+  shore is pebbles (`meadows.shore`, `valleyFaceColor`): darker and wet at the
+  water, dry up the bank, thinning into the grass face by face over 6 m, and
+  never steep-face rock.
+- **Verges.** `palette.vergeBlend` (0.55) eases the road's dirt shoulder into
+  the ground over half the corridor's blend, each terrain face reaching its
+  own way in, in its own shade between the shoulder and darker earth. The
+  ribbon's verge strips are faceted to match (`Strip.facets`): three ragged
+  bands, the outer edge fraying up to 0.7 m in, each triangle its own shade
+  (±14%) leaning toward the darker earth by its own share.
+- **Scenery.** Ordinary-sized trees (`treeScale` 0.9; no tall pine build,
+  not even beside the road). Trees keep 9 m off every lake's shore (other scenery 2 m), so
+  the water shows from the road. Mixed woods (`rallyKits`' `lakeland` woods): Pinewood's pine
+  builds (`pineWood`, more young and sparse ones, in five summer greens)
+  among the Greenvale's oaks, chestnuts, lindens and stone pines and its
+  bushes; tall grass, crowds, and 15–40 farmhouses a stage tinted Falu red
+  with dark roofs (`palette.houses`), built as Swedish farmhouses
+  (`SwedishHouseGeometry`: red walls and gable ends, white corner boards,
+  eave boards, bargeboards and crossbarred window frames, a porch on white
+  posts, a grey sheet-metal roof), one baked geometry per colour pair. No
+  villages.
+- **Light.** `sunny`: a warmer, stronger sun and a brighter sky fill
+  (`SUNNY_LIGHT` in `WorldTheme`).
 
 **Greenvale** (id `forest`). A Monte Carlo–style mountain road.
 
@@ -749,16 +817,16 @@ the cameras.
 
 ## Surfaces
 
-| Surface | Where                                        | Feel                                                                                                                   |
-| ------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| track   | every circuit                                | race asphalt: a quarter more grip than tarmac and a planted rear, so the car slides far less                           |
-| tarmac  | Greenvale, Coastal and Urban stages, towns   | most grip, highest par speed                                                                                           |
-| gravel  | Pinewood stages                              | the reference surface                                                                                                  |
-| mud     | Autumnal stages                              | slow and slippery                                                                                                      |
-| snow    | Alpine and Arctic stages, and off road there | least grip, dusted asphalt look (soft lane bands: swept wheel tracks, dust between and along the edges, all wandering) |
-| sand    | every Desert stage                           | packed piste, a little looser than gravel                                                                              |
-| dune    | off the road in the Desert                   | soft sand, the car wallows                                                                                             |
-| grass   | off the road everywhere else                 | heavy drag                                                                                                             |
+| Surface | Where                                                                               | Feel                                                                                                                   |
+| ------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| track   | every circuit                                                                       | race asphalt: a quarter more grip than tarmac and a planted rear, so the car slides far less                           |
+| tarmac  | Greenvale, Coastal and Urban stages, towns, Lakeland's tarmac stretches and bridges | most grip, highest par speed                                                                                           |
+| gravel  | Pinewood stages                                                                     | the reference surface                                                                                                  |
+| mud     | Autumnal stages, Lakeland's mud stretches                                           | slow and slippery                                                                                                      |
+| snow    | Alpine and Arctic stages, and off road there                                        | least grip, dusted asphalt look (soft lane bands: swept wheel tracks, dust between and along the edges, all wandering) |
+| sand    | every Desert stage                                                                  | packed piste, a little looser than gravel                                                                              |
+| dune    | off the road in the Desert                                                          | soft sand, the car wallows                                                                                             |
+| grass   | off the road everywhere else                                                        | heavy drag                                                                                                             |
 
 Tyre marks are drawn per surface into a single fading ring-buffer mesh: rubber black on
 tarmac, earth tones off it, and on snow a neutral white a shade below the lit snow, so a

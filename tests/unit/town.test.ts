@@ -6,7 +6,12 @@ import {
   streetGround,
   STUB_LENGTH,
 } from '@/game/stage/TownSideStreets';
-import { generateStage, stageBrief, type StageDef } from '@/game/stage/StageGenerator';
+import {
+  calendarSlot,
+  generateStage,
+  stageBrief,
+  type StageDef,
+} from '@/game/stage/StageGenerator';
 import { markerDistances } from '@/game/stage/RoadMarkers';
 import { propObstacles, scatterScenery } from '@/game/stage/SceneryScatter';
 import { ROAD_BED_DROP, ROAD_LIFT, TerrainField } from '@/game/stage/TerrainField';
@@ -31,7 +36,7 @@ import { hasTown, NARROW_HALF_WIDTH } from '@/game/stage/TownPlan';
 import { halfWidthAt } from '@/game/stage/RoadWidth';
 import { createStageWorld } from '@/game/stage/StageWorld';
 import openRoad from './fixtures/openRoad.json';
-import { rallyIndex } from '@/game/stage/regions';
+import { rallyIndex, type StageTypeId } from '@/game/stage/regions';
 
 /** A synthetic town laid on the route of a generated stage (index 0, never a real town) around distance `at`, with one blocked side street. */
 function withTown(seed: number, index: number, at: number): { stage: StageDef; town: TownDef } {
@@ -231,9 +236,15 @@ describe('town generator', () => {
   });
 
   it('leaves open-road stages byte-identical to the pre-town generator', () => {
+    // The fixtures were recorded on the seven-type rally mix: stage 27 was an Alpine then (a Desert
+    // since Lakeland joined), so it is generated in that slot to compare the same road.
+    const recorded: Record<string, StageTypeId> = { '7/27': 'alpine', '8/27': 'alpine' };
     for (const [key, fix] of Object.entries(openRoad)) {
       const [seed, index] = key.split('/').map(Number) as [number, number];
-      const stage = generateStage(seed, index);
+      const slot = recorded[key]
+        ? { ...calendarSlot(index), stageType: recorded[key], town: false }
+        : calendarSlot(index);
+      const stage = generateStage(seed, index, slot);
       expect(stage.town).toBeUndefined();
       expect(stage.path.length).toBeCloseTo(fix.length, 9);
       fix.xs.forEach((x, i) => expect(stage.path.xs[i]).toBeCloseTo(x, 9));

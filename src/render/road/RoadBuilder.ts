@@ -15,7 +15,7 @@ import type { StageDef } from '@/game/stage/StageGenerator';
 import { controlBoardSkip, markerDistances, type MarkerSkip } from '@/game/stage/RoadMarkers';
 import { ROAD_LIFT, TRENCH_OUT, VERGE_WIDTH, type TerrainField } from '@/game/stage/TerrainField';
 import { halfWidthAt } from '@/game/stage/RoadWidth';
-import { bridgeSpan } from '@/game/stage/Rivers';
+import type { Surface } from '@/game/vehicle/surfaces';
 import { roundaboutOpenings } from '@/game/stage/Roundabout';
 import { KERB_LIFT, townFade } from '@/game/stage/Town';
 import { routeOpenings, type Openings } from '@/game/stage/TownKerbs';
@@ -32,6 +32,15 @@ import {
   WHEEL_TONE,
 } from './SurfaceDetail';
 import { raisedEdge, wornCarriageway } from './MountainRoadStrips';
+import {
+  bridgeRuns,
+  LINE_STOP,
+  lineFade,
+  mudSpill,
+  pieceBreaks,
+  seamFade,
+  SPILL_ZONE,
+} from './RoadStretches';
 import { themeColor, themedMaterial } from '../theme/themeColor';
 import type { RoadTheme } from '../theme/WorldTheme';
 
@@ -262,7 +271,12 @@ function mudEdgeTrack(base: Strip, profile: RutProfile, side: 1 | -1): Strip[] {
     a: edge(band),
     b: edge(band + 1),
     dip,
-    tone: band === 0 || band === 4 ? 1 : profile.tone[band]!,
+    tone:
+      band === 0 || band === 4
+        ? 1
+        : profile.fade
+          ? (k: number) => 1 + (profile.tone[band]! - 1) * profile.fade!(k)
+          : profile.tone[band]!,
   }));
 }
 
@@ -287,8 +301,10 @@ export interface Strip {
   b: (hw: number, k: number) => number;
   lift: number;
   color: Color;
-  /** How much snow dust lies over the strip at a station (its sample index and half width). */
-  cover?: (i: number, hw: number) => number;
+  /** How much snow dust lies over the strip at a station (its sample index and half width; `band`, a worn lane band's index, where split). */
+  cover?: (i: number, hw: number, band?: number) => number;
+  /** What `cover` lays over the strip, where it is not snow dust (mud tracked onto tarmac). */
+  coverColor?: Color;
   shaded: boolean;
   town?: { color: Color; lift: number };
   /** Which verge this strip lies on (+1 left, -1 right); such strips stop across junction openings. */
@@ -300,6 +316,8 @@ export interface Strip {
   /** A shade on the strip's colour, fixed or varying along the road (by station sample index). */
   tone?: number | ((k: number) => number);
   blendFromRoad?: boolean;
+  /** Faceted verge: ragged bands of the strip's colour, each triangle shaded toward this earth by its own share. */
+  facets?: Color;
   /** A painted edge line: it runs on across a bridge, where the verges stop. */
   line?: boolean;
   /** A shade on each piece of its own (a city's slabs and asphalt, `SurfaceDetail`), from the half width and station there. */
@@ -337,7 +355,7 @@ export class RoadBuilder {
       openings.right.sort((p, q) => p.from - q.from);
     }
     // Over a bridge the verges and posts give way to its masonry and parapets; the edge lines run on.
-    const bridges = field.rivers.map((r) => bridgeSpan(r));
+    const bridges = bridgeRuns(field);
     if (bridges.length > 0) {
       openings.left.push(...bridges);
       openings.right.push(...bridges);
@@ -355,9 +373,15 @@ export class RoadBuilder {
     });
     this.materials.push(roadMat);
     const path = stage.path;
-    for (let s0 = 0; s0 < path.count - 1; s0 += SAMPLES_PER_PIECE) {
-      const s1 = Math.min(path.count - 1, s0 + SAMPLES_PER_PIECE);
-      const geo = this.buildPiece(stage, field, s0, s1, openings);
+    // Where the road changes surface each piece is one surface, drawn as that surface's road.
+    for (const [s0, s1] of pieceBreaks(
+      path.count,
+      path.spacing,
+      SAMPLES_PER_PIECE,
+      field.surfaceRuns,
+    )) {
+      const surface = field.roadSurfaceAt(((s0 + s1) / 2) * path.spacing);
+      const geo = this.buildPiece(stage, field, s0, s1, openings, surface);
       this.geometries.push(geo);
       const mesh = new Mesh(geo, roadMat);
       mesh.receiveShadow = true;
@@ -365,6 +389,7 @@ export class RoadBuilder {
     }
     // A sand piste is marked by nothing but its own colour, a circuit by its kerbs and barriers, and
     // an Autumnal mud lane by its fading verges and crowds: none of them has verge posts.
+    // On a road that changes surface, the posts stand along the tarmac only (`buildMarkers`).
     const posts = stage.surface !== 'sand' && !stage.circuit && stage.stageType !== 'autumnal';
     if (posts) this.buildMarkers(stage, field);
   }
@@ -381,6 +406,7 @@ export class RoadBuilder {
     s0: number,
     s1: number,
     openings: Openings,
+    surface: Surface,
   ): BufferGeometry {
     const path = stage.path;
     const sp = path.spacing;
@@ -388,11 +414,30 @@ export class RoadBuilder {
     // Snow lies on the road where the surface is snow, and wherever a region heaps banks: there the
     // whole carriageway is snowed over, edge to edge.
     const drifts = STAGE_TYPES[stage.stageType].terrain.banks !== undefined;
-    const snowy = stage.surface === 'snow' || drifts;
+    const snowy = surface === 'snow' || drifts;
+    // The Autumnal's mud lane, and every mud stretch of a road that changes surface.
+    const mudLane =
+      stage.stageType === 'autumnal' || (field.surfaceRuns !== null && surface === 'mud');
+    const seam = seamFade(field.surfaceRuns);
+    // Tarmac by a mud stretch, with mud tracked onto it: drawn with the mud's ruts, not worn bands.
+    const spill = surface === 'tarmac' ? mudSpill(field.surfaceRuns, sp) : null;
+    const spillPiece = spill !== null && seam.distance(((s0 + s1) / 2) * sp) < SPILL_ZONE;
+    // Worn tarmac on a road that changes surface eases in past the spill zone, the rest by the seam.
+    const relief = surface === 'tarmac' && field.surfaceRuns ? seam.worn : seam.relief;
+    // The Autumnal's mud fades into ragged verges; on a road that changes surface both surfaces keep
+    // the same plain verges, so the edges run on unbroken across every change.
+    const raggedVerges = mudLane && field.surfaceRuns === null;
+    // A soft-shouldered road (`StagePalette.vergeBlend`) has faceted verges: ragged bands, each
+    // triangle a shade of its own between the shoulder's dirt and darker earth, as the ground beside
+    // them is, so the strip runs into the ground without a seam.
+    const palette = STAGE_TYPES[stage.stageType].palette;
+    const earthy = palette.vergeBlend
+      ? { facets: new Color(palette.meadows?.earth ?? palette.shoulder) }
+      : {};
     const surfaces = theme.surfaces;
     const tarmac = theme.surface ?? surfaces.tarmac;
     const road = new Color(
-      theme.surface ?? (drifts ? surfaces.snow : snowy ? surfaces.tarmac : surfaces[stage.surface]),
+      theme.surface ?? (drifts ? surfaces.snow : snowy ? surfaces.tarmac : surfaces[surface]),
     );
     const dust = new Color(surfaces.snow);
     const tint = new Color();
@@ -445,7 +490,7 @@ export class RoadBuilder {
     // Road, two verges and two edge lines; lateral extents follow the local half width. A sand
     // piste has no painted lines: its packed sand reads against the dunes on its own.
     // No edge lines on a sand piste, nor where snow banks line the road: the winter road is unmarked.
-    const lined = stage.surface !== 'sand' && !drifts && stage.stageType !== 'autumnal';
+    const lined = surface !== 'sand' && !drifts && !mudLane;
     const edgeLines: Strip[] = [
       {
         a: (hw) => hw - 0.35 - LINE_WIDTH,
@@ -517,7 +562,8 @@ export class RoadBuilder {
         shaded: true,
         town: pavement,
         side: 1,
-        blendFromRoad: stage.stageType === 'autumnal',
+        blendFromRoad: raggedVerges,
+        ...earthy,
       },
       {
         a: (hw) => -hw - VERGE_WIDTH,
@@ -527,7 +573,8 @@ export class RoadBuilder {
         shaded: true,
         town: pavement,
         side: -1,
-        blendFromRoad: stage.stageType === 'autumnal',
+        blendFromRoad: raggedVerges,
+        ...earthy,
       },
       ...(lined ? edgeLines : []),
       // Kerb faces in town, each wound with its raised edge placed so the face looks at the carriageway.
@@ -557,18 +604,22 @@ export class RoadBuilder {
     const index: number[] = [];
     for (let stripIndex = strips.length - 1; stripIndex >= 0; stripIndex--) {
       const verge = strips[stripIndex]!;
-      if (!verge.blendFromRoad) continue;
+      if (!verge.blendFromRoad && !verge.facets) continue;
       const offsetAt = (band: number, k: number) => {
         const salt = verge.side === 1 ? 613 : 727;
         if (band === 0) return 0;
-        if (band === 3) return VERGE_WIDTH;
+        // A faceted verge's outer edge frays too, never in over the trench's ramp.
+        if (band === 3)
+          return verge.facets ? VERGE_WIDTH - 0.7 * driftNoise(k, 1.4, salt + 41) : VERGE_WIDTH;
         return band === 1
           ? 0.45 + 0.4 * driftNoise(k, 2.3, salt)
           : 1.1 + 0.5 * driftNoise(k, 3.1, salt + 19);
       };
       const bands = [0, 1, 2].map((band): Strip => ({
         ...verge,
-        color: road.clone().lerp(verge.color, [0.18, 0.58, 1][band]!),
+        color: verge.facets
+          ? verge.color.clone()
+          : road.clone().lerp(verge.color, [0.18, 0.58, 1][band]!),
         a: (hw, k) => (verge.side === 1 ? hw + offsetAt(band, k) : -hw - offsetAt(band + 1, k)),
         b: (hw, k) => (verge.side === 1 ? hw + offsetAt(band + 1, k) : -hw - offsetAt(band, k)),
       }));
@@ -578,19 +629,35 @@ export class RoadBuilder {
     // cut into the road, with the mud tracks deeper and darker than the packed-snow pair; gravel
     // keeps only faint, fading traces of them.
     const roadBase = strips[0]!;
+    // Mud tracked out onto the tarmac either side of a mud stretch.
+    if (spill) {
+      roadBase.cover = (k, _hw, band) => spill(k, band ?? 0);
+      roadBase.coverColor = new Color(surfaces.mud);
+      // The edge lines fade into the mud toward the join, so they run out in a gradient.
+      for (const ln of edgeLines) {
+        ln.cover = (k) => lineFade(seam.distance(k * sp));
+        ln.coverColor = roadBase.coverColor;
+      }
+    }
+    // In the spill zone the mud's ruts run on, flat, shading as deep as the mud lies thick, so they
+    // carry across the join stripe for stripe.
+    const spillRuts: RutProfile | null = spillPiece
+      ? { depth: 0, tone: MUD_RUT_TONE, fade: (k) => spill(k, 0) }
+      : null;
     const ruts =
-      stage.surface === 'mud'
+      spillRuts ??
+      (surface === 'mud'
         ? MUD_RUTS
         : drifts && road.getHex() === dust.getHex()
           ? SNOW_RUTS
-          : stage.surface === 'gravel'
+          : surface === 'gravel'
             ? GRAVEL_RUTS
-            : null;
+            : null);
     if (ruts) {
       const tracks = rutStrips(roadBase, ruts);
-      if (stage.stageType === 'autumnal') {
-        const left = mudEdgeTrack(roadBase, MUD_RUTS, -1);
-        const right = mudEdgeTrack(roadBase, MUD_RUTS, 1);
+      if (mudLane || spillRuts) {
+        const left = mudEdgeTrack(roadBase, spillRuts ?? MUD_RUTS, -1);
+        const right = mudEdgeTrack(roadBase, spillRuts ?? MUD_RUTS, 1);
         tracks[0]!.a = left[left.length - 1]!.b;
         tracks[tracks.length - 1]!.b = right[0]!.a;
         strips.splice(0, 1, ...left, ...tracks, ...right);
@@ -618,7 +685,7 @@ export class RoadBuilder {
     // The Greenvale's mountain road: worn tarmac in wandering bands, and the asphalt standing a hand
     // above a gravel shoulder (`MountainRoadStrips`).
     const region = STAGE_TYPES[stage.stageType];
-    if (region.wornTarmac && !snowy && !town?.city) {
+    if (region.wornTarmac && !snowy && !mudLane && !spillPiece && !town?.city) {
       wornCarriageway(strips, roadBase, path);
       const lip = region.terrain.embankment?.lip;
       if (lip) raisedEdge(strips, this.verge, road, lip);
@@ -660,7 +727,10 @@ export class RoadBuilder {
     // verges up into pavements, the kerb faces growing with them.
     const vertex = (st: Station, e: number, strip: Strip, raise = 0, dip = 0) => {
       const t = strip.town !== undefined && town !== undefined ? townFade(town, st.d) : 0;
-      const rutBlend = 1 - t;
+      // Ruts and worn dips ease out into a town and toward a change of surface; the ruts' tones run
+      // on to the join, where the spill zone's flat ruts carry them across.
+      const rutBlend = (1 - t) * relief(st.d);
+      const toneBlend = 1 - t;
       // A built-up road's verges slope down its bank with the ground (none in town).
       const bank =
         strip.side !== undefined && strip.rise === undefined
@@ -674,9 +744,9 @@ export class RoadBuilder {
         dip * rutBlend -
         bank;
       const tone = typeof strip.tone === 'function' ? strip.tone(st.k) : (strip.tone ?? 1);
-      const shade = (strip.shaded ? st.shade : 1) * (1 + (tone - 1) * rutBlend);
+      const shade = (strip.shaded ? st.shade : 1) * (1 + (tone - 1) * toneBlend);
       const c = strip.cover
-        ? tint.copy(strip.color).lerp(dust, strip.cover(st.k, st.hw) * (1 - t))
+        ? tint.copy(strip.color).lerp(strip.coverColor ?? dust, strip.cover(st.k, st.hw) * (1 - t))
         : tint.copy(strip.color);
       if (t > 0) c.lerp(strip.town!.color, t);
       pos.push(st.x + st.lx * e, y, st.z + st.lz * e);
@@ -689,6 +759,8 @@ export class RoadBuilder {
         const q = stations[k + 1]!;
         const mid = (p.d + q.d) / 2;
         const bridged = strip.line === true && this.bridges.some((b) => mid > b.from && mid < b.to);
+        // Edge lines stop a little short of a change of surface (the mud's edge).
+        if (strip.line && seam.distance(mid) < LINE_STOP) continue;
         if (strip.side !== undefined && open(strip.side, mid) && !bridged) continue;
         if (strip.rise !== undefined && (!town || townFade(town, mid) < 0.02)) continue;
         // A band with no width at either end (a tongue-free stretch of edge) draws nothing.
@@ -705,7 +777,7 @@ export class RoadBuilder {
         const dips = strip.dip;
         const [da, db] = typeof dips === 'function' ? dips(p.hw, p.k) : (dips ?? NO_DIP);
         const [qa, qb] = typeof dips === 'function' ? dips(q.hw, q.k) : [da, db];
-        if (strip.blendFromRoad) {
+        if (strip.blendFromRoad || strip.facets) {
           const corners = [
             [p, strip.a(p.hw, p.k)],
             [q, strip.a(q.hw, q.k)],
@@ -717,13 +789,16 @@ export class RoadBuilder {
           for (const [station, lateral] of corners) vertex(station, lateral, strip);
           for (let triangle = 0; triangle < 2; triangle++) {
             const start = (base + triangle * 3) * 3;
-            const variation =
-              0.96 + 0.08 * hash01(p.k * 7 + triangle + (strip.side === 1 ? 31 : 59));
+            const salt = p.k * 7 + triangle + (strip.side === 1 ? 31 : 59) + base * 0.013;
+            const facets = strip.facets;
+            const variation = facets ? 0.86 + 0.28 * hash01(salt) : 0.96 + 0.08 * hash01(salt);
+            // A faceted verge's triangle leans toward the earth by its own share.
+            const earth = facets ? 0.6 * hash01(salt * 1.7 + 5) ** 1.5 : 0;
             for (let channel = 0; channel < 3; channel++) {
-              const flat =
-                ((col[start + channel]! + col[start + 3 + channel]! + col[start + 6 + channel]!) /
-                  3) *
-                variation;
+              const mean =
+                (col[start + channel]! + col[start + 3 + channel]! + col[start + 6 + channel]!) / 3;
+              const toward = facets ? [facets.r, facets.g, facets.b][channel]! : mean;
+              const flat = (mean + (toward - mean) * earth) * variation;
               for (let corner = 0; corner < 3; corner++) col[start + corner * 3 + channel] = flat;
             }
           }
@@ -736,7 +811,8 @@ export class RoadBuilder {
         vertex(q, strip.b(q.hw, q.k), strip, rb, qb);
         // A piece shaded on its own keeps its own corners: they do not weld to the next piece's.
         if (strip.detail) {
-          const shade = strip.detail(p.hw, p.k);
+          const detail = strip.detail(p.hw, p.k);
+          const shade = 1 + (detail - 1) * relief(p.d);
           for (let i = base * 3; i < (base + 4) * 3; i++) col[i]! *= shade;
         }
         index.push(base, base + 2, base + 1, base + 2, base + 3, base + 1);
@@ -758,10 +834,10 @@ export class RoadBuilder {
   private buildMarkers(stage: StageDef, field: TerrainField): void {
     const path = stage.path;
     const skip: MarkerSkip[] = stage.town ? [[stage.town.from, stage.town.to]] : [];
-    for (const r of field.rivers) {
-      const span = bridgeSpan(r);
-      skip.push([span.from, span.to]);
-    }
+    for (const span of bridgeRuns(field)) skip.push([span.from, span.to]);
+    // A road that changes surface has posts along its tarmac only: none beside the mud.
+    for (const r of field.surfaceRuns ?? [])
+      if (r.surface !== 'tarmac') skip.push([r.from, Math.min(r.to, path.length)]);
     if (!stage.circuit) {
       skip.push(controlBoardSkip(stage.startDistance));
       for (const g of stage.gates) if (g.kind === 'finish') skip.push(controlBoardSkip(g.distance));

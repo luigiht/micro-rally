@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { generateStage } from '@/game/stage/StageGenerator';
 import { TerrainField } from '@/game/stage/TerrainField';
-import { stageIndexOf } from './stageIndex';
+import { stageV13 } from './stageIndex';
 
 /**
  * The ground beside the road never steps: walking out from the road on
@@ -20,7 +19,7 @@ describe('the ground beside the road', () => {
   for (const type of ['forest', 'alpine'] as const)
     it(`never steps on ${type} stages`, () => {
       for (const seed of [2, 989380427]) {
-        const stage = generateStage(seed, stageIndexOf(type, 1));
+        const stage = stageV13(seed, type, 1);
         const field = new TerrainField(stage);
         const p = stage.path;
         const steps: string[] = [];

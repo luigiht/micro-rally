@@ -138,7 +138,7 @@ export const it: Messages = {
       highlights: [
         {
           title: 'Prove e progressione',
-          body: 'Le prove rally ruotano tra sette tipi, ognuno con il proprio fondo: Pineta su ghiaia, Alpino su neve, Valverde e Costiero su asfalto, Artico su neve, Autunnale su fango e Deserto su sabbia. Ogni nona prova è una città e ogni decima è un circuito di tre giri; quando coincidono, la città viene prima e il circuito subito dopo. Il ciclo rally riprende con strade più lunghe e curve più strette.',
+          body: 'Le prove rally ruotano tra otto tipi, ognuno con il proprio fondo: Pineta su ghiaia, Alpino su neve, Valverde e Costiero su asfalto, Artico su neve, Autunnale su fango, Deserto su sabbia e Lacustre, la cui strada alterna asfalto e fango e attraversa i laghi su lunghi ponti. Ogni nona prova è una città e ogni decima è un circuito di tre giri; quando coincidono, la città viene prima e il circuito subito dopo. Il ciclo rally riprende con strade più lunghe e curve più strette.',
         },
         {
           title: 'Guida, riparti e rivedi',
@@ -146,7 +146,7 @@ export const it: Messages = {
         },
         {
           title: 'Fondi e aderenza',
-          body: 'L’asfalto offre più aderenza e la ghiaia è il riferimento; neve e fango sono i fondi più scivolosi. Nell’Artico le auto montano gomme chiodate, e nelle prove Alpino e Autunnale gomme invernali e da fango, così affrontano le salite senza perdere ritmo.',
+          body: 'L’asfalto offre più aderenza e la ghiaia è il riferimento; neve e fango sono i fondi più scivolosi. Nell’Artico le auto montano gomme chiodate, e nelle prove Alpino e Autunnale gomme invernali e da fango, così affrontano le salite senza perdere ritmo; nel Lacustre le gomme da fango aiutano solo sui tratti di fango.',
         },
         {
           title: 'Personalizza l’auto',
@@ -180,6 +180,11 @@ export const it: Messages = {
     changelog: {
       intro: 'Tutte le versioni dal primo rilascio giocabile, dalla più recente alla più vecchia.',
       entries: [
+        {
+          date: '19 novembre 2026',
+          title: 'Lacustre',
+          body: 'Un nuovo tipo di prova entra nel ciclo rally dopo il Deserto: Lacustre, un’estate svedese di colline boscose arrotondate e laghi allungati. La strada stretta costeggia i laghi per buona parte del percorso, passa sulle colline tra l’uno e l’altro e attraversa un lago su un lungo ponte di cemento, alternando asfalto e fango lungo il percorso; le gomme da fango aiutano solo sul fango. Boschi misti di pini e latifoglie coprono le colline, punteggiate di fattorie rosso Falun sotto un sole di piena estate. I tempi migliori delle prove che hanno cambiato tipo con il ciclo più lungo vengono azzerati.',
+        },
         {
           date: '12 novembre 2026',
           title: 'Città con mappa, anello del tram e strade continue',
@@ -453,6 +458,7 @@ export const it: Messages = {
     urban: 'Urbano',
     coastal: 'Costiero',
     desert: 'Deserto',
+    lakeland: 'Lacustre',
   },
   controls: [
     { keys: 'W / S · ↑ / ↓', action: 'Acceleratore / freno, tieni premuto per la retro' },
@@ -573,6 +579,10 @@ export const it: Messages = {
           note: 'Dune. Palme. Oasi.',
           surface: 'Sabbia',
         },
+        autumnal: {
+          note: 'Foglie cadute. Solchi nel fango.',
+          surface: 'Fango',
+        },
         forest: {
           note: 'Strade veloci. Colline verdi.',
           surface: 'Asfalto',
@@ -580,6 +590,10 @@ export const it: Messages = {
         circuit: {
           note: 'Cordoli. Vie di fuga in ghiaia. Tre giri.',
           surface: 'Pista',
+        },
+        lakeland: {
+          note: 'Grandi laghi. Ponti lunghi.',
+          surface: 'Misto',
         },
       },
     },

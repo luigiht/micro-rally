@@ -149,6 +149,7 @@ export class DrivingSession {
           gripScale: handling.grip,
           steerSensitivity: handling.steer,
           steerLock: handling.lock,
+          ...(handling.surfaceGrip ? { surfaceGrip: handling.surfaceGrip } : {}),
         }
       : DEFAULT_ENV;
     if (this.run && world.startAlong !== undefined) this.run.skipGatesBefore(world.startAlong);

@@ -82,6 +82,7 @@ export function scatterGrass(field: TerrainField, props: readonly Prop[]): Prop[
         if (path.nearest(x, z, stage.halfWidth + ROAD_GAP + reach, hit)) continue;
         if (stage.town && townBlocks(stage.town, x, z)) continue;
         if (field.inRiver(x, z, reach + 1)) continue;
+        if (field.inLake(x, z, reach)) continue;
         if (field.onMound(x, z, reach)) continue;
         if (blockers.blocks(x, z, reach)) continue;
         const y = field.heightAt(x, z) - SINK;

@@ -18,6 +18,8 @@ import { OasisBuilder } from '../terrain/OasisBuilder';
 import { SeaPlane } from '../terrain/SeaPlane';
 import { FrozenRiverBuilder } from '../terrain/FrozenRiverBuilder';
 import { StoneBridgeBuilder } from '../road/StoneBridgeBuilder';
+import { LakeBuilder } from '../terrain/LakeBuilder';
+import { LakeBridgeBuilder } from '../road/LakeBridgeBuilder';
 import { TerrainChunkManager } from '../terrain/TerrainChunkManager';
 import { dayTheme, type WorldTheme } from '../theme/WorldTheme';
 import { CrossingBuilder } from '../town/CrossingBuilder';
@@ -139,6 +141,9 @@ interface Surfaces {
   /** The Alpine's frozen rivers and the stone bridges over them. */
   rivers: FrozenRiverBuilder | null;
   bridges: StoneBridgeBuilder | null;
+  /** The Lakeland's lakes and the long bridges across them. */
+  lakes: LakeBuilder | null;
+  lakeBridges: LakeBridgeBuilder | null;
   kerbs: KerbBuilder | null;
   barriers: BarrierBuilder | null;
   dressing: CircuitDressingBuilder | null;
@@ -242,6 +247,13 @@ export class StageRenderer {
       pools: field.oases.length > 0 ? new OasisBuilder(field.oases, theme.sea) : null,
       rivers: field.rivers.length > 0 ? new FrozenRiverBuilder(field.rivers) : null,
       bridges: field.rivers.length > 0 ? new StoneBridgeBuilder(stage, field, theme.seawall) : null,
+      lakes:
+        field.lakes.length > 0
+          ? new LakeBuilder(field.lakes, STAGE_TYPES[stage.stageType].lakes?.water ?? theme.sea)
+          : null,
+      lakeBridges: field.lakes.some((l) => l.bridge)
+        ? new LakeBridgeBuilder(stage, field, field.lakes)
+        : null,
       kerbs: null,
       barriers: null,
       dressing: null,
@@ -348,6 +360,8 @@ export class StageRenderer {
       s.pools,
       s.rivers,
       s.bridges,
+      s.lakes,
+      s.lakeBridges,
       s.kerbs,
       s.barriers,
       s.dressing,

@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 
 interface HudDialogProps {
   id: string;
@@ -9,7 +9,7 @@ interface HudDialogProps {
   closeLabel: string;
   onClose: () => void;
   children: ReactNode;
-  /** Pinned under the scrolling content, directly above the Close button. */
+  /** Under the content, directly above the Close button; scrolls with it. */
   footer?: ReactNode;
   /** Extra classes for the panel, e.g. a wider max width on short screens. */
   className?: string;
@@ -27,6 +27,9 @@ export function HudDialog({
   className = '',
 }: HudDialogProps) {
   const titleId = `${id}-title`;
+  const closeRef = useRef<HTMLButtonElement>(null);
+  // Focus Close as the panel opens without scrolling to it: it sits at the end of the scrolling content.
+  useEffect(() => closeRef.current?.focus({ preventScroll: true }), []);
   return (
     <div className="pixel-scrim pointer-events-auto absolute inset-0 flex items-center justify-center p-4 short:p-2 md:p-8">
       {/* min-w-0 stops wide children (the 3D preview canvas) from pushing the panel past the screen. */}
@@ -44,13 +47,13 @@ export function HudDialog({
             <p className="mt-2 text-sm text-ink/70 short:mt-1 short:text-xs">{subtitle}</p>
           )}
           {children}
-        </div>
-        {/* With a footer, the content's pb-3 alone spaces it, matching the footer-to-Close gap. */}
-        <div className={`mb-1 flex shrink-0 flex-col gap-3 ${footer ? '' : 'mt-6 short:mt-3'}`}>
-          {footer}
-          <button type="button" autoFocus onClick={onClose} className="pixel-btn w-full">
-            {closeLabel}
-          </button>
+          {/* The actions scroll with the content, so a short screen never stacks them over it. */}
+          <div className={`flex flex-col gap-4 ${footer ? 'mt-5' : 'mt-6'} short:mt-3`}>
+            {footer}
+            <button ref={closeRef} type="button" onClick={onClose} className="pixel-btn w-full">
+              {closeLabel}
+            </button>
+          </div>
         </div>
       </section>
     </div>

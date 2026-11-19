@@ -5,8 +5,7 @@ import { lacetGround, RADIUS_MIN } from '@/game/stage/Lacets';
 import { createRoadHit } from '@/game/stage/RoadPath';
 import { standable } from '@/game/stage/Spectators';
 import { STAGE_TYPES, stageScenery } from '@/game/stage/regions';
-import { createStageWorld } from '@/game/stage/StageWorld';
-import { generateStage, type StageDef } from '@/game/stage/StageGenerator';
+import type { StageDef } from '@/game/stage/StageGenerator';
 import { scatterGrass } from '@/game/stage/TallGrass';
 import { TerrainField } from '@/game/stage/TerrainField';
 import { wornTone } from '@/render/road/SurfaceDetail';
@@ -21,10 +20,10 @@ import {
 import { hexToLinear, terrainColors } from '@/render/terrain/meshTerrainChunk';
 import { valleyFaceColor, type ValleyFace } from '@/render/terrain/valleyFaceColor';
 import { Color } from 'three';
-import { stageIndexOf } from './stageIndex';
+import { stageV13, worldV13 } from './stageIndex';
 
-const greenvale = (seed: number, nth = 1) => generateStage(seed, stageIndexOf('forest', nth));
-const pinewood = (seed: number, nth = 1) => generateStage(seed, stageIndexOf('pinewood', nth));
+const greenvale = (seed: number, nth = 1) => stageV13(seed, 'forest', nth);
+const pinewood = (seed: number, nth = 1) => stageV13(seed, 'pinewood', nth);
 
 /** Total turning per kilometre of road, radians. */
 function turnPerKm(stage: StageDef): number {
@@ -93,11 +92,11 @@ describe('Greenvale roads', () => {
   });
 
   it('wears thick mixed woods and tall grass', () => {
-    const gv = createStageWorld(2, stageIndexOf('forest', 1));
+    const gv = worldV13(2, 'forest', 1);
     const perKm = (props: readonly { kind: string }[], kinds: string[], length: number) =>
       props.filter((p) => kinds.includes(p.kind)).length / (length / 1000);
     const trees = perKm(gv.props, ['tree', 'broadleaf'], gv.stage.path.length);
-    const autumnal = createStageWorld(2, stageIndexOf('autumnal', 1));
+    const autumnal = worldV13(2, 'autumnal', 1);
     expect(trees).toBeGreaterThan(
       perKm(autumnal.props, ['tree', 'broadleaf'], autumnal.stage.path.length) * 1.5,
     );
@@ -109,7 +108,7 @@ describe('Greenvale roads', () => {
 
 describe('Greenvale groves', () => {
   it('run the road through thick broadleaf forest now and then', () => {
-    const w = createStageWorld(989380427, stageIndexOf('forest', 0));
+    const w = worldV13(989380427, 'forest', 0);
     const def = stageScenery('forest').groves!;
     const at = groves(w.stage.seed, def);
     const hit = createRoadHit();
@@ -139,7 +138,7 @@ describe('Greenvale groves', () => {
 describe('Greenvale spectators', () => {
   it('stand on level ground, never at a brink, with a view of the road, and still turn out', () => {
     for (const seed of [1, 2]) {
-      const w = createStageWorld(seed, stageIndexOf('forest', 1));
+      const w = worldV13(seed, 'forest', 1);
       const people = w.props.filter((p) => p.kind === 'spectator');
       expect(people.length).toBeGreaterThan(100);
       const hit = createRoadHit();
@@ -169,7 +168,7 @@ describe('Greenvale jumps', () => {
     let jumps = 0;
     for (let seed = 1; seed <= 6; seed++)
       for (const nth of [0, 1]) {
-        const stage = generateStage(seed, stageIndexOf('forest', nth));
+        const stage = stageV13(seed, 'forest', nth);
         const field = new TerrainField(stage);
         expect(field.crestsAt.length).toBeGreaterThan(0);
         jumps += field.crestsAt.length;
@@ -191,7 +190,7 @@ describe('Greenvale jumps', () => {
   });
 
   it('draw a crowd on either side', () => {
-    const w = createStageWorld(1, stageIndexOf('forest', 0));
+    const w = worldV13(1, 'forest', 0);
     expect(w.field.crestsAt.length).toBeGreaterThan(0);
     const hit = createRoadHit();
     for (const c of w.field.crestsAt) {
@@ -210,7 +209,7 @@ describe('Greenvale jumps', () => {
 describe('Greenvale crowds', () => {
   it('turn out at the start, every checkpoint and the finish, on benches level with the road', () => {
     for (const seed of [1, 2, 3]) {
-      const w = createStageWorld(seed, stageIndexOf('forest', 1));
+      const w = worldV13(seed, 'forest', 1);
       const { stage } = w;
       // Checkpoints stand at a stack's foot or top, never on it.
       for (const g of stage.gates)

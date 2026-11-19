@@ -79,7 +79,8 @@ export class Autopilot {
 
     // Speed: the slowest of the bends ahead, each allowed for the braking distance to it.
     // Snow grips at under half of tarmac: the car is driven to the ground it is on.
-    const grip = env.gripScale * Math.min(1, SURFACES[s.surface].grip);
+    const grip =
+      env.gripScale * (env.surfaceGrip?.[s.surface] ?? 1) * Math.min(1, SURFACES[s.surface].grip);
     const lateral = this.opts.cornering * grip;
     const decel = this.opts.braking * grip;
     let target = this.opts.maxSpeed;

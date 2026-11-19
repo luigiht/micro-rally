@@ -206,6 +206,7 @@ export function scatterSpectators(
     if (path.nearest(x, z, verge, hit)) return false;
     // Nobody stands on a frozen river or at the lip of its gorge.
     if (field.inRiver(x, z, RIVER_GAP)) return false;
+    if (field.inLake(x, z, RIVER_GAP)) return false;
     return standable(field, x, z, d);
   };
   const stand = (d: number, side: 1 | -1, off: number, variant: number): boolean => {

@@ -238,6 +238,11 @@ body {
   outline-offset: 2px;
 }
 
+/* The game hides focus rings until the player navigates by keyboard (`useFocusRingGate`). */
+html[data-focus-gate]:not([data-focus-ring]) :focus-visible {
+  outline: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
