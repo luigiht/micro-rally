@@ -1,6 +1,6 @@
 import { sanitizeUpgrades, type UpgradeLevels } from '../economy/upgrades';
 import { isCatalogCar, RETIRED_CARS, type CatalogCarId } from '../economy/cars';
-import { stageSlot, type StageTypeId } from '../stage/regions';
+import { isCityStage, rallyIndex, stageSlot, type StageTypeId } from '../stage/regions';
 import { isValidGameId } from './GameId';
 
 export interface StageRecord {
@@ -8,7 +8,7 @@ export interface StageRecord {
   splits: number[];
 }
 
-export const SAVE_VERSION = 13;
+export const SAVE_VERSION = 14;
 export const DRIVER_NAME_MAX = 24;
 
 /** Everything needed to resume a game. Nothing personal beyond the driver name. */
@@ -203,8 +203,8 @@ function migrateV6(raw: Record<string, unknown>): Record<string, unknown> {
     Object.entries(records).filter(([key]) => {
       const index = Number(key);
       const before = isCircuitStage(index) ? 'circuit' : CYCLE_V6[index % CYCLE_V6.length];
-      const now = stageSlot(index);
-      const previousRegion: Readonly<Record<StageTypeId, LegacyStageId>> = {
+      const now = stageSlotV13(index);
+      const previousRegion: Readonly<Record<StageTypeIdV13, LegacyStageId>> = {
         arctic: 'arctic',
         circuit: 'circuit',
         autumnal: 'forest',
@@ -226,7 +226,7 @@ function migrateV6(raw: Record<string, unknown>): Record<string, unknown> {
 function migrateV8(raw: Record<string, unknown>): Record<string, unknown> {
   const records = isRecord(raw.records) ? raw.records : {};
   const kept = Object.fromEntries(
-    Object.entries(records).filter(([key]) => stageSlot(Number(key)) !== 'urban'),
+    Object.entries(records).filter(([key]) => stageSlotV13(Number(key)) !== 'urban'),
   );
   return { ...raw, version: 9, records: kept };
 }
@@ -235,7 +235,7 @@ function migrateV8(raw: Record<string, unknown>): Record<string, unknown> {
 function migrateV10(raw: Record<string, unknown>): Record<string, unknown> {
   const records = isRecord(raw.records) ? raw.records : {};
   const kept = Object.fromEntries(
-    Object.entries(records).filter(([key]) => stageSlot(Number(key)) !== 'urban'),
+    Object.entries(records).filter(([key]) => stageSlotV13(Number(key)) !== 'urban'),
   );
   return { ...raw, version: 11, records: kept };
 }
@@ -245,7 +245,7 @@ function migrateV12(raw: Record<string, unknown>): Record<string, unknown> {
   const records = isRecord(raw.records) ? raw.records : {};
   const kept = Object.fromEntries(
     Object.entries(records).filter(([key]) => {
-      const slot = stageSlot(Number(key));
+      const slot = stageSlotV13(Number(key));
       return slot !== 'forest' && slot !== 'alpine';
     }),
   );
@@ -256,7 +256,7 @@ function migrateV12(raw: Record<string, unknown>): Record<string, unknown> {
 function migrateV11(raw: Record<string, unknown>): Record<string, unknown> {
   const records = isRecord(raw.records) ? raw.records : {};
   const kept = Object.fromEntries(
-    Object.entries(records).filter(([key]) => stageSlot(Number(key)) !== 'forest'),
+    Object.entries(records).filter(([key]) => stageSlotV13(Number(key)) !== 'forest'),
   );
   return { ...raw, version: 12, records: kept };
 }
@@ -265,7 +265,7 @@ function migrateV11(raw: Record<string, unknown>): Record<string, unknown> {
 function migrateV9(raw: Record<string, unknown>): Record<string, unknown> {
   const records = isRecord(raw.records) ? raw.records : {};
   const kept = Object.fromEntries(
-    Object.entries(records).filter(([key]) => stageSlot(Number(key)) !== 'urban'),
+    Object.entries(records).filter(([key]) => stageSlotV13(Number(key)) !== 'urban'),
   );
   return { ...raw, version: 10, records: kept };
 }
@@ -274,9 +274,43 @@ function migrateV9(raw: Record<string, unknown>): Record<string, unknown> {
 function migrateV7(raw: Record<string, unknown>): Record<string, unknown> {
   const records = isRecord(raw.records) ? raw.records : {};
   const kept = Object.fromEntries(
-    Object.entries(records).filter(([key]) => stageSlot(Number(key)) !== 'alpine'),
+    Object.entries(records).filter(([key]) => stageSlotV13(Number(key)) !== 'alpine'),
   );
   return { ...raw, version: 8, records: kept };
+}
+
+/** The stage types before Lakeland joined the rally mix (v13 and older). */
+type StageTypeIdV13 = Exclude<StageTypeId, 'lakeland'>;
+
+/** The seven-type rally mix of v7–v13, frozen so the migrations up to v13 keep their meaning. */
+const RALLY_CYCLE_V13: readonly StageTypeIdV13[] = [
+  'pinewood',
+  'alpine',
+  'forest',
+  'coastal',
+  'arctic',
+  'autumnal',
+  'desert',
+];
+
+/** What stage `index` was in v7–v13: the same cities and circuits, the seven-type mix between them. */
+function stageSlotV13(index: number): StageTypeIdV13 {
+  const rally = rallyIndex(index);
+  if (rally === null) return isCityStage(index) ? 'urban' : 'circuit';
+  return RALLY_CYCLE_V13[rally % RALLY_CYCLE_V13.length]!;
+}
+
+/**
+ * v14 adds Lakeland at the end of the rally mix, which grows from seven
+ * types to eight: from the first Lakeland on, many stages are another
+ * type's road now. Records are kept only where the stage is still the same type.
+ */
+function migrateV13(raw: Record<string, unknown>): Record<string, unknown> {
+  const records = isRecord(raw.records) ? raw.records : {};
+  const kept = Object.fromEntries(
+    Object.entries(records).filter(([key]) => stageSlotV13(Number(key)) === stageSlot(Number(key))),
+  );
+  return { ...raw, version: 14, records: kept };
 }
 
 function parseCurrent(raw: Record<string, unknown>): SaveFile | null {
@@ -335,6 +369,7 @@ export function parseSaveFile(data: unknown): SaveFile | null {
   if (raw.version === 10) raw = migrateV10(raw);
   if (raw.version === 11) raw = migrateV11(raw);
   if (raw.version === 12) raw = migrateV12(raw);
+  if (raw.version === 13) raw = migrateV13(raw);
   if (raw.version === SAVE_VERSION) return parseCurrent(raw);
   return null;
 }

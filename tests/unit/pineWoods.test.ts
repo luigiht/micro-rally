@@ -4,16 +4,15 @@ import { createRoadHit } from '@/game/stage/RoadPath';
 import { stagePalette, stageScenery } from '@/game/stage/regions';
 import { canopyRadius } from '@/game/stage/SceneryScatter';
 import { GRASS_REACH, scatterGrass } from '@/game/stage/TallGrass';
-import { createStageWorld } from '@/game/stage/StageWorld';
 import { rallyKits } from '@/render/scenery/kits/RallyKits';
 import { PINE_SHAPES, pineFoliage, pineStandIn, pineTrunk } from '@/render/scenery/PineGeometry';
 import { tallGrassGeometry, tallGrassStandIn } from '@/render/scenery/TallGrassGeometry';
-import { stageIndexOf } from './stageIndex';
+import { worldV13 } from './stageIndex';
 
 describe('Pinewood pines', () => {
-  const pinewood = createStageWorld(2, stageIndexOf('pinewood', 1));
+  const pinewood = worldV13(2, 'pinewood', 1);
   // The summer woodland's own trees, as the Autumnal plants them (the Greenvale has its own woods).
-  const forest = createStageWorld(2, stageIndexOf('autumnal', 1));
+  const forest = worldV13(2, 'autumnal', 1);
   type World = typeof pinewood;
   const of = (w: World, kind: string) => w.props.filter((p) => p.kind === kind);
   const perKm = (w: World) => of(w, 'tree').length / (w.stage.path.length / 1000);

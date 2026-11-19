@@ -133,7 +133,7 @@ export const en = {
       highlights: [
         {
           title: 'Stages and progression',
-          body: 'Rally stages cycle through seven stage types, each with its own road surface: Pinewood gravel, Alpine snow, Greenvale and Coastal tarmac, Arctic snow, Autumnal mud and Desert sand. Every ninth stage is a city and every tenth is a three-lap circuit; when they coincide, the city comes first and the circuit follows. The rally mix then loops with longer, tighter roads.',
+          body: 'Rally stages cycle through eight stage types, each with its own road surface: Pinewood gravel, Alpine snow, Greenvale and Coastal tarmac, Arctic snow, Autumnal mud, Desert sand, and Lakeland, whose road changes between tarmac and mud and crosses lakes on long bridges. Every ninth stage is a city and every tenth is a three-lap circuit; when they coincide, the city comes first and the circuit follows. The rally mix then loops with longer, tighter roads.',
         },
         {
           title: 'Drive, reset and replay',
@@ -141,7 +141,7 @@ export const en = {
         },
         {
           title: 'Surfaces and grip',
-          body: 'Tarmac grips best and gravel is the reference; snow and mud are the most slippery. Arctic cars run studded tyres, and Alpine and Autumnal cars run winter and mud tyres, so they can still climb the hills at pace.',
+          body: 'Tarmac grips best and gravel is the reference; snow and mud are the most slippery. Arctic cars run studded tyres, and Alpine and Autumnal cars run winter and mud tyres, so they can still climb the hills at pace; on Lakeland the mud tyres only help on its mud stretches.',
         },
         {
           title: 'Make the car yours',
@@ -172,6 +172,11 @@ export const en = {
     changelog: {
       intro: 'Every release since the first playable build, newest first.',
       entries: [
+        {
+          date: '19 November 2026',
+          title: 'Lakeland',
+          body: 'A new stage type joins the rally mix after the Desert: Lakeland, a Swedish summer of rounded wooded hills and long lakes. Its narrow road winds along the lakes for much of its length, rolls over the hills between them and crosses one lake on a long concrete bridge, changing between tarmac and mud as it goes; mud tyres help on the mud only. Mixed woods of pines and broadleaves cover the hills, with Falu-red farmhouses all over under a high summer sun. Best times on stages that changed type with the longer rotation are reset.',
+        },
         {
           date: '12 November 2026',
           title: 'Mapped cities, tram loop, wall-to-wall streets',
@@ -440,6 +445,7 @@ export const en = {
     urban: 'Urban',
     coastal: 'Coastal',
     desert: 'Desert',
+    lakeland: 'Lakeland',
   },
   controls: [
     { keys: 'W / S · ↑ / ↓', action: 'Throttle / brake, hold to reverse' },
@@ -554,6 +560,10 @@ export const en = {
           note: 'Dunes. Palms. Oases.',
           surface: 'Sand',
         },
+        autumnal: {
+          note: 'Fallen leaves. Muddy ruts.',
+          surface: 'Mud',
+        },
         forest: {
           note: 'Fast roads. Green hills.',
           surface: 'Tarmac',
@@ -561,6 +571,10 @@ export const en = {
         circuit: {
           note: 'Kerbs. Gravel traps. Three laps.',
           surface: 'Track',
+        },
+        lakeland: {
+          note: 'Big lakes. Long bridges.',
+          surface: 'Mixed',
         },
       },
     },

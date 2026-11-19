@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { RALLY_CYCLE, STAGE_TYPES } from '@/game/stage/regions';
-import { stageIndexOf } from './stageIndex';
+import { slotV13, stageIndexOf } from './stageIndex';
 import { createRoadHit } from '@/game/stage/RoadPath';
 import { scatterScenery } from '@/game/stage/SceneryScatter';
 import { generateStage, stageHasTown, stageTypeAt } from '@/game/stage/StageGenerator';
@@ -325,7 +325,8 @@ describe('Coast stages', () => {
         fieldFor(seed).stage,
         generateStage(seed, LATE_COAST_INDEX),
       ]),
-      generateStage(1101485805, 38),
+      // Stage 38 was a Coastal on the seven-type calendar this case was found on.
+      generateStage(1101485805, 38, slotV13(38)),
     ];
     for (const stage of stages) {
       expect(stage.stageType).toBe('coastal');

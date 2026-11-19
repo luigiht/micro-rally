@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { selfApproachOk, START_DISTANCE } from '@/game/stage/Centreline';
 import { parseSaveFile, SAVE_VERSION } from '@/game/save/SaveFile';
-import { stageIndexOf } from './stageIndex';
+import { indexV13, stableIndexV13, stageIndexOf } from './stageIndex';
 import { isCircuitStage, isCityStage, STAGE_TYPES } from '@/game/stage/regions';
 import { createRoadHit } from '@/game/stage/RoadPath';
 import { halfWidthAt } from '@/game/stage/RoadWidth';
@@ -497,12 +497,14 @@ describe('Urban stages', { timeout: 30_000 }, () => {
   }, 90_000);
 });
 
+// Each step's records sit where the v13 calendar put them; the ones expected to survive are on
+// stages still of their type since Lakeland joined the mix (v14), which a parse runs on to.
 describe('save migration', () => {
   it("moves v12 saves to v13, dropping the Greenvale's and the Alpine's records only", () => {
     const rec = { best: 90, splits: [30, 60, 90] };
-    const greenvale = stageIndexOf('forest', 1);
-    const alpine = stageIndexOf('alpine', 1);
-    const pinewood = stageIndexOf('pinewood', 1);
+    const greenvale = indexV13('forest', 1);
+    const alpine = indexV13('alpine', 1);
+    const pinewood = stableIndexV13('pinewood', 1);
     const save = parseSaveFile({
       version: 12,
       gameId: 'ABCD2345',
@@ -522,9 +524,9 @@ describe('save migration', () => {
 
   it("moves v11 saves to v12, dropping the Greenvale's records only", () => {
     const rec = { best: 90, splits: [30, 60, 90] };
-    const greenvale = stageIndexOf('forest', 1);
-    const pinewood = stageIndexOf('pinewood', 1);
-    const city = stageIndexOf('urban', 1);
+    const greenvale = indexV13('forest', 1);
+    const pinewood = stableIndexV13('pinewood', 1);
+    const city = indexV13('urban', 1);
     const save = parseSaveFile({
       version: 11,
       gameId: 'ABCD2345',
@@ -548,8 +550,8 @@ describe('save migration', () => {
 
   it("moves v10 saves to v11, dropping the cities' records only", () => {
     const rec = { best: 90, splits: [30, 60, 90] };
-    const city = stageIndexOf('urban', 2);
-    const pinewood = stageIndexOf('pinewood', 2);
+    const city = indexV13('urban', 2);
+    const pinewood = stableIndexV13('pinewood', 2);
     const save = parseSaveFile({
       version: 10,
       gameId: 'ABCD2345',
@@ -569,8 +571,8 @@ describe('save migration', () => {
 
   it("moves v9 saves to v10, dropping the cities' records only", () => {
     const rec = { best: 90, splits: [30, 60, 90] };
-    const city = stageIndexOf('urban', 1);
-    const pinewood = stageIndexOf('pinewood', 1);
+    const city = indexV13('urban', 1);
+    const pinewood = stableIndexV13('pinewood', 1);
     const save = parseSaveFile({
       version: 9,
       gameId: 'ABCD2345',

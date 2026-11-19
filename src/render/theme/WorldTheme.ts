@@ -132,6 +132,17 @@ const DAY_LIGHTING = {
 export const COAST_HEMI = { hemiSky: '#e6eef5', hemiGround: '#a3aa94' } as const;
 
 /**
+ * A high summer sun (`StageTypeDef.sunny`, the Lakeland): warmer and a touch
+ * stronger than the stock day, with a brighter sky fill.
+ */
+export const SUNNY_LIGHT = {
+  sunColor: '#fff3d6',
+  sunIntensity: 3,
+  hemiSky: '#fff8e8',
+  hemiIntensity: 2.05,
+} as const;
+
+/**
  * Just past sunset: an indigo sky over an afterglow, a violet haze closing in
  * nearer than by day, and little light left: a cool sky fill and a faint warm
  * glow from the west, so the snow reads blue and the car's lamps carry.
@@ -223,6 +234,7 @@ export function dayTheme(stageType: StageTypeDef, dusk = false): WorldTheme {
             fog: stageType.palette.fog,
             ...DAY_LIGHTING,
             ...(stageType.coast ? COAST_HEMI : {}),
+            ...(stageType.sunny ? SUNNY_LIGHT : {}),
           },
       road,
       gates: DAY_GATES,

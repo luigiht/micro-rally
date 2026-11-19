@@ -72,7 +72,7 @@ describe('Checkpoints', () => {
 });
 
 describe('StageGenerator', () => {
-  it('defines exactly nine named stage types with fixed surfaces', () => {
+  it('defines exactly ten named stage types with fixed surfaces', () => {
     expect(Object.keys(STAGE_TYPES).sort()).toEqual(
       [
         'arctic',
@@ -84,6 +84,7 @@ describe('StageGenerator', () => {
         'urban',
         'coastal',
         'desert',
+        'lakeland',
       ].sort(),
     );
     expect(STAGE_TYPES.pinewood.surface).toBe('gravel');
@@ -91,6 +92,9 @@ describe('StageGenerator', () => {
     expect(STAGE_TYPES.alpine.surface).toBe('snow');
     expect(STAGE_TYPES.forest.surface).toBe('tarmac');
     expect(STAGE_TYPES.coastal.surface).toBe('tarmac');
+    // Lakeland's own surface is tarmac; its road runs in stretches of tarmac and mud (`SurfaceSpans`).
+    expect(STAGE_TYPES.lakeland.surface).toBe('tarmac');
+    expect(STAGE_TYPES.lakeland.surfaceSpans?.alt).toBe('mud');
   });
 
   it('is deterministic for the same seed and index', () => {
@@ -154,11 +158,11 @@ describe('StageGenerator', () => {
     expect(stageTypes.filter((type) => type === 'circuit')).toHaveLength(20);
     for (let i = 1; i < 200; i++) expect(isCircuitStage(i) && isCircuitStage(i - 1)).toBe(false);
     for (let i = 0; i < 200; i++) if (isCircuitStage(i)) expect(stageHasTown(i)).toBe(false);
-    // The rally stages cycle through seven explicit stage types.
+    // The rally stages cycle through eight explicit stage types, Lakeland last.
     const rally = Array.from({ length: 200 }, (_, i) => i).filter(
       (i) => !isCityStage(i) && !isCircuitStage(i),
     );
-    const slots = rally.slice(0, 7).map((i) => stageSlot(i));
+    const slots = rally.slice(0, 8).map((i) => stageSlot(i));
     expect(slots).toEqual([
       'pinewood',
       'alpine',
@@ -167,13 +171,14 @@ describe('StageGenerator', () => {
       'arctic',
       'autumnal',
       'desert',
+      'lakeland',
     ]);
-    rally.forEach((i, k) => expect(stageSlot(i)).toEqual(stageSlot(rally[k % 7]!)));
+    rally.forEach((i, k) => expect(stageSlot(i)).toEqual(stageSlot(rally[k % 8]!)));
     for (let seed = 1; seed <= 6; seed++) {
       expect(generateStage(seed, stageIndexOf('pinewood')).surface).toBe('gravel');
       expect(generateStage(seed, stageIndexOf('forest')).surface).toBe('tarmac');
       expect(generateStage(seed, stageIndexOf('autumnal')).surface).toBe('mud');
-      const alpine = generateStage(seed, 27);
+      const alpine = generateStage(seed, stageIndexOf('alpine', 2));
       expect(alpine.surface).toBe('snow');
       expect(alpine.stageType).toBe('alpine');
     }

@@ -2,6 +2,7 @@ import { ObstacleGrid } from '../vehicle/Collisions';
 import { barrierObstacles } from './CircuitTrackside';
 import { seaWallObstacles } from './Coastline';
 import { bridgeObstacles } from './Rivers';
+import { lakeBridgeObstacles } from './Lakes';
 import { propObstacles, scatterScenery, type Prop } from './SceneryScatter';
 import { calendarSlot, generateStage, type StageDef, type StageSlot } from './StageGenerator';
 import { TerrainField } from './TerrainField';
@@ -53,6 +54,7 @@ function buildStageWorld(gameSeed: number, index: number, slot: StageSlot): Stag
     ...(field.coast ? seaWallObstacles(field.coast) : []),
     ...barrierObstacles(stage),
     ...bridgeObstacles(stage, field.rivers),
+    ...lakeBridgeObstacles(stage, field.lakes),
   ];
   return {
     gameSeed,

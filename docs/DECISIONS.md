@@ -6017,3 +6017,152 @@ bed)`. The road, its profile and every record stay as they were, so
        `LandingCarStage`), which sets every car, the truck included, below
        the stats. The still under it is the desktop render, so until the
        first 3D frame the car shows a little larger.
+
+278. **2026-11-19 — Focus rings in the game wait for the keyboard.** Menus
+     and dialogs focus their first control as they open (`autoFocus`), and
+     browsers paint `:focus-visible` for that on a fresh load or on any text
+     input, so a dashed ring showed before the player had done anything.
+     `useFocusRingGate` (mounted by `GameRoot`) marks `<html data-focus-gate>`
+     and adds `data-focus-ring` on a navigation key (Tab, arrows, Enter,
+     Space, Escape, Home, End); a pointer press removes it. globals.css drops
+     the outline under the gate until the ring flag is set. Focus itself still
+     moves the same way, so keyboard and screen-reader use is unchanged and
+     the ring appears from the first Tab. The landing page is not gated.
+
+279. **2026-11-19 — Lakeland: a tenth stage type, lakes and roads that change surface.**
+     At the user's request, a Swedish summer stage type mixing Coastal,
+     Autumnal and Greenvale: big wooded mountains, long lakes, the road over
+     the mountains and back along the lakes, long bridges, Falu-red houses,
+     a narrow road that changes between Greenvale's tarmac and the
+     Autumnal's mud.
+     - **Rotation.** Appended to `RALLY_CYCLE` after Desert, so the first
+       seven rally stages keep their types. Save v14 drops records only where
+       a stage's type changed; the old migrations (v6–v12) now read a frozen
+       copy of the seven-type calendar (`stageSlotV13`) so they keep their
+       meaning. Tests whose stages were chosen on that calendar generate the
+       same stages through `slotV13`/`stageV13` (a stage is fixed by seed,
+       index and slot); some of their properties fail on other stages of the
+       same type under the new numbering, which is a pre-existing generator
+       edge case, not a Lakeland one. Multiplayer sessions created without
+       ticked types take the new list, so one in progress may shift; they
+       are short-lived.
+     - **Surface stretches** (`SurfaceSpans`): drawn from the stage seed on
+       their own stream and from the length alone, so the brief and the walk
+       keep their draws and lists can price par stretch by stretch. The
+       brief's `surface` stays the type's own (tarmac), which keeps the icon
+       and the prize factor; mud grip comes from a new per-surface
+       `handling.surfaceGrip`, so the Autumnal's 1.3× applies on mud only.
+       `TerrainField.surfaceRuns` lays bridges over the stretches as tarmac;
+       the road ribbon breaks its pieces at each change and draws each as
+       its surface's road, with mud tracked onto the tarmac by the snow-patch
+       `cover` mechanism (`coverColor`).
+     - **Lakes** (`Lakes.ts`): laid after the road, like `Rivers`, so no road
+       changes. Star-shaped about a centre (a wobbly ellipse cast as 64 rays
+       cut back at the road's corridor, other lakes and rising ground), which
+       makes inside and shore distance a one-sector lookup and the water a
+       fan, with no polygon library. Bridge candidates are stretches straight
+       enough over ±55 m, lowest first; a dips-only search found a bridge on
+       a third of stages, this one on all probed. Where the valley falls past
+       a shape-limited shore, a levee with a 3 m crest holds the water
+       instead of a cliff at the rim. In the water the surface is `dune`, so
+       no new `Surface` value disturbs replay indices.
+     - **Bridges** are a concrete beam deck on piers with steel guard rails
+       (colliders via the generalised `edgeObstacles`). Flat-shaded and
+       double-sided, so they cast shadows but receive none, which avoids
+       self-shadow striping.
+     - **Light.** `sunny` brightens the sun and sky fill only. A longer fog
+       was tried and dropped, because it would widen the scenery streaming
+       radius.
+     - **Houses.** Density 4 per 100 m: on the steep mountains most sites
+       fail the house slope test, so this nets 3–7 farmhouses a stage.
+     - **Revised the same day after play-testing.** The hills are flatter
+       (amplitude 30, a quarter ridged) with no hairpin stacks, so the road
+       spends more of its length beside up to six lakeside lakes. Their level
+       now comes from the road within 60 m, and the lake is shortened where a
+       falling road would drop below it; the old level, from the lowest road
+       far along, left your seed with no lakeside lakes. Bridge fixes: the
+       wheels ride the deck out to the slab's edge (`DECK_OUT`; before, a
+       wheel past the carriageway fell to the lake bed and the car rolled
+       onto the rail), abutment tops sit 25 cm under the deck so the
+       ribbon's worn dips no longer show them, and a bridge lake whose shore
+       reaches the road anywhere but its bridge is not laid. A stretch left
+       under 80 m long by a bridge overlay takes the bridge's tarmac. Mud
+       meets tarmac at full mud colour and thins over ~30 m in per-lane
+       tongues (each worn band takes its own `cover`), with no straight seam.
+       The woods mix Pinewood's pine builds with the Greenvale's broadleaf
+       shapes and bushes. House density rose to 5 per 100 m, giving 15–40
+       houses a stage on the gentler ground.
+       A second pass the same day: seams between surfaces flatten the ruts,
+       worn dips and their shading over 14 m either side (`seamFade`), so the
+       two pieces meet flush with no step or crack; the edge lines stop 6 m
+       short. The palette is darker (deep pine and canopy greens) and browner
+       (heath and dry-earth ground in place of meadow green).
+       A third pass: on a road that changes surface both surfaces keep the
+       same plain verges (the Autumnal's ragged verge bands only where its
+       whole road is mud), so the edges run unbroken across every change.
+       The farmhouses became Swedish ones (`SwedishHouseGeometry`) in place
+       of the tinted stock cottage, whose instance tint turned its white
+       frames red as well, and whose solid roof hid red gable ends. Colours
+       are baked per `palette.houses` pair, so each pair is its own kit,
+       chosen by the prop's variant.
+       A fourth pass, for a stage that is mostly lakes and low hills with the
+       road round the lakes' edges: the hills are lower (amplitude 18, 15%
+       ridged; 14–24 m of relief). Lakeside lakes number up to fifteen, laid
+       as little as 60 m apart along the road, and fill the inside of a bend
+       where the road turns (else the lower side). Their shore keeps 11 m past
+       the carriageway's edge instead of the whole 15 m blend corridor plus
+       the rim, so the road runs along the water. That made a flaw visible:
+       a lake's level came from the road near its middle, and another stretch
+       of road nearby could lie metres under the water. Now every shore stops
+       short of any road within 45 m that stands less than 0.8 m over the
+       water. All the low road points around a lake are gathered first,
+       because the nearest-road test only ever saw the lake's own stretch.
+       Trees keep 9 m off a shore so the water shows from the road. Mud is
+       shorter (100–200 m, tarmac 380–700 m) and firmer: its grip factor is
+       1.6, giving 0.88 grip against tarmac's 1 and the Autumnal's 0.72. It
+       stays a factor on the stage, not a change to the mud surface, so the
+       Autumnal keeps its slither. Coverage across ten seeds went from about
+       5% of the road within 20 m of water (bridges only) to 32–64%.
+       A fifth pass, on the look. The lake bed shelved so gently, by a
+       smoothstep, that its first ~5 m stood barely under the water, so the
+       waterline wandered across the big terrain faces as a jagged line. It
+       now drops at once and eases out, so the waterline follows the shore's
+       64-sided outline. Shores are pebbles (`meadows.shore`), wet-dark at the
+       water and thinning raggedly into the grass, and never steep-face rock.
+       The water's outer rings pale toward the wet pebbles. The road's
+       shoulder used to end over a tenth of the blend, a crisp line. With
+       `palette.vergeBlend` it frays into the ground over a wide band, face by
+       face in dirt and earth shades. This is a palette option, so other
+       stage types keep their crisp edge. The tall pine build is gone from
+       Lakeland (roadside too), and `treeScale` is 0.9.
+       The verge strips then got the same treatment (`Strip.facets`), reusing
+       the Autumnal's ragged-band path that keeps each triangle flat-shaded.
+       Three bands of the shoulder colour, the outer edge fraying, each
+       triangle shaded ±14% and leaning toward the earth tone by a hashed
+       share. That matches the faceted ground beside the strip, so it reads as
+       one surface. Patching the strip through `cover` was tried first and
+       came out too faint: it varies only along the road, and the colours
+       blend smoothly across each quad.
+       Then the joins themselves. The edge lines no longer stop 6 m short of
+       the mud. They run to 0.5 m from the join and fade from white into the
+       mud's colour over the last 26 m (`lineFade`, a `cover` on the line
+       strips). The ruts' tones are no longer flattened toward a join; only
+       their depth is, so there is still no step. The mud's dark ruts now run
+       right up to the tarmac. Through the mud tracked onto the tarmac, the
+       worn wheel-path bands darken by 0.3× the spill (`SPILL_TRACK`), so the
+       tracks carry on across the join instead of meeting flat brown.
+       Full-strength ruts meeting the tarmac drew a hard line, though. The two
+       sides' stripes never line up, because the mud's rut bands and the
+       tarmac's lane bands are cut differently, so they met in a staircase.
+       Fading both sides' track shading out over 16 m left a plain brown
+       patch at every join. The fix is to make the stripes the same on both
+       sides. The tarmac within 40 m of a mud stretch (`SPILL_ZONE`, how far
+       the spill reaches) is now a piece of its own (`pieceBreaks`), drawn
+       with the mud's rut layout (`rutStrips`, `mudEdgeTrack`) instead of
+       worn lane bands. Those ruts are flat, and their shading scales with how
+       thick the spilled mud lies (`RutProfile.fade`). The ruts' lateral
+       positions are functions of the road distance, so the stripes carry
+       straight across the join. They are full strength there, where the spill
+       is solid mud, and thin out with it onto the tarmac. The worn
+       tarmac's bands, dips and shades ease in over 25 m past the spill zone
+       (`seamFade().worn`), so that edge shows no line either.

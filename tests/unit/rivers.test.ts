@@ -2,12 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { createRoadHit } from '@/game/stage/RoadPath';
 import { bridgeObstacles, bridgeSpan } from '@/game/stage/Rivers';
 import { scatterGrass } from '@/game/stage/TallGrass';
-import { createStageWorld } from '@/game/stage/StageWorld';
-import { generateStage } from '@/game/stage/StageGenerator';
 import { ROAD_LIFT, TerrainField } from '@/game/stage/TerrainField';
-import { stageIndexOf } from './stageIndex';
+import { stageV13, worldV13 } from './stageIndex';
 
-const alpine = (seed: number, nth: number) => generateStage(seed, stageIndexOf('alpine', nth));
+const alpine = (seed: number, nth: number) => stageV13(seed, 'alpine', nth);
 
 describe('Alpine frozen rivers', () => {
   it('cross every Alpine stage at least twice, at the road’s lows, and nothing else has them', () => {
@@ -33,8 +31,8 @@ describe('Alpine frozen rivers', () => {
         }
       }
     expect(atDips).toBeGreaterThan(crossings * 0.8);
-    expect(new TerrainField(generateStage(1, stageIndexOf('pinewood', 1))).rivers).toHaveLength(0);
-    expect(new TerrainField(generateStage(1, stageIndexOf('forest', 1))).rivers).toHaveLength(0);
+    expect(new TerrainField(stageV13(1, 'pinewood', 1)).rivers).toHaveLength(0);
+    expect(new TerrainField(stageV13(1, 'forest', 1)).rivers).toHaveLength(0);
   });
 
   it('wind off through the hills on both sides, clear of every other stretch of road', () => {
@@ -105,7 +103,7 @@ describe('Alpine frozen rivers', () => {
   });
 
   it('keep trees, rocks, grass and spectators off the ice', () => {
-    const w = createStageWorld(2, stageIndexOf('alpine', 1));
+    const w = worldV13(2, 'alpine', 1);
     expect(w.field.rivers.length).toBeGreaterThanOrEqual(2);
     for (const p of w.props)
       if (p.kind !== 'house') expect(w.field.inRiver(p.x, p.z), p.kind).toBe(false);

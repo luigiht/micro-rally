@@ -333,7 +333,8 @@
   margin-top: 70px;
   padding-bottom: 18px;
   display: grid;
-  grid-template-columns: repeat(8, 240px);
+  grid-auto-flow: column;
+  grid-auto-columns: 240px;
   gap: 16px;
   overflow-x: auto;
   scrollbar-color: var(--orange) transparent;

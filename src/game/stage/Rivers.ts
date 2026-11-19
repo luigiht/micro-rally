@@ -371,12 +371,23 @@ export function bridgeObstacles(
   stage: Pick<StageDef, 'path' | 'halfWidth'>,
   rivers: readonly River[],
 ): BoxObstacle[] {
+  return edgeObstacles(stage, rivers.map(bridgeSpan), stage.halfWidth + PARAPET_OUT, PARAPET_HALF);
+}
+
+/**
+ * A rail or parapet along both edges of each span of road, `off` metres out
+ * from the centre line (its middle) and `half` thick each way, as short boxes.
+ */
+export function edgeObstacles(
+  stage: Pick<StageDef, 'path'>,
+  spans: readonly { from: number; to: number }[],
+  off: number,
+  half: number,
+): BoxObstacle[] {
   const out: BoxObstacle[] = [];
   const a: RoadSample = { x: 0, z: 0, heading: 0 };
   const b: RoadSample = { x: 0, z: 0, heading: 0 };
-  const off = stage.halfWidth + PARAPET_OUT;
-  for (const r of rivers) {
-    const { from, to } = bridgeSpan(r);
+  for (const { from, to } of spans) {
     for (let d = from; d < to - 1e-6; d += PARAPET_PIECE) {
       const e = Math.min(to, d + PARAPET_PIECE);
       stage.path.sample(d, a);
@@ -389,7 +400,7 @@ export function bridgeObstacles(
         out.push({
           x: (x0 + x1) / 2,
           z: (z0 + z1) / 2,
-          hx: PARAPET_HALF,
+          hx: half,
           hz: Math.hypot(x1 - x0, z1 - z0) / 2 + 0.15,
           yaw: Math.atan2(x1 - x0, z1 - z0),
         });

@@ -138,7 +138,7 @@ export const es: Messages = {
       highlights: [
         {
           title: 'Tramos y progresión',
-          body: 'Los tramos de rally recorren siete tipos, cada uno con su propia superficie: Pinar de grava, Alpino nevado, Valverde y Costero de asfalto, Ártico nevado, Otoñal de barro y Desierto de arena. Cada noveno tramo es una ciudad y cada décimo es un circuito de tres vueltas; si coinciden, primero va la ciudad y después el circuito. El ciclo de rally continúa con carreteras más largas y curvas más cerradas.',
+          body: 'Los tramos de rally recorren ocho tipos, cada uno con su propia superficie: Pinar de grava, Alpino nevado, Valverde y Costero de asfalto, Ártico nevado, Otoñal de barro, Desierto de arena y Lacustre, cuya pista alterna asfalto y barro y cruza lagos por puentes largos. Cada noveno tramo es una ciudad y cada décimo es un circuito de tres vueltas; si coinciden, primero va la ciudad y después el circuito. El ciclo de rally continúa con carreteras más largas y curvas más cerradas.',
         },
         {
           title: 'Conduce, reinicia y repite',
@@ -146,7 +146,7 @@ export const es: Messages = {
         },
         {
           title: 'Superficies y agarre',
-          body: 'El asfalto es lo que más agarra y la grava es la referencia; la nieve y el barro son lo más resbaladizo. En el Ártico los coches llevan neumáticos con clavos, y en los tramos Alpino y Otoñal, neumáticos de invierno y de barro, para subir las cuestas sin perder ritmo.',
+          body: 'El asfalto es lo que más agarra y la grava es la referencia; la nieve y el barro son lo más resbaladizo. En el Ártico los coches llevan neumáticos con clavos, y en los tramos Alpino y Otoñal, neumáticos de invierno y de barro, para subir las cuestas sin perder ritmo; en el Lacustre los neumáticos de barro solo ayudan en sus tramos de barro.',
         },
         {
           title: 'Prepara tu coche',
@@ -180,6 +180,11 @@ export const es: Messages = {
     changelog: {
       intro: 'Todas las versiones desde la primera entrega jugable, de más reciente a más antigua.',
       entries: [
+        {
+          date: '19 de noviembre de 2026',
+          title: 'Lacustre',
+          body: 'Un nuevo tipo de tramo se suma al ciclo de rally después del Desierto: Lacustre, un verano sueco de colinas boscosas redondeadas y lagos alargados. Su pista estrecha bordea los lagos buena parte del recorrido, pasa por las colinas entre ellos y cruza un lago por un largo puente de hormigón, alternando asfalto y barro por el camino; los neumáticos de barro solo ayudan en el barro. Bosques mixtos de pinos y frondosas cubren las colinas, salpicadas de granjas de rojo Falun bajo un sol de pleno verano. Los mejores tiempos de los tramos que cambiaron de tipo con el ciclo más largo se reinician.',
+        },
         {
           date: '12 de noviembre de 2026',
           title: 'Ciudades con mapa, tranvía y calles continuas',
@@ -456,6 +461,7 @@ export const es: Messages = {
     urban: 'Urbano',
     coastal: 'Costero',
     desert: 'Desierto',
+    lakeland: 'Lacustre',
   },
   controls: [
     { keys: 'W / S · ↑ / ↓', action: 'Acelerar / frenar, mantén para marcha atrás' },
@@ -573,6 +579,10 @@ export const es: Messages = {
           note: 'Dunas. Palmeras. Oasis.',
           surface: 'Arena',
         },
+        autumnal: {
+          note: 'Hojas caídas. Roderas de barro.',
+          surface: 'Barro',
+        },
         forest: {
           note: 'Carreteras rápidas. Colinas verdes.',
           surface: 'Asfalto',
@@ -580,6 +590,10 @@ export const es: Messages = {
         circuit: {
           note: 'Pianos. Escapatorias de grava. Tres vueltas.',
           surface: 'Circuito',
+        },
+        lakeland: {
+          note: 'Grandes lagos. Puentes largos.',
+          surface: 'Mixto',
         },
       },
     },

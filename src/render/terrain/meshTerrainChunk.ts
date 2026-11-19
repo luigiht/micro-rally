@@ -21,6 +21,10 @@ export interface TerrainColors {
   coast?: CoastTones;
   /** Palettes with `meadows` (the Greenvale): valley greens, rock and roadside earth by `valleyFaceColor`. */
   valley?: ValleyTones;
+  /** How far the shoulder's dirt eases into the ground, ragged (`StagePalette.vergeBlend`); unset, a crisp edge. */
+  vergeBlend?: number;
+  /** The darker earth the eased shoulder breaks into, face by face. */
+  dirt?: Rgb;
   /** Cities: the ground under carriageways and under pavements (see `TerrainSample.paved`). */
   tarmac: Rgb;
   pavement: Rgb;
@@ -79,7 +83,12 @@ export function terrainColors(p: StagePalette, coast?: CoastDef): TerrainColors 
       rockDark: hexToLinear(m.rockDark),
       rockLight: hexToLinear(m.rockLight),
       earth: hexToLinear(m.earth),
+      ...(m.shore ? { shore: hexToLinear(m.shore) } : {}),
     };
+  }
+  if (p.vergeBlend) {
+    out.vergeBlend = p.vergeBlend;
+    out.dirt = p.meadows ? hexToLinear(p.meadows.earth) : scaleRgb(out.shoulder, 0.8);
   }
   if (coast) {
     out.sand = hexToLinear(coast.sand);
@@ -285,10 +294,29 @@ export function meshTerrainChunk(
     }
     // Dirt verge only right next to the road bed; the rest of the corridor stays grassy.
     const blend = (road[ia]! + road[ib]! + road[ic]!) / 3;
-    const shoulder = Math.min(1, Math.max(0, (blend - 0.9) * 10));
-    r += (colors.shoulder[0] - r) * shoulder;
-    g += (colors.shoulder[1] - g) * shoulder;
-    b += (colors.shoulder[2] - b) * shoulder;
+    if (colors.vergeBlend && colors.dirt) {
+      // An eased shoulder: dirt thinning into the ground over a wide band, each face reaching its
+      // own way in, in its own shade between the shoulder's dirt and darker earth.
+      const w = colors.vergeBlend;
+      const ragA = hash(seed * 7 + 3, cx * 6151 + cz);
+      const ragB = hash(seed * 11 + 5, cz * 4219 + cx);
+      const reach = blend + (ragA - 0.5) * w * 0.7;
+      const s = Math.min(1, Math.max(0, (reach - (1 - w)) / (w * 0.85)));
+      const shoulder = s * s * (3 - 2 * s);
+      const dark = 0.55 * ragB * (1 - shoulder * 0.5);
+      const shade = 0.93 + 0.14 * ragA;
+      const dr = (colors.shoulder[0] + (colors.dirt[0] - colors.shoulder[0]) * dark) * shade;
+      const dg = (colors.shoulder[1] + (colors.dirt[1] - colors.shoulder[1]) * dark) * shade;
+      const db = (colors.shoulder[2] + (colors.dirt[2] - colors.shoulder[2]) * dark) * shade;
+      r += (dr - r) * shoulder;
+      g += (dg - g) * shoulder;
+      b += (db - b) * shoulder;
+    } else {
+      const shoulder = Math.min(1, Math.max(0, (blend - 0.9) * 10));
+      r += (colors.shoulder[0] - r) * shoulder;
+      g += (colors.shoulder[1] - g) * shoulder;
+      b += (colors.shoulder[2] - b) * shoulder;
+    }
     // A crowd's berm is grassed over in a lusher green, easing into the field at its foot.
     const soil = Math.min(
       1,

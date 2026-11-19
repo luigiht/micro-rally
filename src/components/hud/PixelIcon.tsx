@@ -11,7 +11,8 @@
  * a dollar bill, the compact HUD's labels on touch devices; `respawn` is an
  * undo arrow (head left, tail hooking back under), the touch toolbar's R;
  * `player` (16×16) is one driver, head and shoulders, and `players` (16×16)
- * two side by side, the splash's Single player and Multiplayer buttons.
+ * two side by side, the splash's Single player and Multiplayer buttons;
+ * `lakeland` (16×16) is two pines on a mountain over a lake's ripples.
  */
 export type PixelIconName =
   | 'respawn'
@@ -38,6 +39,7 @@ export type PixelIconName =
   | 'urban'
   | 'arctic'
   | 'alpine'
+  | 'lakeland'
   | 'turbo'
   | 'checkpoint'
   | 'money'
@@ -336,6 +338,24 @@ const GLYPHS: Record<PixelIconName, readonly string[]> = {
     '################',
   ],
   // 16×16: two mountains, a big one left and a small one right, each with its peak in outline (the snow) over a zigzag snow line.
+  lakeland: [
+    '.........#......',
+    '........###.....',
+    '...#...#####....',
+    '..###...###.....',
+    '.#####.#####....',
+    '..###.#######...',
+    '.#####...#......',
+    '#######..#......',
+    '...#..########..',
+    '...#.##########.',
+    '################',
+    '................',
+    '.###..####..###.',
+    '................',
+    '..####..####..##',
+    '................',
+  ],
   alpine: [
     '.....#..........',
     '....#.#.........',

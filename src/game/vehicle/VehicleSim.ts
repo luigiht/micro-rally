@@ -80,6 +80,13 @@ export interface SimEnv {
   steerSensitivity: number;
   /** Multiplier on the steering lock (how far the wheels turn), 1 by default. */
   steerLock: number;
+  /** A further grip multiplier on the surfaces it names only (the Lakeland's mud tyres); 1 elsewhere. */
+  surfaceGrip?: Readonly<Partial<Record<Surface, number>>>;
+}
+
+/** The environment's grip multiplier on `surface`: the stage-wide scale times any surface's own. */
+export function envGrip(env: Readonly<SimEnv>, surface: Surface): number {
+  return env.gripScale * (env.surfaceGrip?.[surface] ?? 1);
 }
 
 export const DEFAULT_ENV: Readonly<SimEnv> = {
@@ -251,7 +258,8 @@ export class VehicleSim {
     const load = touching ? Math.max(0, 1 + (rawLoad - 1) * (1 - 0.7 * p.stability)) : 0;
 
     const surf = SURFACES[s.surface];
-    const mu = surf.grip * p.tyreGrip * env.gripScale * (1 + (p.aeroGrip * speed * speed) / 1000);
+    const mu =
+      surf.grip * p.tyreGrip * envGrip(env, s.surface) * (1 + (p.aeroGrip * speed * speed) / 1000);
     const weight = p.mass * GRAVITY * load;
     const transfer = (p.cgHeight / L) * p.mass * s.longAccel * load;
     const wf = Math.max(0, (p.cgToRear / L) * weight - transfer);

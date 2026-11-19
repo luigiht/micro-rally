@@ -30,7 +30,7 @@ here as of 2 November 2026.
   fixed run of 3, 6 or 9 stages. The host ticks the **stage types** the
   session uses (all by default); its stages take them in turn, in the
   picker's order (Pinewood, Alpine, Greenvale, Coastal, Arctic, Autumnal,
-  Desert, Urban, Circuit), with towns and dusk runs on every third as in the
+  Desert, Lakeland, Urban, Circuit), with towns and dusk runs on every third as in the
   career. **Each driver picks their own car** in the lobby, any in the
   catalogue; driving their first stage locks it in for the session. The
   scoreboard shows each driver's car under their name ("Choosing a car…"
@@ -133,9 +133,12 @@ the last sector board or lap line passed.
 - Every ninth stage (9, 18, 27…) is a city, and every tenth (10, 20,
   30…) a circuit race; where the two would meet (stage 90, 180…) the city
   keeps the stage and the circuit is the next one. The stages between run
-  through a seven-type rally mix in turn: Pinewood, Alpine, Greenvale, Coastal,
-  Arctic, Autumnal and Desert, so a type never runs twice in a row. Each type
-  has one fixed road surface.
+  through an eight-type rally mix in turn: Pinewood, Alpine, Greenvale, Coastal,
+  Arctic, Autumnal, Desert and Lakeland, so a type never runs twice in a row.
+  Each type has one fixed road surface, except Lakeland, whose road changes
+  between tarmac and mud along its length.
+  Lakeland joined last (save v14), so the first seven rally stages kept their
+  types; best times on later stages whose type changed were cleared.
   Every six stages the roads lengthen by 25 % and the bends tighten a
   little, so there is always a next stage.
 - Greenvale stages are Riviera mountain roads in the Monte Carlo manner:
@@ -143,6 +146,15 @@ the last sector board or lap line passed.
   once or twice a stage a stack of two hairpins climbing or dropping a
   hillside. The asphalt stands 15 cm above its gravel shoulders, so a wheel
   off the edge drops onto them.
+- Lakeland stages are Swedish summer: low wooded hills among many lakes.
+  The narrow lane (as narrow as the Autumnal's) sweeps round the lakes'
+  edges, often filling the inside of a bend with water, for a third to two
+  thirds of its length within 20 m of a lake, rolls over the low hills
+  between them without hairpin climbs, and once a stage (twice from the third loop) crosses a
+  lake on a long concrete bridge with guard rails. It runs on worn tarmac, 400–700 m at a time,
+  broken by short mud stretches of 100–200 m, with mud tracked onto the tarmac where
+  they meet; bridges are always tarmac. Driving into a lake, the car
+  wallows as in soft sand.
 - Every third rally stage carries a town: the route leaves the open road,
   threads a village of right-angle corners, narrow streets and blocked side
   streets, and rejoins the stage. Counted along the mix, villages come round
@@ -154,21 +166,24 @@ the last sector board or lap line passed.
 
 ## Stage types
 
-| Stage type | Surface | Off road            | Terrain                                  | Base length | Par speed |
-| ---------- | ------- | ------------------- | ---------------------------------------- | ----------- | --------- |
-| Arctic     | snow    | snow                | snow banks and spruce walls              | 1900 m      | 16 m/s    |
-| Circuit    | track   | grass, gravel traps | parkland racing, kerbs                   | 3 laps      | 20 m/s    |
-| Autumnal   | mud     | grass               | autumn trees, crowds, mud ruts and jumps | 1800 m      | 15 m/s    |
-| Pinewood   | gravel  | grass               | soft, wooded hills                       | 1800 m      | 15 m/s    |
-| Alpine     | snow    | snow                | sharper bends and frosted pines          | 1500 m      | 14 m/s    |
-| Greenvale  | tarmac  | grass               | mountains, hairpin stacks, mixed woods   | 1800 m      | 13.5 m/s  |
-| Urban      | tarmac  | grass               | city streets and roundabouts             | 1700 m      | 13 m/s    |
-| Coastal    | tarmac  | grass               | limestone cliffs and sea                 | 1600 m      | 15 m/s    |
-| Desert     | sand    | dune                | dunes and oases                          | 1900 m      | 16 m/s    |
+| Stage type | Surface        | Off road            | Terrain                                  | Base length | Par speed |
+| ---------- | -------------- | ------------------- | ---------------------------------------- | ----------- | --------- |
+| Arctic     | snow           | snow                | snow banks and spruce walls              | 1900 m      | 16 m/s    |
+| Circuit    | track          | grass, gravel traps | parkland racing, kerbs                   | 3 laps      | 20 m/s    |
+| Autumnal   | mud            | grass               | autumn trees, crowds, mud ruts and jumps | 1800 m      | 15 m/s    |
+| Pinewood   | gravel         | grass               | soft, wooded hills                       | 1800 m      | 15 m/s    |
+| Alpine     | snow           | snow                | sharper bends and frosted pines          | 1500 m      | 14 m/s    |
+| Greenvale  | tarmac         | grass               | mountains, hairpin stacks, mixed woods   | 1800 m      | 13.5 m/s  |
+| Urban      | tarmac         | grass               | city streets and roundabouts             | 1700 m      | 13 m/s    |
+| Coastal    | tarmac         | grass               | limestone cliffs and sea                 | 1600 m      | 15 m/s    |
+| Desert     | sand           | dune                | dunes and oases                          | 1900 m      | 16 m/s    |
+| Lakeland   | tarmac and mud | grass               | low hills, lakes, long bridges, pines    | 1900 m      | 14 m/s    |
 
 Three stage types grip harder than their surface alone: the Arctic's
 studded tyres ×1.45 (with quicker, deeper steering), the Alpine's winter
-tyres ×1.35 and the Autumnal's mud tyres ×1.3. The cars climb the snow and
+tyres ×1.35 and the Autumnal's mud tyres ×1.3. Lakeland's mud tyres (×1.6,
+so its firm mud grips nearly as well as tarmac) work on its mud stretches only; its tarmac grips as tarmac always does, and
+its par time is priced stretch by stretch. The cars climb the snow and
 mud hills instead of spinning their wheels, though mud's drag still holds
 the slowest cars back.
 

@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { halfWidthAt } from '@/game/stage/RoadWidth';
-import { stageHasTown, stageTypeAt } from '@/game/stage/StageGenerator';
 import { createStageWorld } from '@/game/stage/StageWorld';
 import { ROAD_LIFT, VERGE_WIDTH, type TerrainField } from '@/game/stage/TerrainField';
-import { stageIndexOf } from './stageIndex';
+import { slotV13, worldV13 } from './stageIndex';
 
 /** The terrain chunks' grid: `DEFAULT_STAGE_RENDER` meshes 64 m chunks at 32 cells. */
 const STEP = 2;
@@ -41,7 +40,7 @@ function meshHeight(field: TerrainField, cache: Map<number, number>) {
 /** The first open-road (townless) Autumnal stage. */
 function autumnalIndex(): number {
   let index = 0;
-  while (stageTypeAt(index).stageType !== 'autumnal' || stageHasTown(index)) {
+  while (slotV13(index).stageType !== 'autumnal' || slotV13(index).town) {
     index++;
     if (index > 200) throw new Error('no open-road Autumnal stage in the first 200');
   }
@@ -50,7 +49,7 @@ function autumnalIndex(): number {
 
 describe('terrain under the verge strips', () => {
   it('never shares the strip’s plane, so no terrain face flickers through the Autumnal verge', () => {
-    const { stage, field } = createStageWorld(1, autumnalIndex());
+    const { stage, field } = createStageWorld(1, autumnalIndex(), slotV13(autumnalIndex()));
     const mesh = meshHeight(field, new Map());
     const at = { x: 0, z: 0, heading: 0 };
     let samples = 0;
@@ -81,8 +80,8 @@ describe('terrain under the verge strips', () => {
   }, 60_000);
 
   it('builds the Autumnal lane up on a bank: the ground falls 0.55 m across each verge, for the wheels too', () => {
-    const { stage, field } = createStageWorld(1, autumnalIndex());
-    const pinewood = createStageWorld(1, stageIndexOf('pinewood', 1));
+    const { stage, field } = createStageWorld(1, autumnalIndex(), slotV13(autumnalIndex()));
+    const pinewood = worldV13(1, 'pinewood', 1);
     const at = { x: 0, z: 0, heading: 0 };
     let checked = 0;
     for (let d = 100; d < 1500; d += 50) {
@@ -106,7 +105,7 @@ describe('terrain under the verge strips', () => {
   });
 
   it('stands the Greenvale asphalt 15 cm proud of its gravel shoulders, for the wheels too', () => {
-    const { stage, field } = createStageWorld(1, stageIndexOf('forest', 1));
+    const { stage, field } = worldV13(1, 'forest', 1);
     expect(field.bankDrop(0)).toBe(0);
     expect(field.bankDrop(0.3)).toBeCloseTo(0.15, 3);
     expect(field.bankDrop(3)).toBeCloseTo(0.15, 3);

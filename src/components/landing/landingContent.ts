@@ -12,7 +12,9 @@ export const LANDING_STAGES = [
   'coastal',
   'urban',
   'desert',
+  'autumnal',
   'forest',
+  'lakeland',
   'circuit',
 ] as const satisfies readonly StageTypeId[];
 

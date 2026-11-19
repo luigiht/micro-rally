@@ -5,6 +5,35 @@ tags yet: `main` is deployed continuously, so entries are grouped by the day
 they landed. The numbered entries in [docs/DECISIONS.md](docs/DECISIONS.md)
 hold the reasoning behind each change; the numbers in brackets point there.
 
+## 2026-11-19
+
+### Added
+
+- **Lakeland, a new stage type.** Swedish summer after the Desert in the
+  rally mix: low wooded hills and lakes everywhere, a narrow road that sweeps
+  round the lakes' edges for much of its length, over open shores, rolls over
+  the hills between them and crosses one lake on a long concrete bridge. It is
+  mostly tarmac, with short stretches of firm mud lane that grip almost as
+  well. Pale shallows run into pebbly shores, the road's dirt shoulders fray
+  into the grass, and the trees are ordinary-sized. Where tarmac meets mud the
+  edge lines fade into the mud and the wheel tracks run on across the join. Mixed woods of pines and
+  broadleaves, Swedish farmhouses all over (Falu-red walls, white trim and
+  window frames, grey metal roofs, a porch at the door) and a high summer sun. Best times on stages whose type changed with the longer
+  rotation are reset (save v14). It has its own stage-list icon, a landing
+  card and a Multiplayer checkbox [279].
+
+### Changed
+
+- **No focus outline on the menus until you use the keyboard.** The game no
+  longer draws an orange outline on the first button or field when a menu
+  opens; it appears as soon as you press Tab or the arrow keys [278].
+- **The Game and Settings panels scroll all the way.** Exit game and Close
+  now scroll with the rest of the panel, so on short screens they no longer
+  sit on top of Feedback and About.
+- **New stage pictures and link preview.** The front page shows fresh stills
+  for every stage type and now includes Autumnal, so all nine are there. Links
+  shared to the site show a new preview image.
+
 ## 2026-11-18
 
 ### Added

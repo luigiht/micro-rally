@@ -213,8 +213,8 @@ export function LandingPage() {
                       className="stage-image"
                       src={landingAsset(`stage-${id}.png`)}
                       alt={fill(t.worlds.alt, { name })}
-                      width={511}
-                      height={676}
+                      width={1000}
+                      height={1323}
                       sizes="(max-width: 620px) 70vw, 280px"
                     />
                     <div className="stage-meta">

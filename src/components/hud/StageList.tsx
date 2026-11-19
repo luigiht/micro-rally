@@ -24,12 +24,13 @@ const SURFACE_ICON: Readonly<Record<Surface, PixelIconName>> = {
   dune: 'sand',
 };
 
-/** Coastal stages show a sun and a palm, circuits a chequered flag, cities a skyline, the Arctic two spruces and the Alpine two snow-capped mountains, rather than the tarmac glyph they would all share. */
+/** Coastal stages show a sun and a palm, circuits a chequered flag, cities a skyline, the Arctic two spruces, the Alpine two snow-capped mountains and Lakeland pines over a lake, rather than the surface glyph they would show. */
 function stageIcon(b: StageBrief): PixelIconName {
   if (b.stageType === 'circuit') return 'circuit';
   if (b.stageType === 'urban') return 'urban';
   if (b.stageType === 'arctic') return 'arctic';
   if (b.stageType === 'alpine') return 'alpine';
+  if (b.stageType === 'lakeland') return 'lakeland';
   return b.stageType === 'coastal' ? 'coast' : SURFACE_ICON[b.surface];
 }
 
