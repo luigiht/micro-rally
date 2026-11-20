@@ -149,7 +149,7 @@ export const en = {
         },
         {
           title: 'Choose your view',
-          body: 'Switch between chase, interior, isometric and cinematic cameras with C or in Settings. Scroll to zoom the chase, isometric and cinematic views.',
+          body: 'Switch between chase, interior, isometric and cinematic cameras with C or in Settings. Scroll, or pinch with two fingers on a touch screen, to zoom the chase, isometric and cinematic views.',
         },
         {
           title: 'Multiplayer',
@@ -456,6 +456,7 @@ export const en = {
     { keys: 'C', action: 'Switch camera (chase / interior / isometric / cinematic)' },
     { keys: 'H', action: 'Hide or show the HUD' },
     { keys: 'Mouse wheel', action: 'Zoom the camera' },
+    { keys: 'Two-finger pinch', action: 'Zoom the camera on a touch screen' },
     { keys: '`', action: 'Debug overlay' },
     { keys: 'Esc', action: 'Close any panel, or open the Game panel' },
   ],

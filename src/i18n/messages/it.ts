@@ -154,7 +154,7 @@ export const it: Messages = {
         },
         {
           title: 'Scegli la visuale',
-          body: 'Passa tra visuale inseguimento, abitacolo, isometrica e cinematografica con C o dalle Impostazioni. Usa la rotella per zoomare nelle visuali inseguimento, isometrica e cinematografica.',
+          body: 'Passa tra visuale inseguimento, abitacolo, isometrica e cinematografica con C o dalle Impostazioni. Usa la rotella, o pizzica con due dita su uno schermo touch, per zoomare nelle visuali inseguimento, isometrica e cinematografica.',
         },
         {
           title: 'Multigiocatore',
@@ -472,6 +472,7 @@ export const it: Messages = {
     },
     { keys: 'H', action: 'Nascondi o mostra l’interfaccia' },
     { keys: 'Rotella del mouse', action: 'Zoom della telecamera' },
+    { keys: 'Pizzico con due dita', action: 'Zoom della telecamera su schermo touch' },
     { keys: '`', action: 'Pannello di debug' },
     { keys: 'Esc', action: 'Chiudi qualsiasi pannello, o apri il pannello Gioco' },
   ],

@@ -263,11 +263,28 @@ describe('garage in the store', () => {
     ).toEqual([]);
   });
 
-  it('shares one grip setup across the dealership', () => {
+  it('raises tyre grip along the showroom from medium to high', () => {
+    const grips = CAR_CATALOG.map((c) => CAR_SPECS[c.id].tyreGrip);
+    // Never below the handling's tuned 1.1, the free hatch lowest, the last car grippiest.
+    expect(Math.min(...grips)).toBe(CAR_SPECS.hatchback.tyreGrip);
+    expect(CAR_SPECS.hatchback.tyreGrip).toBe(1.1);
+    expect(Math.max(...grips)).toBeLessThanOrEqual(1.35);
+    expect(grips.at(-1)).toBe(Math.max(...grips));
+    // Rising overall: each third of the showroom grippier on average than the one before.
+    const third = Math.ceil(grips.length / 3);
+    const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+    const thirds = [0, 1, 2].map((k) => mean(grips.slice(k * third, (k + 1) * third)));
+    expect(thirds[1]).toBeGreaterThan(thirds[0]!);
+    expect(thirds[2]).toBeGreaterThan(thirds[1]!);
+    // The Grip bar: medium for the free hatch, full for the grippiest.
+    expect(carStats(CAR_SPECS.hatchback).grip).toBeCloseTo(0.5);
+    expect(carStats(CAR_SPECS.berlinette).grip).toBeCloseTo(1);
+  });
+
+  it('shares the rest of the grip setup across the dealership', () => {
     const base = CAR_SPECS.hatchback;
     for (const c of CAR_CATALOG) {
       const spec = CAR_SPECS[c.id];
-      expect(spec.tyreGrip).toBe(base.tyreGrip);
       expect(spec.corneringFront).toBe(base.corneringFront);
       expect(spec.corneringRear).toBe(base.corneringRear);
       expect(spec.stability).toBe(base.stability);

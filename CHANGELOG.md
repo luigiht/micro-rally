@@ -9,6 +9,8 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Added
 
+- **Pinch to zoom on phones and tablets.** Two fingers on the game view zoom
+  the chase, isometric and cinematic cameras, as the mouse wheel does [290].
 - **Every circuit is a figure of eight with a tunnel.** The lap crosses
   itself once: one straight climbs onto a concrete bridge while the other
   dips into a walled cutting and runs under it through a short tunnel. Cars
@@ -36,6 +38,10 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Changed
 
+- **Grip rises through the dealership.** The free Rally Hatch keeps its grip
+  and every dearer car grips a little more, up to the Dieppe Berlinette, with
+  some variation between neighbours; the Grip bars show it, from half to
+  full [289].
 - **The Sochaux T16 has red mud flaps at all four wheels**, and no longer a
   second, black pair behind its rear wheels.
 - **Front mud flaps** on the Tricolore Coupé, Riviera WRC, Tempesta Group B,

@@ -117,9 +117,32 @@ const BASE: Omit<CarSpec, 'id'> = {
   bodyScale: 1,
 };
 
-/** Grip (tyres, cornering stiffness, stability, aero) is shared by every car in the dealership; they differ in mass, power, drag and drive split. */
+/**
+ * Each dealership car's tyre grip, rising along the showroom from the free hatch's 1.1 (the
+ * value the handling was tuned at, decision 48) to 1.35, with a little jitter so neighbours
+ * differ and a dearer car isn't always grippier than the one before it.
+ */
+export const DEALERSHIP_GRIP = {
+  hatchback: 1.1,
+  coupe: 1.13,
+  t16: 1.12,
+  saloon: 1.17,
+  wrc: 1.21,
+  groupb: 1.19,
+  s1: 1.25,
+  focus: 1.27,
+  dakar: 1.24,
+  lemans: 1.33,
+  buggy: 1.29,
+  berlinette: 1.35,
+} as const;
+
+/**
+ * Cornering stiffness, stability and aero grip are shared by every car in the dealership; tyre
+ * grip rises along it (`DEALERSHIP_GRIP`); they differ too in mass, power, drag and drive split.
+ */
 export const CAR_SPECS: Readonly<Record<CarId, CarSpec>> = {
-  hatchback: { ...BASE, id: 'hatchback' },
+  hatchback: { ...BASE, id: 'hatchback', tyreGrip: DEALERSHIP_GRIP.hatchback },
   /**
    * Tiny rear-engined 1970s berlinette (its body: `BerlinetteBody`): 2.1 m
    * wheelbase, 1.36 m track, the engine behind the rear axle, rear-drive,
@@ -128,6 +151,7 @@ export const CAR_SPECS: Readonly<Record<CarId, CarSpec>> = {
   berlinette: {
     ...BASE,
     id: 'berlinette',
+    tyreGrip: DEALERSHIP_GRIP.berlinette,
     mass: 820,
     cgToFront: 1.22,
     cgToRear: 0.88,
@@ -145,6 +169,7 @@ export const CAR_SPECS: Readonly<Record<CarId, CarSpec>> = {
   coupe: {
     ...BASE,
     id: 'coupe',
+    tyreGrip: DEALERSHIP_GRIP.coupe,
     mass: 980,
     cgToFront: 1.0,
     cgToRear: 1.16,
@@ -162,6 +187,7 @@ export const CAR_SPECS: Readonly<Record<CarId, CarSpec>> = {
   t16: {
     ...BASE,
     id: 't16',
+    tyreGrip: DEALERSHIP_GRIP.t16,
     mass: 940,
     cgToFront: 1.27,
     cgToRear: 1.15,
@@ -182,6 +208,7 @@ export const CAR_SPECS: Readonly<Record<CarId, CarSpec>> = {
   saloon: {
     ...BASE,
     id: 'saloon',
+    tyreGrip: DEALERSHIP_GRIP.saloon,
     mass: 1230,
     cgToFront: 1.25,
     cgToRear: 1.25,
@@ -200,6 +227,7 @@ export const CAR_SPECS: Readonly<Record<CarId, CarSpec>> = {
   groupb: {
     ...BASE,
     id: 'groupb',
+    tyreGrip: DEALERSHIP_GRIP.groupb,
     mass: 960,
     cgToFront: 1.24,
     cgToRear: 1.34,
@@ -220,6 +248,7 @@ export const CAR_SPECS: Readonly<Record<CarId, CarSpec>> = {
   wrc: {
     ...BASE,
     id: 'wrc',
+    tyreGrip: DEALERSHIP_GRIP.wrc,
     mass: 1230,
     cgToFront: 1.3,
     cgToRear: 1.315,
@@ -239,6 +268,7 @@ export const CAR_SPECS: Readonly<Record<CarId, CarSpec>> = {
   s1: {
     ...BASE,
     id: 's1',
+    tyreGrip: DEALERSHIP_GRIP.s1,
     mass: 1090,
     cgToFront: 1.1,
     cgToRear: 1.12,
@@ -259,6 +289,7 @@ export const CAR_SPECS: Readonly<Record<CarId, CarSpec>> = {
   focus: {
     ...BASE,
     id: 'focus',
+    tyreGrip: DEALERSHIP_GRIP.focus,
     mass: 1230,
     cgToFront: 1.3,
     cgToRear: 1.34,
@@ -279,11 +310,12 @@ export const CAR_SPECS: Readonly<Record<CarId, CarSpec>> = {
    * slow-revving diesel torque through all four wheels. Game-weight rather
    * than real (2.6 t), with a low yaw inertia and quick steering so it turns
    * in far better than its size suggests; the driver sits 2.5 m up. Grip is
-   * the shared dealership setup.
+   * the shared dealership setup, tyre grip its own (`DEALERSHIP_GRIP`).
    */
   dakar: {
     ...BASE,
     id: 'dakar',
+    tyreGrip: DEALERSHIP_GRIP.dakar,
     mass: 2600,
     cgToFront: 2.0,
     cgToRear: 1.9,
@@ -322,11 +354,13 @@ export const CAR_SPECS: Readonly<Record<CarId, CarSpec>> = {
    * a big naturally aspirated flat engine on the rear axle through five
    * gears, stiff springs, very little drag and the lowest centre of gravity
    * in the shop. The driver sits far forward and low (eye 0.88 m up, 0.3 m
-   * ahead of the axle midpoint). Grip is the shared dealership setup.
+   * ahead of the axle midpoint). Grip is the shared dealership setup,
+   * tyre grip its own (`DEALERSHIP_GRIP`).
    */
   lemans: {
     ...BASE,
     id: 'lemans',
+    tyreGrip: DEALERSHIP_GRIP.lemans,
     mass: 800,
     cgToFront: 1.11,
     cgToRear: 1.19,
@@ -363,11 +397,13 @@ export const CAR_SPECS: Readonly<Record<CarId, CarSpec>> = {
    * rear axle alone. Light for its size (1.45 t) but tall and draggy, with
    * the soft suspension soaking up bumps; the body stands 0.1 m higher over
    * its wheels than a car's would (`BUGGY_LIFT`), so the driver sits mid-car
-   * 0.21 m higher than in a hatch. Grip is the shared dealership setup.
+   * 0.21 m higher than in a hatch. Grip is the shared dealership setup,
+   * tyre grip its own (`DEALERSHIP_GRIP`).
    */
   buggy: {
     ...BASE,
     id: 'buggy',
+    tyreGrip: DEALERSHIP_GRIP.buggy,
     mass: 1450,
     cgToFront: 1.55,
     cgToRear: 1.45,

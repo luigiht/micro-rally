@@ -6,12 +6,19 @@ import { DEFAULT_ENV } from '@/game/vehicle/VehicleSim';
 import { DT, input, makeSim } from './vehicleHarness';
 
 /** km/h after `seconds` of full throttle from a standstill up a steady `grade` on the stage type's road. */
-function climb(stageType: StageTypeId, car: CarId, gripScale: number, grade = 0.1, seconds = 8) {
+function climb(
+  stageType: StageTypeId,
+  car: CarId,
+  gripScale: number,
+  tyreGrip = CAR_SPECS[car].tyreGrip,
+  grade = 0.1,
+  seconds = 8,
+) {
   const terrain = {
     heightAt: (_x: number, z: number) => z * grade,
     surfaceAt: () => STAGE_TYPES[stageType].surface,
   };
-  const sim = makeSim(CAR_SPECS[car], terrain);
+  const sim = makeSim({ ...CAR_SPECS[car], tyreGrip }, terrain);
   const env = { ...DEFAULT_ENV, gripScale };
   const throttle = input({ throttle: 1 });
   for (let i = 0; i < Math.round(seconds / DT); i++) sim.step(DT, throttle, terrain, env);
@@ -32,8 +39,12 @@ describe('climbing grip on the Alpine and Autumnal stages', () => {
   it('lets the cars climb a 10 % grade markedly faster than the old grip did', () => {
     for (const id of ['alpine', 'autumnal'] as const) {
       const grip = STAGE_TYPES[id].handling!.grip;
+      // On the tyre grip the stage boost was tuned with (1.1, decision 209): the gain it gives.
       for (const car of ['wrc', 'groupb', 'coupe'] as const)
-        expect(climb(id, car, grip) - climb(id, car, 1)).toBeGreaterThan(10);
+        expect(climb(id, car, grip, 1.1) - climb(id, car, 1, 1.1)).toBeGreaterThan(10);
+      // Each car's own (higher, `DEALERSHIP_GRIP`) tyre grip never climbs slower than 1.1 did.
+      for (const car of ['wrc', 'groupb', 'coupe'] as const)
+        expect(climb(id, car, grip)).toBeGreaterThanOrEqual(climb(id, car, grip, 1.1) - 0.5);
       // No car climbs slower for the extra grip.
       for (const car of Object.keys(CAR_SPECS) as CarId[])
         expect(climb(id, car, grip)).toBeGreaterThanOrEqual(climb(id, car, 1) - 0.5);

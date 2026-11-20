@@ -6572,3 +6572,37 @@ bed)`. The road, its profile and every record stay as they were, so
      truck now hangs all four from its body (`OWN_FLAPS`), the rear pair
      from the cargo box's floor 8 cm behind the rear tyres, built as the
      front pair.
+289. **2026-11-20 — Tyre grip rises along the showroom.** The user asked for
+     the dealership's Grip to go from medium to high progressively, with some
+     variation, every car still easy to drive. Since decision 47 every car
+     had the hatch's tyre grip 1.1, so every Grip bar matched. Tyre grip is
+     now per car (`DEALERSHIP_GRIP` in `CarSpec`), rising in showroom order
+     from 1.1 to 1.35 with a little jitter (Rally Hatch 1.1, Tricolore 1.13,
+     T16 1.12, Saloon 1.17, Riviera 1.21, Tempesta 1.19, Edelweiss 1.25,
+     Albion 1.27, Sirocco 1.24, Le Mans 1.33, Toro 1.29, Dieppe 1.35).
+     Nothing drops below 1.1, the grip decision 48 tuned and tested the
+     handling at, so no car is harder to drive than before; cornering
+     stiffness, stability and aero grip stay shared. The Grip bar's scale
+     moved so 1.1 reads as half (`(grip − 0.85) / 0.5`), the Dieppe full;
+     the tyre upgrade still adds 6 % a level on top. `garage.test.ts` pins
+     the rise (each third of the showroom grippier on average than the one
+     before, the free hatch lowest, the last car grippiest). The climb test
+     of decision 209 measured the stage boost's gain on each car's own
+     grip; grippier tyres leave less traction to win back, so it now
+     measures that gain at the 1.1 it was tuned with and checks no car's
+     own grip climbs slower than 1.1 did.
+290. **2026-11-20 — Pinch to zoom on touch screens.** The user asked for
+     the mouse wheel's camera zoom on mobile, by dragging two fingers in the
+     middle of the screen. `PinchZoom` (`components/game/input`) listens for
+     touches on the game canvas and turns a two-finger spread change into a
+     wheel delta for the active rig's `zoom` (`DrivingSession` attaches it
+     beside the wheel listener): `ln(previous / current spread) / 0.001`,
+     so the camera's distance follows the fingers' spread (twice the spread,
+     half the distance) whatever the rig. Only touches that start on the
+     canvas count: the HUD frame passes touches through, and the pads are
+     buttons over it, so a thumb on a pad and a finger elsewhere never
+     pinch. The canvas takes `touch-action: none` while attached so the
+     browser doesn't zoom the page instead. Checked in a phone-landscape
+     Chromium with CDP touch input: spreading pulled the chase camera in,
+     pinching pushed it out. The help and controls list say so in all three
+     languages.

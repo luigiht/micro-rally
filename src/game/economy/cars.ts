@@ -69,7 +69,8 @@ export function carStats(spec: CarSpec): { power: number; grip: number; agility:
   const clamp = (v: number) => Math.max(0.05, Math.min(1, v));
   return {
     power: clamp(spec.peakTorque / 480),
-    grip: clamp((spec.tyreGrip - 0.7) / 0.5),
+    // The free hatch's 1.1 reads as medium (0.5), the grippiest car's 1.35 as full.
+    grip: clamp((spec.tyreGrip - 0.85) / 0.5),
     agility: clamp(1 - (spec.mass - 800) / 900 + (0.6 - spec.cgHeight) * 0.5),
   };
 }

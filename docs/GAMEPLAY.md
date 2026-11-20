@@ -205,7 +205,8 @@ react to it yet.
 ## Cameras
 
 `C` cycles Chase → Interior → Isometric → Cinematic; Settings has the same
-choice. The mouse wheel zooms the chase, isometric and cinematic views.
+choice. The mouse wheel zooms the chase, isometric and cinematic views; on a touch
+screen a two-finger pinch on the view does the same (`PinchZoom`).
 
 - **Chase.** Behind and above the car, trailing its motion, pulling back
   with speed, leaning a little toward where the car is sliding; level
@@ -245,6 +246,7 @@ state).
 | `C`                   | Switch camera                                           |
 | `H`                   | Hide or show the HUD                                    |
 | Mouse wheel           | Zoom the camera                                         |
+| Two-finger pinch      | Zoom the camera on a touch screen                       |
 | `` ` ``               | Debug overlay                                           |
 | `Esc`                 | Close any panel, leave a replay, or open the Game panel |
 

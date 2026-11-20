@@ -154,7 +154,7 @@ export const es: Messages = {
         },
         {
           title: 'Elige la cámara',
-          body: 'Cambia entre las cámaras de persecución, interior, isométrica y cinematográfica con C o desde Ajustes. Usa la rueda para acercar o alejar las cámaras de persecución, isométrica y cinematográfica.',
+          body: 'Cambia entre las cámaras de persecución, interior, isométrica y cinematográfica con C o desde Ajustes. Usa la rueda, o pellizca con dos dedos en una pantalla táctil, para acercar o alejar las cámaras de persecución, isométrica y cinematográfica.',
         },
         {
           title: 'Multijugador',
@@ -472,6 +472,7 @@ export const es: Messages = {
     { keys: 'C', action: 'Cambiar de cámara (persecución / interior / isométrica / cinemática)' },
     { keys: 'H', action: 'Ocultar o mostrar la interfaz' },
     { keys: 'Rueda del ratón', action: 'Zoom de cámara' },
+    { keys: 'Pellizco con dos dedos', action: 'Zoom de cámara en pantalla táctil' },
     { keys: '`', action: 'Panel de depuración' },
     { keys: 'Esc', action: 'Cerrar cualquier panel, o abrir el panel Juego' },
   ],

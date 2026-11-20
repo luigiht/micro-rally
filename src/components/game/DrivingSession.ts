@@ -28,6 +28,7 @@ import { useUiStore } from '@/state/uiStore';
 import type { CameraMode, CameraRig, CameraRigFrame } from './cameras/CameraRig';
 import { createCameraRig } from './cameras/createCameraRig';
 import { KeyboardControls, type KeyAction } from './input/KeyboardControls';
+import { PinchZoom } from './input/PinchZoom';
 import { TOUCH_ACTIONS, TOUCH_INPUT } from './input/touchInput';
 
 const HUD_INTERVAL = 0.1;
@@ -184,11 +185,13 @@ export class DrivingSession {
     this.keyboard.attach(win);
     this.canvas = canvas;
     canvas.addEventListener('wheel', this.handleWheel, { passive: false });
+    this.pinch.attach(canvas);
   }
 
   dispose(win: Window): void {
     this.keyboard.detach(win);
     this.canvas?.removeEventListener('wheel', this.handleWheel);
+    this.pinch.detach();
     this.canvas = null;
     this.rig.dispose();
     useUiStore.getState().stopReplay();
@@ -387,6 +390,9 @@ export class DrivingSession {
       useUiStore.getState().toggleHud();
     }
   };
+
+  /** Two-finger pinch on the canvas: the wheel's zoom on touch screens. */
+  private readonly pinch = new PinchZoom((delta) => this.rig.zoom(delta));
 
   private readonly handleWheel = (e: WheelEvent): void => {
     e.preventDefault();
