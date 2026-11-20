@@ -38,6 +38,11 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 - **The Sochaux T16 has red mud flaps at all four wheels**, and no longer a
   second, black pair behind its rear wheels.
+- **A boxier Albion RS Hatch.** Same length, stance and details, with
+  more upright cabin sides, a flatter roof, squarer shoulders and a slightly
+  more upright windscreen; the B-pillar and the rear side window are one
+  black shape that stops at the roof's edge, with no white line between
+  them, and the tail lamps show whole beside the rear window [286].
 - **Gentler circuits.** Circuit stages and the parkland round them are
   flatter, with no climb steeper than about 10 %, and the tunnel's walls have
   level tops and run on to meet the fences [285].

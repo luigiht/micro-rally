@@ -109,6 +109,64 @@ const ROOF_STRIPE = 0.4;
 /** The navy roof starts here: behind it, over the C-pillars and the hatch, everything is blue. */
 const ROOF_FROM = -1.32;
 
+/**
+ * The B-pillar and the quarter window behind it, one near-black shape painted in the livery's
+ * own layer (not over it), so no white lies under its edges to show past them at an angle: from
+ * the door glass's trailing edge back over the pillar, the window's foot along the belt, ending in
+ * a point toward the tail, its top on the roof's edge, never over the roof.
+ */
+const QUARTER_GLASS = '#1d1d22';
+/** The door glass ends here: the pillar's black starts at it. */
+const PILLAR_FRONT = -0.76;
+/** The window's top corner over the C-pillar's foot, and its point along the belt. */
+const QUARTER_BACK = -1.32;
+const QUARTER_TIP = -1.75;
+/** The belt under the window: 1.01 m at the B-pillar's foot rising to 1.03 at the point. */
+const BELT: readonly [number, number] = [1.01, 1.03];
+/** The roof's edge over the window (with the boxier roof, about 1.40–1.42 m up, 0.647 m out). */
+const ROOF_EDGE_Y = 1.4;
+const ROOF_EDGE_X = 0.645;
+/** From above, the point's outer edge: past it the window ends at its tip. */
+const QUARTER_OUT = 0.86;
+
+/** Where the black starts, along the car, at height `y` on the flank (null: none at this height). */
+function quarterRearSide(y: number): number | null {
+  const [b0, b1] = BELT;
+  if (y < b0) return null;
+  // The belt rises toward the tail under the window: the black starts further back as it climbs.
+  if (y < b1) return -0.86 + ((y - b0) / (b1 - b0)) * (QUARTER_TIP + 0.86);
+  if (y < ROOF_EDGE_Y)
+    return QUARTER_TIP + ((y - b1) / (ROOF_EDGE_Y - b1)) * (QUARTER_BACK - QUARTER_TIP);
+  return QUARTER_BACK;
+}
+
+/** Where the black starts, along the car, at half-width `a` from above (null: none so far in). */
+function quarterRearTop(a: number): number | null {
+  if (a < ROOF_EDGE_X) return null;
+  if (a >= QUARTER_OUT) return QUARTER_TIP;
+  return (
+    QUARTER_BACK + ((a - ROOF_EDGE_X) / (QUARTER_OUT - ROOF_EDGE_X)) * (QUARTER_TIP - QUARTER_BACK)
+  );
+}
+
+/**
+ * `regions` with the black laid over [from, PILLAR_FRONT]: every region clipped either side of it.
+ * Always the same number of regions (some empty), so a row's two edges match up.
+ */
+function carveQuarter(
+  regions: readonly (readonly [string, number, number])[],
+  from: number | null,
+): (readonly [string, number, number])[] {
+  const [a, b] = from === null ? [PILLAR_FRONT, PILLAR_FRONT] : [from, PILLAR_FRONT];
+  const out: (readonly [string, number, number])[] = [];
+  for (const [color, f, t] of regions) {
+    out.push([color, f, Math.max(f, Math.min(t, a))]);
+    out.push([color, Math.min(t, Math.max(f, b)), t]);
+  }
+  out.push([QUARTER_GLASS, a, b]);
+  return out;
+}
+
 /** The flank at height `y`, tail to nose. */
 const flankRegions: Regions = (y) => {
   const f = frontSweep(y);
@@ -130,7 +188,9 @@ function flank(): Paint {
     [0.1, PIN[0]],
     [PIN[0], PIN[1]],
     [PIN[1], GREEN_TOP],
-    [GREEN_TOP, 1.2],
+    [GREEN_TOP, BELT[0]],
+    [BELT[0], BELT[1]],
+    [BELT[1], 1.2],
   ];
   // Above the windows the roof's edge, rolling round from the top: navy over the cabin, blue
   // over the hatch, as the top view paints it, so no white line shows along it.
@@ -138,9 +198,14 @@ function flank(): Paint {
     [BLUE, TAIL, ROOF_FROM],
     [WHITE, ROOF_FROM, NOSE],
   ];
+  const withQuarter =
+    (regions: Regions): Regions =>
+    (y) =>
+      carveQuarter(regions(y), quarterRearSide(y));
   return mergePaint(
-    ...bands.map(([a, b]) => rows(a, b, 0.03, flankRegions)),
-    rows(1.2, 1.6, 0.1, roofEdge),
+    ...bands.map(([a, b]) => rows(a, b, 0.01, withQuarter(flankRegions))),
+    rows(1.2, ROOF_EDGE_Y, 0.04, withQuarter(roofEdge)),
+    rows(ROOF_EDGE_Y, 1.6, 0.1, withQuarter(roofEdge)),
   );
 }
 
@@ -181,21 +246,23 @@ const topRegions: Regions = (x) => {
 
 /** Row by row out from the middle each way, so no row spans the |x| kink at 0 or the wings' edge. */
 function top(): Paint {
+  // Cut at the roof stripe's edge, the roof's edge, the wings' edge and the quarter window's
+  // point too, so no row straddles any of them.
+  const cuts: [number, number, number][] = [
+    [0, ROOF_STRIPE, 0.03],
+    [ROOF_STRIPE, ROOF_EDGE_X, 0.03],
+    [ROOF_EDGE_X, 0.7, 0.01],
+    [0.7, QUARTER_OUT, 0.02],
+    [QUARTER_OUT, 1.05, 0.05],
+  ];
   const half = (s: 1 | -1) =>
     mergePaint(
-      // Cut at the roof stripe's edge too, so no row straddles it.
-      rows(0, ROOF_STRIPE, 0.03, (v) => topRegions(s * v)).map((p) => ({
-        ...p,
-        tris: flipV(p.tris, s),
-      })),
-      rows(ROOF_STRIPE, 0.7, 0.03, (v) => topRegions(s * v)).map((p) => ({
-        ...p,
-        tris: flipV(p.tris, s),
-      })),
-      rows(0.7, 1.05, 0.05, (v) => topRegions(s * v)).map((p) => ({
-        ...p,
-        tris: flipV(p.tris, s),
-      })),
+      ...cuts.map(([a, b, dv]) =>
+        rows(a, b, dv, (v) => carveQuarter(topRegions(s * v), quarterRearTop(v))).map((p) => ({
+          ...p,
+          tris: flipV(p.tris, s),
+        })),
+      ),
     );
   return mergePaint(half(1), half(-1));
 }
@@ -224,86 +291,11 @@ function back(): Paint {
 
 /** Details over the flank: door handles and the amber side repeater (the panel gaps are the hull's own grooves). */
 function flankDetails(): Paint {
-  // The quarter window behind the B-pillar: black glass from the pillar back, over the belt,
-  // ending in a point toward the tail; its top edge falls from the roof's edge to the belt, so the
-  // C-pillar behind is all blue with no white between.
-  const [b0, b1] = [-0.86, -1.32];
-  const beltAt = (z: number) => 1.01 + ((z - b0) / (QUARTER_TIP - b0)) * 0.02;
   return mergePaint(
-    [
-      {
-        color: QUARTER_GLASS,
-        tris: [
-          b0,
-          beltAt(b0),
-          b1,
-          beltAt(b1),
-          b1,
-          1.6,
-          b0,
-          beltAt(b0),
-          b1,
-          1.6,
-          b0,
-          1.6,
-          b1,
-          beltAt(b1),
-          QUARTER_TIP,
-          beltAt(QUARTER_TIP),
-          b1,
-          1.4,
-        ],
-      },
-    ],
     // The door's one handle, near its trailing edge.
     [rect(GAP, -0.7, -0.58, 0.875, 0.9)],
     [rect(AMBER, 1.0, 1.1, 0.74, 0.775)],
   );
-}
-
-/** The quarter window's point, along the car. */
-const QUARTER_TIP = -1.75;
-/** The pillars' near-black. */
-const QUARTER_GLASS = '#1d1d22';
-
-/**
- * The quarter window seen from above: the upper side faces leaning up toward the roof's edge face
- * the top more than the side, so the window's grey is laid there too, from the roof's edge (its
- * half-width a hair inside) out past the belt, tapering toward the window's point as its top edge
- * falls. So the window reaches the roof's edge as the door's glass does.
- */
-function quarterTop(): Paint {
-  const [b0, b1] = [-0.86, -1.32];
-  const half = (s: 1 | -1) => ({
-    color: QUARTER_GLASS,
-    tris: [
-      b0,
-      0.585 * s,
-      b1,
-      0.588 * s,
-      b1,
-      0.95 * s,
-      b0,
-      0.585 * s,
-      b1,
-      0.95 * s,
-      b0,
-      0.95 * s,
-      b1,
-      0.588 * s,
-      QUARTER_TIP,
-      0.86 * s,
-      b1,
-      0.95 * s,
-      QUARTER_TIP,
-      0.86 * s,
-      QUARTER_TIP,
-      0.95 * s,
-      b1,
-      0.95 * s,
-    ],
-  });
-  return mergePaint([half(1)], [half(-1)]);
 }
 
 /** Nose details, across the car (x) and up: lower grille, the navy number panel, fog lamps (the headlamps are the body's own). */
@@ -445,7 +437,7 @@ export const ALBION_LIVERY: LiveryShapes = {
   over: {
     left: { u: SIDE_U, v: SIDE_V, paint: flankDetails() },
     right: { u: SIDE_U, v: SIDE_V, paint: flankDetails() },
-    top: { u: SIDE_U, v: ACROSS, paint: quarterTop() },
+    top: { u: SIDE_U, v: ACROSS, paint: [] },
     front: { u: ACROSS, v: SIDE_V, paint: noseDetails() },
     back: { u: ACROSS, v: SIDE_V, paint: tailDetails() },
   },

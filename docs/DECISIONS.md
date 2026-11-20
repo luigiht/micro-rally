@@ -6508,3 +6508,26 @@ bed)`. The road, its profile and every record stay as they were, so
        `CarLamps` under braking like any unlit lamp part). Every car's brake
        beams now start 30 cm behind their lamps (`BRAKE_BEAM_BACK`), clear of
        the car's own tail.
+286. **2026-11-20 — A boxier Albion RS Hatch.** The user asked for the
+     Albion a bit more boxy, keeping its proportions and details. The
+     reference rows (`AlbionShape.ROWS`) keep their lengths, belt line and
+     body widths; the loft squares the section on top of them (`BOXY`): each
+     roof edge stands 22 % of the way out from the reference's toward the
+     belt (less tumblehome; the cabin roof stays inside the livery's 0.7 m
+     roof edge), the roof crown keeps 60 % and the flank's bow 50 %, and the
+     belt-to-roof roll is fuller (`fullness` 0.55 → 0.9), a squarer
+     shoulder. In profile the windscreen stands a little more upright, the
+     roof over its top raised 2–3.5 cm.
+     The wider roof first widened the hatch glass over the tail lamps' inner
+     edges, so the roof edge eases back to the reference's over the
+     C-pillars (`roofOutFrom`, −1.56 → −1.32) and the hatch keeps its shape.
+     It also left the quarter window's top-view paint, which started at the
+     old roof edge (0.585 m), 6 cm onto the roof. And the user saw a thin
+     white line between the black B-pillar and the quarter window: the
+     pillar was unpainted trim (0 mm), the window an `over` decal (10 mm off
+     the hull) on top of the white base livery (5 mm), whose edge showed
+     under the black at an angle. The B-pillar is now body colour and the
+     pillar and quarter window are one near-black shape carved into the
+     base livery itself (`carveQuarter`, side and top views), from the door
+     glass back to the window's point, its top on the roof's edge (1.40 m
+     side, 0.645 m from above), with no white under it anywhere.
