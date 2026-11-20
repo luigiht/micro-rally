@@ -8,8 +8,9 @@ import { loft, type LoftKey } from './HullLoft';
  * roof edge and crown heights and the half-widths along the car, sampled and
  * moved 4 cm forward so its axles sit on ours). The keys are eased along the
  * car on monotone cubics and laid every 8 cm (`loft`), and every section is
- * rounded: the upper sides roll in over two facets, the roof and bonnet
- * crown over two more, and the flank bows out under the belt over three.
+ * rounded, then squared off a little (`BOXY`, decision 286): the upper
+ * sides roll in over two facets, the roof and bonnet crown over two more,
+ * and the flank bows out under the belt over three.
  * The lower flank swells over both axles into flared arches (0.94 at the
  * front, 0.93 at the rear, the belt 0.86 between). A three-door: one long
  * door each side, a fixed quarter window behind its B-pillar. Panel gaps
@@ -42,9 +43,10 @@ const ROWS: readonly (readonly [number, number, number, number, number, number, 
   [-1.16, 1.018, 1.419, 0.05, 0.922, 0.848, 0.59],
   [-0.86, 1.01, 1.423, 0.052, 0.891, 0.851, 0.59],
   [-0.41, 0.997, 1.425, 0.055, 0.876, 0.856, 0.593],
-  [-0.01, 0.988, 1.385, 0.055, 0.875, 0.859, 0.6],
-  [0.1, 0.986, 1.342, 0.05, 0.875, 0.86, 0.611],
-  [0.34, 0.978, 1.22, 0.045, 0.875, 0.861, 0.66],
+  // The windscreen stands a little more upright than the reference's, the roof squarer over it.
+  [-0.01, 0.988, 1.405, 0.055, 0.875, 0.859, 0.6],
+  [0.1, 0.986, 1.37, 0.05, 0.875, 0.86, 0.611],
+  [0.34, 0.978, 1.255, 0.045, 0.875, 0.861, 0.66],
   [0.66, 0.95, 1.028, 0.04, 0.881, 0.862, 0.728],
   [0.74, 0.937, 0.99, 0.037, 0.885, 0.862, 0.738],
   [0.99, 0.904, 0.942, 0.035, 0.911, 0.862, 0.74],
@@ -79,24 +81,40 @@ const BOW: readonly (readonly [number, number])[] = [
   [2.23, 0],
 ];
 
+/**
+ * Squared off from the reference, keeping its heights and lengths: the roof edge stands this
+ * share of the way out from the reference's toward the belt (less tumblehome, still inside the
+ * livery's 0.7 m roof edge), and the roof crown and the flank's bow keep only these shares.
+ * The roof edge eases back to the reference's over the C-pillars (`roofOutFrom`), so the hatch
+ * glass keeps its width and the tail lamps beside it show whole.
+ */
+const BOXY = { roofOut: 0.22, roofOutFrom: [-1.56, -1.32], crown: 0.6, bow: 0.5 } as const;
+
+/** The share of `BOXY.roofOut` at `z`: none over the hatch, all of it from the cabin forward. */
+function roofOutAt(z: number): number {
+  const [a, b] = BOXY.roofOutFrom;
+  return BOXY.roofOut * Math.min(1, Math.max(0, (z - a) / (b - a)));
+}
+
 const keys: LoftKey[] = [
   ...ROWS.map(([z, belt, roof, crown, xBody, xBelt, xRoof]) => ({
     z,
     belt,
     roof,
-    crown,
+    crown: crown * BOXY.crown,
     xBody,
     xBelt,
-    xRoof,
+    xRoof: xRoof + (xBelt - xRoof) * roofOutAt(z),
     xSill: xBody - 0.07,
   })),
   ...FLOOR.map(([z, floor, sill]) => ({ z, floor, sill })),
-  ...BOW.map(([z, bow]) => ({ z, bow })),
+  ...BOW.map(([z, bow]) => ({ z, bow: bow * BOXY.bow })),
 ].sort((a, b) => a.z - b.z);
 
 /**
  * Glass and pillars along the car: a three-door, so one long door, its window from the A-pillar
- * back to a black B-pillar over the door's trailing edge, then a fixed quarter window.
+ * back to a B-pillar over the door's trailing edge, then a fixed quarter window (both painted
+ * black by the livery).
  */
 const HATCH = [-2.01, -1.56] as const;
 const C_PILLAR = [-1.56, -1.32] as const;
@@ -127,7 +145,9 @@ function flags(z0: number, z1: number): Partial<HullStation> {
   // The quarter window is the livery's black shape (it ends in a point toward the tail), so its
   // segment is body colour; the door's window is glass.
   if (within(z, DOOR)) return { glass: true };
-  if (within(z, B_PILLAR)) return { sidePaint: ALBION_TRIM };
+  // The B-pillar is body colour: the livery paints it black with the quarter window behind it,
+  // one shape in one layer, so no seam shows between them.
+  if (within(z, B_PILLAR)) return {};
   // The door's glass runs on forward past the screen's top, then beside the screen as a triangle
   // narrowing down to the mirror at the cowl, meeting the screen with no pillar between.
   if (within(z, A_ROOT) || within(z, SUNSTRIP)) return { glass: true };
@@ -147,7 +167,8 @@ function cutGaps(stations: HullStation[]): HullStation[] {
 export const ALBION_HULL: HullSpec = {
   wells: { ...wellsFor(CAR_SPECS.focus), segments: 12 },
   colors: { body: SHELL, trim: ALBION_TRIM, glass: GLASS },
-  rounding: { upper: 2, fullness: 0.55, top: 2, lower: 3 },
+  // A fuller roll from belt to roof edge: a squarer shoulder than the reference's.
+  rounding: { upper: 2, fullness: 0.9, top: 2, lower: 3 },
   stations: cutGaps(
     loft(keys, {
       step: 0.08,

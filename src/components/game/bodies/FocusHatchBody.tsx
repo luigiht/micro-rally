@@ -84,21 +84,27 @@ function LampShellMesh({
 }
 
 /**
- * The rear wing's end plates, in (z, y): tall swept blades standing on the roof's rear corners,
- * running back flat along the top to the wing's trailing edge, then curving down; their lower
- * edge stays over the tail lamps in the pillars below.
+ * The rear wing's end plates, in (z, y): tall swept blades standing on the hatch glass by its
+ * edges, from the roof's rear corner down to the glass's foot at the tail lamps' amber-to-red
+ * line (1.0 m), rising along the top to the wing's trailing edge, then sweeping down and forward
+ * to that foot. Their lower edge is a chord under the glass's curve, so it hides in the hatch.
  */
 const WING_PLATE: readonly (readonly [number, number])[] = [
-  [-1.5, 1.33],
-  [-1.62, 1.48],
-  [-2.22, 1.52],
-  [-2.3, 1.42],
-  [-2.26, 1.28],
+  [-1.5, 1.31],
+  [-1.64, 1.54],
+  [-2.22, 1.64],
+  [-2.33, 1.51],
+  [-2.04, 1.0],
 ];
 /** The wing's black (carbon). */
 const WING = '#141418';
-/** The plates stand this far either side of the middle; the wing spans between them. */
-const WING_X = 0.74;
+/**
+ * The plates stand this far either side of the middle, on the hatch glass just inside its edges
+ * (inboard of the tail lamps, so they never cover them from behind); the wing spans between them.
+ */
+const WING_X = 0.55;
+/** The plates' thickness: broad supports. */
+const WING_PLATE_THICK = 0.06;
 
 /** The four-lamp pod's lamps across the nose, and the pod's plate. */
 const POD_LAMPS = [-0.345, -0.115, 0.115, 0.345] as const;
@@ -143,20 +149,26 @@ export function FocusHatchBody({ cabinRef }: { spec: CarSpec; cabinRef: Ref<Grou
       <Box p={[-0.1, 1.62, -0.98]} s={[0.012, 0.42, 0.012]} c={K.trim} r={[-0.35, 0, 0]} />
       {/*
         Rear wing after the works car's, all black: a lip along the roof's rear edge; a broad top
-        plane from over the hatch's top back past the tail; under its trailing half a second
+        plane standing tall over the hatch, rising toward its trailing edge, open beneath; under its trailing half a second
         element, two struts between them so the gap reads as three windows; every element held
         inside the swept end plates' outline, so each meets the plates.
       */}
-      <Box p={[0, 1.33, -1.6]} s={[1.3, 0.04, 0.2]} c={WING} r={[0.15, 0, 0]} shadow />
-      <Box p={[0, 1.48, -1.93]} s={[WING_X * 2, 0.04, 0.62]} c={WING} r={[-0.03, 0, 0]} shadow />
-      <Box p={[0, 1.5, -2.22]} s={[WING_X * 2, 0.05, 0.03]} c={WING} />
-      <Box p={[0, 1.34, -2.1]} s={[WING_X * 2, 0.05, 0.28]} c={WING} r={[0.15, 0, 0]} shadow />
+      <Box p={[0, 1.33, -1.6]} s={[WING_X * 2, 0.04, 0.2]} c={WING} r={[0.15, 0, 0]} shadow />
+      <Box p={[0, 1.55, -1.93]} s={[WING_X * 2, 0.04, 0.62]} c={WING} r={[0.13, 0, 0]} shadow />
+      <Box p={[0, 1.61, -2.22]} s={[WING_X * 2, 0.05, 0.03]} c={WING} />
+      <Box p={[0, 1.4, -2.1]} s={[WING_X * 2, 0.05, 0.28]} c={WING} r={[0.15, 0, 0]} shadow />
       {[-0.25, 0.25].map((x) => (
-        <Box key={x} p={[x, 1.41, -2.1]} s={[0.03, 0.13, 0.22]} c={WING} />
+        <Box key={x} p={[x, 1.49, -2.1]} s={[0.03, 0.16, 0.22]} c={WING} />
       ))}
       {([1, -1] as const).map((side) => (
         <group key={side}>
-          <Prism x={WING_X * side} points={WING_PLATE} thickness={0.03} c={WING} shadow />
+          <Prism
+            x={WING_X * side}
+            points={WING_PLATE}
+            thickness={WING_PLATE_THICK}
+            c={WING}
+            shadow
+          />
           {/* Red tow straps front and rear */}
           <Box p={[0.62 * side, 0.3, 2.24]} s={[0.05, 0.12, 0.03]} c={K.red} />
         </group>
