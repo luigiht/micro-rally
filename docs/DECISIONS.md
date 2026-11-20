@@ -6531,3 +6531,18 @@ bed)`. The road, its profile and every record stay as they were, so
      base livery itself (`carveQuarter`, side and top views), from the door
      glass back to the window's point, its top on the roof's edge (1.40 m
      side, 0.645 m from above), with no white under it anywhere.
+     The rear wing then sat too flat on the roof for the user (after a photo
+     of the works car): its main plane stands 14 cm higher and rises 8 cm
+     toward its trailing edge (tilt −0.03 → 0.13 rad), the lower
+     element 8 cm higher, the struts between them taller and the end plates
+     drawn up to match, so the wing stands clear of the hatch with daylight
+     under it. The user then wanted it carried lower, standing tall on the body
+     down to the tail lamps' amber-to-red line: the end plates now stand on
+     the hatch glass from the roof's rear corner down to the glass's foot at
+     1.0 m, their lower edge a chord hidden under the glass's curve. They
+     moved inboard to x 0.62 (from 0.74), on the glass just inside its
+     edges, so from behind they never cover the lamps, and the wing and its
+     lip narrow to span between them, as on the works car. At the user's
+     next look it narrowed again and sat lower: plates at x 0.55 and twice
+     as thick (6 cm), the wing 1.1 m across, its main plane 7 cm lower
+     (centre 1.55 m) with the plates' tops and the lower element following.

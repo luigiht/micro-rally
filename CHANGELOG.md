@@ -42,7 +42,9 @@ hold the reasoning behind each change; the numbers in brackets point there.
   more upright cabin sides, a flatter roof, squarer shoulders and a slightly
   more upright windscreen; the B-pillar and the rear side window are one
   black shape that stops at the roof's edge, with no white line between
-  them, and the tail lamps show whole beside the rear window [286].
+  them, and the tail lamps show whole beside the rear window. Its rear wing
+  stands taller over the hatch, rising toward the back, on end plates that
+  run down the rear window's sides to the tail lamps [286].
 - **Gentler circuits.** Circuit stages and the parkland round them are
   flatter, with no climb steeper than about 10 %, and the tunnel's walls have
   level tops and run on to meet the fences [285].
