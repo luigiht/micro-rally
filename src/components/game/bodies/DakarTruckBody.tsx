@@ -157,15 +157,20 @@ export function DakarTruckBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Re
       <Box p={[1.0, 3.24, 0.66]} s={[0.2, 0.1, 0.2]} c={K.steel} />
       <Box p={[-1.0, 2.4, 0.66]} s={[0.3, 1.6, 0.3]} c={K.navy} />
       <Box p={[-1.0, 3.26, 0.7]} s={[0.34, 0.2, 0.4]} c={K.trim} />
-      {/* Mirrors: orange arms and housings with a wide-angle glass below */}
+      {/*
+        Mirrors: orange arms out to housings turned square across the truck, their broad faces
+        to the rear with the glass on them; a wide-angle glass below, joined to the main one by
+        a short orange neck so the two read as one unit.
+      */}
       <group ref={cabinRef}>
         {SIDES.map((side) => (
           <group key={side}>
             <Box p={[1.3 * side, 2.45, 2.35]} s={[0.24, 0.04, 0.04]} c={K.orange} />
-            <Box p={[1.44 * side, 2.4, 2.35]} s={[0.06, 0.36, 0.2]} c={K.orange} />
-            <Box p={[1.44 * side, 2.4, 2.24]} s={[0.05, 0.3, 0.012]} c={K.glass} />
-            <Box p={[1.44 * side, 2.12, 2.35]} s={[0.06, 0.14, 0.18]} c={K.orange} />
-            <Box p={[1.44 * side, 2.12, 2.25]} s={[0.05, 0.1, 0.012]} c={K.glass} />
+            <Box p={[1.44 * side, 2.4, 2.35]} s={[0.22, 0.36, 0.07]} c={K.orange} />
+            <Box p={[1.44 * side, 2.4, 2.309]} s={[0.18, 0.3, 0.012]} c={K.glass} />
+            <Box p={[1.44 * side, 2.205, 2.35]} s={[0.08, 0.05, 0.05]} c={K.orange} />
+            <Box p={[1.44 * side, 2.12, 2.35]} s={[0.2, 0.14, 0.07]} c={K.orange} />
+            <Box p={[1.44 * side, 2.12, 2.309]} s={[0.16, 0.1, 0.012]} c={K.glass} />
           </group>
         ))}
       </group>
@@ -221,13 +226,13 @@ export function DakarTruckBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Re
         <Box key={x} p={[x, 0.84, 3.0]} s={[0.1, 0.1, 0.14]} c={K.red} />
       ))}
       <Box p={[0, 0.78, 2.96]} s={[2.0, 0.08, 0.2]} c={K.trim} />
-      {/* Flanks: mudguards, steps, door strip, handle, sponsor plates, REPSOL letters */}
+      {/* Flanks: mudguards, steps (behind the front mud flaps, `BodyMudFlaps`), door strip, handle, sponsor plates, REPSOL letters */}
       {SIDES.map((side) => (
         <group key={side}>
           <ArchLip x={X_BODY * side} z={front} radius={spec.wheelRadius} c={K.orange} tube={0.07} />
           <ArchLip x={X_BODY * side} z={rear} radius={spec.wheelRadius} c={K.trim} tube={0.06} />
-          <Box p={[1.26 * side, 0.7, 1.3]} s={[0.3, 0.06, 0.5]} c={K.orange} />
-          <Box p={[1.24 * side, 0.98, 1.3]} s={[0.22, 0.05, 0.42]} c={K.orange} />
+          <Box p={[1.26 * side, 0.7, 1.05]} s={[0.3, 0.06, 0.42]} c={K.orange} />
+          <Box p={[1.24 * side, 0.98, 1.05]} s={[0.22, 0.05, 0.36]} c={K.orange} />
           <Box p={[1.23 * side, 2.2, 0.9]} s={[0.04, 0.8, 0.04]} c={K.steel} />
           <Box p={[flank * side, 1.45, 2.3]} s={[0.03, 1.0, 0.1]} c={K.orange} />
           <Box p={[flank * side, 1.78, 1.5]} s={[0.03, 0.05, 0.28]} c={K.orange} />

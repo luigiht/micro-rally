@@ -19,6 +19,7 @@ import { T16HatchBody } from './bodies/T16HatchBody';
 import { WrcHatchBody } from './bodies/WrcHatchBody';
 import { CarLamps } from '@/render/car/CarLamps';
 import { CarInterior, type CarInteriorHandle } from './CarInterior';
+import { BodyMudFlaps } from './BodyMudFlaps';
 import { Box, CAR_COLORS as C } from './CarParts';
 
 export interface CarModelHandle {
@@ -32,8 +33,11 @@ export interface CarModelHandle {
 /** Wheels can rise this far into their wells before the body bottoms out (matches the sim). */
 const MAX_WHEEL_LIFT = 0.35;
 
-/** Bodies that hang their own mud flaps (the buggy's hang from its spare carrier, inside the leaning body). */
-const OWN_FLAPS: ReadonlySet<CarId> = new Set<CarId>(['buggy', 'saloon', 't16']);
+/**
+ * Bodies that hang their own mud flaps (the buggy's hang from its spare carrier, inside the
+ * leaning body; the Sirocco's from its floors, `BodyMudFlaps`).
+ */
+const OWN_FLAPS: ReadonlySet<CarId> = new Set<CarId>(['buggy', 'saloon', 't16', 'dakar']);
 
 /** Wheel rim colour per car; cream by default. */
 const RIM: Partial<Record<CarId, string>> = {
@@ -192,6 +196,10 @@ export function CarModel({
           <CarInterior ref={interior} spec={spec} />
         </group>
         <BodyFor spec={spec} cabinRef={cabin} />
+        {/* Flaps hung from the body lean with it, not with the wheels */}
+        <group position={[0, -0.1, 0]}>
+          <BodyMudFlaps spec={spec} />
+        </group>
       </group>
       {/* Mud flaps hang off the chassis, not the leaning body; sized to the wheel. Some day bodies hang their own. */}
       {!OWN_FLAPS.has(spec.id) && (

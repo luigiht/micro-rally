@@ -6546,3 +6546,29 @@ bed)`. The road, its profile and every record stay as they were, so
      next look it narrowed again and sat lower: plates at x 0.55 and twice
      as thick (6 cm), the wing 1.1 m across, its main plane 7 cm lower
      (centre 1.55 m) with the plates' tops and the lower element following.
+287. **2026-11-20 — The Sirocco Dakar Truck's mirrors face the rear.** The
+     user saw them lying parallel to the cab: each housing was 6 cm across
+     the truck and 20 cm along it, its glass a 5 cm sliver. They now stand
+     square across the truck (main housing 22 × 36 × 7 cm, wide-angle 20 ×
+     14 × 7 cm), each glass on the housing's rear face (18 and 16 cm wide),
+     and a short orange neck joins the wide-angle housing to the main one,
+     so the pair reads as one unit on its arm (`DakarTruckBody`).
+288. **2026-11-20 — Front mud flaps, hung from the body.** The user asked for
+     mud flaps behind the front wheels of the Tricolore Coupé, Riviera WRC,
+     Tempesta Group B, Edelweiss S1, Albion RS Hatch and Sirocco Dakar Truck,
+     joined to the body so they don't stay with the wheels. The rear flaps
+     hang off the chassis group (`CarModel`); the front ones
+     (`BodyMudFlaps`) sit inside the body's group, so they pitch, roll and
+     heave with it. Each stands just behind its tyre, clear of the tyre's
+     trailing corner at full lock (5 cm on the cars, 8 cm on the truck; the
+     corner swings about 2 and 4 cm past the tyre at 0.55 rad), its foot
+     level with the rear flaps' (0.35 × the wheel radius) and its top tucked
+     5 cm into the body over the wheel well's edge at that point
+     (`wellsFor`: the wheel radius + 8 cm), so no gap shows. The truck's
+     hang from the cab's floor within its width, and its steps moved back
+     25 cm (centre z 1.3 → 1.05) so they don't run through them.
+     The truck's rear flaps, the chassis's shared ones, then still floated:
+     sized to the wheel (0.21–0.69 m) under a box floor at 0.95 m. The
+     truck now hangs all four from its body (`OWN_FLAPS`), the rear pair
+     from the cargo box's floor 8 cm behind the rear tyres, built as the
+     front pair.

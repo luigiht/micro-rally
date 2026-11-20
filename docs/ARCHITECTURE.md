@@ -22,7 +22,8 @@ flowchart TD
   workers, particles, skid marks. Each builder returns disposables.
 - **Car models** — `components/game/CarModel` builds every car from
   primitives (`bodies/*Body.tsx`) around shared wheels, interior and an
-  imperative handle; the lofted hulls (`render/car/CarHull.ts`) and the
+  imperative handle. Rear mud flaps hang off the chassis; front ones
+  (`BodyMudFlaps`) ride in the body's group so they lean with it. The lofted hulls (`render/car/CarHull.ts`) and the
   buggy's free-standing mudguards (`render/car/FenderShell.ts`) are pure TS
   builders. The GLBs in `assets/` are measurement references only.
 - **`src/components/game`** — R3F `<Canvas>`, scene graph, camera rigs. The

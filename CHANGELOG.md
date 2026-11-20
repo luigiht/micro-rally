@@ -38,6 +38,14 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 - **The Sochaux T16 has red mud flaps at all four wheels**, and no longer a
   second, black pair behind its rear wheels.
+- **Front mud flaps** on the Tricolore Coupé, Riviera WRC, Tempesta Group B,
+  Edelweiss S1, Albion RS Hatch and Sirocco Dakar Truck. They hang from the
+  body behind the front wheels and move with it; the truck's hang from the
+  cab, its steps moved back to make room, and its rear flaps now hang from
+  the cargo box instead of floating under it [288].
+- **The Sirocco Dakar Truck's mirrors face backward.** Each stands square
+  across the truck with its glass on the rear face, and the wide-angle
+  mirror below is joined to the main one [287].
 - **A boxier Albion RS Hatch.** Same length, stance and details, with
   more upright cabin sides, a flatter roof, squarer shoulders and a slightly
   more upright windscreen; the B-pillar and the rear side window are one
