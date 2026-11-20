@@ -52,7 +52,7 @@ function buildStageWorld(gameSeed: number, index: number, slot: StageSlot): Stag
   const boxes = [
     ...(stage.town ? townObstacles(stage.town) : []),
     ...(field.coast ? seaWallObstacles(field.coast) : []),
-    ...barrierObstacles(stage),
+    ...barrierObstacles(stage, (d) => field.roadHeightAt(d)),
     ...bridgeObstacles(stage, field.rivers),
     ...lakeBridgeObstacles(stage, field.lakes),
   ];

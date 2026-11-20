@@ -1,4 +1,12 @@
 import type { BoxObstacle } from '../vehicle/Collisions';
+import {
+  PARAPET_GAP,
+  WALL_GAP,
+  WALL_REACH,
+  lapGap,
+  nearCrossing,
+  type CircuitCrossing,
+} from './CircuitCrossing';
 import type { Surface } from '../vehicle/surfaces';
 import type { RoadHit, RoadPath } from './RoadPath';
 import type { StageDef } from './StageGenerator';
@@ -76,6 +84,27 @@ function maxCyclic(a: Float64Array, r: number): Float64Array {
   return out;
 }
 
+function minCyclic(a: Float64Array, r: number): Float64Array {
+  const n = a.length - 1;
+  const out = new Float64Array(a.length);
+  for (let i = 0; i < n; i++) {
+    let m = Infinity;
+    for (let k = -r; k <= r; k++) m = Math.min(m, a[(i + k + n) % n]!);
+    out[i] = m;
+  }
+  out[n] = out[0]!;
+  return out;
+}
+
+/**
+ * Over this many samples either side the barrier's offset is eased: a
+ * cyclic minimum then a box of the same reach, so the line never comes in
+ * nearer than any sample asked for (the minimum's window takes in every
+ * sample the box averages), and swings in or out only gently, running
+ * parallel to the road through a chicane instead of stepping in and out.
+ */
+const BARRIER_EASE = 14;
+
 /** Grow every run of set samples by `r` either way, round the lap. */
 function dilate(mask: Uint8Array, r: number): Uint8Array {
   const n = mask.length - 1;
@@ -88,7 +117,28 @@ function dilate(mask: Uint8Array, r: number): Uint8Array {
   return out;
 }
 
-function buildTrackside(path: RoadPath, halfWidth: number, mainStraight: number): CircuitTrackside {
+/**
+ * Near a circuit's crossing each stretch's barrier keeps close in: the
+ * tunnel road's becomes the cutting's walls, the bridge road's its
+ * parapets (`CircuitCrossing`), Infinity elsewhere. Per sample.
+ */
+function crossingLimits(path: RoadPath, halfWidth: number, c: CircuitCrossing): Float64Array {
+  const out = new Float64Array(path.count).fill(Infinity);
+  for (let i = 0; i < path.count; i++) {
+    const d = i * path.spacing;
+    if (lapGap(d, c.under, path.length) < WALL_REACH) out[i] = halfWidth + WALL_GAP - 0.25;
+    else if (lapGap(d, c.over, path.length) < WALL_REACH) out[i] = halfWidth + PARAPET_GAP;
+  }
+  return out;
+}
+
+function buildTrackside(
+  path: RoadPath,
+  halfWidth: number,
+  mainStraight: number,
+  crossing?: CircuitCrossing,
+): CircuitTrackside {
+  const limits = crossing ? crossingLimits(path, halfWidth, crossing) : null;
   const n = path.count - 1;
   const span = 3;
   const raw = new Float64Array(path.count);
@@ -136,8 +186,9 @@ function buildTrackside(path: RoadPath, halfWidth: number, mainStraight: number)
   const gravel: [Uint8Array, Uint8Array] = [new Uint8Array(path.count), new Uint8Array(path.count)];
   const mainEnd = Math.ceil(mainStraight / path.spacing);
   for (const s of [0, 1] as const) {
-    // Runoff opens out before the corner and closes after it: widened, then eased.
-    const runoff = smoothCyclic(maxCyclic(extra[s]!, 10), 8);
+    // Runoff opens out before the corner and closes after it: widened, then eased (widened by the
+    // barrier's own ease too, so easing the line takes none of it back).
+    const runoff = smoothCyclic(maxCyclic(extra[s]!, 10 + 2 * BARRIER_EASE), 8);
     const grown = dilate(gravelSeed[s]!, 10);
     for (let i = 0; i <= n; i++) {
       const j = i % n;
@@ -148,15 +199,23 @@ function buildTrackside(path: RoadPath, halfWidth: number, mainStraight: number)
       if (insideHere && Math.abs(k) > 1e-6) {
         let rMin = Infinity;
         for (let m = -10; m <= 10; m++) {
-          const km = Math.abs(curvature[(j + m + n) % n]!);
+          // The sharpest reading of the bend here: the eased curvature, the raw one and the turn
+          // from one sample to the next (a short, tight corner hides in the wider windows).
+          const at = (j + m + n) % n;
+          const step =
+            Math.abs(wrapAngle(path.headings[(at + 1) % n]! - path.headings[at]!)) / path.spacing;
+          const km = Math.max(Math.abs(curvature[at]!), Math.abs(raw[at]!), step);
           if (km > 1e-6) rMin = Math.min(rMin, 1 / km);
         }
         offset = Math.min(offset, Math.max(halfWidth + MIN_INSIDE_GAP, 0.7 * rMin));
       }
-      barrier[s]![i] = offset;
-      fence[s]![i] = runoff[j]! > 4 || j <= mainEnd ? 1 : 0;
-      const room = offset - GRAVEL_TO_BARRIER - (halfWidth + KERB_OUT + GRAVEL_FROM_KERB);
-      gravel[s]![i] = grown[j]! && room > 3 ? 1 : 0;
+      barrier[s]![i] = limits ? Math.min(offset, limits[j]!) : offset;
+      fence[s]![i] = (runoff[j]! > 4 || j <= mainEnd) && !(limits && limits[j]! < Infinity) ? 1 : 0;
+    }
+    barrier[s] = smoothCyclic(minCyclic(barrier[s], BARRIER_EASE), BARRIER_EASE);
+    for (let i = 0; i <= n; i++) {
+      const room = barrier[s][i]! - GRAVEL_TO_BARRIER - (halfWidth + KERB_OUT + GRAVEL_FROM_KERB);
+      gravel[s]![i] = grown[i % n]! && room > 3 ? 1 : 0;
     }
   }
   const gravelRun: [Float64Array, Float64Array] = [
@@ -185,7 +244,12 @@ export function circuitTrackside(stage: StageDef): CircuitTrackside | null {
   if (!stage.circuit) return null;
   let t = cache.get(stage);
   if (!t) {
-    t = buildTrackside(stage.path, stage.halfWidth, stage.circuit.mainStraight);
+    t = buildTrackside(
+      stage.path,
+      stage.halfWidth,
+      stage.circuit.mainStraight,
+      stage.circuit.crossing,
+    );
     cache.set(stage, t);
   }
   return t;
@@ -269,12 +333,32 @@ export function barrierLine(stage: StageDef, t: CircuitTrackside, side: 1 | -1):
   return out;
 }
 
-/** The barriers as colliders: 4 m boxes along each line. */
-export function barrierObstacles(stage: StageDef): BoxObstacle[] {
+/** Near the crossing, each stretch's barriers stop only cars on its own level, this far along either way. */
+const LEVEL_REACH = WALL_REACH + 35;
+
+/**
+ * The barriers as colliders: 4 m boxes along each line. Near a circuit's
+ * crossing (`roadHeightAt` given) the tunnel road's stop only cars below
+ * the level midway between the two decks and the bridge road's only cars
+ * above it, so a car passes over one and under the other.
+ */
+export function barrierObstacles(
+  stage: StageDef,
+  roadHeightAt?: (along: number) => number,
+): BoxObstacle[] {
   const t = circuitTrackside(stage);
   if (!t) return [];
   const out: BoxObstacle[] = [];
   const step = Math.max(1, Math.round(4 / stage.path.spacing));
+  const c = stage.circuit?.crossing;
+  const lap = stage.path.length;
+  const mid = c && roadHeightAt ? (roadHeightAt(c.over) + roadHeightAt(c.under)) / 2 : NaN;
+  const level = (along: number): Partial<BoxObstacle> => {
+    if (!c || Number.isNaN(mid)) return {};
+    if (lapGap(along, c.under, lap) < LEVEL_REACH) return { yMax: mid };
+    if (lapGap(along, c.over, lap) < LEVEL_REACH) return { yMin: mid };
+    return {};
+  };
   for (const side of [1, -1] as const) {
     const line = barrierLine(stage, t, side);
     for (let i = 0; i + step < stage.path.count; i += step) {
@@ -290,6 +374,7 @@ export function barrierObstacles(stage: StageDef): BoxObstacle[] {
         hx: BARRIER_HALF,
         hz: Math.hypot(dx, dz) / 2 + 0.2,
         yaw: Math.atan2(dx, dz),
+        ...level((i + step / 2) * stage.path.spacing),
       });
     }
   }
@@ -365,6 +450,9 @@ export function cornerStandSpots(stage: StageDef, t: CircuitTrackside): CornerSt
       if (Math.abs(t.curvature[(i + offset + n) % n]!) > strength + 1e-8) peak = false;
     if (!peak) continue;
     const distance = i * path.spacing;
+    // No stand over the crossing's cutting or on its bridge's embankment.
+    const c = stage.circuit?.crossing;
+    if (c && nearCrossing(c, distance, path.length, WALL_REACH + 60)) continue;
     const fromStart = path.wrap(distance - stage.startDistance);
     const startGap = Math.min(fromStart, path.length - fromStart);
     if (startGap < (STAND.length + CORNER_STAND.length) / 2 + 16) continue;
@@ -403,6 +491,59 @@ export function cornerStandSpots(stage: StageDef, t: CircuitTrackside): CornerSt
         radius: Math.hypot(CORNER_STAND.length / 2, CORNER_STAND.depth / 2) + 4,
       };
     });
+}
+
+/** A stand's level pad reaches this far past its footprint, then eases into the hills over `STAND_PAD_BLEND`. */
+const STAND_PAD_MARGIN = 1.5;
+const STAND_PAD_BLEND = 8;
+
+/**
+ * Level pads under the grandstands (`TerrainField.setPads`): each stand's
+ * footprint and a margin flattened to the ground's height at the middle of
+ * its front edge (the side by the track), so the stand sits square on level
+ * ground, its rows never hanging over a slope nor sunk into one. `ground`
+ * is the height before any pad.
+ */
+export function standPads(
+  stage: StageDef,
+  t: CircuitTrackside,
+  ground: (x: number, z: number) => number,
+): {
+  x: number;
+  z: number;
+  y: number;
+  radius: number;
+  hx: number;
+  hz: number;
+  yaw: number;
+  blend: number;
+}[] {
+  const stands = [
+    { spot: grandstandSpot(stage, t), length: STAND.length, depth: STAND.depth },
+    ...cornerStandSpots(stage, t).map((spot) => ({
+      spot,
+      length: CORNER_STAND.length,
+      depth: CORNER_STAND.depth,
+    })),
+  ];
+  return stands.map(({ spot, length, depth }) => {
+    const { heading, side } = spot;
+    // The front edge's middle: half the depth back toward the track from the footprint's centre.
+    const fx = spot.x - Math.cos(heading) * (depth / 2) * side;
+    const fz = spot.z + Math.sin(heading) * (depth / 2) * side;
+    const hx = depth / 2 + STAND_PAD_MARGIN;
+    const hz = length / 2 + STAND_PAD_MARGIN;
+    return {
+      x: spot.x,
+      z: spot.z,
+      y: ground(fx, fz),
+      radius: Math.hypot(hx, hz),
+      hx,
+      hz,
+      yaw: heading,
+      blend: STAND_PAD_BLEND,
+    };
+  });
 }
 
 function smoothstep(e0: number, e1: number, x: number): number {

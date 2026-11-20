@@ -208,7 +208,8 @@ describe('Lakeland', () => {
       gameSeed: 1,
       money: 10,
       stageIndex: city + 1,
-      records: { [moved]: rec, [kept]: rec, [city]: rec },
+      // 9 is a circuit: every circuit was laid out anew with v14, so its record goes too.
+      records: { [moved]: rec, [kept]: rec, [city]: rec, 9: rec },
       carId: 'hatchback',
       ownedCars: ['hatchback'],
       upgrades: {},

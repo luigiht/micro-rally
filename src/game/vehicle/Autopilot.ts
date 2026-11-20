@@ -32,6 +32,8 @@ const SCAN_STEP = 3;
 const CURVE_SPAN = 8;
 /** The car is lost beyond this from the centreline: it holds its last road distance. */
 const SEARCH = 40;
+/** On a closed lap the car's road is looked for within this far of where it was last found. */
+const TRACK_WINDOW = 60;
 
 function wrapAngle(a: number): number {
   return Math.atan2(Math.sin(a), Math.cos(a));
@@ -62,7 +64,13 @@ export class Autopilot {
   /** The inputs for this step: steer toward the road ahead, throttle or brake toward the safe speed. */
   drive(s: VehicleState, env: SimEnv, out: ControlInput): ControlInput {
     const path = this.path;
-    if (path.nearest(s.x, s.z, SEARCH, this.hit)) this.along = this.hit.along;
+    // On a closed lap, which may cross itself, the road is looked for near where it was last found
+    // first, so the crossing never hands the car the other stretch.
+    if (
+      (path.closed && path.nearest(s.x, s.z, SEARCH, this.hit, this.along, TRACK_WINDOW)) ||
+      path.nearest(s.x, s.z, SEARCH, this.hit)
+    )
+      this.along = this.hit.along;
     const v = Math.max(0, s.speed);
 
     // Steering: the wheel angle that carries the car through the lookahead point.

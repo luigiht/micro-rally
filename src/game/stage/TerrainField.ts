@@ -15,6 +15,19 @@ import { Coastline } from './Coastline';
 import { BENCH_REACH, benchAcross, benchAlong, planBenches, type Bench } from './CrowdBenches';
 import { planRivers, RiverIndex, type River, type RiverHit } from './Rivers';
 import { lacetGround } from './Lacets';
+import {
+  CROSS_CLEARANCE,
+  CROSS_EASE,
+  CROSS_PLATEAU,
+  limitLapGrade,
+  PARAPET_GAP,
+  crossingGround,
+  inCrossingZone,
+  lapGap,
+  shapeCrossing,
+  type CircuitCrossing,
+} from './CircuitCrossing';
+import { levelCircuitStart } from './CircuitStage';
 import { DECK_OUT, lakeAt, lakeGround, lakeShore, planLakes, type Lake } from './Lakes';
 import { overlaySpans, surfaceAlong, type SurfaceSpan } from './SurfaceSpans';
 import { type AxisPoint, CoastShape, type CoastSurface } from './CoastShape';
@@ -323,6 +336,15 @@ export class TerrainField implements TerrainQuery {
   private readonly hit = createRoadHit();
   private readonly offroad: Surface;
   readonly corridor: number;
+  /** A circuit's crossing (its bridge over a tunnel), and half the lap between its two stretches. */
+  private readonly crossing: CircuitCrossing | null;
+  private readonly crossWindow: number;
+  /** While shaping the ground near the crossing, road queries keep within `window` of `around` (one stretch). */
+  private around = NaN;
+  private window = Infinity;
+  /** The height of the thing asking (`heightAt`'s `y`): picks the bridge's deck or the tunnel's floor. */
+  private hintY = NaN;
+  private readonly crossScratch: TerrainSample = { height: 0, roadBlend: 0, roadDistance: 0 };
   private pads: TerrainPad[] = [];
   /** Bumps off the road and the berms in front of the crowds. */
   private readonly detail: TerrainDetail;
@@ -411,6 +433,10 @@ export class TerrainField implements TerrainQuery {
         )
       : null;
     this.offroad = region.offroad;
+    this.crossing = stage.circuit?.crossing ?? null;
+    this.crossWindow = this.crossing
+      ? lapGap(this.crossing.over, this.crossing.under, stage.path.length) / 2
+      : 0;
     this.trackside = circuitTrackside(stage);
     this.flatMargin = this.trackside
       ? outermostBarrier(this.trackside) - stage.halfWidth + 4
@@ -772,7 +798,7 @@ export class TerrainField implements TerrainQuery {
    */
   private nearestStreet(x: number, z: number, out: StreetHit): boolean {
     let found = false;
-    if (this.stage.path.nearest(x, z, this.corridor, this.hit)) {
+    if (this.stage.path.nearest(x, z, this.corridor, this.hit, this.around, this.window)) {
       out.hw = halfWidthAt(this.stage, this.hit.along);
       out.deck = this.roadHeightAt(this.hit.along);
       out.distance = this.hit.distance;
@@ -912,6 +938,38 @@ export class TerrainField implements TerrainQuery {
   }
 
   sample(x: number, z: number, out: TerrainSample): TerrainSample {
+    this.samplePlain(x, z, out);
+    const c = this.crossing;
+    if (!c || !inCrossingZone(c, x, z)) return out;
+    const s = this.crossScratch;
+    const over = this.windowed(c.over, () => this.samplePlain(x, z, s).height);
+    const under = this.windowed(c.under, () => this.samplePlain(x, z, s).height);
+    out.height = crossingGround(
+      c,
+      x,
+      z,
+      under,
+      over,
+      s.roadDistance,
+      this.stage.halfWidth,
+      out.height,
+    );
+    return out;
+  }
+
+  /** Road queries keep to the stretch of the crossing at `around` while `f` runs. */
+  private windowed<T>(around: number, f: () => T): T {
+    this.around = around;
+    this.window = this.crossWindow;
+    try {
+      return f();
+    } finally {
+      this.around = NaN;
+      this.window = Infinity;
+    }
+  }
+
+  private samplePlain(x: number, z: number, out: TerrainSample): TerrainSample {
     const base = this.shapedGround(x, z);
     const st = this.street;
     if (this.coast) {
@@ -1108,8 +1166,31 @@ export class TerrainField implements TerrainQuery {
     return this.lakes.length > 0 ? lakeGround(this.lakes, x, z, ground) : ground;
   }
 
-  /** The surface without the pavements' kerb lift or any river's gorge. */
+  /**
+   * The surface without the pavements' kerb lift or any river's gorge. Near
+   * a circuit's crossing: the cutting and the bridge's embankment, and for a
+   * car on the bridge (`hintY` well over the cutting's floor) its deck.
+   */
   private deckGround(x: number, z: number): number {
+    const c = this.crossing;
+    if (!c || !inCrossingZone(c, x, z)) return this.deckGroundPlain(x, z);
+    const over = this.windowed(c.over, () => this.deckGroundPlain(x, z));
+    const overDistance = this.nearStreet ? this.street.distance : Infinity;
+    const under = this.windowed(c.under, () => this.deckGroundPlain(x, z));
+    const underDistance = this.nearStreet ? this.street.distance : Infinity;
+    // Last, so the street left for the kerb and surface reads is the nearest of all.
+    const normal = this.deckGroundPlain(x, z);
+    const hw = this.stage.halfWidth;
+    if (
+      !Number.isNaN(this.hintY) &&
+      overDistance <= hw + PARAPET_GAP + 0.4 &&
+      this.hintY > under + CROSS_CLEARANCE / 2
+    )
+      return over;
+    return crossingGround(c, x, z, under, over, underDistance, hw, normal);
+  }
+
+  private deckGroundPlain(x: number, z: number): number {
     const base = this.shapedGround(x, z);
     const st = this.street;
     this.nearStreet = this.nearestStreet(x, z, st);
@@ -1148,7 +1229,14 @@ export class TerrainField implements TerrainQuery {
     this.softNearest = st.distance;
     this.softWeight = 0;
     this.softSum = 0;
-    this.stage.path.visitNear(x, z, st.distance + SOFT_REACH, this.softVisit);
+    this.stage.path.visitNear(
+      x,
+      z,
+      st.distance + SOFT_REACH,
+      this.softVisit,
+      this.around,
+      this.window,
+    );
     if (this.softWeight === 0) return st.deck;
     return st.deck + (this.softSum / this.softWeight - st.deck) * s;
   }
@@ -1210,8 +1298,11 @@ export class TerrainField implements TerrainQuery {
    * pavement (a strip `PAVEMENT_WIDTH` wide outside every carriageway and
    * junction surface), climbed over `KERB_RAMP` so a wheel mounts it as a bump.
    */
-  heightAt(x: number, z: number): number {
+  heightAt(x: number, z: number, y?: number): number {
+    // Where a circuit crosses itself, the asker's height says which level it is on.
+    this.hintY = y ?? NaN;
     const h = this.deckAt(x, z);
+    this.hintY = NaN;
     if (this.trackside) return h + this.kerbLift();
     const town = this.town;
     if (!town || !this.nearStreet) return h;
@@ -1304,6 +1395,17 @@ export class TerrainField implements TerrainQuery {
       raw[i] = this.groundHeight(xs[i]!, zs[i]!);
     const smooth = smoothRoadProfile(raw, spacing, closed);
     if (this.urban) return this.urban.levelProfile(smooth, spacing, this.stage.path);
+    // A circuit's grid and start line stand on level road; at its crossing one stretch rises onto
+    // the bridge and the other sinks under it.
+    if (this.stage.circuit) {
+      levelCircuitStart(smooth, spacing, this.stage.startDistance);
+      const c = this.stage.circuit.crossing;
+      shapeCrossing(smooth, spacing, c);
+      // The level start and the ramps either side of the crossing held to a gentle grade, the
+      // crossing last so its two plateaus keep their exact clearance.
+      limitLapGrade(smooth, spacing, [this.stage.startDistance], 220);
+      limitLapGrade(smooth, spacing, [c.over, c.under], CROSS_PLATEAU + CROSS_EASE + 120);
+    }
     const crests = STAGE_TYPES[this.stage.stageType].terrain.crests;
     if (crests && !closed) this.addCrests(smooth, crests);
     return smooth;

@@ -20,6 +20,8 @@ const BRAKE_BEAM_DISTANCE = 3;
 const BRAKE_BEAM_ANGLE = 0.6;
 const BRAKE_BEAM_PENUMBRA = 0.9;
 const BRAKE_BEAM_AIM: readonly [number, number] = [1, -1.6];
+/** Each brake beam starts this far behind its lamps. */
+const BRAKE_BEAM_BACK = 0.3;
 /** Each headlamp's beam: candela, metres of reach, cone half-angle, edge softness, aim ahead and down. */
 const BEAM_INTENSITY = 480;
 const BEAM_DISTANCE = 90;
@@ -135,7 +137,8 @@ export class CarLamps {
         b.position.set(cx + (i === 0 ? x : -x), y, box.min.z - 0.08);
       } else {
         s.getCenter(v);
-        b.position.set(v.x, v.y, s.min.z - 0.08);
+        // Far enough behind the lamp that the steep cone misses the car's own tail below it.
+        b.position.set(v.x, v.y, s.min.z - BRAKE_BEAM_BACK);
       }
       b.target.position.set(
         b.position.x,

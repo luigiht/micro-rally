@@ -18,6 +18,9 @@ export const MIN_JUMP_AIR = 0.3;
 export const MAX_JUMP_AIR = 3;
 
 /** Stage timing state machine: countdown → running → finished. Advanced in fixed sim steps. */
+/** On a closed lap the car's road is looked for within this far of where it was last found. */
+const TRACK_WINDOW = 80;
+
 export class StageRun {
   phase: RunPhase = 'countdown';
   countdown = COUNTDOWN_SECONDS;
@@ -40,6 +43,8 @@ export class StageRun {
   private spell = 0;
   private readonly sample: RoadSample = { x: 0, z: 0, heading: 0 };
   private readonly hit: RoadHit = createRoadHit();
+  /** Where on the lap the car was last found (NaN before the first look). */
+  private lastAlong = NaN;
   private progressValue = 0;
   private alongValue: number;
 
@@ -77,7 +82,16 @@ export class StageRun {
    * points one lap apart, the one within half a lap of the last gate passed.
    */
   progressAt(x: number, z: number, gatesPassed = this.tracker.next): number {
-    if (this.stage.path.nearest(x, z, this.stage.halfWidth * 6, this.hit)) {
+    const { path, halfWidth } = this.stage;
+    // On a lap that crosses itself, near where the car was last found first: the crossing never
+    // hands it the other stretch. Anywhere after a jump (a reset).
+    if (
+      (path.closed &&
+        !Number.isNaN(this.lastAlong) &&
+        path.nearest(x, z, halfWidth * 6, this.hit, this.lastAlong, TRACK_WINDOW)) ||
+      path.nearest(x, z, halfWidth * 6, this.hit)
+    ) {
+      this.lastAlong = this.hit.along;
       this.alongValue = this.raceDistance(this.hit.along, gatesPassed);
       this.progressValue = this.fraction(this.alongValue);
     }

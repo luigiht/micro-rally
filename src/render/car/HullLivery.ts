@@ -60,13 +60,13 @@ export interface LiverySolid {
 }
 
 /** A solid as half-spaces: each `f(p) ≥ 0` inside, linear in p, plus its bounds. */
-interface SolidCut {
+export interface SolidCut {
   rgb: V3;
   planes: ((q: V3) => number)[];
   box: [V3, V3];
 }
 
-function solidCuts(solid: LiverySolid): SolidCut[] {
+export function solidCuts(solid: LiverySolid): SolidCut[] {
   const out: SolidCut[] = [];
   for (const sx of solid.mirror ? [1, -1] : [1]) {
     const planes: ((q: V3) => number)[] = [];
@@ -103,7 +103,7 @@ function solidCuts(solid: LiverySolid): SolidCut[] {
 }
 
 /** The part of a planar polygon inside every half-space (Sutherland–Hodgman in 3D). */
-function clipPlanes(poly: V3[], planes: readonly ((q: V3) => number)[]): V3[] {
+export function clipPlanes(poly: V3[], planes: readonly ((q: V3) => number)[]): V3[] {
   let out = poly;
   for (const f of planes) {
     if (out.length === 0) break;

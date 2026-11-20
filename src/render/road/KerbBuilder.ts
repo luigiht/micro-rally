@@ -13,6 +13,7 @@ import { ROAD_LIFT, type TerrainField } from '@/game/stage/TerrainField';
 import { themeColor } from '../theme/themeColor';
 import type { CircuitTheme } from '../theme/WorldTheme';
 import { TrackMesh } from './TrackMesh';
+import { cellHash } from './SurfaceDetail';
 
 const SAMPLES_PER_PIECE = 100;
 /** Gravel lies this far over the flat runoff it is drawn on. */
@@ -26,6 +27,10 @@ type V3 = [number, number, number];
  * per sample, about 2 m), gravel as a pale band out toward the barrier. Cut
  * into pieces along the lap for frustum culling, like the road.
  */
+/** Gravel traps are cut into this many bands across, every block straying this much lighter or darker. */
+const GRAVEL_BANDS = 5;
+const GRAVEL_JITTER = 0.12;
+
 export class KerbBuilder {
   readonly group = new Group();
   private readonly geometries: BufferGeometry[] = [];
@@ -92,19 +97,34 @@ export class KerbBuilder {
             const outer0 = barrier[i]! - GRAVEL_TO_BARRIER;
             const outer1 = barrier[i + 1]! - GRAVEL_TO_BARRIER;
             if (outer0 <= inner || outer1 <= inner) continue;
-            // A faint grain from sample to sample, so the trap reads as loose stone.
-            const c = shade.copy(gravel).multiplyScalar(0.95 + ((i * 7919) % 11) / 110);
-            const lo = side === 1 ? inner : outer0;
-            const hi = side === 1 ? outer0 : inner;
-            const lo1 = side === 1 ? inner : outer1;
-            const hi1 = side === 1 ? outer1 : inner;
-            mesh.ribbon(
-              point(i, side * lo, GRAVEL_LIFT),
-              point(i, side * hi, GRAVEL_LIFT),
-              point(i + 1, side * lo1, GRAVEL_LIFT),
-              point(i + 1, side * hi1, GRAVEL_LIFT),
-              c,
-            );
+            // Loose stone: the trap cut into bands across, each block of each a shade of its own,
+            // some raked lighter, some darker where cars have ploughed through.
+            for (let band = 0; band < GRAVEL_BANDS; band++) {
+              const f0 = band / GRAVEL_BANDS;
+              const f1 = (band + 1) / GRAVEL_BANDS;
+              const at = (outer: number, f: number) => inner + (outer - inner) * f;
+              const block = Math.floor(i / 2);
+              const tone =
+                1 +
+                (cellHash(block, band + side * 17, 431) - 0.5) * 2 * GRAVEL_JITTER -
+                (cellHash(Math.floor(i / 7), band + side * 17, 433) < 0.2 ? 0.16 : 0);
+              const c = shade.copy(gravel).multiplyScalar(tone);
+              const l0 = at(outer0, side === 1 ? f0 : 1 - f1);
+              const h0 = at(outer0, side === 1 ? f1 : 1 - f0);
+              const l1 = at(outer1, side === 1 ? f0 : 1 - f1);
+              const h1 = at(outer1, side === 1 ? f1 : 1 - f0);
+              const lo = side === 1 ? l0 : h0;
+              const hi = side === 1 ? h0 : l0;
+              const lo1 = side === 1 ? l1 : h1;
+              const hi1 = side === 1 ? h1 : l1;
+              mesh.ribbon(
+                point(i, side * lo, GRAVEL_LIFT),
+                point(i, side * hi, GRAVEL_LIFT),
+                point(i + 1, side * lo1, GRAVEL_LIFT),
+                point(i + 1, side * hi1, GRAVEL_LIFT),
+                c,
+              );
+            }
           }
         }
       }

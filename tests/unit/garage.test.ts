@@ -201,12 +201,12 @@ describe('garage in the store', () => {
     expect(save.version).toBe(SAVE_VERSION);
     // 6 then goes with the v4 migration (the first Desert stage is the first city now), 3
     // with the v5 one (the second Alpine is the first Arctic) and 0 with v7's fixed Forest surface;
-    // the circuit's record outlives them all.
+    // the circuit's record outlives them all until v14 lays every circuit out anew.
     expect(
       Object.keys(save.records)
         .map(Number)
         .sort((a, b) => a - b),
-    ).toEqual([9]);
+    ).toEqual([]);
   });
 
   it('drops v4 records at indices whose region changed with the fifteen-stage cycle, keeping the rest', () => {
@@ -228,11 +228,12 @@ describe('garage in the store', () => {
     };
     const save = parseSaveFile(v4)!;
     expect(save.version).toBe(SAVE_VERSION);
+    // The circuit's record (9) lasts until v14 lays every circuit out anew.
     expect(
       Object.keys(save.records)
         .map(Number)
         .sort((a, b) => a - b),
-    ).toEqual([9]);
+    ).toEqual([]);
   });
 
   it('drops v6 records where the fixed schedule changed the type or surface', () => {
@@ -244,7 +245,8 @@ describe('garage in the store', () => {
       gameSeed: 1,
       money: 10,
       stageIndex: 20,
-      // 0 Forest (surface now fixed), 4 Coast → Arctic, 8 Alpine → city, 9 and 19 circuits,
+      // 0 Forest (surface now fixed), 4 Coast → Arctic, 8 Alpine → city, 9 and 19 circuits (kept
+      // until v14 lays every circuit out anew),
       // 13 Arctic stays comparable until Lakeland joins the mix (v14) and makes it a Coastal,
       // 27 Alpine is dropped now its surface is fixed to snow.
       records: { 0: rec, 4: rec, 8: rec, 9: rec, 13: rec, 19: rec, 27: rec },
@@ -258,7 +260,7 @@ describe('garage in the store', () => {
       Object.keys(save.records)
         .map(Number)
         .sort((a, b) => a - b),
-    ).toEqual([9, 19]);
+    ).toEqual([]);
   });
 
   it('shares one grip setup across the dealership', () => {

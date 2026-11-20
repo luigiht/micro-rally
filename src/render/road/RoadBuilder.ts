@@ -32,6 +32,9 @@ import {
   WHEEL_TONE,
 } from './SurfaceDetail';
 import { raisedEdge, wornCarriageway } from './MountainRoadStrips';
+import { circuitTrackside } from '@/game/stage/CircuitTrackside';
+import { grassPatchShares } from '../terrain/grassPatches';
+import { circuitTarmacStrips } from './CircuitTarmac';
 import {
   bridgeRuns,
   LINE_STOP,
@@ -280,6 +283,9 @@ function mudEdgeTrack(base: Strip, profile: RutProfile, side: 1 | -1): Strip[] {
   }));
 }
 
+/** Scratch for a verge triangle's grass patch shares. */
+const SHARES = { lush: 0, dry: 0 };
+
 /** One cross-section of the ribbon: where it is, which way is left, how wide, how high, and its tarmac shade. */
 interface Station {
   d: number;
@@ -318,6 +324,8 @@ export interface Strip {
   blendFromRoad?: boolean;
   /** Faceted verge: ragged bands of the strip's colour, each triangle shaded toward this earth by its own share. */
   facets?: Color;
+  /** A faceted verge's triangles also take the ground's grass patches where they lie (`grassPatchShares`). */
+  patches?: { lush: Color; dry: Color };
   /** A painted edge line: it runs on across a bridge, where the verges stop. */
   line?: boolean;
   /** A shade on each piece of its own (a city's slabs and asphalt, `SurfaceDetail`), from the half width and station there. */
@@ -431,9 +439,19 @@ export class RoadBuilder {
     // triangle a shade of its own between the shoulder's dirt and darker earth, as the ground beside
     // them is, so the strip runs into the ground without a seam.
     const palette = STAGE_TYPES[stage.stageType].palette;
+    // A circuit's mown verges are faceted the same way, in the grass patches the ground beside them
+    // has (`grassPatches`), so the strip runs into the ground without a seam.
     const earthy = palette.vergeBlend
       ? { facets: new Color(palette.meadows?.earth ?? palette.shoulder) }
-      : {};
+      : stage.circuit && palette.grassPatches
+        ? {
+            facets: new Color(palette.shoulder),
+            patches: {
+              lush: new Color(palette.grassPatches.lush),
+              dry: new Color(palette.grassPatches.dry),
+            },
+          }
+        : {};
     const surfaces = theme.surfaces;
     const tarmac = theme.surface ?? surfaces.tarmac;
     const road = new Color(
@@ -684,6 +702,12 @@ export class RoadBuilder {
     }
     // The Greenvale's mountain road: worn tarmac in wandering bands, and the asphalt standing a hand
     // above a gravel shoulder (`MountainRoadStrips`).
+    // A circuit's race asphalt: textured blocks, rubber in the braking zones and corners.
+    const trackside = circuitTrackside(stage);
+    if (trackside) {
+      const at = strips.indexOf(roadBase);
+      if (at >= 0) strips.splice(at, 1, ...circuitTarmacStrips(roadBase, trackside, path));
+    }
     const region = STAGE_TYPES[stage.stageType];
     if (region.wornTarmac && !snowy && !mudLane && !spillPiece && !town?.city) {
       wornCarriageway(strips, roadBase, path);
@@ -794,10 +818,24 @@ export class RoadBuilder {
             const variation = facets ? 0.86 + 0.28 * hash01(salt) : 0.96 + 0.08 * hash01(salt);
             // A faceted verge's triangle leans toward the earth by its own share.
             const earth = facets ? 0.6 * hash01(salt * 1.7 + 5) ** 1.5 : 0;
+            const patches = strip.patches;
+            if (patches) {
+              grassPatchShares(
+                (pos[start]! + pos[start + 3]! + pos[start + 6]!) / 3,
+                (pos[start + 2]! + pos[start + 5]! + pos[start + 8]!) / 3,
+                SHARES,
+              );
+            }
             for (let channel = 0; channel < 3; channel++) {
-              const mean =
+              let mean =
                 (col[start + channel]! + col[start + 3 + channel]! + col[start + 6 + channel]!) / 3;
-              const toward = facets ? [facets.r, facets.g, facets.b][channel]! : mean;
+              if (patches) {
+                const l = [patches.lush.r, patches.lush.g, patches.lush.b][channel]!;
+                const d = [patches.dry.r, patches.dry.g, patches.dry.b][channel]!;
+                mean += (l - mean) * SHARES.lush + (d - mean) * SHARES.dry;
+              }
+              // On a patched verge the patches carry the colour: only a light lean of its own.
+              const toward = facets && !patches ? [facets.r, facets.g, facets.b][channel]! : mean;
               const flat = (mean + (toward - mean) * earth) * variation;
               for (let corner = 0; corner < 3; corner++) col[start + corner * 3 + channel] = flat;
             }

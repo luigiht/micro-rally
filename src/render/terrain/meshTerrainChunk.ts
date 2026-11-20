@@ -2,6 +2,7 @@ import type { CoastDef, StagePalette } from '@/game/stage/regions';
 import type { TerrainField, TerrainSample } from '@/game/stage/TerrainField';
 import { PAVEMENT_COLOR, ROAD_COLORS } from '../road/roadColors';
 import { coastFaceColor, type CoastFace, type CoastTones } from './coastFaceColor';
+import { grassPatchShares } from './grassPatches';
 import { valleyFaceColor, type ValleyFace, type ValleyTones } from './valleyFaceColor';
 
 export type Rgb = readonly [number, number, number];
@@ -21,6 +22,8 @@ export interface TerrainColors {
   coast?: CoastTones;
   /** Palettes with `meadows` (the Greenvale): valley greens, rock and roadside earth by `valleyFaceColor`. */
   valley?: ValleyTones;
+  /** Plain ground's patches of lusher and drier green (`StagePalette.grassPatches`). */
+  patches?: { lush: Rgb; dry: Rgb };
   /** How far the shoulder's dirt eases into the ground, ragged (`StagePalette.vergeBlend`); unset, a crisp edge. */
   vergeBlend?: number;
   /** The darker earth the eased shoulder breaks into, face by face. */
@@ -35,6 +38,8 @@ export interface TerrainColors {
 /** Hills go rocky past about 44° of tilt; the coast's limestone past about 37°, so its scrub hillside stays green. */
 const ROCK_FROM = 0.28;
 const COAST_ROCK_FROM = 0.2;
+/** Scratch for a face's grass patch shares. */
+const SHARES = { lush: 0, dry: 0 };
 
 export interface ChunkMeshData {
   cx: number;
@@ -86,6 +91,8 @@ export function terrainColors(p: StagePalette, coast?: CoastDef): TerrainColors 
       ...(m.shore ? { shore: hexToLinear(m.shore) } : {}),
     };
   }
+  if (p.grassPatches)
+    out.patches = { lush: hexToLinear(p.grassPatches.lush), dry: hexToLinear(p.grassPatches.dry) };
   if (p.vergeBlend) {
     out.vergeBlend = p.vergeBlend;
     out.dirt = p.meadows ? hexToLinear(p.meadows.earth) : scaleRgb(out.shoulder, 0.8);
@@ -316,6 +323,23 @@ export function meshTerrainChunk(
       r += (colors.shoulder[0] - r) * shoulder;
       g += (colors.shoulder[1] - g) * shoulder;
       b += (colors.shoulder[2] - b) * shoulder;
+    }
+    // After the shoulder, so a circuit's mown verges get them too.
+    if (colors.patches) {
+      // Broad patches of lusher and drier grass, broken up by smaller tufts, each face its own shade.
+      const fx = (ax + bx + qx) / 3;
+      const fz = (az + bz + qz) / 3;
+      grassPatchShares(fx, fz, SHARES);
+      const lush = SHARES.lush;
+      const parched = SHARES.dry;
+      const { lush: l, dry: d } = colors.patches;
+      r += (l[0] - r) * lush + (d[0] - r) * parched;
+      g += (l[1] - g) * lush + (d[1] - g) * parched;
+      b += (l[2] - b) * lush + (d[2] - b) * parched;
+      const shade = 0.9 + 0.2 * hash(seed * 13 + 7, cz * 4111 + cx);
+      r *= shade;
+      g *= shade;
+      b *= shade;
     }
     // A crowd's berm is grassed over in a lusher green, easing into the field at its foot.
     const soil = Math.min(
