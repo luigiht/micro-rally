@@ -1,4 +1,5 @@
 import { type BufferGeometry, DoubleSide, Group, Mesh, MeshStandardMaterial } from 'three';
+import { BRIDGE_REACH, WALL_REACH, lapGap } from '@/game/stage/CircuitCrossing';
 import { barrierLine, type CircuitTrackside } from '@/game/stage/CircuitTrackside';
 import type { StageDef } from '@/game/stage/StageGenerator';
 import type { TerrainField } from '@/game/stage/TerrainField';
@@ -56,6 +57,13 @@ export class BarrierBuilder {
     const fence = themeColor(theme.fence);
     const { path } = stage;
     const lines = { 1: barrierLine(stage, trackside, 1), [-1]: barrierLine(stage, trackside, -1) };
+    // At the crossing the cutting's walls and the bridge's parapets stand in for the rail
+    // (`CircuitCrossingBuilder`); the barrier line carries on past them.
+    const c = stage.circuit?.crossing;
+    const replaced = (i: number) =>
+      c !== undefined &&
+      (lapGap(i * path.spacing, c.under, path.length) < WALL_REACH ||
+        lapGap(i * path.spacing, c.over, path.length) < BRIDGE_REACH);
     for (let s0 = 0; s0 < path.count - 1; s0 += SAMPLES_PER_PIECE) {
       const s1 = Math.min(path.count - 1, s0 + SAMPLES_PER_PIECE);
       const mesh = new TrackMesh();
@@ -74,6 +82,7 @@ export class BarrierBuilder {
           return [x, field.heightAt(x, z) + up, z];
         };
         for (let i = s0; i < s1; i++) {
+          if (replaced(i)) continue;
           // The beam bulges toward the track at its middle (negative back), two strips per segment.
           const lo0 = at(i, 0, RAIL_LOW);
           const mid0 = at(i, -RAIL_BULGE, RAIL_MID);

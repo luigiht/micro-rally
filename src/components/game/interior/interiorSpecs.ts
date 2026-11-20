@@ -295,11 +295,12 @@ export const INTERIORS: Readonly<Record<CarId, InteriorSpec>> = {
   /** Mid-2000s WRC hatch: blue cage, black seats with lime harness, digital dash. */
   focus: base({
     halfWidth: 0.82,
-    roofY: 1.37,
-    cowlZ: 1.12,
-    cowlY: 0.88,
-    screenTopZ: 0.39,
-    rearZ: -1.57,
+    roofY: 1.38,
+    // A touch ahead of the screen's foot (0.74): the dash runs on under the bonnet's edge.
+    cowlZ: 0.8,
+    cowlY: 0.85,
+    screenTopZ: 0.02,
+    rearZ: -1.56,
     dash: 'digital',
     lever: 'sequential',
     palette: {

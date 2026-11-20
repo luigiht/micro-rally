@@ -6,13 +6,16 @@ import {
   KERB_OUT,
   KERB_RADIUS,
   barrierAt,
+  barrierLine,
   barrierObstacles,
   circuitTrackside,
   cornerStandSpots,
   grandstandSpot,
   gravelDepth,
   outermostBarrier,
+  standPads,
 } from '@/game/stage/CircuitTrackside';
+import { WALL_REACH, nearCrossing } from '@/game/stage/CircuitCrossing';
 import { scatterScenery } from '@/game/stage/SceneryScatter';
 import { generateStage } from '@/game/stage/StageGenerator';
 import { ROAD_LIFT, TerrainField, type TerrainSample } from '@/game/stage/TerrainField';
@@ -42,8 +45,11 @@ describe('circuit trackside', () => {
   });
 
   it('keeps barriers clear of the track and inside every corner radius, so the line never folds', () => {
+    // At the crossing the walls and parapets stand closer in by design (`circuitCrossing.test`).
+    const c = stage.circuit!.crossing;
     for (const k of [0, 1] as const) {
       for (let i = 0; i < n; i++) {
+        if (nearCrossing(c, i * stage.path.spacing, stage.path.length, WALL_REACH + 40)) continue;
         const offset = t.barrier[k][i]!;
         expect(offset).toBeGreaterThanOrEqual(stage.halfWidth + 2.5 - 1e-9);
         const curv = t.curvature[i]!;
@@ -72,10 +78,11 @@ describe('circuit trackside', () => {
   });
 
   it('stands colliders along both barrier lines, well off the carriageway', () => {
-    const boxes = barrierObstacles(stage);
+    const boxes = barrierObstacles(stage, (d) => field.roadHeightAt(d));
     expect(boxes.length).toBeGreaterThan((2 * stage.path.length) / 5);
     const hit = { index: 0, along: 0, lateral: 0, distance: 0 };
-    for (const b of boxes) {
+    // The crossing's walls and parapets (held to one level) are checked in `circuitCrossing.test`.
+    for (const b of boxes.filter((o) => o.yMin === undefined && o.yMax === undefined)) {
       stage.path.nearest(b.x, b.z, 60, hit);
       expect(hit.distance).toBeGreaterThan(stage.halfWidth + 2);
     }
@@ -170,6 +177,114 @@ describe('circuit trackside', () => {
       expect(
         Math.hypot(stand.x - grandstandSpot(stage, t).x, stand.z - grandstandSpot(stage, t).z),
       ).toBeGreaterThan(30);
+    }
+  });
+});
+
+describe('grandstand pads', () => {
+  it('level the ground under every stand, flush with the ground at its front', () => {
+    for (const seed of [6, 11, 42]) {
+      const st = generateStage(seed, 9);
+      const tr = circuitTrackside(st)!;
+      const f = new TerrainField(st);
+      scatterScenery(f);
+      const pads = standPads(st, tr, (x, z) => f.heightAt(x, z));
+      expect(pads.length).toBeGreaterThan(1);
+      for (const p of pads) {
+        // Corners and middle of the footprint (in the pad's own frame) all at the pad's height.
+        for (const [u, v] of [
+          [0, 0],
+          [-1, -1],
+          [1, -1],
+          [-1, 1],
+          [1, 1],
+        ] as const) {
+          const lu = u * (p.hx - 1.6);
+          const lv = v * (p.hz - 1.6);
+          const x = p.x + Math.cos(p.yaw) * lu + Math.sin(p.yaw) * lv;
+          const z = p.z - Math.sin(p.yaw) * lu + Math.cos(p.yaw) * lv;
+          expect(f.heightAt(x, z)).toBeCloseTo(p.y, 2);
+        }
+      }
+    }
+  });
+});
+
+describe('circuit starts', () => {
+  it('put the grid and the start line on level road', () => {
+    for (const seed of [1, 6, 42, 989380427]) {
+      const st = generateStage(seed, 9);
+      const f = new TerrainField(st);
+      const h0 = f.roadHeightAt(st.startDistance);
+      for (let d = -70; d <= 40; d += 2)
+        expect(
+          Math.abs(f.roadHeightAt(st.startDistance + d) - h0),
+          `seed ${seed} at ${d}`,
+        ).toBeLessThan(0.02);
+    }
+  });
+
+  it('keep every barrier easing in and out gently, never folding back on a corner', () => {
+    for (const seed of [1, 6, 42]) {
+      for (const idx of [9, 19, 29]) {
+        const st = generateStage(seed, idx);
+        const tr = circuitTrackside(st)!;
+        const p = st.path;
+        const n = p.count - 1;
+        for (const side of [1, -1] as const) {
+          const a = tr.barrier[side === 1 ? 0 : 1];
+          const line = barrierLine(st, tr, side);
+          for (let i = 0; i < n; i++) {
+            expect(Math.abs(a[i + 1]! - a[i]!) / p.spacing).toBeLessThan(0.3);
+            const dx = line[(i + 1) * 2]! - line[i * 2]!;
+            const dz = line[(i + 1) * 2 + 1]! - line[i * 2 + 1]!;
+            expect(dx * Math.sin(p.headings[i]!) + dz * Math.cos(p.headings[i]!)).toBeGreaterThan(
+              0,
+            );
+          }
+        }
+      }
+    }
+  });
+});
+
+describe('circuit woods', () => {
+  it('stand dense beyond the fences, every crown clear of the fences, the stands and each other', () => {
+    for (const seed of [6, 42]) {
+      const st = generateStage(seed, 9);
+      const tr = circuitTrackside(st)!;
+      const f = new TerrainField(st);
+      const props = scatterScenery(f).filter(
+        (p) => p.kind === 'tree' || p.kind === 'broadleaf' || p.kind === 'bush',
+      );
+      expect(props.length).toBeGreaterThan(st.path.length / 3);
+      const radius = (k: string) => (k === 'tree' ? 1.4 : k === 'broadleaf' ? 2.2 : 1);
+      const fence = outermostBarrier(tr);
+      const stands = [grandstandSpot(st, tr), ...cornerStandSpots(st, tr)];
+      const hit = { index: 0, along: 0, lateral: 0, distance: 0 };
+      for (const p of props) {
+        const reach = radius(p.kind) * p.scale;
+        expect(st.path.nearest(p.x, p.z, fence + 4 + reach - 1e-6, hit), `${p.kind}`).toBe(false);
+        for (const s of stands) expect(Math.hypot(p.x - s.x, p.z - s.z)).toBeGreaterThan(s.radius);
+      }
+      // No two crowns overlap (a spatial bucket keeps the check quick).
+      const cells = new Map<string, typeof props>();
+      const key = (x: number, z: number) => `${Math.floor(x / 8)},${Math.floor(z / 8)}`;
+      for (const p of props) {
+        const k = key(p.x, p.z);
+        cells.set(k, [...(cells.get(k) ?? []), p]);
+      }
+      for (const p of props) {
+        const cx = Math.floor(p.x / 8);
+        const cz = Math.floor(p.z / 8);
+        for (let i = cx - 1; i <= cx + 1; i++)
+          for (let j = cz - 1; j <= cz + 1; j++)
+            for (const q of cells.get(`${i},${j}`) ?? []) {
+              if (q === p) continue;
+              const min = radius(p.kind) * p.scale + radius(q.kind) * q.scale;
+              expect(Math.hypot(p.x - q.x, p.z - q.z)).toBeGreaterThanOrEqual(min - 1e-6);
+            }
+      }
     }
   });
 });

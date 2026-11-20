@@ -69,7 +69,7 @@ function hash(i: number, j: number, salt: number): number {
 }
 
 /** Smooth value noise 0..1 on a lattice `cell` metres across. */
-function valueNoise(x: number, z: number, cell: number, salt: number): number {
+export function valueNoise(x: number, z: number, cell: number, salt: number): number {
   const u = x / cell;
   const v = z / cell;
   const i = Math.floor(u);

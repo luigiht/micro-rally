@@ -9,6 +9,18 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Added
 
+- **Every circuit is a figure of eight with a tunnel.** The lap crosses
+  itself once: one straight climbs onto a concrete bridge while the other
+  dips into a walled cutting and runs under it through a short tunnel. Cars
+  stay on their own level, over the top or through underneath, and the
+  barriers there only stop a car on their own level. Its concrete is cast in
+  panels of varied shade, some weathered darker toward the ground, and the
+  ground no longer climbs the walls [281, 283].
+- **Fuller parkland round the circuits.** About twice as many trees and
+  bushes stand beyond the fences, with a wood further off, none touching a
+  fence, a grandstand or each other. The grass comes in patches of lusher
+  and drier green, the verges by the track in faceted shades of green, and
+  the gravel traps in blocks of lighter and darker stone [281].
 - **Lakeland, a new stage type.** Swedish summer after the Desert in the
   rally mix: low wooded hills and lakes everywhere, a narrow road that sweeps
   round the lakes' edges for much of its length, over open shores, rolls over
@@ -24,6 +36,29 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Changed
 
+- **The Sochaux T16 has red mud flaps at all four wheels**, and no longer a
+  second, black pair behind its rear wheels.
+- **Gentler circuits.** Circuit stages and the parkland round them are
+  flatter, with no climb steeper than about 10 %, and the tunnel's walls have
+  level tops and run on to meet the fences [285].
+- **The Albion RS Hatch is rebuilt as a mid-2000s works rally hatch.** A
+  three-door with a wider, longer and rounder body, flared arches front and
+  rear, a high roof and a fast windscreen, swept white headlamps wrapping the
+  nose, tall amber-and-red tail lamps high in the pillars beside the rear window, a black quarter window
+  ending in a point, front side windows running forward to the mirrors, a big black rear wing on swept end plates, a four-lamp pod,
+  roof scoop, splitter and diffuser. Its new livery has a lime
+  nose sweeping back into blue and sky blue, white-over-green doors,
+  a white roof with a wide blue centre stripe, a blue bonnet band edged in white, a white sun strip and a blue tail. Its panel gaps are grooves in the body [284].
+- **Start and finish gantries stand on the ground.** Each post now sits on a
+  concrete footing and reaches down to the lowest ground round it, so no
+  sliver of light shows between a post and its shadow.
+- **Curvier circuits.** Every circuit is laid out anew with more corners and
+  flowing esses on its straights, so about half of each lap is in a bend.
+  The grandstands sit level on flat ground, the fences run parallel to the
+  track instead of jutting in and out at chicanes, and the grid and start
+  line stand on level road. The track's asphalt is textured, with dark
+  rubber laid along the racing line in the braking zones and through the
+  corners. Best times on circuits are reset [280].
 - **No focus outline on the menus until you use the keyboard.** The game no
   longer draws an orange outline on the first button or field when a menu
   opens; it appears as soon as you press Tab or the arrow keys [278].

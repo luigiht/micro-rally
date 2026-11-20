@@ -227,11 +227,12 @@ export class VehicleSim {
     // Ground contact and suspension.
     const L = p.cgToFront + p.cgToRear;
     const halfTrack = p.trackWidth / 2;
-    const h = terrain.heightAt(s.x, s.z);
-    const hF = terrain.heightAt(s.x + sinY * p.cgToFront, s.z + cosY * p.cgToFront);
-    const hR = terrain.heightAt(s.x - sinY * p.cgToRear, s.z - cosY * p.cgToRear);
-    const hL = terrain.heightAt(s.x + cosY * halfTrack, s.z - sinY * halfTrack);
-    const hRt = terrain.heightAt(s.x - cosY * halfTrack, s.z + sinY * halfTrack);
+    // The car's own height picks the level where a circuit crosses over itself.
+    const h = terrain.heightAt(s.x, s.z, s.y);
+    const hF = terrain.heightAt(s.x + sinY * p.cgToFront, s.z + cosY * p.cgToFront, s.y);
+    const hR = terrain.heightAt(s.x - sinY * p.cgToRear, s.z - cosY * p.cgToRear, s.y);
+    const hL = terrain.heightAt(s.x + cosY * halfTrack, s.z - sinY * halfTrack, s.y);
+    const hRt = terrain.heightAt(s.x - cosY * halfTrack, s.z + sinY * halfTrack, s.y);
     s.surface = terrain.surfaceAt(s.x, s.z);
     const groundVy = clamp((h - s.groundHeight) / dt, -MAX_GROUND_VY, MAX_GROUND_VY);
     s.groundHeight = h;

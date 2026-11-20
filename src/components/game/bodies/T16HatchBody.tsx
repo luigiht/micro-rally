@@ -150,8 +150,9 @@ export function T16HatchBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Ref<
           <Box p={[0.56 * side, 0.46, 1.93]} s={[0.2, 0.06, 0.03]} c={K.amber} glow={0.3} />
           <Box p={[0.62 * side, 0.7, TAIL - 0.01]} s={[0.24, 0.1, 0.03]} c={K.tail} glow={0.5} />
           <Box p={[0.36 * side, 0.7, TAIL - 0.01]} s={[0.2, 0.1, 0.03]} c={K.amber} glow={0.3} />
-          {/* Red mud flaps behind the rear wheels */}
+          {/* Red mud flaps behind all four wheels (the body hangs its own: `OWN_FLAPS`) */}
           <Box p={[0.76 * side, 0.28, rear - 0.5]} s={[0.26, 0.3, 0.03]} c={K.red} />
+          <Box p={[0.76 * side, 0.28, front - 0.5]} s={[0.26, 0.3, 0.03]} c={K.red} />
         </group>
       ))}
       {/* Nose: black grille between the lamps, white bumper with a black slot, two fog lamps, white chin spoiler */}

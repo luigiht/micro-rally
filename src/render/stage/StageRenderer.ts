@@ -6,6 +6,7 @@ import type { StageWorld } from '@/game/stage/StageWorld';
 import type { TownDef } from '@/game/stage/Town';
 import { BarrierBuilder } from '../road/BarrierBuilder';
 import { GravelStoneBuilder } from '../road/GravelStones';
+import { CircuitCrossingBuilder } from '../road/CircuitCrossingBuilder';
 import { CircuitDressingBuilder } from '../road/CircuitDressingBuilder';
 import { KerbBuilder } from '../road/KerbBuilder';
 import { LaneMarkings } from '../road/LaneMarkings';
@@ -147,6 +148,7 @@ interface Surfaces {
   kerbs: KerbBuilder | null;
   barriers: BarrierBuilder | null;
   dressing: CircuitDressingBuilder | null;
+  crossing: CircuitCrossingBuilder | null;
   roundabouts: RoundaboutBuilder | null;
   trams: TramTrackBuilder | null;
   lanes: LaneMarkings | null;
@@ -257,6 +259,7 @@ export class StageRenderer {
       kerbs: null,
       barriers: null,
       dressing: null,
+      crossing: null,
       roundabouts: null,
       trams: null,
       lanes: null,
@@ -277,6 +280,8 @@ export class StageRenderer {
       if (this.opts.barriers)
         s.barriers = new BarrierBuilder(stage, track, field, circuit, this.opts.catchFences);
       s.dressing = new CircuitDressingBuilder(stage, track, field, circuit);
+      if (stage.circuit?.crossing)
+        s.crossing = new CircuitCrossingBuilder(stage, field, stage.circuit.crossing);
     }
     this.group.add(s.road.group, s.gates.group);
     for (const b of this.extras(s)) this.group.add(b.group);
@@ -365,6 +370,7 @@ export class StageRenderer {
       s.kerbs,
       s.barriers,
       s.dressing,
+      s.crossing,
       s.roundabouts,
       s.trams,
       s.lanes,

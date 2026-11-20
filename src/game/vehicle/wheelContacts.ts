@@ -33,6 +33,8 @@ export interface ContactPose {
   x: number;
   z: number;
   yaw: number;
+  /** The car's height, where it is known: picks the level where a circuit crosses over itself. */
+  y?: number;
 }
 
 function smoothstep(a: number, b: number, x: number): number {
@@ -98,7 +100,7 @@ export function placeWheelContacts(
     const c = out[i]!;
     c.x = pose.x + sinY * along + cosY * side;
     c.z = pose.z + cosY * along - sinY * side;
-    c.y = terrain.heightAt(c.x, c.z);
+    c.y = terrain.heightAt(c.x, c.z, pose.y);
     c.intensity = i < 2 ? front : rear;
   }
 }

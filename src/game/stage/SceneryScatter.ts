@@ -3,6 +3,7 @@ import {
   cornerStandSpots,
   grandstandSpot,
   outermostBarrier,
+  standPads,
 } from './CircuitTrackside';
 import { hashSeed, mulberry32 } from '../rng';
 import type { Obstacle } from '../vehicle/Collisions';
@@ -148,6 +149,8 @@ export const CANOPY_RADIUS: Readonly<Partial<Record<PropKind, number>>> = {
   spruce: 1.3,
 };
 const CANOPY_CELL = 6;
+/** On a circuit bushes take this canopy radius, so they keep off the trees and the fences too. */
+const CIRCUIT_BUSH_RADIUS = 1;
 
 /** Spatial hash of placed canopies so each new tree checks only its neighbourhood. */
 class CanopyGrid {
@@ -395,7 +398,17 @@ export function scatterScenery(field: TerrainField): Prop[] {
           const roadside = path.nearest(x, z, stage.halfWidth + wood.roadside, hit);
           pine = roadside ? 'tall' : pickForm(wood.mix, r);
         }
-        const canopy = canopyRadius({ kind, pine }, density);
+        // On a circuit a bush keeps clear of the trees too, and every crown keeps its whole reach
+        // off the fences and the grandstands, not just its trunk.
+        const canopy =
+          canopyRadius({ kind, pine }, density) ??
+          (trackside && kind === 'bush' ? CIRCUIT_BUSH_RADIUS : undefined);
+        if (trackside && canopy !== undefined) {
+          const reach = canopy * scale;
+          if (path.nearest(x, z, stage.halfWidth + clear + reach, hit)) continue;
+          if (stand && Math.hypot(x - stand.x, z - stand.z) < stand.radius + reach) continue;
+          if (cornerStands.some((s) => Math.hypot(x - s.x, z - s.z) < s.radius + reach)) continue;
+        }
         // A pine wood keeps every bough off the road, not just the trunk.
         if (
           canopy !== undefined &&
@@ -464,6 +477,8 @@ export function scatterScenery(field: TerrainField): Prop[] {
     ...terraces,
     ...islands,
     ...oasisPads(oases),
+    // A circuit's grandstands each stand on a level pad.
+    ...(trackside ? standPads(stage, trackside, (x, z) => field.heightAt(x, z)) : []),
   ]);
   // Nothing grows through a house or in a pool: drop trees, bushes and rocks inside their footprints.
   const crowded = nearSpectator(spectators);

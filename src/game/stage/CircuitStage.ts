@@ -1,4 +1,5 @@
 import type { Gate } from './Checkpoints';
+import { CROSS_ZONE, lapGap, type CircuitCrossing } from './CircuitCrossing';
 import type { CircuitStyle } from './CircuitGenerator';
 import type { RoadPath, RoadSample } from './RoadPath';
 
@@ -27,6 +28,8 @@ export interface CircuitInfo {
   mainStraight: number;
   /** Multiplier on the region's hill relief. */
   relief: number;
+  /** Where the lap crosses itself, on a bridge over a tunnel. */
+  crossing: CircuitCrossing;
 }
 
 const ITALIAN = ['Valtorre', 'Montebello', 'Castelvento', 'Roccalta', 'Pievedoro', 'Lagomare'];
@@ -57,8 +60,20 @@ export function circuitGates(
   startDistance: number,
   laps: number,
   halfWidth: number,
+  crossing?: CircuitCrossing,
 ): Gate[] {
   const lap = path.length;
+  // A sector checkpoint keeps off the crossing (its gate line would reach the other stretch): it
+  // moves away from it, back or on, whichever side it stood.
+  const clear = (d: number) => {
+    if (!crossing) return d;
+    for (const c of [crossing.over, crossing.under]) {
+      if (lapGap(d, c, lap) >= CROSS_ZONE) continue;
+      const after = (((d - c) % lap) + lap) % lap;
+      d += after < lap / 2 ? CROSS_ZONE - after + 10 : -(CROSS_ZONE - (lap - after) + 10);
+    }
+    return d;
+  };
   const sample: RoadSample = { x: 0, z: 0, heading: 0 };
   const gates: Gate[] = [];
   const push = (kind: Gate['kind'], distance: number) => {
@@ -74,7 +89,10 @@ export function circuitGates(
   };
   for (let k = 0; k < laps; k++) {
     for (let s = 1; s <= SECTORS; s++) {
-      push('checkpoint', startDistance + k * lap + (lap * s) / (SECTORS + 1));
+      push(
+        'checkpoint',
+        startDistance + k * lap + clear((lap * s) / (SECTORS + 1) + startDistance) - startDistance,
+      );
     }
     push(k === laps - 1 ? 'finish' : 'lap', startDistance + (k + 1) * lap);
   }
@@ -93,4 +111,39 @@ export function lapTimes(gates: readonly Gate[], splits: readonly number[]): num
     prev = t;
   });
   return out;
+}
+
+/** The start is level from behind the last grid slot to this far past the line, easing back into the lap's hills over `START_EASE`. */
+const START_BEHIND = GRID.first + GRID.slots * GRID.pitch + 6;
+const START_AHEAD = 40;
+const START_EASE = 80;
+
+/**
+ * Level the road profile of a closed lap (`heights`, one per sample, the
+ * last repeating the first) over its start: the grid and the line stand on
+ * flat road at the mean height there, the profile easing back to its own
+ * over `START_EASE` either side. In place.
+ */
+export function levelCircuitStart(
+  heights: Float64Array,
+  spacing: number,
+  startDistance: number,
+): void {
+  const n = heights.length - 1;
+  const at = (d: number) => ((Math.round(d / spacing) % n) + n) % n;
+  let sum = 0;
+  let count = 0;
+  for (let d = -START_BEHIND; d <= START_AHEAD; d += spacing) {
+    sum += heights[at(startDistance + d)]!;
+    count++;
+  }
+  const level = sum / count;
+  for (let d = -START_BEHIND - START_EASE; d <= START_AHEAD + START_EASE; d += spacing) {
+    const out = d < -START_BEHIND ? -START_BEHIND - d : d > START_AHEAD ? d - START_AHEAD : 0;
+    const t = Math.min(1, out / START_EASE);
+    const keep = t * t * (3 - 2 * t);
+    const i = at(startDistance + d);
+    heights[i] = level + (heights[i]! - level) * keep;
+  }
+  heights[n] = heights[0]!;
 }

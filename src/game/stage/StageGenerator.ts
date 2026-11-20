@@ -430,7 +430,7 @@ function circuitStage(brief: StageBrief, layout: CircuitLayout): StageDef {
     halfWidth: CIRCUIT_HALF_WIDTH,
     startDistance,
     path,
-    gates: circuitGates(path, startDistance, CIRCUIT_LAPS, CIRCUIT_HALF_WIDTH),
+    gates: circuitGates(path, startDistance, CIRCUIT_LAPS, CIRCUIT_HALF_WIDTH, layout.crossing),
     spawn: { x: sample.x, z: sample.z, yaw: sample.heading },
     circuit: {
       laps: CIRCUIT_LAPS,
@@ -438,6 +438,7 @@ function circuitStage(brief: StageBrief, layout: CircuitLayout): StageDef {
       style: layout.style,
       mainStraight: layout.mainStraight,
       relief: layout.relief,
+      crossing: layout.crossing,
     },
   };
 }

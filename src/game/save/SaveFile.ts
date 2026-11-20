@@ -303,12 +303,16 @@ function stageSlotV13(index: number): StageTypeIdV13 {
 /**
  * v14 adds Lakeland at the end of the rally mix, which grows from seven
  * types to eight: from the first Lakeland on, many stages are another
- * type's road now. Records are kept only where the stage is still the same type.
+ * type's road now. Records are kept only where the stage is still the same
+ * type, and none on a circuit: every circuit's lap was laid out anew, curvier.
  */
 function migrateV13(raw: Record<string, unknown>): Record<string, unknown> {
   const records = isRecord(raw.records) ? raw.records : {};
   const kept = Object.fromEntries(
-    Object.entries(records).filter(([key]) => stageSlotV13(Number(key)) === stageSlot(Number(key))),
+    Object.entries(records).filter(([key]) => {
+      const slot = stageSlot(Number(key));
+      return slot !== 'circuit' && stageSlotV13(Number(key)) === slot;
+    }),
   );
   return { ...raw, version: 14, records: kept };
 }

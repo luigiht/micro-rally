@@ -18,6 +18,13 @@ export interface BoxObstacle {
   hx: number;
   hz: number;
   yaw: number;
+  /**
+   * Only a car between these heights hits it (a wall down in a cutting, a
+   * parapet up on a bridge, where a circuit crosses over itself); every
+   * car when unset.
+   */
+  yMin?: number;
+  yMax?: number;
 }
 
 const CELL = 8;
@@ -111,6 +118,7 @@ function push(s: VehicleState, nx: number, nz: number, depth: number): number {
 
 /** Car circle at (cx, cz) against one oriented box; returns the inbound speed removed, 0 when clear. */
 function hitBox(s: VehicleState, b: BoxObstacle, cx: number, cz: number): number {
+  if ((b.yMin !== undefined && s.y < b.yMin) || (b.yMax !== undefined && s.y > b.yMax)) return 0;
   const dx = cx - b.x;
   const dz = cz - b.z;
   const sy = Math.sin(b.yaw);

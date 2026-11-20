@@ -6166,3 +6166,345 @@ bed)`. The road, its profile and every record stay as they were, so
        is solid mud, and thin out with it onto the tarmac. The worn
        tarmac's bands, dips and shades ease in over 25 m past the spill zone
        (`seamFade().worn`), so that edge shows no line either.
+
+280. **2026-11-19 — Curvier circuits, level grandstands, parallel fences and
+     a level start.** By request the circuits should be curvier, with the
+     grandstands level on the ground. Mid-task the user also asked for fences
+     that run parallel to the road at the chicanes, and for a start on level
+     road. Measured over 90 layouts, only a quarter of a lap was in a bend
+     (radius under 250 m), at 4.6–6 radians of turning a kilometre.
+     - **Layouts** (`CircuitGenerator`). Each style has more corners (Ring
+       14–18, Sarthe 8–11, Park 8–10), more inward dents and a tighter
+       radius for open kinks. Most straights other than the main one and
+       those with a chicane gain esses: `swing · sin²(πu/L) · sin(kπu/L)`,
+       whole bends 70–140 m long swinging 6–14 m, eased in at both ends so
+       the corners either side meet them square. Half of every lap is now in
+       a bend, at 8–11 rad/km, and the tightest corner is no tighter. The
+       stricter layouts fell back to the rounded rectangle 6 times in 300,
+       so attempts went from 14 to 24 (none in 300).
+     - **Barriers** (`CircuitTrackside`). The barrier offset jumped by up to
+       4.8 m per metre of lap. That happened where a corner's outside runoff
+       met the next corner's inside clamp, which in a chicane alternates
+       side to side. It is now eased by a cyclic minimum then a box over ±14
+       samples. The minimum's window covers every sample the box averages,
+       so the line never comes nearer the road than any sample asked, and it
+       swings at most 0.22 m a metre. The runoff is widened by the same reach
+       first, so easing takes none of it back. The inside clamp now reads the
+       sharpest of the eased, raw and sample-to-sample curvature, because one
+       short, tight corner hid in the wider windows and folded the line
+       back. Over 60 circuits there are no folds.
+     - **Stands** sat on the highest ground under their front, level, so on
+       a slope their low side hung above the hill. Each now has a level pad
+       (`standPads`, through the existing `TerrainField.setPads`, which the
+       terrain worker's scenery pass also sets). The pad covers the footprint
+       plus 1.5 m at the ground's height at the middle of its front edge, so
+       it meets the trackside flat, and eases out over 8 m.
+     - **Start.** The road profile is levelled from behind the last grid
+       slot to 40 m past the line, at its mean height there, easing back to
+       the lap's own profile over 80 m (`levelCircuitStart`).
+     - **Saves.** Every circuit's road changed, so, as when the Coast roads
+       changed (v3 → v4), circuit records are dropped. v14 is not yet
+       released, so this is folded into its migration rather than adding a
+       v15.
+     - **Track texture.** A follow-up asked for texture on the circuit's
+       tarmac, showing the braking zones. `CircuitTarmac` cuts the
+       carriageway into ten bands, each a series of flat-shaded blocks with
+       their own shade (the ribbon's existing `detail` hook). It darkens the
+       racing line from the trackside curvature alone. The braking zone is
+       the 70 m before any corner under 110 m radius, darkest just before
+       the turn-in and held to the outside. Through the corner itself the
+       line moves to the inside, lighter. The rubber runs in streaks a few
+       metres long. Its first strength (30 %) did not read from the chase
+       camera, so it is 50 % in the braking zones and 24 % in corners.
+
+281. **2026-11-19 — Every circuit crosses itself: a bridge over a tunnel.**
+     The user asked to "get a bit crazy" with the circuits, with the track
+     passing under itself through a tunnel at least once a lap. The game
+     assumed one road and one ground height at any (x, z): the terrain is a
+     heightfield, colliders are 2D, and lap progress, the autopilot and the
+     ground under a wheel all looked up the nearest road point.
+     - **Layout.** Every circuit is now a figure of eight
+       (`CircuitFigureEight`): two lobes either side of an X of two long
+       straights, so the lap crosses itself exactly once, at the polygon's
+       origin, which the rounding never moves. The crossing straights get no
+       chicanes, and esses only on their outer parts. The main straight (the
+       start) is the longest straight not on the crossing. The right lobe
+       leaves part of its sweep without corners so there is one; the share
+       grows with the style's stretch, keeping the Sarthe's longest. The
+       self-clearance check exempts pairs within 115 m of the crossing.
+       Rejected attempts were mostly a too-short main straight; with the
+       corner-free gap and 40 attempts, 11 in 300 circuits use the fallback,
+       which is itself a figure of eight. The Ring's tight radius on gentle
+       kinks gave short arcs, so its kink radius rose from 45 to 85 m to
+       keep half its lap in a bend.
+     - **Levels.** The road profile lifts one stretch and sinks the other
+       7.5 m apart (`shapeCrossing`). The start is kept 145 m or more from
+       either stretch's ramp.
+     - **Ground.** A heightfield cannot overhang, so the ground follows the
+       lower road: a cutting out to its walls, then the upper road's
+       embankment. The upper road's ribbon spans the cutting on a concrete
+       slab that is also the tunnel's roof. Each level is worked out with
+       road queries restricted to one stretch (`RoadPath.nearest` and
+       `visitNear` take an `around`/`window`). This is done in both
+       `sample()` (the mesh) and `deckGround()` (physics).
+     - **Physics.** `TerrainQuery.heightAt` takes an optional `y`. Above
+       the cutting's floor by half the clearance and on the bridge's deck,
+       it answers with the deck. `VehicleSim` passes the car's own height,
+       and nothing else needs to.
+     - **Collisions.** `BoxObstacle` gained an optional `yMin`/`yMax`. Near
+       the crossing the tunnel road's barriers (pulled in to the walls) stop
+       only cars below the midway level, and the bridge road's (pulled in to
+       the parapets) only cars above it.
+     - **Tracking.** The autopilot and `StageRun.progressAt` look for the
+       road within 60–80 m of where they last found the car first, so the
+       crossing never hands them the other stretch. Sector checkpoints move
+       75 m off it; corner stands and spectators keep away.
+     - **Verified.** New tests drive the autopilot round whole laps of three
+       circuits, with barrier collisions, and find the car on the right deck
+       each time it passes over and under. They also check the clearance,
+       both levels' ground, the colliders' levels and the gates. Screenshots
+       on the user's seed show the tunnel's portal, walls and slab, and the
+       bridge road on its embankment. Circuit records were already dropped
+       in v14 (decision 280).
+     - **Parkland.** A follow-up asked for more shades in the circuit's
+       grass and denser trees outside the track, with no vegetation touching
+       fences, stands or other trees. Tree, broadleaf and bush counts about
+       doubled, and a deep wood was added. Trees already kept their canopies
+       apart and their trunks past the outermost barrier plus 4 m. On a
+       circuit each crown's reach (canopy × scale) now also counts against
+       that line and the stands' radii. Bushes, which had no canopy radius,
+       take 1 m there, so they no longer sit in a tree. A test checks every
+       crown on two circuits against the fences, the stands and each other.
+       The grass gets `palette.grassPatches`: value-noise patches toward a
+       lusher and a drier green, and per-face shade. The first try hid
+       inside the fences, where the shoulder colour is laid over the whole
+       flat corridor, so the patches now come after it.
+       A further follow-up asked for texture on the grass by the track's
+       edge and on the gravel traps. The verge strips reuse Lakeland's
+       faceted bands (`Strip.facets`), leaning toward the lush green. Each
+       gravel trap, one quad per sample before, is now five bands of 4 m
+       blocks, each ±12 %, some runs ploughed darker. ±7 % did not read on
+       the pale stone.
+       The strip and the ground beside it still met in a seam: the ground
+       took the grass patches but the strip did not. The patch pattern
+       moved to `render/terrain/grassPatches` and the verge's faceted
+       triangles take it at their own centroid (`Strip.patches`), so both
+       sides of the join are in the same patch.
+
+282. **2026-11-19 — Gantry posts meet the ground.** The user saw light
+     between a circuit gantry's post and its shadow. Measured on four
+     stages: on the circuits the old post bottom (0.15 m under the exact
+     ground) was already under every corner of the drawn triangle, so the
+     gap there came from the shadow starting a texel or so from a thin
+     post. On a rally stage the drawn ground dipped up to 0.2 m below the
+     exact height between corners, so a post could stop short. Now each
+     post reaches to the lowest ground over a ±4 m grid round its foot
+     (a coarse terrain cell), sunk 0.3 m. It also stands on a 0.75 m
+     concrete footing 0.3 m over the ground, which casts its own contact
+     shadow. The global shadow bias was left alone, so nothing else in the
+     scene can pick up shadow acne.
+
+283. **2026-11-19 — The tunnel's ground stays out of its walls.** The user
+     saw green terrain triangles climbing the tunnel's walls. The cutting's
+     ground climbed out over 1.5 m right behind each wall's 0.6 m face, so
+     the 2 m terrain triangles straddling the wall sloped up in front of
+     it. Now the ground holds at the cutting's floor 4.5 m past the wall's
+     face (`WALL_HOLD`, two terrain cells) before climbing. Each wall is a
+     solid 6.5 m-deep retaining block (`WALL_BODY`), its top at the ground
+     behind it, so the climb is hidden inside it.
+     The same day the user asked for texture on the tunnel's concrete. The
+     walls' faces are now courses about 1.1 m tall of 4 m panels, each ±7 %,
+     with 30 % of the panel columns weathered up to 14 % darker toward their
+     foot. The coping varies ±4 %, the slab is four 8 m blocks across in
+     4 m runs, each ±7 %, and the parapets ±5 % per 2 m.
+
+284. **2026-11-19 — The Albion RS Hatch rebuilt after a mid-2000s works
+     rally hatch.** By request, after `context/ford-focus-rework`. Two of
+     its 3D models are Sketchfab downloads under CC-BY-NC(-SA), which rule 9
+     keeps out of the game. They, and the photos, were used as references
+     only; nothing from them ships. The shape and the livery follow the
+     user's own `build2.mjs` there, which draws a livery from code with no
+     names, logos or marks, and its `livery.png` and `focus_wrc.glb`.
+     - **Body** (`FocusHatchBody`). The existing hull lofter rather than an
+       imported mesh, so the car stays in the game's flat-shaded style, with
+       its collisions and cockpit framework unchanged. 22 stations sampled
+       from `build2.mjs`'s profiles (belt, roof plus crown, belt, roof and
+       shoulder half-widths), its lengths moved 4 cm so its axles sit on the
+       car's. The lower flank stands proud of the belt and swells to 0.94
+       over the front axle and 0.93 over the rear: the flared arches. The
+       hatch glass and windscreen are `screen` segments, because neither
+       roof meets its belt, which is what normally makes a screen. The hull's
+       `roof` colour was dropped: every bonnet station has more than 5 cm of
+       crown, so the hull counted the bonnet as cabin and painted it the roof
+       colour.
+     - **Livery** (`AlbionLivery`), for `paintLivery`. Flanks in rows, each
+       row's bounds taken at both its edges, so the two sweeps (lime ahead of
+       the front one, edged blue and sky blue; blue behind the rear one,
+       edged sky blue) are exact slanted lines. The doors are white over
+       green with a sill pinstripe. The top has a white bonnet with a curved
+       lime edge, a navy roof and a blue tail deck. The lamps, grille,
+       number panel and plate are drawn in the livery's front and back
+       views, because the rounded nose and tail leave almost no end panel
+       for decals. The door plate's "3" is drawn in strokes, read the right
+       way round from each side.
+     - **Details:** a four-lamp pod on a navy plate, a louvred bonnet vent
+       and pins, a navy roof scoop, a two-element wing on white end plates
+       over a roof spoiler, a carbon splitter, diffuser fins, an exhaust,
+       tow straps and white mirrors.
+     - **Cockpit:** the windscreen's foot moved back from 1.15 to 0.74 m.
+       The cowl sits at 0.80, a little ahead of it, the closest that keeps
+       the wheel's rim clear of the instrument hood (`interiorSpecs` test),
+       and the screen top is at 0.02.
+     - **Not done:** the big red number on the rear side glass. The livery
+       only paints body-coloured faces, not glass.
+       Revised the same day at the user's request. The door plates (yellow
+       number square, red bar) are gone. The panel gaps (both bumper seams,
+       both doors' edges and the B-pillar shut line) are now grooves in the
+       hull instead of painted lines: at each one, three stations eased from
+       their neighbours (`withGrooves`), the middle pressed 16 mm into the
+       lower flank over 24 mm. Flags are copied from the segment's start, so
+       screens and glass run on through a groove. The front bumper's moved to
+       1.76 m to clear the front arch. The grille lost its white plate. The
+       headlamps are geometry: a dark 0.46 × 0.18 m housing either side,
+       turned to follow the nose's rounding, with a glowing white lens and two
+       brighter inner lamps. They replace the light-grey painted lenses on the
+       nose and wing tops.
+       A third pass, at the user's request, toward the references' curvier
+       shape and a three-door body. The hull moved to `AlbionShape`: 26 keys
+       from `build2.mjs`'s profiles, lofted every 8 cm (`loft`) and rounded
+       like the Berlinette (upper sides over two facets, roof and bonnet
+       crowned over two, the flank bowed over three). It is a three-door: one
+       long door each side, its window to a black B-pillar at -0.86, a fixed
+       quarter window behind it, the gaps at the door's two edges and both
+       bumper seams. The glass is the Edelweiss S1's `#4d6f8c`. The headlamps
+       follow `build2.mjs`'s: a swept lens wrapping each top corner of the
+       nose, narrow by the grille and widening along the wing. It is drawn as
+       a `LiverySolid`, then raised 2.5 cm into a white shell (`LampShell`):
+       the patch of hull inside the solid, lifted along normals averaged where
+       faces meet so the pieces stay one body, with walls round its rim,
+       welded and smooth-shaded. The round projectors were removed. The flank
+       paint stopped at 1.2 m, so the roof's outermost facets above it stayed
+       white, a thin line along the roof edge. The flank now runs to 1.6 m,
+       navy over the cabin. The C-pillars and hatch sides were hull
+       `sidePaint` in a different shade from the livery's blue beside them,
+       with a sliver of white where the two layers met. They are now body
+       colour, painted by the livery in the one blue, and the roof turns navy
+       only ahead of the quarter window (-1.32). The rear wing follows the
+       works car's photos: tall swept end plates in blue from the roof's rear
+       corners back past the tail and down to a point over the tail lamps; a
+       broad top plane; a navy second element at the hatch's foot with two
+       struts making three windows; a lip along the roof's rear edge.
+       Then the rear quarters, at the user's request. The quarter window is
+       no longer hull glass, which can only be a band between two stations.
+       It is a black shape in the livery's detail layer, from the B-pillar
+       back over the belt, its top edge falling from the roof's edge to a
+       point on the belt at -1.75. That fills the white triangle that showed
+       between the glass and the blue. The tail lamps left the tail panel:
+       each is a tall red `LiverySolid` (`TAIL_LAMPS`) standing in the rear
+       corner beside the hatch glass, from the bumper's top up the pillar,
+       wrapping from the tail onto the flank. Like the headlamps it is raised
+       into a shell (`LampShellMesh`, the old headlamp component generalised).
+       The quarter window then became dark grey (`#3a3f47`, a shade over the
+       trim) instead of black. It now reaches the roof's edge like the door's
+       glass. The upper side faces under the roof's edge lean up, so they
+       were painted from the top view, in navy. The window's grey is now laid
+       in the top view as well, from the roof's half-width outward, tapering
+       toward its point (`quarterTop`).
+       The tail lamps then moved higher, at the user's request (the type's
+       signature): each now climbs the rear pillar along the hatch glass's
+       edge, from the tail's corner (0.84 m) to 1.2 m, wrapping over the
+       pillar's top up to the glass. The wing's end plates no longer reach
+       down over the pillars. Their lower edge now runs from the roof's rear
+       corner at 1.26 m to 1.38 m at the back, clear of the lamps.
+       Last, by request: the tail's yellow plate and the bonnet's louvred
+       vent were removed, and the tail lamps narrowed. From behind they now
+       run from 0.72 m out at their foot (0.62 at the top, along the glass)
+       to the corner, and from the side they are a slimmer band climbing the
+       pillar.
+       The tail lamps then grew taller and took the type's colours: each now
+       climbs the pillar to 1.3 m by the roof's corner, in three bands (amber
+       to 1.0 m, bright red to 1.17 m, deep red above). The bands are three
+       solids (`TAIL_LAMP_PARTS`) cut from one side outline by height
+       (`band`), each raised into its own shell. The wing's end plates got a
+       straight lower edge from the roof's corner (1.33 m) to the back
+       (1.4 m), clear of the taller lamps.
+       Then the rear window's edges. Thin white lines showed round the
+       windows: the livery's pieces stand a few millimetres proud, so beside
+       the glass a sliver of the white shell under them showed at an angle.
+       The shell is now dark grey (`#26282e`, apart from the trim's). The
+       livery paints every face of it, white included, so a sliver now reads
+       as a dark window seal. The hatch glass widened at its foot (half-width
+       0.64 → 0.69 at -2.01, 0.68 at -1.91, 0.655 at -1.71). The tail lamps'
+       inner outlines reach in under it, and the glass is left as it is, so
+       each lamp starts exactly at the glass's edge and follows it up the
+       pillar. They are raised only 1 cm, nearly flush. The quarter windows
+       are now the pillars' near-black (`#1d1d22`).
+       The roof then took the works car's colours, by request: white, with a
+       navy stripe 0.52 m wide down its middle (`ROOF_STRIPE`), from the
+       windscreen's top back to the quarter windows. The roof's edges above
+       the windows are white too. The hatch area behind stays blue.
+       The bonnet and the windscreen's top followed, after the same photos.
+       The bonnet has a blue band down its middle, 1.04 m wide at the scuttle
+       and narrowing to 0.48 m at 1.95 m, with 0.1 m of white either side and
+       lime beyond and across the nose (`bonnetBlue`). It replaces the
+       earlier curved lime edge. The windscreen's top 12 cm is a sun strip:
+       painted body rather than glass (`SUNSTRIP`, 0.04–0.16), white with a
+       blue line along its foot. The livery's rows now read each edge a hair
+       inside the row, because a row starting exactly at the wings' edge took
+       the wing tops' shorter region list at one edge and the bonnet's at the
+       other, which crashed the paint.
+       Then the roof stripe widened to 0.64 m and runs on down the sun strip
+       to the glass. The bonnet's blue band now spans the bonnet's whole back
+       up to 0.97 m, joining the wings' blue (the flank's front sweep), and
+       narrows from 1.04 m wide there to the nose.
+       Then, by request, the front side windows run on forward as a triangle
+       beside the windscreen down to the mirror. The sun strip's and the
+       screen's side bands are glass (`sideGlass`), and a slim black A-pillar
+       strip (`pillarStrip`, as the Berlinette's) lies over the corner. The
+       roof stripe widened to 0.8 m and is now the bonnet's blue rather than
+       navy. The A-pillar strip first stopped short of the roof. It started
+       at the roof's front edge, and at 8 mm it sank under the livery over
+       the roof, which draws pulled toward the eye. It now starts a station
+       back on the roof and stands 2 cm proud, so it laps over the roof's
+       edge.
+       Then, by request, the A-pillar strips were removed: the side glass now
+       meets the screen with nothing between. The rear wing came down 12 cm
+       and turned black (carbon) like the works car's. Its lower element and
+       struts moved inside the end plates' outline: the element had hung
+       below the plates' lower edge, so it read as a separate piece. The
+       tail lamps climb on to the roof's rear corner (1.34 m at -1.56), so
+       no rear glass shows above them.
+
+285. **2026-11-20 — Flatter circuits, gentler crossings, tunnel walls that
+     meet the fences.** The user found the circuits too steep and hilly, the
+     tunnel's walls humped and not joined to the fences. Measured over four
+     circuits: up to 35 m of climb a lap, and up to 16.7 % grades. The
+     crossing's ramps and the level start were laid after the profile's
+     12 % grade limit, so nothing held them to it.
+     - **Terrain:** the circuit region's hills are 9 m high (was 14) at a
+       360 m wavelength (was 300). The styles' relief multipliers fell:
+       Ring 1.6 → 1.0, Sarthe 0.8 → 0.6, Park 0.5 → 0.35.
+     - **Grades:** `limitLapGrade` holds a closed lap's profile to 10 %
+       outward from fixed stretches, round the lap, over the whole reach of
+       their ramps. It runs from the start, then from the crossing's two
+       plateaus last, so the bridge keeps its exact 7.5 m clearance. Over 15
+       circuits: 7.5–16 m of climb, grades at most 11 %. A test pins grades
+       under 12 %, climb under 20 m and the clearance.
+     - **Tunnel walls:** the tops are capped at the bridge deck's height
+       (the portal), so the embankment's hump no longer lifts them into
+       ramps. They stand at least 0.8 m over the road all along the cutting,
+       so they run on to meet the barrier rail at each end instead of
+       stopping short of it.
+       After dark the brake light lit up in the middle of the tail. The brake
+       beams find a car's tail lamps by colour and place each at its side's
+       lamp's centre. The raised tail lamps were one mesh mirrored across both
+       sides, so its centre was the middle of the tail. Each lamp shell is now
+       one mesh per side (`LampShellMesh`), and each brake beam sits at its own
+       side's lamp, lighting it.
+       Two round glows then showed on the lamps under braking: hotspots of
+       the brake spotlights, each 8 cm behind its lamp, on the lamps' lit
+       shells and on the tail panel below, which the steep cone reached. The
+       tail lamp shells are now unlit (`MeshBasicMaterial`, brightened by
+       `CarLamps` under braking like any unlit lamp part). Every car's brake
+       beams now start 30 cm behind their lamps (`BRAKE_BEAM_BACK`), clear of
+       the car's own tail.

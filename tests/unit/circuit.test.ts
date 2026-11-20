@@ -52,12 +52,12 @@ describe('circuit generator', () => {
     expect(a.style).toBe(b.style);
   });
 
-  it('makes valid laps: in length, no corner too tight, never close to itself', () => {
+  it('makes valid laps: in length, no corner too tight, never close to itself but at its crossing', () => {
     for (const c of layouts) {
       expect(c.path.length).toBeGreaterThanOrEqual(LAP_MIN);
       expect(c.path.length).toBeLessThanOrEqual(LAP_MAX);
       expect(minRadius(c.path)).toBeGreaterThanOrEqual(MIN_RADIUS);
-      expect(lapClearOfItself(c.path)).toBe(true);
+      expect(lapClearOfItself(c.path, c.crossing)).toBe(true);
       // The lap closes smoothly: no kink at the seam.
       const n = c.path.count - 1;
       expect(Math.abs(wrap(c.path.headings[1]! - c.path.headings[n - 1]!))).toBeLessThan(0.1);
@@ -74,11 +74,27 @@ describe('circuit generator', () => {
     expect(mean('sarthe')).toBeGreaterThan(mean('ring'));
   });
 
+  it('spends about half of every lap in a bend, on every style', () => {
+    const share = (c: (typeof layouts)[number]) => {
+      const p = c.path;
+      const n = p.count - 1;
+      let bent = 0;
+      for (let k = 0; k < n; k++)
+        if (Math.abs(wrap(p.headings[(k + 1) % n]! - p.headings[k]!)) / p.spacing > 1 / 250) bent++;
+      return bent / n;
+    };
+    for (const s of ['ring', 'sarthe', 'park']) {
+      const of = layouts.filter((c) => c.style === s);
+      expect(of.reduce((a, c) => a + share(c), 0) / of.length, s).toBeGreaterThan(0.4);
+    }
+  });
+
   it('has a fallback that passes every check', () => {
     const f = fallbackCircuit();
     expect(f.path.length).toBeGreaterThanOrEqual(LAP_MIN);
     expect(minRadius(f.path)).toBeGreaterThanOrEqual(MIN_RADIUS);
-    expect(lapClearOfItself(f.path)).toBe(true);
+    expect(lapClearOfItself(f.path, f.crossing)).toBe(true);
+    expect(Math.hypot(f.crossing.x, f.crossing.z)).toBeLessThan(1);
   });
 });
 

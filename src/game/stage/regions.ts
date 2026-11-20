@@ -62,6 +62,8 @@ export interface StagePalette {
     /** Lake shores' pebbles (the Lakeland's), dry over the waterline and darker wet at it; unset, a shore is rock. */
     shore?: string;
   };
+  /** Plain ground in broad patches of a lusher and a drier green (`meshTerrainChunk`); unset, the height's gradient alone. */
+  grassPatches?: { lush: string; dry: string };
   /**
    * How far the road's dirt shoulder eases into the ground, in shares of
    * the corridor's blend, ragged face by face in shades of dirt and earth;
@@ -652,11 +654,23 @@ const CIRCUIT: StageTypeDef = {
     canopyAlt: '#7fa64f',
     trunk: '#6b4d33',
     boulder: '#9a9688',
+    // Parkland grass in broad patches of lusher and drier green.
+    grassPatches: { lush: '#4c8639', dry: '#adc46b' },
   },
-  terrain: { amplitude: 14, frequency: 1 / 300 },
+  // Gentle parkland: low, broad hills round the circuits.
+  terrain: { amplitude: 9, frequency: 1 / 360 },
   twistiness: 0,
   baseLength: 2000,
-  scenery: { trees: 36, broadleaf: 30, bushes: 8, rocks: 0, houses: 0, spectators: 0 },
+  // Woods all round the circuit beyond the fences, and further off.
+  scenery: {
+    trees: 80,
+    broadleaf: 64,
+    bushes: 22,
+    rocks: 0,
+    houses: 0,
+    spectators: 0,
+    deepWood: 70,
+  },
   parSpeed: 20,
   towns: false,
 };

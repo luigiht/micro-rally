@@ -132,8 +132,34 @@ export class RoadPath {
     return out;
   }
 
-  /** Closest point on the centreline within `maxDist`. Returns false if none. */
-  nearest(x: number, z: number, maxDist: number, out: RoadHit): boolean {
+  /**
+   * Whether segment `i` lies within `window` metres of road distance
+   * `around` (round the lap on a closed path); every segment when `around`
+   * is NaN. Where a lap crosses itself, this keeps a query on one stretch.
+   */
+  private within(i: number, around: number, window: number): boolean {
+    if (Number.isNaN(around)) return true;
+    let d = Math.abs(i * this.spacing - around);
+    if (this.closed) {
+      d %= this.length;
+      d = Math.min(d, this.length - d);
+    }
+    return d <= window;
+  }
+
+  /**
+   * Closest point on the centreline within `maxDist`, only on segments
+   * within `window` of road distance `around` when that is given. Returns
+   * false if none.
+   */
+  nearest(
+    x: number,
+    z: number,
+    maxDist: number,
+    out: RoadHit,
+    around = NaN,
+    window = Infinity,
+  ): boolean {
     out.distance = Infinity;
     const c0x = Math.floor((x - maxDist) / CELL);
     const c1x = Math.floor((x + maxDist) / CELL);
@@ -147,6 +173,7 @@ export class RoadPath {
         if (!segs) continue;
         for (let k = 0; k < segs.length; k++) {
           const i = segs[k]!;
+          if (!this.within(i, around, window)) continue;
           const ax = this.xs[i]!;
           const az = this.zs[i]!;
           const dx = this.xs[i + 1]! - ax;
@@ -173,13 +200,15 @@ export class RoadPath {
     return found;
   }
 
-  /** Calls `visit(along, distance)` for the closest point of every segment within `maxDist`; a segment may come twice. */
+  /** Calls `visit(along, distance)` for the closest point of every segment within `maxDist` (and `window` of `around`, as `nearest`); a segment may come twice. */
   visitNear(
     x: number,
     z: number,
     maxDist: number,
     /** `lateral` is the signed offset, positive to the left of travel (as `nearest` reports it). */
     visit: (along: number, distance: number, lateral: number) => void,
+    around = NaN,
+    window = Infinity,
   ): void {
     const c0x = Math.floor((x - maxDist) / CELL);
     const c1x = Math.floor((x + maxDist) / CELL);
@@ -192,6 +221,7 @@ export class RoadPath {
         if (!segs) continue;
         for (let k = 0; k < segs.length; k++) {
           const i = segs[k]!;
+          if (!this.within(i, around, window)) continue;
           const ax = this.xs[i]!;
           const az = this.zs[i]!;
           const dx = this.xs[i + 1]! - ax;

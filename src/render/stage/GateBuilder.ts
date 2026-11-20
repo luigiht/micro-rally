@@ -16,8 +16,12 @@ import type { GateTheme, ThemeColor } from '../theme/WorldTheme';
 
 const HEIGHT = 4.4;
 const POST = 0.35;
+/** Each gantry post stands on a footing this wide and this high over the ground. */
+const FOOTING = { width: 0.75, height: 0.3 } as const;
 /** Gantry posts sink this far into the ground at their feet, so a slope never shows a gap. */
-const POST_SINK = 0.15;
+const POST_SINK = 0.3;
+/** A post's foot is looked for over a 5 × 5 grid this far apart round it (±4 m: a coarse terrain cell). */
+const FOOT_STEP = 2;
 /** The gantry's banner: a chequer two squares tall, this tall and deep. */
 const BANNER = { height: 0.9, depth: 0.3 } as const;
 
@@ -262,14 +266,32 @@ export class GateBuilder {
     arch.rotation.y = s.heading;
     for (const side of [-1, 1]) {
       // Each post reaches down to the ground at its own foot (lower down a built-up road's bank,
-      // higher on a cut), sunk a little into it, so the gantry never stands on air.
+      // higher on a cut), sunk a little into it, so the gantry never stands on air. The drawn ground
+      // is a mesh of triangles a few metres across, which can dip under the exact height between its
+      // corners: the post goes down to the lowest ground round its foot, the rest of it buried.
       const fx = s.x + Math.cos(s.heading) * side * half;
       const fz = s.z - Math.sin(s.heading) * side * half;
-      const foot = field.heightAt(fx, fz) - base - POST_SINK;
+      let ground = Infinity;
+      for (let i = -2; i <= 2; i++)
+        for (let j = -2; j <= 2; j++)
+          ground = Math.min(ground, field.heightAt(fx + i * FOOT_STEP, fz + j * FOOT_STEP));
+      const foot = ground - base - POST_SINK;
       const post = new Mesh(this.box(POST, HEIGHT - foot, POST), this.material(this.theme.post));
       post.position.set(side * half, (HEIGHT + foot) / 2, 0);
       post.castShadow = true;
       arch.add(post);
+      // A concrete footing round the post's base, standing on the ground at the post's own spot
+      // and buried below the lowest ground round it: the post meets the ground on a solid block,
+      // its shadow starting at the ground with no sliver of light between.
+      const top = field.heightAt(fx, fz) - base + FOOTING.height;
+      const footing = new Mesh(
+        this.box(FOOTING.width, top - foot, FOOTING.width),
+        this.material(this.theme.post),
+      );
+      footing.position.set(side * half, (top + foot) / 2, 0);
+      footing.castShadow = true;
+      footing.receiveShadow = true;
+      arch.add(footing);
     }
     this.addChequer(arch, half);
     this.freeze(arch);

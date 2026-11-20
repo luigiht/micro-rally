@@ -1,4 +1,5 @@
 import { hashSeed, mulberry32 } from '../rng';
+import { WALL_REACH, nearCrossing } from './CircuitCrossing';
 import { barrierAt, circuitTrackside, grandstandSpot } from './CircuitTrackside';
 import { STAGE_TYPES } from './regions';
 import { crowdSpans, STRIDE } from './CrowdSpans';
@@ -200,7 +201,10 @@ export function scatterSpectators(
   };
 
   /** Whether the place `off` out from the road at `d` is free and good ground (`standable`), the circuit's barrier aside. */
+  const crossing = stage.circuit?.crossing;
   const placeable = (d: number, side: 1 | -1, off: number): boolean => {
+    // Nobody stands over a circuit's cutting or on its bridge.
+    if (crossing && nearCrossing(crossing, d, path.length, WALL_REACH + 20)) return false;
     if (trackside) return true;
     const [x, z] = at(d, side, off);
     if (path.nearest(x, z, verge, hit)) return false;

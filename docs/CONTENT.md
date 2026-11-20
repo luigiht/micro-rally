@@ -726,36 +726,95 @@ see `stageSlot`). A layout is drawn by
 `CircuitGenerator` from the stage seed in one of three styles, mixing the
 traits of three famous tracks without copying any of them:
 
-- **Ring** (after the Nürburgring): 12–15 corners, medium radii, inward
-  dents, a chicane now and then, and 1.6× the region's hill relief, so the
+- **Ring** (after the Nürburgring): 14–18 corners, medium radii, many inward
+  dents, esses on most straights, a chicane now and then, and 1.6× the region's hill relief, so the
   lap climbs and dips.
 - **Sarthe** (after Le Mans): a long, thin loop whose main straight carries
-  two chicanes, fast open kinks, and a slow hairpin at the straight's end.
-- **Park** (after Monza): six to eight corners on a stretched loop, chicanes
+  two chicanes, 8–11 corners with fast kinks and long sweeping esses, and a
+  slow hairpin at the straight's end.
+- **Park** (after Monza): eight to ten corners on a stretched loop, esses on
+  most of the other straights, chicanes
   on the two longest straights, one long sweeper onto the main straight,
   almost flat.
 
-The lap is a star-shaped polygon round a centre (which cannot cross itself),
-every vertex rounded into an arc of a radius set by its sharpness and the
-style, chicanes dropped onto long straights as smooth S-offsets of 6–9 m
-over about 55 m, and resampled as a closed path starting at the beginning of
+Every lap is a figure of eight (`CircuitFigureEight`): two lobes, each a
+wobbly, dented ellipse stretched outward by the style, joined by two long
+straights that cross at the middle at 1.0–1.5 rad. The right-hand lobe
+leaves part of its sweep without corners for the main straight, where the
+lap starts, never on a crossing straight. Every vertex is rounded into an arc of a radius set by its sharpness and the
+style, chicanes dropped onto the lobes' long straights as smooth S-offsets of 6–9 m
+over about 55 m, esses swung across the others (every straight of 110 m or
+more but the main one and those with a chicane, at the style's chance:
+6–14 m either way, one bend every 60–140 m, eased in at both ends; on the
+crossing straights only their outer parts, 60 m either side of the crossing
+kept straight), and resampled as a closed path starting at the beginning of
 its longest straight. It must be 1.5–2.8 km long (1.7–2.4 km targeted), have
 no corner under 12 m radius and keep stretches more than 200 m apart round
 the lap at least 90 m apart in space (room for runoff and barriers, and for
 each stretch's flattened corridor to blend back to the hills before the
-next); a few attempts, then a rounded-rectangle fallback, guarantee one.
+next); a few attempts, then a rounded-rectangle fallback, guarantee one (24 attempts; none of 300 sampled laps fell back).
+About half of every lap is in a bend (radius under 250 m), 8–11 radians
+of turning per kilometre; the road is level from behind the last grid slot
+to 40 m past the line, easing back into the hills over 80 m either side
+(`levelCircuitStart`).
 
-The track is 12 m wide race asphalt (the `track` surface, see Surfaces) with white edge lines. The trackside comes from the
+**The crossing** (`CircuitCrossing`, built by
+`render/road/CircuitCrossingBuilder`). One straight (drawn at random) goes
+over, the other under. The road profile lifts the bridge stretch and sinks
+the tunnel stretch about their mean, 7.5 m apart, held for 25 m either side
+and eased over 110 m (`shapeCrossing`). Within 55 m of the crossing the
+ground is the tunnel road's cutting out to walls 2.5 m past its edge (held at
+the floor 4.5 m behind their face, inside 6.5 m-deep retaining blocks, so no
+terrain triangle climbs a wall), then
+the bridge road's embankment (each worked out with road queries kept to
+that one stretch, `RoadPath.nearest`'s `around`/`window`), easing back to
+the ordinary ground at the zone's edge. The bridge road crosses on a 32 m
+wide, 1.3 m deep concrete slab, the tunnel's roof, with parapets 1 m past
+its edge; concrete walls line the cutting from under its deck to the ground
+behind or the slab's underside. The barrier line pulls in to the walls and
+parapets there and the rail gives way to them; near the crossing the tunnel
+road's colliders stop only cars below the level midway between the decks,
+the bridge road's only cars above it (`BoxObstacle.yMin`/`yMax`). The car's
+own height picks the level (`TerrainQuery.heightAt`'s `y`). The autopilot
+and the lap progress look for the road within 60–80 m of where they last
+found the car. Sector checkpoints, corner stands and spectators keep off
+the crossing.
+
+The track is 12 m wide race asphalt (the `track` surface, see Surfaces) with white edge lines,
+textured by `render/road/CircuitTarmac`: ten bands across, every 2 m block
+of each a shade of its own (±4.5 %), and dark rubber along the racing line
+(the outside before a corner, the inside through it), up to half as dark
+over the 70 m braking zone before each corner tighter than 110 m and a
+quarter through the corner, in streaks a few metres long. The trackside comes from the
 lap's curvature: kerbs where the radius is under 150 m (the inside of the
 whole corner and the outside from the apex over the exit), raised 3 cm and
 striped red and white every sample; gravel traps on the outside of corners
 of 40–150 m radius; Armco 6 m beyond the edge on straights and up to 16 m on
-a corner's outside, held inside 0.7 × the radius on the inside; catch
+a corner's outside, held inside 0.7 × the radius on the inside (the
+sharpest of the eased, raw and sample-to-sample curvature), the offset then
+eased over ±14 samples (a running minimum, then a box), so the line never
+comes in nearer than asked and runs parallel to the road through chicanes,
+swinging in or out at most 0.3 m a metre; catch
 fencing behind it on the outsides and along the main straight; a chequered
 line, eight staggered grid slots and a gantry at the start; a blue
-grandstand behind the barrier on the outside of the lap facing the line.
-Trees and bushes stand only beyond the outermost barrier and off the
-grandstand. Names are an Italian autodromo, a French circuit or a German
+grandstand behind the barrier on the outside of the lap facing the line,
+and smaller open stands outside up to six of the tightest corners. Each
+stand sits on a level pad (`standPads`): its footprint and 1.5 m flattened
+to the ground's height at the middle of its front edge, easing into the
+hills over 8 m.
+Trees and bushes (80 trees, 64 broadleaves and 22 bushes per 100 m, plus a
+deep wood of 70 out to 160 m) stand only beyond the outermost barrier and
+off the grandstands, their whole crown clear of both: a crown's reach counts,
+not just the trunk. Bushes take a 1 m canopy radius there, so no crown
+overlaps another. The grass (`palette.grassPatches`) comes in broad patches
+of a lusher and a drier green, 24 m across, broken by 7 m tufts, each face
+±10 % of its own; they are laid after the shoulder colour, so the mown
+ground inside the fences has them too. The road's verge strips are faceted
+(`Strip.facets`) in the very same patches (`Strip.patches`, one shared
+`render/terrain/grassPatches` pattern for the strip and the mesher), so the
+strip runs into the ground without a seam, and each gravel trap is cut
+into five bands across, every 4 m block of each ±12 %, with a fifth of the
+14 m runs ploughed 16 % darker (`KerbBuilder`). Names are an Italian autodromo, a French circuit or a German
 ring with an invented place name.
 
 ## Cars
