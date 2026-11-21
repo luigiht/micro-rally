@@ -462,6 +462,7 @@ export const es: Messages = {
     coastal: 'Costero',
     desert: 'Desierto',
     lakeland: 'Lacustre',
+    moorland: 'Páramo',
   },
   controls: [
     { keys: 'W / S · ↑ / ↓', action: 'Acelerar / frenar, mantén para marcha atrás' },
@@ -596,6 +597,10 @@ export const es: Messages = {
           note: 'Grandes lagos. Puentes largos.',
           surface: 'Mixto',
         },
+        moorland: {
+          note: 'Lluvia y vados.',
+          surface: 'Grava mojada',
+        },
       },
     },
     garage: {
@@ -708,6 +713,7 @@ export const es: Messages = {
     grass: 'Hierba',
     sand: 'Arena',
     dune: 'Dunas',
+    water: 'Agua',
   },
   session: {
     choiceLabel: 'Sesión',

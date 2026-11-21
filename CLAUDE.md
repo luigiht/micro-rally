@@ -6,7 +6,8 @@ status: [docs/PLAN.md](docs/PLAN.md). Code map:
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Technical choices:
 [docs/DECISIONS.md](docs/DECISIONS.md). How the game plays and what the
 generators make: [docs/GAMEPLAY.md](docs/GAMEPLAY.md) and
-[docs/CONTENT.md](docs/CONTENT.md). Tests and screenshot harness:
+[docs/CONTENT.md](docs/CONTENT.md). Stage types to build next:
+[docs/UPCOMING_STAGES.md](docs/UPCOMING_STAGES.md). Tests and screenshot harness:
 [docs/TESTING.md](docs/TESTING.md). User-visible changes: [CHANGELOG.md](CHANGELOG.md).
 
 ## Project rules

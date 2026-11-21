@@ -9,6 +9,15 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Added
 
+- **Moorland, a new stage type.** A Welsh forest rally in the rain, after
+  Lakeland in the rally mix: wet slate-grey gravel with no painted lines
+  over open moor of bracken and heather, through dark spruce plantations,
+  past sheep, fences and dry-stone walls. It always rains: rain falls round
+  the camera, the mist closes in and every tyre grips a little less. Six to ten
+  watersplashes lie right across the road in its dips; driving through
+  one throws up a fan of spray and slows the car noticeably. The track's
+  edges fray into peaty verges between low, ragged earth banks. No houses and
+  no bridges [291].
 - **Pinch to zoom on phones and tablets.** Two fingers on the game view zoom
   the chase, isometric and cinematic cameras, as the mouse wheel does [290].
 - **Every circuit is a figure of eight with a tunnel.** The lap crosses
@@ -38,6 +47,12 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Changed
 
+- **Villages move round the stage mix.** With nine stage types, the villages
+  step on by one stage each time round, so Pinewood, Alpine, Greenvale and
+  Autumnal stages all keep getting them. Best times on stages whose type or
+  village changed are cleared [291].
+- **Spectator banks match the ground** round them on Greenvale, Lakeland
+  and Moorland stages, instead of a bright green [291].
 - **Grip rises through the dealership.** The free Rally Hatch keeps its grip
   and every dearer car grips a little more, up to the Dieppe Berlinette, with
   some variation between neighbours; the Grip bars show it, from half to

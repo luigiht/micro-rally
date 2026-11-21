@@ -1,5 +1,6 @@
 import { hashSeed, mulberry32 } from '../rng';
 import type { BoxObstacle } from '../vehicle/Collisions';
+import { roadLowPoints } from './RoadDips';
 import { createRoadHit, type RoadSample } from './RoadPath';
 import { SpatialHash } from './SpatialHash';
 import type { StageDef } from './StageGenerator';
@@ -80,19 +81,14 @@ const FADE = 45;
 const GORGE = 55;
 /** The ice never stands closer than this under the ground beside it. */
 const UNDER = 0.6;
-/** Crossings: a low point is the lowest road within this much either way, and stands this far from the start, gates, finish and town. */
-const LOW_WINDOW = 30;
-const PROMINENCE_WINDOW = 150;
+/** Crossings stand this far from the start, gates, finish and town (`RoadDips` finds the low points). */
 const GATE_GAP = 60;
 const ENDS = 90;
 const TOWN_GAP = 150;
 /** Crossings stand at least this far apart along the road (a fallback pick a little less). */
 const APART = 350;
 const FALLBACK_APART = 240;
-/** Fallback crossings are tried every this many metres of road; no stage tries more than this many rivers. */
-const REST_STEP = 20;
-/** A fallback crossing's lowness: its height over the lowest road this far either way. */
-const LIFT_WINDOW = 100;
+/** No stage tries more than this many rivers. */
 const MAX_TRIES = 40;
 /** The bridge spans the ice and this much of each bank. */
 const BANK_SPAN = 6;
@@ -124,46 +120,7 @@ export function planRivers(ground: RiverGround, style: RiverStyle): River[] {
 
 /** Candidate crossings: the road's dips by how deep they are, and every other allowed stretch from the lowest up. */
 function crossings(ground: RiverGround): { dips: number[]; rest: number[] } {
-  const stage = ground.stage;
-  const sp = stage.path.spacing;
-  const finish = stage.startDistance + stage.length;
-  const keep = [stage.startDistance, ...stage.gates.map((g) => g.distance)];
-  const town = stage.town;
-  const allowed = (d: number) =>
-    d > stage.startDistance + ENDS &&
-    d < finish - ENDS &&
-    keep.every((k) => Math.abs(k - d) > GATE_GAP) &&
-    !(town && d > town.from - TOWN_GAP && d < town.to + TOWN_GAP);
-  const n = Math.floor(stage.path.length / sp);
-  const h = Array.from({ length: n }, (_, i) => ground.roadHeightAt(i * sp));
-  const lows: { d: number; prominence: number }[] = [];
-  const w = Math.round(LOW_WINDOW / sp);
-  const pw = Math.round(PROMINENCE_WINDOW / sp);
-  for (let i = w; i < n - w; i++) {
-    const d = i * sp;
-    if (!allowed(d)) continue;
-    let low = true;
-    for (let j = i - w; j <= i + w && low; j++) if (h[j]! < h[i]!) low = false;
-    if (!low) continue;
-    let left = h[i]!;
-    let right = h[i]!;
-    for (let j = Math.max(0, i - pw); j < i; j++) left = Math.max(left, h[j]!);
-    for (let j = i + 1; j <= Math.min(n - 1, i + pw); j++) right = Math.max(right, h[j]!);
-    lows.push({ d, prominence: Math.min(left, right) - h[i]! });
-  }
-  lows.sort((a, b) => b.prominence - a.prominence);
-  // The rest by how far each stands above the lowest road near it: the nearest thing to a dip first.
-  const lift = (d: number) => {
-    let low = Infinity;
-    for (let e = -LIFT_WINDOW; e <= LIFT_WINDOW; e += sp)
-      low = Math.min(low, ground.roadHeightAt(d + e));
-    return ground.roadHeightAt(d) - low;
-  };
-  const rest: { d: number; lift: number }[] = [];
-  for (let d = stage.startDistance + ENDS; d < finish - ENDS; d += REST_STEP)
-    if (allowed(d)) rest.push({ d, lift: lift(d) });
-  rest.sort((a, b) => a.lift - b.lift);
-  return { dips: lows.map((l) => l.d), rest: rest.map((r) => r.d) };
+  return roadLowPoints(ground, { ends: ENDS, gateGap: GATE_GAP, townGap: TOWN_GAP });
 }
 
 /** One side of a river from the crossing, outward: its points, without the crossing itself. */

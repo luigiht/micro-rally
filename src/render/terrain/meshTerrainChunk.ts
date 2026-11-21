@@ -31,13 +31,19 @@ export interface TerrainColors {
   /** Cities: the ground under carriageways and under pavements (see `TerrainSample.paved`). */
   tarmac: Rgb;
   pavement: Rgb;
-  /** The crowds' berms: a lusher shade of the low grass, so a berm reads against the field. */
-  berm: Rgb;
+  /**
+   * The crowds' berms: a lusher shade of the low grass, so a berm reads against the field; null
+   * keeps the ground's own colour round it, trodden a shade darker (palettes with `meadows`, whose
+   * ground is the valley tones, not the low grass).
+   */
+  berm: Rgb | null;
 }
 
 /** Hills go rocky past about 44° of tilt; the coast's limestone past about 37°, so its scrub hillside stays green. */
 const ROCK_FROM = 0.28;
 const COAST_ROCK_FROM = 0.2;
+/** A berm of the ground's own colour is this much darker at its top: earth trodden by the crowd. */
+const BERM_TRODDEN = 0.12;
 /** Scratch for a face's grass patch shares. */
 const SHARES = { lush: 0, dry: 0 };
 
@@ -75,7 +81,7 @@ export function terrainColors(p: StagePalette, coast?: CoastDef): TerrainColors 
     shoulder: hexToLinear(p.shoulder),
     tarmac: hexToLinear(ROAD_COLORS.tarmac),
     pavement: hexToLinear(PAVEMENT_COLOR),
-    berm: scaleRgb(hexToLinear(p.grassLow), 0.82),
+    berm: p.meadows ? null : scaleRgb(hexToLinear(p.grassLow), 0.82),
   };
   if (p.meadows) {
     const m = p.meadows;
@@ -346,9 +352,17 @@ export function meshTerrainChunk(
       1,
       Math.max(0, (Math.max(earth[ia]!, earth[ib]!, earth[ic]!) - 0.3) * 2.5),
     );
-    r += (colors.berm[0] - r) * soil;
-    g += (colors.berm[1] - g) * soil;
-    b += (colors.berm[2] - b) * soil;
+    if (colors.berm) {
+      r += (colors.berm[0] - r) * soil;
+      g += (colors.berm[1] - g) * soil;
+      b += (colors.berm[2] - b) * soil;
+    } else {
+      // The ground the berm was heaped from: the same moor, heath or meadow, trodden darker.
+      const trodden = 1 - BERM_TRODDEN * soil;
+      r *= trodden;
+      g *= trodden;
+      b *= trodden;
+    }
     // A city's ground under its streets: tarmac where the face's middle lies under a carriageway or
     // junction paving (so a seam between plates shows tarmac, not grass), paving under a pavement.
     // The middle, not the corners: a face at a junction's corner can have every corner on a

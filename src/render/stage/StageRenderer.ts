@@ -6,6 +6,8 @@ import type { StageWorld } from '@/game/stage/StageWorld';
 import type { TownDef } from '@/game/stage/Town';
 import { BarrierBuilder } from '../road/BarrierBuilder';
 import { GravelStoneBuilder } from '../road/GravelStones';
+import { SplashBuilder } from '../road/SplashBuilder';
+import { MoorlandDressingBuilder } from '../scenery/MoorlandDressingBuilder';
 import { CircuitCrossingBuilder } from '../road/CircuitCrossingBuilder';
 import { CircuitDressingBuilder } from '../road/CircuitDressingBuilder';
 import { KerbBuilder } from '../road/KerbBuilder';
@@ -74,6 +76,10 @@ export interface StageRenderOptions {
   tallGrass: boolean;
   /** Loose stones strewn on a gravel road (the Pinewood); visual only. */
   roadStones: boolean;
+  /** Falling rain round the camera on a rainy stage (the Moorland), this many streaks; 0 for none. */
+  rainStreaks: number;
+  /** Spray thrown up by tyres in a watersplash; the water itself is always drawn. */
+  waterSpray: boolean;
 }
 
 /** Scenery is streamed in chunks this many metres square. */
@@ -100,6 +106,8 @@ export const DEFAULT_STAGE_RENDER: StageRenderOptions = {
   leafLitter: true,
   tallGrass: true,
   roadStones: true,
+  rainStreaks: 2600,
+  waterSpray: true,
 };
 
 /**
@@ -118,6 +126,8 @@ export const SOFTWARE_STAGE_RENDER: StageRenderOptions = {
   leafLitter: false,
   tallGrass: false,
   roadStones: false,
+  // A lighter rain; the spray stays (it only lives while a tyre wades).
+  rainStreaks: 700,
 };
 
 /**
@@ -157,6 +167,10 @@ interface Surfaces {
   parking: ParkingBayBuilder | null;
   fleet: TramFleet | null;
   stones: GravelStoneBuilder | null;
+  /** The Moorland's watersplashes: water across the road, wet road either side. */
+  splashes: SplashBuilder | null;
+  /** The Moorland's sheep, fences and field walls. */
+  farms: MoorlandDressingBuilder | null;
   /** A mapped city's barriers across the streets the route passes. */
   closed: RoadClosedBuilder | null;
 }
@@ -176,7 +190,11 @@ export class StageRenderer {
   constructor(
     private readonly world: StageWorld,
     private readonly opts: StageRenderOptions = DEFAULT_STAGE_RENDER,
-    theme: WorldTheme = dayTheme(STAGE_TYPES[world.stage.stageType], world.stage.dusk === true),
+    theme: WorldTheme = dayTheme(
+      STAGE_TYPES[world.stage.stageType],
+      world.stage.dusk === true,
+      world.stage.weather,
+    ),
   ) {
     const region = STAGE_TYPES[world.stage.stageType];
     this.terrain = new TerrainChunkManager(
@@ -272,6 +290,8 @@ export class StageRenderer {
         this.opts.roadStones && stage.surface === 'gravel'
           ? new GravelStoneBuilder(stage, field)
           : null,
+      splashes: field.splashes.length > 0 ? new SplashBuilder(stage, field, field.splashes) : null,
+      farms: this.world.farms ? new MoorlandDressingBuilder(stage, field, this.world.farms) : null,
     };
     const track = circuitTrackside(stage);
     if (track) {
@@ -379,6 +399,8 @@ export class StageRenderer {
       s.parking,
       s.fleet,
       s.stones,
+      s.splashes,
+      s.farms,
       s.closed,
     ].filter((b) => b !== null);
   }

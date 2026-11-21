@@ -9,7 +9,7 @@ import { alpineKits } from '@/render/scenery/kits/AlpineKits';
 import { PINE_SPECS, snowPineGeometry } from '@/render/scenery/SnowPineGeometry';
 import { terrainColors } from '@/render/terrain/meshTerrainChunk';
 import { valleyFaceColor, type ValleyFace } from '@/render/terrain/valleyFaceColor';
-import { stageIndexOf } from './stageIndex';
+import { stageIndexOf, worldV13 } from './stageIndex';
 
 describe('Alpine woods', () => {
   const greens = [new Color('#3a6451'), new Color('#6a8c82')] as const;
@@ -114,7 +114,8 @@ describe('Alpine snowfields', () => {
 
   it('crowd round every checkpoint on benches beside the road', () => {
     for (const seed of [1, 2]) {
-      const w = createStageWorld(seed, stageIndexOf('alpine', 1));
+      // The second Alpine of the seven-type calendar it was tuned on.
+      const w = worldV13(seed, 'alpine', 1);
       const hit = createRoadHit();
       const along = w.props
         .filter((p) => p.kind === 'spectator')

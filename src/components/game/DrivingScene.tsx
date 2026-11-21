@@ -101,7 +101,11 @@ function StageDrive({
   const group = useRef<Group>(null);
   const renderer = useRef<StageRenderer | null>(null);
   const self = useRef<Readonly<VehiclePose> | null>(null);
-  const theme = dayTheme(STAGE_TYPES[world.stage.stageType], world.stage.dusk === true);
+  const theme = dayTheme(
+    STAGE_TYPES[world.stage.stageType],
+    world.stage.dusk === true,
+    world.stage.weather,
+  );
   // Software WebGL gets the light stage: the full one would crawl there.
   const gl = useThree((s) => s.gl);
   const renderOptions = useMemo(
@@ -133,7 +137,7 @@ function StageDrive({
   );
 
   return (
-    <DriveRig world={drive} theme={theme} onPose={onPose}>
+    <DriveRig world={drive} theme={theme} onPose={onPose} effects={renderOptions}>
       <group ref={group} />
       {opponent && <OpponentCar carId={opponent.carId} name={opponent.name} self={self} />}
     </DriveRig>

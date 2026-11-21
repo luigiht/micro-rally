@@ -10,6 +10,8 @@ import {
   calendarSlot,
   generateStage,
   stageBrief,
+  stageHasTown,
+  stageTypeAt,
   type StageDef,
 } from '@/game/stage/StageGenerator';
 import { markerDistances } from '@/game/stage/RoadMarkers';
@@ -212,10 +214,16 @@ function townStages(): StageDef[] {
 
 describe('town generator', () => {
   it('puts a town on every third rally stage and nowhere else, whatever the game seed', () => {
+    // Every third rally stage, stepping on by one each time round the nine-type mix (`hasTown`).
     for (let index = 0; index < 60; index++) {
       const rally = rallyIndex(index);
-      expect(hasTown(index)).toBe(rally !== null && rally % 3 === 2);
+      expect(hasTown(index)).toBe(rally !== null && (rally + Math.floor(rally / 9)) % 3 === 2);
     }
+    // So over three rounds every village-building type gets its towns.
+    const typed = new Set<string>();
+    for (let index = 0; index < 120; index++)
+      if (stageHasTown(index)) typed.add(stageTypeAt(index).stageType);
+    expect([...typed].sort()).toEqual(['alpine', 'autumnal', 'forest', 'pinewood']);
     for (let seed = 1; seed <= 20; seed++) {
       expect(generateStage(seed, 0).town).toBeUndefined();
       expect(generateStage(seed, 1).town).toBeUndefined();

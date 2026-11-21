@@ -119,7 +119,13 @@ export function DemoDrive({ paused }: { paused: boolean }) {
   return (
     <>
       <SceneLights
-        lighting={dayTheme(STAGE_TYPES[world.stage.stageType], world.stage.dusk === true).lighting}
+        lighting={
+          dayTheme(
+            STAGE_TYPES[world.stage.stageType],
+            world.stage.dusk === true,
+            world.stage.weather,
+          ).lighting
+        }
         sunRef={sun}
       />
       <group ref={group} />

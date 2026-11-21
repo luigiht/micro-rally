@@ -18,7 +18,7 @@ import { createVehiclePose, interpolatePose } from '@/game/vehicle/interpolatePo
 import type { TerrainQuery } from '@/game/vehicle/Terrain';
 import { axleMarkIntensities } from '@/game/vehicle/wheelContacts';
 import { DEFAULT_ENV, type SimEnv, VehicleSim, type SpawnPose } from '@/game/vehicle/VehicleSim';
-import { STAGE_TYPES } from '@/game/stage/regions';
+import { STAGE_TYPES, stageGripScale } from '@/game/stage/regions';
 import { useGameStore } from '@/state/gameStore';
 import { useSettingsStore } from '@/state/settingsStore';
 import { stagePaceNotes } from '@/game/stage/PaceNotes';
@@ -143,14 +143,16 @@ export class DrivingSession {
     this.bodyScale = spec.bodyScale;
     this.sim.reset(world.spawn, world.terrain);
     this.run = world.stage ? new StageRun(world.stage) : null;
-    const handling = world.stage ? STAGE_TYPES[world.stage.stageType].handling : undefined;
-    this.env = handling
+    const stage = world.stage;
+    const handling = stage ? STAGE_TYPES[stage.stageType].handling : undefined;
+    // The type's handling, and the rain's grip on a wet stage (`stageGripScale`).
+    this.env = stage
       ? {
           ...DEFAULT_ENV,
-          gripScale: handling.grip,
-          steerSensitivity: handling.steer,
-          steerLock: handling.lock,
-          ...(handling.surfaceGrip ? { surfaceGrip: handling.surfaceGrip } : {}),
+          gripScale: stageGripScale(stage.stageType, stage.weather),
+          steerSensitivity: handling?.steer ?? 1,
+          steerLock: handling?.lock ?? 1,
+          ...(handling?.surfaceGrip ? { surfaceGrip: handling.surfaceGrip } : {}),
         }
       : DEFAULT_ENV;
     if (this.run && world.startAlong !== undefined) this.run.skipGatesBefore(world.startAlong);

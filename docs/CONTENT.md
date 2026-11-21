@@ -98,6 +98,7 @@ input.
 | Coastal    | tarmac         | limestone cliffs, beach and sea                                                                                                                                                                                                      |
 | Desert     | sand           | dunes, palms and oases                                                                                                                                                                                                               |
 | Lakeland   | tarmac and mud | big wooded mountains, long lakes beside the road and under long concrete bridges, pines and birches, Falu-red farmhouses, a high summer sun                                                                                          |
+| Moorland   | gravel         | Welsh moor in the rain: bracken and heather, spruce plantations, sheep, fences and slate walls, watersplashes across the road                                                                                                        |
 
 Three types grip harder than their surface alone (`handling.grip`, read
 into the sim's `gripScale`): the Arctic's studded tyres 1.45×, the
@@ -106,6 +107,45 @@ the cars climb the snow and mud hills instead of spinning their wheels.
 Only the Arctic also quickens the steering. Lakeland's mud tyres are
 `handling.surfaceGrip` (`{ mud: 1.6 }`, the sim's `SimEnv.surfaceGrip`): 1.6×
 on its mud stretches, tarmac as ever.
+
+## Moorland
+
+A Welsh forest rally in the rain (`MOORLAND` in `regions.ts`, last in
+`RALLY_CYCLE`, save v15; reference photos in `context/moorland-stage/`).
+
+- **Weather.** `weathers: [['rain', 1]]`. The stage's weather now matters:
+  `stageGripScale` (regions) multiplies the type's handling grip by
+  `RAIN_GRIP` 0.9 in the rain, for the session and the autopilot alike;
+  `dayTheme(type, dusk, weather)` gives rain a close grey mist (fog 30–190 m),
+  a flat light and a dim sun, wet slate-grey gravel (`RAIN_GRAVEL`), a
+  faintly damp road (roughness 0.88) and dark wet tyre marks. `Rain`
+  (`render/effects`) draws 2,600 streaks (700 on software WebGL, 650 slower
+  ones under reduced motion) in a 60 × 30 × 60 m box that wraps round the
+  camera in the vertex shader: one draw call, nothing touched per frame but
+  two uniforms; streaks fade near the lens and into the fog.
+- **Road.** A narrow gravel track, 5.5 m wide (`roadHalfWidth: 2.75`), no painted edge lines (`unlined`). Its edges fray: the verge strip's first band is the carriageway's own gravel (same colour and outer-rut tone, unfaceted), reaching 0.15–1.6 m out on two scales of noise, so the carriageway's straight edge never shows; then faceted bands toward a peaty brown earth, into a brown shoulder that runs ragged well into the moor (`vergeBlend` 0.9). Low earth banks (`terrain.earthBanks`, up to 0.35 m, the foot wandering 0.3–1.4 m out, ending by 2.1 m) swell, dwindle and vanish along the road (`TerrainField.earthBank`, two octaves of 1D noise); the terrain and the road mesh's verges both ride them, so wheels run up them too.
+- **Watersplashes** (`Watersplashes.ts`). The brief draws 6–10 from the stage
+  seed (`splashCount`), and par allows `SPLASH_PAR_SECONDS` 0.6 s each. The
+  terrain lays them on the finished road (`planSplashes`): the road's dips
+  first (`RoadDips.roadLowPoints`, shared with the Alpine's rivers), then the
+  lowest of the rest, 120 m from the ends, 50 m from gates, 110–150 m apart,
+  where the road turns little enough to see one coming (relaxed only if a
+  twisty road leaves too few). Each is 7–12 m long. `surfaceAt` returns the `water` surface (grip 0.6, drag 0.35)
+  across the whole carriageway inside one. `SplashBuilder` draws each as an irregular puddle set into the road: a rounded, ragged-ended blob (a superellipse with a wavy rim) filling the carriageway across its middle, 1.2 cm over the deck, translucent (vertex alpha 0.7 in the middle fading to 0 at the rim, so the gravel shows through and there is no edge), grey where deep and browner toward the rim, with a satin sheen (roughness 0.18).
+  `SprayEmitter` watches each wheel's `surfaceAt` and throws spray from
+  `WaterSpray` (a 1,400-particle ring flown under gravity in the shader):
+  a stream in proportion to speed, a burst the frame a wheel plunges in,
+  outward, up and on with the car, white with brown in it. It works from
+  the wheels' places, so replays splash too.
+- **Ground and woods.** Wet green low down, bracken and heather browns up
+  the slopes, slate rock (`meadows` tones). Sparse pines on the open moor;
+  spruce plantations as pine groves (`GroveDef.kind: 'tree'`, 40 % of the
+  road in 300 m runs, 14× as thick). No houses, no towns; a lake now and
+  then beside the road, never bridged (`LakeStyle.bridges` 0 now means none
+  on any loop). Crowd berms keep the surrounding ground's colour (any
+  palette with `meadows`).
+- **Farms** (`farms`, `MoorlandDressing.ts` → `MoorlandDressingBuilder`):
+  flocks of sheep 30–150 m out on gentle open ground; wooden post-and-rail fences 5.5 m off the road on open stretches, a post every ~3 m and at both ends, two or three plank rails (sometimes a diagonal brace) running straight from post to post at the posts' own heights so they follow the ground; dry-stone slate walls 16–34 m out; all off the plantations, lakes and other stretches of road. Planned with the world (`StageWorld.farms`); fences and walls are colliders (`moorlandObstacles`), sheep are not.
 
 ## Lakeland
 
@@ -880,7 +920,8 @@ the cameras.
 | ------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | track   | every circuit                                                                       | race asphalt: a quarter more grip than tarmac and a planted rear, so the car slides far less                           |
 | tarmac  | Greenvale, Coastal and Urban stages, towns, Lakeland's tarmac stretches and bridges | most grip, highest par speed                                                                                           |
-| gravel  | Pinewood stages                                                                     | the reference surface                                                                                                  |
+| gravel  | Pinewood and Moorland stages                                                        | the reference surface                                                                                                  |
+| water   | the Moorland's watersplashes                                                        | wading: heavy drag and a little less grip                                                                              |
 | mud     | Autumnal stages, Lakeland's mud stretches                                           | slow and slippery                                                                                                      |
 | snow    | Alpine and Arctic stages, and off road there                                        | least grip, dusted asphalt look (soft lane bands: swept wheel tracks, dust between and along the edges, all wandering) |
 | sand    | every Desert stage                                                                  | packed piste, a little looser than gravel                                                                              |

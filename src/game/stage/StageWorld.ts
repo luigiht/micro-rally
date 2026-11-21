@@ -3,6 +3,8 @@ import { barrierObstacles } from './CircuitTrackside';
 import { seaWallObstacles } from './Coastline';
 import { bridgeObstacles } from './Rivers';
 import { lakeBridgeObstacles } from './Lakes';
+import { moorlandObstacles, planMoorlandDressing, type MoorlandDressing } from './MoorlandDressing';
+import { STAGE_TYPES } from './regions';
 import { propObstacles, scatterScenery, type Prop } from './SceneryScatter';
 import { calendarSlot, generateStage, type StageDef, type StageSlot } from './StageGenerator';
 import { TerrainField } from './TerrainField';
@@ -18,6 +20,8 @@ export interface StageWorld {
   field: TerrainField;
   props: Prop[];
   obstacles: ObstacleGrid;
+  /** The Moorland's sheep, fences and field walls (`farms`); absent elsewhere. */
+  farms?: MoorlandDressing;
   /** A city's tram lines and their timetable; absent elsewhere. */
   trams?: TramTraffic;
 }
@@ -49,7 +53,9 @@ function buildStageWorld(gameSeed: number, index: number, slot: StageSlot): Stag
   const stage = generateStage(gameSeed, index, slot);
   const field = new TerrainField(stage);
   const props = scatterScenery(field);
+  const farms = STAGE_TYPES[stage.stageType].farms ? planMoorlandDressing(field) : undefined;
   const boxes = [
+    ...(farms ? moorlandObstacles(field, farms) : []),
     ...(stage.town ? townObstacles(stage.town) : []),
     ...(field.coast ? seaWallObstacles(field.coast) : []),
     ...barrierObstacles(stage, (d) => field.roadHeightAt(d)),
@@ -63,6 +69,7 @@ function buildStageWorld(gameSeed: number, index: number, slot: StageSlot): Stag
     field,
     props,
     obstacles: new ObstacleGrid(propObstacles(props), boxes),
+    ...(farms ? { farms } : {}),
     ...(stage.town?.tramLoop
       ? {
           trams: {

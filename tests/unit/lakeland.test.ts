@@ -195,7 +195,7 @@ describe('Lakeland', () => {
     expect(envGrip(DEFAULT_ENV, 'mud')).toBe(1);
   });
 
-  it('moves v13 saves to v14, keeping records only where the stage is still the same type', () => {
+  it('moves v13 saves on, keeping records only where the stage is still the same type', () => {
     const rec = { best: 90, splits: [30, 60, 90] };
     // Stage 7 was a Pinewood on the seven-type mix and is the first Lakeland now; stage 0 is still a Pinewood.
     const moved = indexV13('pinewood', 1);
@@ -215,8 +215,8 @@ describe('Lakeland', () => {
       upgrades: {},
       updatedAt: 1,
     })!;
-    expect(SAVE_VERSION).toBe(14);
-    expect(save.version).toBe(14);
+    // Read on through v15 (Moorland), which keeps both: neither moved again.
+    expect(save.version).toBe(SAVE_VERSION);
     expect(moved).toBe(7);
     expect(
       Object.keys(save.records)

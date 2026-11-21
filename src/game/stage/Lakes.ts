@@ -24,7 +24,7 @@ import type { StageDef } from './StageGenerator';
 export interface LakeStyle {
   /** At most this many lakes beside the road a stage. */
   lakeside: number;
-  /** At most this many lakes the road bridges a stage, one more from the second loop on. */
+  /** At most this many lakes the road bridges a stage, one more from the second loop on; none ever at 0. */
   bridges: number;
   /** The water's colour. */
   water: string;
@@ -132,7 +132,8 @@ function smoothstep(e0: number, e1: number, x: number): number {
 export function planLakes(ground: LakeGround, style: LakeStyle, loop: number): Lake[] {
   const rand = mulberry32(hashSeed(ground.stage.seed, 'lakes'));
   const lakes: Lake[] = [];
-  const bridges = style.bridges + (loop >= 2 ? 1 : 0);
+  // A type that bridges no lakes never does, whatever the loop (the Moorland's lakes lie off the road).
+  const bridges = style.bridges > 0 ? style.bridges + (loop >= 2 ? 1 : 0) : 0;
   let tries = 0;
   for (const along of bridgeCandidates(ground)) {
     if (lakes.length >= bridges || tries >= MAX_TRIES) break;

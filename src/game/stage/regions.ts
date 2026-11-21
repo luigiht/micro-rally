@@ -5,6 +5,7 @@ import type { LakeStyle } from './Lakes';
 import type { RiverStyle } from './Rivers';
 import type { PineForm } from './SceneryScatter';
 import type { SurfaceSpanStyle } from './SurfaceSpans';
+import type { SplashStyle } from './Watersplashes';
 import type { BuildingStyle } from './Town';
 
 export type StageTypeId =
@@ -17,7 +18,8 @@ export type StageTypeId =
   | 'urban'
   | 'coastal'
   | 'desert'
-  | 'lakeland';
+  | 'lakeland'
+  | 'moorland';
 export type Weather = 'clear' | 'overcast' | 'rain' | 'night';
 
 export interface StagePalette {
@@ -198,6 +200,12 @@ export interface StageTypeDef {
     dunes?: boolean;
     banks?: { height: number; width: number };
     /**
+     * Low earth banks along both verges of a forest track (the Moorland): `height` at their
+     * tallest, over `width` from the carriageway's edge, swelling, dwindling and gone now and
+     * then along the road (`TerrainField.earthBank`); the road mesh's verges ride up over them.
+     */
+    earthBanks?: { height: number; width: number };
+    /**
      * The road is built up on a bank: the ground falls this far over this width past its edges,
      * from `from` metres out (0.3 when unset). With `lip`, the fall is the asphalt's own edge,
      * drawn as a dark face this wide down to a gravel shoulder (`MountainRoadStrips`).
@@ -264,6 +272,12 @@ export interface StageTypeDef {
   lakes?: LakeStyle;
   /** A high summer sun: stronger, warmer light than the stock day. */
   sunny?: boolean;
+  /** Fords of standing water right across the road, in its dips (`Watersplashes`); none when unset. */
+  splashes?: SplashStyle;
+  /** A forest track with no painted edge lines. */
+  unlined?: boolean;
+  /** Hill farming on the open ground: sheep, post-and-wire fences, dry-stone walls (`MoorlandDressing`). */
+  farms?: boolean;
 }
 
 const FOREST_PALETTE: StagePalette = {
@@ -895,6 +909,110 @@ const LAKELAND: StageTypeDef = {
   towns: false,
 };
 
+/**
+ * Moorland: a Welsh forest rally in the rain. Wet slate-grey gravel over
+ * open moorland (tan bracken and brown heather, bright wet green in the
+ * hollows, slate outcrops), through dark spruce plantations that the road
+ * plunges into and out of (pine `groves`), a grey lake now and then in a
+ * valley. It always rains: the grip drops a little (`RAIN_GRIP`), the mist
+ * closes in, and three to five watersplashes lie right across the road in
+ * its dips (`Watersplashes`), slowing every car that wades them.
+ */
+const MOORLAND: StageTypeDef = {
+  id: 'moorland',
+  seedKey: 'moorland',
+  surface: 'gravel',
+  offroad: 'grass',
+  weathers: [['rain', 1]],
+  palette: {
+    sky: '#9ea6a9',
+    fog: '#a8afb0',
+    // Wet green low down, bracken and heather browns up the slopes.
+    grassLow: '#5f7d3c',
+    grassHigh: '#8b6c44',
+    rock: '#5d6265',
+    // Peaty brown beside the track, not the gravel's grey, so the road reads against it.
+    shoulder: '#5c5040',
+    foliage: '#1d3a2b',
+    foliageAlt: '#24412f',
+    // Birches and rowans on the plantation edges, bracken-brown bushes.
+    canopy: '#6f6a3a',
+    canopyAlt: '#8a5a33',
+    trunk: '#463a2e',
+    boulder: '#666b6e',
+    // Sitka spruce: the darkest greens in the game.
+    pines: ['#142a1e', '#183022', '#1d3627', '#223c2b', '#294430'],
+    meadows: {
+      lush: '#527338',
+      meadow: '#6f7440',
+      sunlit: '#9b8150',
+      olive: '#7d5a38',
+      rockDark: '#4b5053',
+      rockLight: '#868c8f',
+      earth: '#4d4334',
+      shore: '#6f6c64',
+    },
+    // The shoulder's dirt runs well out into the moor, ragged face by face.
+    vergeBlend: 0.9,
+  },
+  // Rolling moorland hills with crags breaking through, banked like the Lakeland's; low ragged
+  // earth banks along the track's edges, where the grader threw the spoil.
+  terrain: {
+    amplitude: 26,
+    frequency: 1 / 320,
+    ridges: 0.3,
+    rugged: 1.8,
+    banked: true,
+    benches: true,
+    earthBanks: { height: 0.35, width: 2.1 },
+  },
+  twistiness: 1.15,
+  straights: 0.16,
+  // A narrow forestry track, 5.5 m across: narrower than the Lakeland's lane.
+  roadHalfWidth: 2.75,
+  // A grey lake in a valley now and then, beside the road, never bridged.
+  lakes: { lakeside: 1, bridges: 0, water: '#55666d' },
+  splashes: { count: [6, 10], length: [7, 12] },
+  // A forestry track: no paint.
+  unlined: true,
+  farms: true,
+  baseLength: 1900,
+  // Open moor (a few pines, bracken bushes, slate rocks, tall dry grass everywhere) broken by
+  // dense spruce plantations the road runs through for a few hundred metres at a time.
+  scenery: {
+    trees: 18,
+    broadleaf: 6,
+    bushes: 30,
+    rocks: 16,
+    // Open hill country: no farmhouses on the moor.
+    houses: 0,
+    treeScale: 1.2,
+    clearance: 2.2,
+    meanOffset: 16,
+    pineWood: {
+      reach: { full: 2.6, tall: 2.35, sparse: 1.8, young: 2 },
+      mix: { full: 0.75, tall: 0.1, young: 0.1, sparse: 0.05 },
+      roadside: 5,
+    },
+    crowding: 0.9,
+    grass: 520,
+    meadow: 1000,
+    spectators: 1.6,
+    groves: {
+      kind: 'tree',
+      share: 0.4,
+      length: 300,
+      boost: 14,
+      grow: 0.15,
+      crowding: 0.8,
+      deep: 520,
+      reach: 90,
+    },
+  },
+  parSpeed: 14,
+  towns: false,
+};
+
 export const STAGE_TYPES: Readonly<Record<StageTypeId, StageTypeDef>> = {
   arctic: ARCTIC,
   circuit: CIRCUIT,
@@ -906,6 +1024,7 @@ export const STAGE_TYPES: Readonly<Record<StageTypeId, StageTypeDef>> = {
   coastal: COAST,
   desert: DESERT,
   lakeland: LAKELAND,
+  moorland: MOORLAND,
 };
 
 /**
@@ -935,9 +1054,10 @@ export function isCircuitStage(index: number): boolean {
 
 /**
  * The rally stages between the cities and circuits, in turn: Pinewood,
- * Alpine, Forest, Coastal, Arctic, Autumnal, Desert, Lakeland. No type runs
- * twice in a row, round the wrap too, and stage 1 remains Pinewood as before.
- * Lakeland came last (save v14) so the first seven rally stages kept theirs.
+ * Alpine, Forest, Coastal, Arctic, Autumnal, Desert, Lakeland, Moorland. No
+ * type runs twice in a row, round the wrap too, and stage 1 remains Pinewood
+ * as before. Lakeland came last (save v14) so the first seven rally stages
+ * kept theirs, and Moorland after it (save v15) for the first eight.
  */
 export const RALLY_CYCLE: readonly StageTypeId[] = [
   'pinewood',
@@ -948,6 +1068,7 @@ export const RALLY_CYCLE: readonly StageTypeId[] = [
   'autumnal',
   'desert',
   'lakeland',
+  'moorland',
 ];
 
 /** How many cities and circuits come before `index`. */
@@ -973,6 +1094,19 @@ export function stageSlot(index: number): StageTypeId {
   const rally = rallyIndex(index);
   if (rally === null) return isCityStage(index) ? 'urban' : 'circuit';
   return RALLY_CYCLE[rally % RALLY_CYCLE.length]!;
+}
+
+/** Rain takes this share off every tyre's grip: wet gravel, a slick road. */
+export const RAIN_GRIP = 0.9;
+
+/**
+ * The grip multiplier a stage runs on (`SimEnv.gripScale`): its type's
+ * handling, less in the rain. Shared by the driving session and the
+ * autopilot so the two always agree.
+ */
+export function stageGripScale(stageType: StageTypeId, weather: Weather): number {
+  const grip = STAGE_TYPES[stageType].handling?.grip ?? 1;
+  return grip * (weather === 'rain' ? RAIN_GRIP : 1);
 }
 
 /** Stages per difficulty loop: every sixth stage the roads grow 25 % longer and bend tighter. */

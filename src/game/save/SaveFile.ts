@@ -1,6 +1,13 @@
 import { sanitizeUpgrades, type UpgradeLevels } from '../economy/upgrades';
 import { isCatalogCar, RETIRED_CARS, type CatalogCarId } from '../economy/cars';
-import { isCityStage, rallyIndex, stageSlot, type StageTypeId } from '../stage/regions';
+import {
+  isCityStage,
+  rallyIndex,
+  STAGE_TYPES,
+  stageSlot,
+  type StageTypeId,
+} from '../stage/regions';
+import { stageHasTown } from '../stage/StageGenerator';
 import { isValidGameId } from './GameId';
 
 export interface StageRecord {
@@ -8,7 +15,7 @@ export interface StageRecord {
   splits: number[];
 }
 
-export const SAVE_VERSION = 14;
+export const SAVE_VERSION = 15;
 export const DRIVER_NAME_MAX = 24;
 
 /** Everything needed to resume a game. Nothing personal beyond the driver name. */
@@ -280,7 +287,9 @@ function migrateV7(raw: Record<string, unknown>): Record<string, unknown> {
 }
 
 /** The stage types before Lakeland joined the rally mix (v13 and older). */
-type StageTypeIdV13 = Exclude<StageTypeId, 'lakeland'>;
+type StageTypeIdV13 = Exclude<StageTypeId, 'lakeland' | 'moorland'>;
+/** The stage types before Moorland joined the rally mix (v14 and older). */
+type StageTypeIdV14 = Exclude<StageTypeId, 'moorland'>;
 
 /** The seven-type rally mix of v7–v13, frozen so the migrations up to v13 keep their meaning. */
 const RALLY_CYCLE_V13: readonly StageTypeIdV13[] = [
@@ -300,6 +309,22 @@ function stageSlotV13(index: number): StageTypeIdV13 {
   return RALLY_CYCLE_V13[rally % RALLY_CYCLE_V13.length]!;
 }
 
+/** The eight-type rally mix of v14, frozen so the migrations up to v14 keep their meaning. */
+const RALLY_CYCLE_V14: readonly StageTypeIdV14[] = [...RALLY_CYCLE_V13, 'lakeland'];
+
+/** What stage `index` was in v14: the same cities and circuits, the eight-type mix between them. */
+function stageSlotV14(index: number): StageTypeIdV14 {
+  const rally = rallyIndex(index);
+  if (rally === null) return isCityStage(index) ? 'urban' : 'circuit';
+  return RALLY_CYCLE_V14[rally % RALLY_CYCLE_V14.length]!;
+}
+
+/** Whether stage `index` carried a town in v14: every third rally stage, of a type that builds them. */
+function townV14(index: number): boolean {
+  const rally = rallyIndex(index);
+  return rally !== null && rally % 3 === 2 && STAGE_TYPES[stageSlotV14(index)].towns;
+}
+
 /**
  * v14 adds Lakeland at the end of the rally mix, which grows from seven
  * types to eight: from the first Lakeland on, many stages are another
@@ -310,11 +335,32 @@ function migrateV13(raw: Record<string, unknown>): Record<string, unknown> {
   const records = isRecord(raw.records) ? raw.records : {};
   const kept = Object.fromEntries(
     Object.entries(records).filter(([key]) => {
-      const slot = stageSlot(Number(key));
+      const slot = stageSlotV14(Number(key));
       return slot !== 'circuit' && stageSlotV13(Number(key)) === slot;
     }),
   );
   return { ...raw, version: 14, records: kept };
+}
+
+/**
+ * v15 adds Moorland at the end of the rally mix, which grows from eight
+ * types to nine: from the first Moorland on, many stages are another type's
+ * road now, and from the second time round the mix on, the towns stand on
+ * other stages (`hasTown`). Records are kept only where the stage is still
+ * the same type, with or without its town as before.
+ */
+function migrateV14(raw: Record<string, unknown>): Record<string, unknown> {
+  const records = isRecord(raw.records) ? raw.records : {};
+  const kept = Object.fromEntries(
+    Object.entries(records).filter(([key]) => {
+      const index = Number(key);
+      const slot = stageSlot(index);
+      // The towns step on each time round the nine-type mix (`hasTown`): a stage that gained
+      // or lost its village is another road too.
+      return slot === stageSlotV14(index) && townV14(index) === stageHasTown(index);
+    }),
+  );
+  return { ...raw, version: 15, records: kept };
 }
 
 function parseCurrent(raw: Record<string, unknown>): SaveFile | null {
@@ -374,6 +420,7 @@ export function parseSaveFile(data: unknown): SaveFile | null {
   if (raw.version === 11) raw = migrateV11(raw);
   if (raw.version === 12) raw = migrateV12(raw);
   if (raw.version === 13) raw = migrateV13(raw);
+  if (raw.version === 14) raw = migrateV14(raw);
   if (raw.version === SAVE_VERSION) return parseCurrent(raw);
   return null;
 }

@@ -1,4 +1,4 @@
-import type { StageTypeDef } from '@/game/stage/regions';
+import type { StageTypeDef, Weather } from '@/game/stage/regions';
 import type { Surface } from '@/game/vehicle/surfaces';
 import {
   CAP_COLOR,
@@ -63,6 +63,8 @@ export interface RoadTheme {
   /** A city's tram tracks: the sett paving between the rails, and the rail heads. */
   tramBed: string;
   rail: ThemeColor;
+  /** The road is wet (rain): a smoother, glossier carriageway that catches the sky. */
+  wet?: boolean;
 }
 
 export interface GateTheme {
@@ -113,6 +115,8 @@ export interface WorldTheme {
   circuit: CircuitTheme;
   /** The car's headlamps and brake lamps are lit (dusk). */
   carLamps?: boolean;
+  /** It rains: streaks fall round the camera (`Rain`). */
+  rain?: boolean;
 }
 
 const DAY_LIGHTING = {
@@ -159,6 +163,25 @@ export const DUSK_LIGHTING: ThemeLighting = {
   sunIntensity: 0.3,
   sky: { zenith: '#141a3c', horizon: '#4a4a72', glow: '#b8607a', glowHot: '#ff9a52' },
 };
+
+/**
+ * Rain: a low grey sky over everything, the mist closing in, a flat light
+ * from a dim, soft sun, so the moor reads dark and damp and the far hills
+ * fade into the murk.
+ */
+export const RAIN_LIGHTING = {
+  fogNear: 30,
+  fogFar: 190,
+  hemiSky: '#d2d8db',
+  hemiGround: '#55604c',
+  hemiIntensity: 1.7,
+  sunColor: '#e6eaec',
+  sunIntensity: 1.1,
+} as const;
+
+/** Wet gravel reads as dark slate; churned wet grit marks it darker still. */
+export const RAIN_GRAVEL = '#5e5b55';
+export const RAIN_SKID_INK: SkidInk = { color: '#2e2c28', opacity: 0.45 };
 
 /** Tyre marks are drawn unlit, so after dark the snow's pale ink would glow: a faint shadow instead. */
 export const DUSK_SKID_INK: SkidInk = { color: '#2b2a44', opacity: 0.3 };
@@ -220,12 +243,21 @@ const DAY = new Map<string, WorldTheme>();
  * a stage that runs at dusk (`StageBrief.dusk`). Memoised, so a theme can be
  * compared by identity.
  */
-export function dayTheme(stageType: StageTypeDef, dusk = false): WorldTheme {
-  const key = `${stageType.id}${dusk ? ':dusk' : ''}`;
+export function dayTheme(
+  stageType: StageTypeDef,
+  dusk = false,
+  weather: Weather = 'clear',
+): WorldTheme {
+  const rain = weather === 'rain' && !dusk;
+  const key = `${stageType.id}${dusk ? ':dusk' : ''}${rain ? ':rain' : ''}`;
   let theme = DAY.get(key);
   if (!theme) {
     const road = dayRoad(stageType.palette.shoulder);
     if (stageType.id === 'autumnal') road.line = '#c0a682';
+    if (rain) {
+      road.surfaces = { ...road.surfaces, gravel: RAIN_GRAVEL };
+      road.wet = true;
+    }
     theme = {
       lighting: dusk
         ? DUSK_LIGHTING
@@ -235,15 +267,17 @@ export function dayTheme(stageType: StageTypeDef, dusk = false): WorldTheme {
             ...DAY_LIGHTING,
             ...(stageType.coast ? COAST_HEMI : {}),
             ...(stageType.sunny ? SUNNY_LIGHT : {}),
+            ...(rain ? RAIN_LIGHTING : {}),
           },
       road,
       gates: DAY_GATES,
       walls: DAY_WALLS,
       seawall: DAY_SEAWALL,
       sea: stageType.coast?.sea ?? DAY_SEA,
-      skidInk: dusk ? DUSK_SKID_INK : null,
+      skidInk: dusk ? DUSK_SKID_INK : rain ? RAIN_SKID_INK : null,
       circuit: DAY_CIRCUIT,
       carLamps: dusk,
+      rain,
     };
     DAY.set(key, theme);
   }

@@ -13,7 +13,12 @@ import {
 } from '@/game/vehicle/wheelContacts';
 import type { CameraMode } from '@/lib/cameraMode';
 import type { ReplayMarks } from '@/game/replay/ReplayTrack';
+import { Rain, REDUCED_RAIN } from '@/render/effects/Rain';
 import { SkidMarks } from '@/render/effects/SkidMarks';
+import { SprayEmitter } from '@/render/effects/SprayEmitter';
+import { WaterSpray } from '@/render/effects/WaterSpray';
+import { STAGE_TYPES } from '@/game/stage/regions';
+import type { StageRenderOptions } from '@/render/stage/StageRenderer';
 import { themeColor } from '@/render/theme/themeColor';
 import type { WorldTheme } from '@/render/theme/WorldTheme';
 import { useGameStore } from '@/state/gameStore';
@@ -34,11 +39,13 @@ interface DriveRigProps {
   theme: WorldTheme;
   /** Every frame: the car's pose, the clock the world's moving parts follow, and the session behind them. */
   onPose?: (pose: Readonly<VehiclePose>, clock: number, session: DrivingSession) => void;
+  /** Weather and water effects: rain streaks and tyre spray (`StageRenderOptions`); none when unset. */
+  effects?: Pick<StageRenderOptions, 'rainStreaks' | 'waterSpray'>;
   children?: ReactNode;
 }
 
 /** Car, lights and the driving session for any world. */
-export function DriveRig({ world, theme, onPose, children }: DriveRigProps) {
+export function DriveRig({ world, theme, onPose, effects, children }: DriveRigProps) {
   const camera = useThree((s) => s.camera) as PerspectiveCamera;
   const gl = useThree((s) => s.gl);
   const scene = useThree((s) => s.scene);
@@ -56,6 +63,10 @@ export function DriveRig({ world, theme, onPose, children }: DriveRigProps) {
   const wasReplaying = useRef(false);
   const replayMarks = useRef<ReplayMarks>({ front: 0, rear: 0, surface: 'tarmac' });
   const contacts = useMemo(() => createWheelContacts(), []);
+  const rain = useRef<Rain | null>(null);
+  const spray = useRef<{ spray: WaterSpray; emitter: SprayEmitter } | null>(null);
+  const rainStreaks = effects?.rainStreaks ?? 0;
+  const sprayOn = effects?.waterSpray === true;
 
   useEffect(() => {
     reduced.current = reducedMotion;
@@ -82,6 +93,35 @@ export function DriveRig({ world, theme, onPose, children }: DriveRigProps) {
       marks.current = null;
     };
   }, [scene, world]);
+
+  // Rain round the camera on a rainy stage: thinner and slower under reduced motion.
+  useEffect(() => {
+    if (!theme.rain || rainStreaks <= 0) return;
+    const r = new Rain(
+      reducedMotion
+        ? { ...REDUCED_RAIN, count: Math.min(rainStreaks, REDUCED_RAIN.count ?? rainStreaks) }
+        : { count: rainStreaks },
+    );
+    scene.add(r.mesh);
+    rain.current = r;
+    return () => {
+      r.dispose();
+      rain.current = null;
+    };
+  }, [scene, world, theme, rainStreaks, reducedMotion]);
+
+  // Spray from the tyres where a stage has watersplashes.
+  useEffect(() => {
+    const stage = world.stage;
+    if (!sprayOn || !stage || !STAGE_TYPES[stage.stageType].splashes) return;
+    const w = new WaterSpray();
+    scene.add(w.mesh);
+    spray.current = { spray: w, emitter: new SprayEmitter(w) };
+    return () => {
+      w.dispose();
+      spray.current = null;
+    };
+  }, [scene, world, sprayOn]);
 
   // Dusk ink keeps unlit tyre marks from glowing against the snow.
   useEffect(() => {
@@ -124,6 +164,17 @@ export function DriveRig({ world, theme, onPose, children }: DriveRigProps) {
           m.update(contacts, rm.surface, s.replayClock ?? 0, dt);
         }
       }
+    }
+    const clock = state.clock.elapsedTime;
+    rain.current?.update(clock, state.camera.position);
+    const sp = spray.current;
+    if (sp) {
+      // The replay's wheels wade the same water, so the spray comes back with it.
+      if (s.replaying) placeWheelContacts(contacts, pose, s.sim.spec, world.terrain, 0, 0);
+      else wheelContacts(contacts, pose, s.sim.state, s.sim.spec, world.terrain);
+      sp.emitter.update(contacts, pose, world.terrain, clock, dt, reduced.current);
+      sp.spray.setTime(clock);
+      sp.spray.flush();
     }
     poseCallback.current?.(pose, s.clock, s);
     if (sun.current) followSun(sun.current, pose, state.camera);

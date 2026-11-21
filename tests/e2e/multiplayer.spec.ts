@@ -65,6 +65,7 @@ test('two drivers share a session, and a stage opens only once both have run the
     'Arctic',
     'Autumnal',
     'Lakeland',
+    'Moorland',
     'Urban',
     'Circuit',
   ])

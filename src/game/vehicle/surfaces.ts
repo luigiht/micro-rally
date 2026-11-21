@@ -1,4 +1,5 @@
-export type Surface = 'tarmac' | 'track' | 'gravel' | 'mud' | 'snow' | 'grass' | 'sand' | 'dune';
+export type Surface =
+  'tarmac' | 'track' | 'gravel' | 'mud' | 'snow' | 'grass' | 'sand' | 'dune' | 'water';
 
 export interface SurfaceProps {
   /** Friction coefficient multiplier. */
@@ -29,6 +30,12 @@ export const SURFACES: Readonly<Record<Surface, SurfaceProps>> = {
   sand: { grip: 0.66, drag: 0.06 },
   /** Soft sand off the piste: the car wallows. */
   dune: { grip: 0.5, drag: 0.2 },
+  /**
+   * A watersplash's standing water (`Watersplashes`): the car wades, losing a
+   * good few km/h through a ford, and its tyres bite a little less than on
+   * the wet gravel round it.
+   */
+  water: { grip: 0.6, drag: 0.35 },
 };
 
 export const SURFACE_LIST: readonly Surface[] = [
@@ -41,4 +48,5 @@ export const SURFACE_LIST: readonly Surface[] = [
   'dune',
   // Appended, so the surface indices replays already store keep their meaning.
   'track',
+  'water',
 ];

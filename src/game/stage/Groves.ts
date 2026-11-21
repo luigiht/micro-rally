@@ -1,8 +1,8 @@
 import { hashSeed } from '../rng';
 
 /**
- * Groves: stretches where the road runs into dense broadleaf forest (the
- * Greenvale's oaks, chestnuts and lindens), so that now and then a stage
+ * Groves: stretches where the road runs into dense forest (the Greenvale's
+ * oaks, chestnuts and lindens; the Moorland's spruce plantations), so that now and then a stage
  * plunges through thick woods between its open hillsides. A slow noise along
  * the road, its own per stage, picks them: about `share` of the road, in
  * runs of roughly `length` metres, easing in and out over a few dozen.
@@ -22,6 +22,11 @@ export interface GroveDef {
   /** More broadleaves per 100 m of road spread evenly out to `reach` metres from its edge, in a grove only. */
   deep: number;
   reach: number;
+  /**
+   * What the grove is a wood of: broadleaves (the Greenvale's, when unset) or pines (`tree`
+   * props: the Moorland's conifer plantations).
+   */
+  kind?: 'broadleaf' | 'tree';
 }
 
 /** A grove fades in and out over this share of the noise's range. */

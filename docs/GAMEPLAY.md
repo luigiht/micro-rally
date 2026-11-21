@@ -133,12 +133,13 @@ the last sector board or lap line passed.
 - Every ninth stage (9, 18, 27…) is a city, and every tenth (10, 20,
   30…) a circuit race; where the two would meet (stage 90, 180…) the city
   keeps the stage and the circuit is the next one. The stages between run
-  through an eight-type rally mix in turn: Pinewood, Alpine, Greenvale, Coastal,
-  Arctic, Autumnal, Desert and Lakeland, so a type never runs twice in a row.
+  through a nine-type rally mix in turn: Pinewood, Alpine, Greenvale, Coastal,
+  Arctic, Autumnal, Desert, Lakeland and Moorland, so a type never runs twice in a row.
   Each type has one fixed road surface, except Lakeland, whose road changes
   between tarmac and mud along its length.
   Lakeland joined last (save v14), so the first seven rally stages kept their
-  types; best times on later stages whose type changed were cleared.
+  types, and Moorland after it (save v15) for the first eight; best times on
+  later stages whose type or village changed were cleared.
   Every six stages the roads lengthen by 25 % and the bends tighten a
   little, so there is always a next stage.
 - Greenvale stages are Riviera mountain roads in the Monte Carlo manner:
@@ -155,12 +156,22 @@ the last sector board or lap line passed.
   broken by short mud stretches of 100–200 m, with mud tracked onto the tarmac where
   they meet; bridges are always tarmac. Driving into a lake, the car
   wallows as in soft sand.
+- Moorland stages are a Welsh forest rally in the rain: wet slate-grey
+  gravel with no painted lines over open moor of bracken and heather, through
+  dark spruce plantations, past sheep, wooden fences and dry-stone
+  walls, with no houses and no bridges. It always rains there: streaks fall
+  round the camera, the mist closes in, and every tyre grips a tenth less.
+  Six to ten watersplashes lie right across the road in its dips; wading
+  one throws up a fan of spray and costs roughly 5–15 km/h (the par time
+  allows for them), without spinning the car.
 - Every third rally stage carries a town: the route leaves the open road,
   threads a village of right-angle corners, narrow streets and blocked side
   streets, and rejoins the stage. Counted along the mix, villages come round
   Pinewood, Autumnal, Greenvale and Alpine; Coastal, Arctic and Desert build
   none, so a town slot that falls there stays open road, and cities and
-  circuits are never counted.
+  circuits are never counted. Since the mix has nine types, the villages step
+  on by one stage each time round it, so every village type keeps getting
+  them.
 - Any stage up to the first unfinished one can be driven again from the
   Game panel's stage list.
 
@@ -178,6 +189,7 @@ the last sector board or lap line passed.
 | Coastal    | tarmac         | grass               | limestone cliffs and sea                 | 1600 m      | 15 m/s    |
 | Desert     | sand           | dune                | dunes and oases                          | 1900 m      | 16 m/s    |
 | Lakeland   | tarmac and mud | grass               | low hills, lakes, long bridges, pines    | 1900 m      | 14 m/s    |
+| Moorland   | wet gravel     | grass               | moor, spruce plantations, watersplashes  | 1900 m      | 14 m/s    |
 
 Three stage types grip harder than their surface alone: the Arctic's
 studded tyres ×1.45 (with quicker, deeper steering), the Alpine's winter

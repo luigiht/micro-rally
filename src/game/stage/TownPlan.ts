@@ -1,5 +1,5 @@
 import type { CityPlan } from './city/CityRoute';
-import { rallyIndex } from './regions';
+import { RALLY_CYCLE, rallyIndex } from './regions';
 import { hashSeed, mulberry32 } from '../rng';
 
 /** Corner arcs: 12 m, or 10 m on the sharpest (over 95°) corners; a leg may set its own (`radius`, wide city streets). */
@@ -21,11 +21,20 @@ export function tangentLength(turn: number, radius?: number): number {
  * Autumnal, Forest, Alpine and Arctic type. Never the first stage (the splash demo and
  * the smoke tests drive it), never two in a row. Stage types that build no
  * villages (Coastal and Desert) skip theirs: see `stageHasTown`.
+ *
+ * Where the mix's length is itself a multiple of three (nine types since
+ * Moorland, save v15), every third stage would land on the same three types
+ * every time round; so each time the mix comes round again the towns step on
+ * by one stage, and over three rounds every type takes its turn. The first
+ * round is as before.
  */
 export const TOWN_EVERY = 3;
 export function hasTown(index: number): boolean {
   const rally = rallyIndex(index);
-  return rally !== null && rally % TOWN_EVERY === TOWN_EVERY - 1;
+  if (rally === null) return false;
+  const n = RALLY_CYCLE.length;
+  const shift = n % TOWN_EVERY === 0 ? Math.floor(rally / n) : 0;
+  return (rally + shift) % TOWN_EVERY === TOWN_EVERY - 1;
 }
 
 /** Half width of the narrow old-town streets some towns have through their middle. */

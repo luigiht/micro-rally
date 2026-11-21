@@ -301,8 +301,10 @@ export function scatterScenery(field: TerrainField): Prop[] {
   const meanOffset = density.meanOffset ?? MEAN_OFFSET;
   const stand = trackside ? grandstandSpot(stage, trackside) : null;
   const cornerStands = trackside ? cornerStandSpots(stage, trackside) : [];
-  // The deep wood spreads evenly into the distance; a grove's own broadleaves out to its reach.
+  // The deep wood spreads evenly into the distance; a grove's own trees out to its reach.
   type Layer = 'deep' | 'grove';
+  // What a grove is a wood of: broadleaves unless it says pines.
+  const groveKind: PropKind = density.groves?.kind ?? 'broadleaf';
   const kinds: readonly [kind: PropKind, perHundred: number, layer?: Layer][] = [
     ['spruce', density.spruces ?? 0],
     ['tree', density.trees],
@@ -313,7 +315,7 @@ export function scatterScenery(field: TerrainField): Prop[] {
     ...(density.saplings ? [['sapling', density.saplings] as [PropKind, number]] : []),
     ...(density.deepWood ? [['tree', density.deepWood, 'deep'] as [PropKind, number, Layer]] : []),
     ...(density.groves
-      ? [['broadleaf', density.groves.deep, 'grove'] as [PropKind, number, Layer]]
+      ? [[groveKind, density.groves.deep, 'grove'] as [PropKind, number, Layer]]
       : []),
   ];
   const grove = density.groves ? groves(stage.seed, density.groves) : null;
@@ -329,7 +331,7 @@ export function scatterScenery(field: TerrainField): Prop[] {
       const thick =
         layer === 'grove'
           ? inGrove
-          : kind === 'broadleaf' && density.groves
+          : kind === groveKind && density.groves
             ? 1 + (density.groves.boost - 1) * inGrove
             : 1;
       const expected = ((perHundred * STEP) / 100) * (kind === 'rock' ? 1 : clump) * thick;
@@ -359,7 +361,7 @@ export function scatterScenery(field: TerrainField): Prop[] {
             ? 0.6 + rand() * 0.8
             : (0.7 + rand() * 0.8) *
               (kind === 'tree' ? (density.treeScale ?? 1) : 1) *
-              (kind === 'broadleaf' && density.groves ? 1 + density.groves.grow * inGrove : 1);
+              (kind === groveKind && density.groves ? 1 + density.groves.grow * inGrove : 1);
         const rotation = rand() * Math.PI * 2;
         const variant = rand() < 0.5 ? 0 : 1;
         // Keep every part of the road (including other bends) clear, and the town plateau.

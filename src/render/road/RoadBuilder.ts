@@ -374,7 +374,13 @@ export class RoadBuilder {
     if (VERGE_WIDTH <= TRENCH_OUT) throw new Error('verge strip must cover the trench ramp');
     const roadMat = new MeshStandardMaterial({
       vertexColors: true,
-      roughness: stage.surface === 'tarmac' || stage.surface === 'track' ? 0.75 : 1,
+      // Asphalt has a little sheen, loose ground none; in the rain a faint damp sheen only, never
+      // a mirror for the sun.
+      roughness: theme.wet
+        ? 0.88
+        : stage.surface === 'tarmac' || stage.surface === 'track'
+          ? 0.75
+          : 1,
       polygonOffset: true,
       polygonOffsetFactor: -2,
       polygonOffsetUnits: -2,
@@ -435,6 +441,8 @@ export class RoadBuilder {
     // The Autumnal's mud fades into ragged verges; on a road that changes surface both surfaces keep
     // the same plain verges, so the edges run on unbroken across every change.
     const raggedVerges = mudLane && field.surfaceRuns === null;
+    // A forest track between earth banks (the Moorland): no crisp edge, the gravel frays out.
+    const frayed = STAGE_TYPES[stage.stageType].terrain.earthBanks !== undefined;
     // A soft-shouldered road (`StagePalette.vergeBlend`) has faceted verges: ragged bands, each
     // triangle a shade of its own between the shoulder's dirt and darker earth, as the ground beside
     // them is, so the strip runs into the ground without a seam.
@@ -508,7 +516,8 @@ export class RoadBuilder {
     // Road, two verges and two edge lines; lateral extents follow the local half width. A sand
     // piste has no painted lines: its packed sand reads against the dunes on its own.
     // No edge lines on a sand piste, nor where snow banks line the road: the winter road is unmarked.
-    const lined = surface !== 'sand' && !drifts && !mudLane;
+    const lined =
+      surface !== 'sand' && !drifts && !mudLane && STAGE_TYPES[stage.stageType].unlined !== true;
     const edgeLines: Strip[] = [
       {
         a: (hw) => hw - 0.35 - LINE_WIDTH,
@@ -629,15 +638,38 @@ export class RoadBuilder {
         // A faceted verge's outer edge frays too, never in over the trench's ramp.
         if (band === 3)
           return verge.facets ? VERGE_WIDTH - 0.7 * driftNoise(k, 1.4, salt + 41) : VERGE_WIDTH;
+        if (frayed) {
+          // The gravel's edge wanders well out over the verge on two scales, long bays and short
+          // tongues; the earth's mix band follows it out, short of the frayed outer edge.
+          const reach =
+            0.15 +
+            1.45 * (0.6 * driftNoise(k, 5.3, salt) + 0.4 * driftNoise(k, 1.6, salt + 5)) ** 1.3;
+          return band === 1
+            ? reach
+            : Math.min(VERGE_WIDTH - 0.8, reach + 0.35 + 0.8 * driftNoise(k, 2.7, salt + 19));
+        }
         return band === 1
           ? 0.45 + 0.4 * driftNoise(k, 2.3, salt)
           : 1.1 + 0.5 * driftNoise(k, 3.1, salt + 19);
       };
       const bands = [0, 1, 2].map((band): Strip => ({
         ...verge,
-        color: verge.facets
-          ? verge.color.clone()
-          : road.clone().lerp(verge.color, [0.18, 0.58, 1][band]!),
+        // A frayed track's first band is the road itself, plain gravel shaded as the carriageway,
+        // so the carriageway's own edge never shows: only the gravel's wandering limit does.
+        ...(frayed && band === 0
+          ? {
+              facets: undefined,
+              patches: undefined,
+              // The carriageway's outer rut band is lit a shade up (`GRAVEL_RUTS`): so is this.
+              tone: (k: number) => 1 + (GRAVEL_RUTS.tone[0]! - 1) * GRAVEL_RUTS.fade!(k),
+            }
+          : {}),
+        // A frayed track's gravel spills out over the verge in ragged tongues before the earth.
+        color: frayed
+          ? road.clone().lerp(verge.color, [0, 0.55, 1][band]!)
+          : verge.facets
+            ? verge.color.clone()
+            : road.clone().lerp(verge.color, [0.18, 0.58, 1][band]!),
         a: (hw, k) => (verge.side === 1 ? hw + offsetAt(band, k) : -hw - offsetAt(band + 1, k)),
         b: (hw, k) => (verge.side === 1 ? hw + offsetAt(band + 1, k) : -hw - offsetAt(band, k)),
       }));
@@ -758,7 +790,8 @@ export class RoadBuilder {
       // A built-up road's verges slope down its bank with the ground (none in town).
       const bank =
         strip.side !== undefined && strip.rise === undefined
-          ? field.bankDrop(Math.abs(e) - st.hw) * (1 - t)
+          ? (field.bankDrop(Math.abs(e) - st.hw) - field.earthBank(Math.abs(e) - st.hw, st.d)) *
+            (1 - t)
           : 0;
       const y =
         st.y +

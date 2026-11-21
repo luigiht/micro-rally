@@ -14,6 +14,7 @@ import {
 import { Coastline } from './Coastline';
 import { BENCH_REACH, benchAcross, benchAlong, planBenches, type Bench } from './CrowdBenches';
 import { planRivers, RiverIndex, type River, type RiverHit } from './Rivers';
+import { planSplashes, splashAt, splashCount, type Watersplash } from './Watersplashes';
 import { lacetGround } from './Lacets';
 import {
   CROSS_CLEARANCE,
@@ -133,6 +134,21 @@ export const TRENCH_OUT = 0.4;
  */
 export const VERGE_WIDTH = 3;
 export const VERGE_BED_DROP = 0.15;
+/** An earth bank starts this far past the carriageway's edge. */
+const EARTH_BANK_FROM = 0.3;
+
+/** Smooth 1D value noise in 0..1 along a line, its own per salt. */
+function ribbonNoise(t: number, salt: number): number {
+  const k = Math.floor(t);
+  const f = t - k;
+  const h = (n: number) => {
+    let x = Math.imul((n + salt) | 0, 374761393);
+    x = Math.imul(x ^ (x >>> 13), 1274126177);
+    return ((x ^ (x >>> 16)) >>> 0) / 4294967296;
+  };
+  const a = h(k);
+  return a + (h(k + 1) - a) * (f * f * (3 - 2 * f));
+}
 const VERGE_BED_RAMP = 0.5;
 /** A built-up road's bank starts falling this far past the carriageway's edge (see `bankDrop`). */
 const EMBANK_FROM = 0.3;
@@ -325,8 +341,13 @@ export class TerrainField implements TerrainQuery {
    * bridge laid over them as tarmac; null where the road is one surface.
    */
   readonly surfaceRuns: SurfaceSpan[] | null;
+  /** Fords of standing water right across the road, in its dips (`splashes`), ordered along it; none elsewhere. */
+  readonly splashes: Watersplash[];
   /** A ridge of snow heaped along both verges (the Arctic), as height and width; null elsewhere. */
   private readonly banks: { height: number; width: number } | null;
+  /** Low earth banks along the verges (the Moorland), and the salt their raggedness is drawn with. */
+  private readonly earthBanks: { height: number; width: number } | null;
+  private readonly earthSalt: number;
   private readonly embankment: { height: number; width: number; from?: number } | null;
   /** Road distances of the crests `addCrests` raised on the straights, for the tests and the probes. */
   readonly crestsAt: number[] = [];
@@ -419,6 +440,8 @@ export class TerrainField implements TerrainQuery {
     this.rugged = region.terrain.rugged ?? 0;
     this.banked = region.terrain.banked === true;
     this.banks = region.terrain.banks ?? null;
+    this.earthBanks = region.terrain.earthBanks ?? null;
+    this.earthSalt = hashSeed(stage.seed, 'earth-banks');
     this.embankment = region.terrain.embankment ?? null;
     this.coast = region.coast
       ? new Coastline(
@@ -490,6 +513,14 @@ export class TerrainField implements TerrainQuery {
           },
           region.lakes,
           stage.loop,
+        )
+      : [];
+    // Laid on the finished road too: water stands in its dips, the deepest first.
+    this.splashes = region.splashes
+      ? planSplashes(
+          { stage, roadHeightAt: (d) => this.roadHeightAt(d) },
+          region.splashes,
+          splashCount(stage.seed, region.splashes),
         )
       : [];
     this.surfaceRuns = stage.surfaces
@@ -1034,6 +1065,7 @@ export class TerrainField implements TerrainQuery {
       this.benchGround(deck + (base - deck) * t - this.embankDrop(st, t), bench) -
       trench +
       this.bankLift(st) +
+      this.earthBankLift(st) +
       this.detailAt(x, z, t * (1 - bench));
     // Under a city's pavements the terraces' pads do not reach: a pad vertex there would tilt the
     // coarse terrain face up through the pavement as a green wedge along the building.
@@ -1128,8 +1160,9 @@ export class TerrainField implements TerrainQuery {
     if (this.banks || this.trackside || st.stub) return 0;
     if (this.town && townFade(this.town, st.along) > 0) return 0;
     const beyond = st.distance - st.hw;
-    // Down a built-up road's curving bank the coarse mesh strays further from the strip: twice the margin.
-    const drop = this.embankment ? 2 * VERGE_BED_DROP : VERGE_BED_DROP;
+    // Down a built-up road's curving bank, or over an earth bank's hump, the coarse mesh strays
+    // further from the strip: twice the margin.
+    const drop = this.embankment || this.earthBanks ? 2 * VERGE_BED_DROP : VERGE_BED_DROP;
     return (
       drop * (1 - smoothstep(VERGE_WIDTH - VERGE_BED_RAMP, VERGE_WIDTH + VERGE_BED_PAST, beyond))
     );
@@ -1149,6 +1182,37 @@ export class TerrainField implements TerrainQuery {
     if (out <= 0 || out >= b.width) return 0;
     const u = out / b.width;
     return b.height * Math.sin(Math.PI * u) ** 1.3;
+  }
+
+  /**
+   * A low earth bank beside a forest track (`terrain.earthBanks`), `beyond`
+   * metres past the carriageway's edge at road distance `along`: up off the
+   * edge, a rounded top, down to the ground before the verge strip ends; its
+   * height swells and dwindles along the road and dies away altogether now and
+   * then, so the track's edges look graded by hand, not drawn. Shared by the
+   * terrain and the road mesh's verges, so both ride the same bank.
+   */
+  earthBank(beyond: number, along: number): number {
+    const e = this.earthBanks;
+    if (!e || !Number.isFinite(along)) return 0;
+    // The foot wanders out from the edge and back, so the bank's slope never draws a line.
+    const rise = EARTH_BANK_FROM + 1.1 * ribbonNoise(along / 6.7, this.earthSalt + 13);
+    const end = Math.min(e.width, rise + 1.5);
+    if (beyond <= rise || beyond >= end) return 0;
+    const u = (beyond - rise) / (end - rise);
+    // A flat-topped hump: up over the first third, down over the last.
+    const shape = smoothstep(0, 0.35, u) * (1 - smoothstep(0.65, 1, u));
+    const swell = smoothstep(0.2, 0.55, ribbonNoise(along / 13, this.earthSalt));
+    const wobble = 0.65 + 0.35 * ribbonNoise(along / 4.1, this.earthSalt + 7);
+    // A bank squeezed narrow by its wandering foot stays low.
+    const room = Math.min(1, (end - rise) / 1.2);
+    return e.height * shape * swell * wobble * room;
+  }
+
+  private earthBankLift(st: StreetHit): number {
+    if (!this.earthBanks || st.stub) return 0;
+    if (this.town && townFade(this.town, st.along) > 0) return 0;
+    return this.earthBank(st.distance - st.hw, st.along);
   }
 
   /** The surface without the pavements' kerb lift: the deck tarmac, kerb faces and pavements are built on. */
@@ -1208,7 +1272,9 @@ export class TerrainField implements TerrainQuery {
         z,
         this.benchGround(deck + (base - deck) * t - this.embankDrop(st, t), bench) +
           this.detailAt(x, z, t * (1 - bench)),
-      ) + this.bankLift(st)
+      ) +
+      this.bankLift(st) +
+      this.earthBankLift(st)
     );
   }
 
@@ -1352,9 +1418,10 @@ export class TerrainField implements TerrainQuery {
       this.stage.path.nearest(x, z, this.stage.halfWidth, this.hit) &&
       this.hit.distance <= halfWidthAt(this.stage, this.hit.along)
     ) {
-      return town && this.hit.along >= town.from && this.hit.along <= town.to
-        ? 'tarmac'
-        : this.roadSurfaceAt(this.hit.along);
+      if (town && this.hit.along >= town.from && this.hit.along <= town.to) return 'tarmac';
+      // A watersplash covers the carriageway from edge to edge.
+      if (this.splashes.length > 0 && splashAt(this.splashes, this.hit.along)) return 'water';
+      return this.roadSurfaceAt(this.hit.along);
     }
     if (
       this.stubs.length > 0 &&

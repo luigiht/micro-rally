@@ -446,6 +446,7 @@ export const en = {
     coastal: 'Coastal',
     desert: 'Desert',
     lakeland: 'Lakeland',
+    moorland: 'Moorland',
   },
   controls: [
     { keys: 'W / S · ↑ / ↓', action: 'Throttle / brake, hold to reverse' },
@@ -577,6 +578,10 @@ export const en = {
           note: 'Big lakes. Long bridges.',
           surface: 'Mixed',
         },
+        moorland: {
+          note: 'Rain and splashes.',
+          surface: 'Wet gravel',
+        },
       },
     },
     garage: {
@@ -689,6 +694,7 @@ export const en = {
     grass: 'Grass',
     sand: 'Sand',
     dune: 'Dunes',
+    water: 'Water',
   },
   session: {
     choiceLabel: 'Session',

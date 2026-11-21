@@ -12,6 +12,7 @@ import {
   type Weather,
   reliefAmplitude,
 } from './regions';
+import { SPLASH_PAR_SECONDS, splashCount } from './Watersplashes';
 import { planSurfaceSpans, type SurfaceSpan } from './SurfaceSpans';
 import { generateCircuit, type CircuitLayout } from './CircuitGenerator';
 import {
@@ -61,6 +62,7 @@ const SURFACE_PAR: Readonly<Record<Surface, number>> = {
   grass: 0.8,
   sand: 0.9,
   dune: 0.8,
+  water: 0.6,
 };
 
 const NAME_HEADS = [
@@ -322,10 +324,13 @@ function lacetSpans(path: RoadPath, lacets: readonly Lacet[]): StageLacet[] {
 /**
  * Seconds a decent run spends between the start and finish lines at the
  * type's par speed, each stretch at its own surface's pace where the road
- * changes surface (`SurfaceSpans`, drawn from the seed and length alone).
+ * changes surface (`SurfaceSpans`, drawn from the seed and length alone),
+ * plus a few seconds' wading through any watersplashes.
  */
 function drivingTime(def: StageTypeDef, seed: number, length: number): number {
-  const own = length / (def.parSpeed * SURFACE_PAR[def.surface]);
+  // Each watersplash costs a little wading (`Watersplashes`), counted from the seed alone.
+  const wading = def.splashes ? splashCount(seed, def.splashes) * SPLASH_PAR_SECONDS : 0;
+  const own = length / (def.parSpeed * SURFACE_PAR[def.surface]) + wading;
   if (!def.surfaceSpans) return own;
   const from = START_DISTANCE;
   const to = START_DISTANCE + length;
@@ -334,7 +339,7 @@ function drivingTime(def: StageTypeDef, seed: number, length: number): number {
     const run = Math.min(to, s.to) - Math.max(from, s.from);
     if (run > 0) time += run / (def.parSpeed * SURFACE_PAR[s.surface]);
   }
-  return time;
+  return time + wading;
 }
 
 /** Draws the brief in RNG order; `generateStage` continues with the same stream. */

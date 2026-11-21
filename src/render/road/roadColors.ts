@@ -12,6 +12,8 @@ export const ROAD_COLORS: Readonly<Record<Surface, string>> = {
   /** Packed sand, close to the dunes either side and just a touch darker and warmer, so the piste reads without shouting. */
   sand: '#cfb07a',
   dune: '#e0c58b',
+  /** A watersplash's muddy grey-brown water (`SplashBuilder` draws it; the ribbon never runs on it). */
+  water: '#5e5a4e',
 };
 /** White edge lines, 2 cm over the deck. */
 export const LINE_COLOR = '#f4f1e8';

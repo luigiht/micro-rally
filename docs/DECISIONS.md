@@ -6606,3 +6606,80 @@ bed)`. The road, its profile and every record stay as they were, so
      Chromium with CDP touch input: spreading pulled the chase camera in,
      pinching pushed it out. The help and controls list say so in all three
      languages.
+291. **2026-11-21 — Moorland: a Welsh stage type with rain and watersplashes.**
+     At the user's request, after `docs/UPCOMING_STAGES.md`'s Wales pick and
+     the photos in `context/moorland-stage/`: it always rains, splashes slow
+     the car noticeably, three to five a stage, appended after Lakeland.
+     - **Rotation and saves.** `moorland` joins `RALLY_CYCLE` last; save v15.
+       The v13→v14 migration compared against the live calendar, so it now
+       uses a frozen eight-type `stageSlotV14`. A nine-type mix is a multiple
+       of three, so the every-third-stage towns would always land on the same
+       three types (no Pinewood or Alpine villages ever again, no Desert on a
+       town slot): `hasTown` steps the towns on by one stage each time round
+       a mix whose length divides by three, leaving the first round as it
+       was. `migrateV14` keeps a record only where the stage kept its type
+       and its town. Calendar-tuned tests use the frozen calendars
+       (`typeV14`, `stableIndexV13` now also requires an unchanged town).
+     - **Weather wired at last.** `StageBrief.weather` was drawn but never
+       read. `stageGripScale` applies `RAIN_GRIP` 0.9 on top of the type's
+       handling (session and autopilot share it); the theme takes the
+       weather (mist, flat light, wet road colour and sheen, dark tyre ink).
+       Only Moorland rains, so no other stage changes.
+     - **Water surface.** Appended to `SURFACE_LIST` (replays store indices).
+       Drag 0.35, grip 0.6: through a 10 m splash at 90 km/h the Rally Hatch,
+       Riviera and Sirocco lose 5–20 km/h with under 3° of yaw (pinned in
+       `moorland.test.ts`). Par allows 0.6 s a splash, counted in the brief
+       from the seed so it needs no terrain.
+     - **Placement.** On the finished road profile like rivers and lakes,
+       the river crossing finder extracted to `RoadDips.ts` (rivers keep
+       their output; their tests pass unchanged).
+     - **Effects.** There is still no quality-tier system (milestone 7), so
+       rain and spray are `StageRenderOptions` flags like the nature extras
+       (`rainStreaks`, `waterSpray`); software WebGL gets 700 streaks. Both
+       are GPU-animated rings with one draw call each, no allocation per
+       frame (spray uploads one range per attribute per frame). Under
+       reduced motion the rain thins to a quarter and slows, the spray stays
+       low and short; the water, wet road and grip are unchanged.
+     - **Look.** No painted lines on the forestry track (`unlined`), spruce
+       plantations as pine groves (`GroveDef.kind`), sheep, fences and slate
+       walls (`farms`). At the user's request mid-build: no houses and no
+       lake bridges (a `bridges: 0` lake style no longer gains one from the
+       second loop), and crowd berms keep the ground's colour on palettes
+       with `meadows`, where the old lush-green berm clashed (it showed bright
+       green on the moor).
+       **Follow-up the same day.** The user found the watersplash a marked
+       rectangle with kerbs, floating, and the fences' wires stepped. Each
+       splash is now an irregular puddle set 1.2 cm into the road (a ragged
+       superellipse filling the carriageway across its middle, a wet ring round
+       it, no kerbs, no concrete fords; `Watersplash.lip` is gone), with a satin
+       sheen instead of the glossy one whose sun highlight blew out white. The
+       fences are wooden post-and-rail after the user's reference: posts every
+       ~3 m and at both ends, plank rails straight from post to post at their
+       own heights (following the ground, never stepped), each piece its own
+       shade of weathered wood, now and then a diagonal brace. The farm plan
+       moved into the stage world (`StageWorld.farms`) so fences and field walls
+       are colliders (`moorlandObstacles`); a test drives a car into a fence.
+       **Second follow-up.** The puddle's dark wet ring read as a border, so it
+       is gone; the water is translucent instead, its vertex alpha fading from
+       0.7 in the middle to nothing at the rim, so it melts into the road. The
+       user also wanted the road's edges irregular, with small banks, after a
+       scanned dirt-track reference: Moorland gets `terrain.earthBanks` (a
+       second bank kind beside the Arctic's snow `banks`, which several builders
+       treat as snow), a flat-topped hump up to 0.35 m whose height wanders along
+       the road on its own seeded noise and dies away now and then.
+       `TerrainField.earthBank` feeds both the ground and the road mesh's verge
+       strips (alongside the embankment's `bankDrop`), and the verge bed sinks
+       twice as deep there so the coarse terrain never pokes through. The verge
+       bands carry the gravel out in ragged tongues before the earth, and the
+       shoulder turned a peaty brown so the grey track reads against it.
+       **Third follow-up.** The carriageway's edge still read as a clean line:
+       the verge's first band started exactly at it in a different shade, and
+       the earth bank's slope began at a constant 0.3 m. The first band is now
+       the road's own gravel (unfaceted, with the outer rut band's tone),
+       reaching 0.15–1.6 m out on two scales of noise; the bank's foot wanders
+       0.3–1.4 m out and a narrowed bank stays low. The shoulder's ragged blend
+       into the moor widens (`vergeBlend` 0.9). At the user's request the stage
+       now has six to ten watersplashes (spaced 150 m, 110 m for fallback
+       picks), and the track narrows to 5.5 m (`roadHalfWidth` 2.75).
+       The wet road's sheen (roughness 0.5) caught the sun too brightly for the
+       user: it is now 0.88, a faint damp sheen.
