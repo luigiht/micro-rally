@@ -525,10 +525,10 @@ export const it: Messages = {
     },
     tickerLabel: 'In evidenza',
     ticker: [
-      'Prove di rally',
-      'Garage da 11 auto',
+      '11 tipi di prove di rally',
+      '12 auto disponibili',
       'Carriera in solitaria',
-      'Rally in due',
+      'Multigiocatore con i tuoi amici',
       'Quattro telecamere',
       'Fatto per il browser',
     ],

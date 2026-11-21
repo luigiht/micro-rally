@@ -525,10 +525,10 @@ export const es: Messages = {
     },
     tickerLabel: 'Lo más destacado',
     ticker: [
-      'Tramos de rally',
-      'Garaje de 11 coches',
+      '11 tipos de tramos de rally',
+      '12 coches disponibles',
       'Carrera en solitario',
-      'Rally para dos',
+      'Multijugador con tus amigos',
       'Cuatro cámaras',
       'Hecho para el navegador',
     ],

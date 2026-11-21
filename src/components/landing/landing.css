@@ -1028,7 +1028,35 @@
   gap: 24px;
 }
 .landing-page .ticker {
-  justify-content: safe center;
+  justify-content: flex-start;
+  overflow: hidden;
+}
+/* The marquee: two identical runs side by side, the track sliding one run's width left and
+   starting over, so the strip scrolls without end. */
+.landing-page .ticker-track {
+  display: flex;
+  flex: none;
+  width: max-content;
+}
+.landing-page .ticker-run {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 24px;
+  padding-right: 24px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .landing-page .ticker-track {
+    animation: landing-ticker 40s linear infinite;
+  }
+  .landing-page .ticker:hover .ticker-track {
+    animation-play-state: paused;
+  }
+}
+@keyframes landing-ticker {
+  to {
+    transform: translateX(-50%);
+  }
 }
 .landing-page .ticker span {
   font-size: 10px;

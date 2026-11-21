@@ -13,7 +13,13 @@ import {
 } from '@/game/vehicle/wheelContacts';
 import type { CameraMode } from '@/lib/cameraMode';
 import type { ReplayMarks } from '@/game/replay/ReplayTrack';
-import { Rain, REDUCED_RAIN } from '@/render/effects/Rain';
+import {
+  DEFAULT_RAIN,
+  DEFAULT_SNOW,
+  Rain,
+  REDUCED_RAIN,
+  REDUCED_SNOW,
+} from '@/render/effects/Rain';
 import { SkidMarks } from '@/render/effects/SkidMarks';
 import { SprayEmitter } from '@/render/effects/SprayEmitter';
 import { WaterSpray } from '@/render/effects/WaterSpray';
@@ -94,13 +100,16 @@ export function DriveRig({ world, theme, onPose, effects, children }: DriveRigPr
     };
   }, [scene, world]);
 
-  // Rain round the camera on a rainy stage: thinner and slower under reduced motion.
+  // Rain or snow round the camera: thinner and slower under reduced motion.
   useEffect(() => {
-    if (!theme.rain || rainStreaks <= 0) return;
+    const kind = theme.precipitation;
+    if (!kind || rainStreaks <= 0) return;
+    const base = kind === 'snow' ? DEFAULT_SNOW : DEFAULT_RAIN;
+    const reduced = kind === 'snow' ? REDUCED_SNOW : REDUCED_RAIN;
     const r = new Rain(
       reducedMotion
-        ? { ...REDUCED_RAIN, count: Math.min(rainStreaks, REDUCED_RAIN.count ?? rainStreaks) }
-        : { count: rainStreaks },
+        ? { ...base, ...reduced, count: Math.min(rainStreaks, reduced.count ?? rainStreaks) }
+        : { ...base, count: rainStreaks },
     );
     scene.add(r.mesh);
     rain.current = r;

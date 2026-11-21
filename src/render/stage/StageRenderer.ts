@@ -76,7 +76,7 @@ export interface StageRenderOptions {
   tallGrass: boolean;
   /** Loose stones strewn on a gravel road (the Pinewood); visual only. */
   roadStones: boolean;
-  /** Falling rain round the camera on a rainy stage (the Moorland), this many streaks; 0 for none. */
+  /** Falling rain or snow round the camera on a rainy or snowy stage (the Moorland, the Alpine), this many drops or flakes; 0 for none. */
   rainStreaks: number;
   /** Spray thrown up by tyres in a watersplash; the water itself is always drawn. */
   waterSpray: boolean;

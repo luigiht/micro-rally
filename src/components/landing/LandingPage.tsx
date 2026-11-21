@@ -165,13 +165,22 @@ export function LandingPage() {
           </div>
         </header>
 
+        {/* A marquee: the items twice over in one track sliding left, so the loop never shows a
+            seam; the copy is hidden from assistive tech, and the track holds still under reduced
+            motion. */}
         <section className="ticker" aria-label={t.tickerLabel}>
-          {t.ticker.map((item, i) => (
-            <span key={item}>
-              {i > 0 && <b aria-hidden="true">◆</b>}
-              {item}
-            </span>
-          ))}
+          <div className="ticker-track">
+            {[0, 1].map((copy) => (
+              <div key={copy} className="ticker-run" aria-hidden={copy === 1 || undefined}>
+                {t.ticker.map((item) => (
+                  <span key={item}>
+                    <b aria-hidden="true">◆</b>
+                    {item}
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
         </section>
 
         <section id="gameplay" className="content-section gameplay">

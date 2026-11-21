@@ -506,10 +506,10 @@ export const en = {
     },
     tickerLabel: 'Game highlights',
     ticker: [
-      'Rally stages',
-      '11-car garage',
+      '11 types of rally stages',
+      '12 cars available',
       'Solo career',
-      'Two-player rally',
+      'Multiplayer with your friends',
       'Four cameras',
       'Built for the browser',
     ],

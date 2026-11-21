@@ -20,7 +20,7 @@ export type StageTypeId =
   | 'desert'
   | 'lakeland'
   | 'moorland';
-export type Weather = 'clear' | 'overcast' | 'rain' | 'night';
+export type Weather = 'clear' | 'overcast' | 'rain' | 'night' | 'snow';
 
 export interface StagePalette {
   sky: string;
@@ -490,10 +490,8 @@ const ALPINE: StageTypeDef = {
   seedKey: 'alpine',
   surface: 'snow',
   offroad: 'snow',
-  weathers: [
-    ['overcast', 2],
-    ['clear', 1],
-  ],
+  // It always snows on the passes: flakes drift round the camera in a pale winter mist.
+  weathers: [['snow', 1]],
   palette: {
     sky: '#dde5ec',
     fog: '#e3e9ee',

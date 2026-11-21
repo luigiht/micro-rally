@@ -156,6 +156,8 @@ the last sector board or lap line passed.
   broken by short mud stretches of 100–200 m, with mud tracked onto the tarmac where
   they meet; bridges are always tarmac. Driving into a lake, the car
   wallows as in soft sand.
+- Alpine stages always snow: flakes drift down round the car and a pale
+  winter mist hides the far slopes (looks only; the grip is the snow road's).
 - Moorland stages are a Welsh forest rally in the rain: wet slate-grey
   gravel with no painted lines over open moor of bracken and heather, through
   dark spruce plantations, past sheep, wooden fences and dry-stone

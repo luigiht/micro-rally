@@ -9,6 +9,9 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Added
 
+- **Snow on the Alpine.** It always snows on the mountain passes now: flakes
+  drift and sway down round the car, and a pale winter mist hides the far
+  slopes [292].
 - **Moorland, a new stage type.** A Welsh forest rally in the rain, after
   Lakeland in the rally mix: wet slate-grey gravel with no painted lines
   over open moor of bracken and heather, through dark spruce plantations,

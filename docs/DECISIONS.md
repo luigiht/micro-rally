@@ -6683,3 +6683,15 @@ bed)`. The road, its profile and every record stay as they were, so
        picks), and the track narrows to 5.5 m (`roadHalfWidth` 2.75).
        The wet road's sheen (roughness 0.5) caught the sun too brightly for the
        user: it is now 0.88, a faint damp sheen.
+292. **2026-11-21 — Snow on the Alpine.** At the user's request the Alpine
+     passes always snow: `Weather` gains `snow`, and the Alpine's weathers
+     are `[['snow', 1]]` (the weather draw is one draw whatever its weights,
+     so no other part of a stage moves). Snow changes the look only, not the
+     grip (the Alpine already runs on the `snow` surface with winter tyres).
+     `dayTheme` gives snow a pale winter murk (`SNOW_LIGHTING`: a cool grey
+     sky, fog closing in at 22–170 m, soft blue-white light, a weak sun), and
+     `WorldTheme.precipitation` ('rain' | 'snow') replaces the rain flag.
+     `Rain` draws snow too: round soft flakes (`flakes`) 13 × 6.5 cm falling
+     at 1.4 m/s, swaying 0.6 m on their own phases (`sway`), white; under
+     reduced motion a quarter of them, slower and barely swaying. Same single
+     draw call and the same `rainStreaks` budget (700 on software WebGL).

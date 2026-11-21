@@ -115,8 +115,8 @@ export interface WorldTheme {
   circuit: CircuitTheme;
   /** The car's headlamps and brake lamps are lit (dusk). */
   carLamps?: boolean;
-  /** It rains: streaks fall round the camera (`Rain`). */
-  rain?: boolean;
+  /** Rain or snow falls round the camera (`Rain`); none when unset. */
+  precipitation?: 'rain' | 'snow';
 }
 
 const DAY_LIGHTING = {
@@ -177,6 +177,22 @@ export const RAIN_LIGHTING = {
   hemiIntensity: 1.7,
   sunColor: '#e6eaec',
   sunIntensity: 1.1,
+} as const;
+
+/**
+ * Snow: a pale winter murk, the mist close and cool, the far slopes lost in
+ * it, a soft blue-white light with no sun to speak of.
+ */
+export const SNOW_LIGHTING = {
+  background: '#cdd5dc',
+  fog: '#d9e0e6',
+  fogNear: 22,
+  fogFar: 170,
+  hemiSky: '#e9eff5',
+  hemiGround: '#9aa5b0',
+  hemiIntensity: 1.85,
+  sunColor: '#eef3f9',
+  sunIntensity: 1.15,
 } as const;
 
 /** Wet gravel reads as dark slate; churned wet grit marks it darker still. */
@@ -249,7 +265,8 @@ export function dayTheme(
   weather: Weather = 'clear',
 ): WorldTheme {
   const rain = weather === 'rain' && !dusk;
-  const key = `${stageType.id}${dusk ? ':dusk' : ''}${rain ? ':rain' : ''}`;
+  const snow = weather === 'snow';
+  const key = `${stageType.id}${dusk ? ':dusk' : ''}${rain ? ':rain' : ''}${snow ? ':snow' : ''}`;
   let theme = DAY.get(key);
   if (!theme) {
     const road = dayRoad(stageType.palette.shoulder);
@@ -268,6 +285,7 @@ export function dayTheme(
             ...(stageType.coast ? COAST_HEMI : {}),
             ...(stageType.sunny ? SUNNY_LIGHT : {}),
             ...(rain ? RAIN_LIGHTING : {}),
+            ...(snow ? SNOW_LIGHTING : {}),
           },
       road,
       gates: DAY_GATES,
@@ -277,7 +295,11 @@ export function dayTheme(
       skidInk: dusk ? DUSK_SKID_INK : rain ? RAIN_SKID_INK : null,
       circuit: DAY_CIRCUIT,
       carLamps: dusk,
-      rain,
+      ...(rain
+        ? { precipitation: 'rain' as const }
+        : snow
+          ? { precipitation: 'snow' as const }
+          : {}),
     };
     DAY.set(key, theme);
   }
