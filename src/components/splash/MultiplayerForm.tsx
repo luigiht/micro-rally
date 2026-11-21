@@ -15,6 +15,9 @@ import type { StageTypeId } from '@/game/stage/regions';
 import { enterSession, getSessionClient, getSessionSeats } from '@/state/sessionStore';
 import { StageTypePicker } from './StageTypePicker';
 
+/** The form's two tabs, in order. */
+const CHOICES = ['create', 'join'] as const;
+
 type Choice = 'create' | 'join';
 
 interface Prefill {
@@ -48,6 +51,10 @@ export function MultiplayerForm() {
   const [error, setError] = useState<string | null>(null);
 
   const typedName = sanitizeDriverName(name);
+  const pick = (c: Choice) => {
+    setChoice(c);
+    setError(null);
+  };
   const holdsSeat = choice === 'join' && isValidGameId(id) && getSessionSeats().get(id) !== null;
   const canSubmit =
     !busy &&
@@ -118,66 +125,89 @@ export function MultiplayerForm() {
         />
       </div>
 
-      <div role="group" aria-label={m.session.choiceLabel} className="grid grid-cols-2 gap-3">
-        {(['create', 'join'] as const).map((c) => (
+      <div role="tablist" aria-label={m.session.choiceLabel} className="pixel-tabs">
+        {CHOICES.map((c, index) => (
           <button
             key={c}
+            id={`session-tab-${c}`}
             type="button"
-            aria-pressed={choice === c}
-            onClick={() => {
-              setChoice(c);
-              setError(null);
+            role="tab"
+            aria-selected={choice === c}
+            aria-controls="session-panel"
+            tabIndex={choice === c ? 0 : -1}
+            onClick={() => pick(c)}
+            onKeyDown={(e) => {
+              // Arrow keys (and Home / End) move between the two tabs, as in any tab list.
+              const next =
+                e.key === 'ArrowRight' || e.key === 'ArrowLeft'
+                  ? CHOICES[(index + 1) % CHOICES.length]!
+                  : e.key === 'Home'
+                    ? CHOICES[0]!
+                    : e.key === 'End'
+                      ? CHOICES[CHOICES.length - 1]!
+                      : null;
+              if (!next) return;
+              e.preventDefault();
+              pick(next);
+              document.getElementById(`session-tab-${next}`)?.focus();
             }}
-            className={`${choice === c ? 'pixel-btn' : 'pixel-btn-ghost'} px-2 text-[10px]`}
+            className="pixel-tab"
           >
             {c === 'create' ? m.session.newTab : m.session.joinTab}
           </button>
         ))}
       </div>
 
-      {choice === 'create' ? (
-        <>
+      <div
+        id="session-panel"
+        role="tabpanel"
+        aria-labelledby={`session-tab-${choice}`}
+        className="space-y-5"
+      >
+        {choice === 'create' ? (
+          <>
+            <div>
+              <label htmlFor="session-stages" className="block font-pixel text-xs">
+                {m.session.stagesLabel}
+              </label>
+              <select
+                id="session-stages"
+                className="pixel-select mt-2 w-full"
+                value={stageCount}
+                onChange={(e) => setStageCount(Number(e.target.value) as SessionLength)}
+              >
+                {SESSION_LENGTHS.map((n) => (
+                  <option key={n} value={n}>
+                    {fill(m.session.stagesOption, { n })}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <StageTypePicker picked={types} onChange={setTypes} />
+          </>
+        ) : (
           <div>
-            <label htmlFor="session-stages" className="block font-pixel text-xs">
-              {m.session.stagesLabel}
+            <label htmlFor="session-id" className="block font-pixel text-xs">
+              {m.session.idLabel}
             </label>
-            <select
-              id="session-stages"
-              className="pixel-select mt-2 w-full"
-              value={stageCount}
-              onChange={(e) => setStageCount(Number(e.target.value) as SessionLength)}
-            >
-              {SESSION_LENGTHS.map((n) => (
-                <option key={n} value={n}>
-                  {fill(m.session.stagesOption, { n })}
-                </option>
-              ))}
-            </select>
+            <input
+              id="session-id"
+              className="pixel-input mt-2 w-full"
+              value={formatGameId(id)}
+              onChange={(e) => {
+                setId(normalizeGameId(e.target.value));
+                setError(null);
+              }}
+              placeholder={m.session.idPlaceholder}
+              maxLength={9}
+              aria-invalid={error === 'not_found' || error === 'full' || undefined}
+              autoCapitalize="characters"
+              autoCorrect="off"
+              spellCheck={false}
+            />
           </div>
-          <StageTypePicker picked={types} onChange={setTypes} />
-        </>
-      ) : (
-        <div>
-          <label htmlFor="session-id" className="block font-pixel text-xs">
-            {m.session.idLabel}
-          </label>
-          <input
-            id="session-id"
-            className="pixel-input mt-2 w-full"
-            value={formatGameId(id)}
-            onChange={(e) => {
-              setId(normalizeGameId(e.target.value));
-              setError(null);
-            }}
-            placeholder={m.session.idPlaceholder}
-            maxLength={9}
-            aria-invalid={error === 'not_found' || error === 'full' || undefined}
-            autoCapitalize="characters"
-            autoCorrect="off"
-            spellCheck={false}
-          />
-        </div>
-      )}
+        )}
+      </div>
 
       {errorText && (
         <p role="alert" className="pixel-box-dark p-3 text-sm">

@@ -93,6 +93,58 @@
     outline: 3px dashed var(--color-rally);
     outline-offset: 8px;
   }
+  /*
+   * Pixel tabs: a row of folder tabs on a 4px ink rule. The selected tab is paper bordered in
+   * ink over its top and sides, standing on the rule so it joins the content below; the others sit back
+   * in a dimmer paper, a little lower, behind the rule.
+   */
+  .pixel-tabs {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+    padding: 0 0.25rem;
+    box-shadow: inset 0 -4px 0 0 var(--color-ink);
+  }
+  .pixel-tab {
+    flex: 1 1 0;
+    min-width: 0;
+    font-family: var(--font-pixel);
+    -webkit-font-smoothing: none;
+    font-size: 0.625rem;
+    line-height: 1.5;
+    text-transform: uppercase;
+    padding: 0.55rem 0.5rem 0.65rem;
+    margin-top: 0.4rem;
+    background-color: color-mix(in srgb, var(--color-ink) 12%, var(--color-paper));
+    color: color-mix(in srgb, var(--color-ink) 70%, var(--color-paper));
+    border-radius: 0;
+    box-shadow:
+      inset 0 4px 0 0 var(--color-ink),
+      inset 4px 0 0 0 var(--color-ink),
+      inset -4px 0 0 0 var(--color-ink),
+      inset 0 -4px 0 0 var(--color-ink);
+    cursor: pointer;
+  }
+  .pixel-tab:hover {
+    color: var(--color-ink);
+  }
+  .pixel-tab[aria-selected='true'] {
+    margin-top: 0;
+    padding-top: 0.75rem;
+    padding-bottom: 0.85rem;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    cursor: default;
+    /* An ink border over its top and down both sides; no bottom edge, so it opens into the content. */
+    box-shadow:
+      inset 0 4px 0 0 var(--color-ink),
+      inset 4px 0 0 0 var(--color-ink),
+      inset -4px 0 0 0 var(--color-ink);
+  }
+  .pixel-tab:focus-visible {
+    outline: 3px dashed var(--color-rally);
+    outline-offset: 3px;
+  }
   /* Native select dressed as a pixel box; the chevron is an inline 1-bit glyph. */
   .pixel-select {
     appearance: none;

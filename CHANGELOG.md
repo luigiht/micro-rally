@@ -47,6 +47,9 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Changed
 
+- **New session and Join session are tabs** on the Multiplayer screen: folder
+  tabs on a rule, the open one raised and joined to the form below, arrow keys move
+  between them.
 - **Villages move round the stage mix.** With nine stage types, the villages
   step on by one stage each time round, so Pinewood, Alpine, Greenvale and
   Autumnal stages all keep getting them. Best times on stages whose type or
