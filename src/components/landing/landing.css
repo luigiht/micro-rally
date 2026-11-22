@@ -411,8 +411,8 @@
   /* The stage and its still sit absolutely in the top 438 px; the footer flows under them. */
   padding: 456px 24px 20px;
   background: #e3dbc4;
-  border: 2px solid var(--ink);
-  box-shadow: 10px 10px 0 var(--ink);
+  /* The same soft drop shadow as the step cards, no border. */
+  box-shadow: 8px 8px 0 0 rgb(43 42 51 / 0.35);
 }
 .landing-page .specs {
   position: absolute;
@@ -453,7 +453,6 @@
   width: calc(100% - 40px);
   height: 416px;
   object-fit: cover;
-  filter: drop-shadow(9px 12px 0 rgba(37, 37, 37, 0.12));
 }
 .landing-page .car-stage {
   position: absolute;
@@ -467,7 +466,6 @@
   touch-action: pan-y;
   opacity: 0;
   transition: opacity 0.35s ease;
-  filter: drop-shadow(9px 12px 0 rgba(37, 37, 37, 0.12));
 }
 .landing-page .car-stage:active {
   cursor: grabbing;
@@ -626,8 +624,8 @@
   position: relative;
   height: 346px;
   overflow: hidden;
-  border: 3px solid var(--ink);
-  box-shadow: 10px 10px 0 var(--ink);
+  /* The same soft drop shadow as the step cards, no border. */
+  box-shadow: 8px 8px 0 0 rgb(43 42 51 / 0.35);
   background: var(--ink);
 }
 .landing-page .camera-frame img {
@@ -953,7 +951,7 @@
   }
   .landing-page .camera-frame {
     height: 230px;
-    box-shadow: 7px 7px 0 var(--ink);
+    box-shadow: 6px 6px 0 0 rgb(43 42 51 / 0.35);
   }
   .landing-page .camera-caption > span {
     font-size: 10px;

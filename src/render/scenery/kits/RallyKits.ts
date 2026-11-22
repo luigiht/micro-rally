@@ -25,6 +25,7 @@ import type { KindKit } from '../SceneryChunkManager';
 import { cityGreenKits } from './CityGreenKits';
 import { alpineKits } from './AlpineKits';
 import { greenvaleKits } from './GreenvaleKits';
+import { savannaKits } from './SavannaKits';
 import { spruceKits } from './SpruceKits';
 import { spectatorKits } from './SpectatorKits';
 import {
@@ -249,7 +250,7 @@ export function rallyKits(
   palette: StagePalette,
   shadows: boolean,
   snow: boolean,
-  woods?: 'alpine' | 'greenvale' | 'lakeland',
+  woods?: 'alpine' | 'greenvale' | 'lakeland' | 'savanna',
 ): KindKit[] {
   const pine = [new Color(palette.foliage), new Color(palette.foliageAlt)] as const;
   const leaf = [new Color(palette.canopy), new Color(palette.canopyAlt)] as const;
@@ -289,12 +290,14 @@ export function rallyKits(
       ? alpineKits(palette, shadows)
       : woods === 'greenvale'
         ? greenvaleKits(palette, shadows)
-        : woods === 'lakeland'
-          ? [
-              ...pineKits(palette.pines ?? [palette.foliage], shadows),
-              ...greenvaleKits(palette, shadows).filter((k) => !k.sources.includes('tree')),
-            ]
-          : null;
+        : woods === 'savanna'
+          ? savannaKits(palette, shadows)
+          : woods === 'lakeland'
+            ? [
+                ...pineKits(palette.pines ?? [palette.foliage], shadows),
+                ...greenvaleKits(palette, shadows).filter((k) => !k.sources.includes('tree')),
+              ]
+            : null;
   return [
     ...(ownWoods ?? [
       ...(palette.pines

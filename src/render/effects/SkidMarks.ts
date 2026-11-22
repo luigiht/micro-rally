@@ -55,6 +55,8 @@ const INK: Readonly<Record<Surface, { color: string; opacity: number }>> = {
   dune: { color: '#c9ad78', opacity: 0.55 },
   // Churned through the water: dark wet grit.
   water: { color: '#3a3832', opacity: 0.45 },
+  // Furrows ploughed through the powder.
+  fechfech: { color: '#a8784e', opacity: 0.5 },
 };
 
 const VERTEX = /* glsl */ `

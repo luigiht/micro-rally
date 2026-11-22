@@ -5,6 +5,7 @@ import { bridgeObstacles } from './Rivers';
 import { lakeBridgeObstacles } from './Lakes';
 import { moorlandObstacles, planMoorlandDressing, type MoorlandDressing } from './MoorlandDressing';
 import { STAGE_TYPES } from './regions';
+import { planSavannaDressing, savannaObstacles, type SavannaDressing } from './SavannaDressing';
 import { propObstacles, scatterScenery, type Prop } from './SceneryScatter';
 import { calendarSlot, generateStage, type StageDef, type StageSlot } from './StageGenerator';
 import { TerrainField } from './TerrainField';
@@ -22,6 +23,8 @@ export interface StageWorld {
   obstacles: ObstacleGrid;
   /** The Moorland's sheep, fences and field walls (`farms`); absent elsewhere. */
   farms?: MoorlandDressing;
+  /** The Savanna's herds, sisal plantations and termite mounds (`wildlife`); absent elsewhere. */
+  wildlife?: SavannaDressing;
   /** A city's tram lines and their timetable; absent elsewhere. */
   trams?: TramTraffic;
 }
@@ -54,8 +57,10 @@ function buildStageWorld(gameSeed: number, index: number, slot: StageSlot): Stag
   const field = new TerrainField(stage);
   const props = scatterScenery(field);
   const farms = STAGE_TYPES[stage.stageType].farms ? planMoorlandDressing(field) : undefined;
+  const wildlife = STAGE_TYPES[stage.stageType].wildlife ? planSavannaDressing(field) : undefined;
   const boxes = [
     ...(farms ? moorlandObstacles(field, farms) : []),
+    ...(wildlife ? savannaObstacles(wildlife) : []),
     ...(stage.town ? townObstacles(stage.town) : []),
     ...(field.coast ? seaWallObstacles(field.coast) : []),
     ...barrierObstacles(stage, (d) => field.roadHeightAt(d)),
@@ -70,6 +75,7 @@ function buildStageWorld(gameSeed: number, index: number, slot: StageSlot): Stag
     props,
     obstacles: new ObstacleGrid(propObstacles(props), boxes),
     ...(farms ? { farms } : {}),
+    ...(wildlife ? { wildlife } : {}),
     ...(stage.town?.tramLoop
       ? {
           trams: {

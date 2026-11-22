@@ -19,6 +19,7 @@ export const SURFACE_DIFFICULTY: Readonly<Record<Surface, number>> = {
   sand: 1.2,
   dune: 1.3,
   water: 1.15,
+  fechfech: 1.25,
 };
 
 /**

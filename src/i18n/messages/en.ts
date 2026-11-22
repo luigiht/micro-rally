@@ -133,7 +133,7 @@ export const en = {
       highlights: [
         {
           title: 'Stages and progression',
-          body: 'Rally stages cycle through eight stage types, each with its own road surface: Pinewood gravel, Alpine snow, Greenvale and Coastal tarmac, Arctic snow, Autumnal mud, Desert sand, and Lakeland, whose road changes between tarmac and mud and crosses lakes on long bridges. Every ninth stage is a city and every tenth is a three-lap circuit; when they coincide, the city comes first and the circuit follows. The rally mix then loops with longer, tighter roads.',
+          body: 'Rally stages cycle through ten stage types, each with its own road surface: Pinewood gravel, Alpine snow, Greenvale and Coastal tarmac, Arctic snow, Autumnal mud, Desert sand, Lakeland, whose road changes between tarmac and mud and crosses lakes on long bridges, Moorland’s wet gravel in the rain, and Savanna’s red murram broken by powdery fech-fech. Every ninth stage is a city and every tenth is a three-lap circuit; when they coincide, the city comes first and the circuit follows. The rally mix then loops with longer, tighter roads.',
         },
         {
           title: 'Drive, reset and replay',
@@ -447,6 +447,7 @@ export const en = {
     desert: 'Desert',
     lakeland: 'Lakeland',
     moorland: 'Moorland',
+    savanna: 'Savanna',
   },
   controls: [
     { keys: 'W / S · ↑ / ↓', action: 'Throttle / brake, hold to reverse' },
@@ -506,7 +507,7 @@ export const en = {
     },
     tickerLabel: 'Game highlights',
     ticker: [
-      '11 types of rally stages',
+      '12 types of rally stages',
       '12 cars available',
       'Solo career',
       'Multiplayer with your friends',
@@ -581,6 +582,10 @@ export const en = {
         moorland: {
           note: 'Rain and splashes.',
           surface: 'Wet gravel',
+        },
+        savanna: {
+          note: 'Red dust. Wild horizons.',
+          surface: 'Mixed',
         },
       },
     },
@@ -695,6 +700,7 @@ export const en = {
     sand: 'Sand',
     dune: 'Dunes',
     water: 'Water',
+    fechfech: 'Fech-fech',
   },
   session: {
     choiceLabel: 'Session',

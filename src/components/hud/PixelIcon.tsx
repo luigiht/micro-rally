@@ -5,7 +5,7 @@
  * a puddle, a snowflake, grass blades and sand ripples; `coast` (16×16) is a
  * sun over a leaning palm with waves and the shore below, shown for Coast
  * stages instead of the surface glyph; `circuit` (16×16) is a chequered flag
- * on a pole, for circuit stages; `turbo` (16×16) is a turbocharger in
+ * billowing from its pole, for circuit stages; `turbo` (16×16) is a turbocharger in
  * two-pixel strokes: its round housing round a hub, the outlet and flange top
  * right and two speed lines behind; `checkpoint` is a small chequered flag and `money`
  * a dollar bill, the compact HUD's labels on touch devices; `respawn` is an
@@ -13,7 +13,11 @@
  * `player` (16×16) is one driver, head and shoulders, and `players` (16×16)
  * two side by side, the splash's Single player and Multiplayer buttons;
  * `lakeland` (16×16) is two pines on a mountain over a lake's ripples;
- * `moorland` (16×16) is a rain cloud, slanting rain, over a rolling hill.
+ * `moorland` (16×16) is a rain cloud, slanting rain, over a rolling hill;
+ * `savanna` (16×16) is a flat-topped acacia on the plain under the sun;
+ * `pinewood` (16×16) is a wood of tall bare-trunked pines on gravel;
+ * `autumnal` (16×16) is a round broadleaf shedding its leaves;
+ * `forest` (16×16, the Greenvale) is a peak with a road zig-zagging up it.
  */
 export type PixelIconName =
   | 'respawn'
@@ -42,6 +46,10 @@ export type PixelIconName =
   | 'alpine'
   | 'lakeland'
   | 'moorland'
+  | 'savanna'
+  | 'pinewood'
+  | 'autumnal'
+  | 'forest'
   | 'turbo'
   | 'checkpoint'
   | 'money'
@@ -340,6 +348,78 @@ const GLYPHS: Record<PixelIconName, readonly string[]> = {
     '################',
   ],
   // 16×16: two mountains, a big one left and a small one right, each with its peak in outline (the snow) over a zigzag snow line.
+  pinewood: [
+    '..#.............',
+    '.###.....#......',
+    '#####...###.....',
+    '.###...#####..#.',
+    '#####...###..###',
+    '..#...#######.#.',
+    '..#.....###..###',
+    '..#....#####.###',
+    '..#......#....#.',
+    '..#......#....#.',
+    '..#......#....#.',
+    '..#......#....#.',
+    '..#......#....#.',
+    '................',
+    '.#..#...#..#..#.',
+    '################',
+  ],
+  autumnal: [
+    '.....######.....',
+    '...##########...',
+    '..############..',
+    '.##############.',
+    '.##############.',
+    '..############..',
+    '...####..####...',
+    '.......##.....#.',
+    '..#....##.......',
+    '.......##...#...',
+    '.......##.......',
+    '.....#.##.......',
+    '.......##..#....',
+    '......####......',
+    '................',
+    '################',
+  ],
+  forest: [
+    '.......##.......',
+    '.......##.......',
+    '......####......',
+    '......####......',
+    '.....####.#.....',
+    '.....###.##.....',
+    '....##..####....',
+    '....#.######....',
+    '...###..#####...',
+    '...#####.####...',
+    '..#######..###..',
+    '..#########.##..',
+    '.#######...####.',
+    '.######.#######.',
+    '####...#########',
+    '###.############',
+  ],
+  savanna: [
+    '...........##...',
+    '..........####..',
+    '...........##...',
+    '................',
+    '.##############.',
+    '################',
+    '..############..',
+    '......#..#......',
+    '.......##.......',
+    '.......#........',
+    '.......#........',
+    '.......#........',
+    '.......#........',
+    '......###.......',
+    '................',
+    '################',
+  ],
   moorland: [
     '................',
     '.....####.......',
@@ -413,24 +493,24 @@ const GLYPHS: Record<PixelIconName, readonly string[]> = {
     '################',
     '################',
   ],
-  // 16×16: a chequered flag on a pole, its free edge waving.
+  // 16×16: a hemmed chequered flag billowing from a pole with a knob on top.
   circuit: [
-    '##..............',
-    '##..............',
-    '####..##..##....',
-    '####..##..##....',
-    '##..##..##..##..',
-    '##..##..##..##..',
-    '####..##..##..##',
-    '####..##..##..##',
-    '##..##..##..##..',
-    '##..##..##..##..',
-    '####..##..##....',
-    '####..##..##....',
-    '##..............',
-    '##..............',
-    '##..............',
-    '##..............',
+    '.#..............',
+    '###.............',
+    '.######.........',
+    '.###..###...###.',
+    '.###..#######.#.',
+    '.#..####..##..#.',
+    '.#..##....#####.',
+    '.###....##..###.',
+    '.###..####....#.',
+    '.#..####..##..#.',
+    '.#..##....#####.',
+    '.######.##..###.',
+    '.#....####..###.',
+    '.#......#####...',
+    '.#..............',
+    '###.............',
   ],
   urban: [
     '................',

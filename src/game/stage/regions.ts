@@ -19,7 +19,8 @@ export type StageTypeId =
   | 'coastal'
   | 'desert'
   | 'lakeland'
-  | 'moorland';
+  | 'moorland'
+  | 'savanna';
 export type Weather = 'clear' | 'overcast' | 'rain' | 'night' | 'snow';
 
 export interface StagePalette {
@@ -72,6 +73,8 @@ export interface StagePalette {
    * unset, the shoulder ends crisply right by the road.
    */
   vergeBlend?: number;
+  /** The road's own colour, where it differs from its surface's (the Savanna's red murram). */
+  road?: string;
   /** The farmhouses' walls and roofs, two tints each, where they differ from the stock render and terracotta. */
   houses?: {
     walls: readonly [string, string];
@@ -227,6 +230,16 @@ export interface StageTypeDef {
     };
     /** Share of the relief drawn as sharp-crested ridges over broad valleys: mountains rather than hills. */
     ridges?: number;
+    /**
+     * Volcanic cones standing far off the road (the Savanna's horizon, `Cones`): how many, how
+     * far from any road, how high and how wide at the foot, each a range.
+     */
+    cones?: {
+      count: readonly [number, number];
+      distance: readonly [number, number];
+      height: readonly [number, number];
+      radius: readonly [number, number];
+    };
     /** Metres of knolls, ribs and gullies laid over the broad relief, so a hillside is never smooth. */
     rugged?: number;
     /** Where the crowds gather, the ground either side of the road is levelled into benches (`CrowdBenches`). */
@@ -249,6 +262,8 @@ export interface StageTypeDef {
     steer: number;
     lock: number;
     surfaceGrip?: Readonly<Partial<Record<Surface, number>>>;
+    /** Extra drag (1/s) on the surfaces it names: loose ground that holds the car back. */
+    surfaceDrag?: Readonly<Partial<Record<Surface, number>>>;
   };
   /** Road curviness: about 1 for a winding road, more for one that bends harder and oftener. */
   twistiness: number;
@@ -272,12 +287,26 @@ export interface StageTypeDef {
   lakes?: LakeStyle;
   /** A high summer sun: stronger, warmer light than the stock day. */
   sunny?: boolean;
+  /** Clear open country: the haze starts and ends this far off (the Savanna's long views). */
+  haze?: { near: number; far: number };
+  /**
+   * A gradient sky in place of the flat one (the Savanna's early morning): its colour overhead,
+   * at the horizon (where the mist matches it), and the glow toward the low sun.
+   */
+  skyGradient?: { zenith: string; horizon: string; glow: string; glowHot: string };
   /** Fords of standing water right across the road, in its dips (`Watersplashes`); none when unset. */
   splashes?: SplashStyle;
   /** A forest track with no painted edge lines. */
   unlined?: boolean;
   /** Hill farming on the open ground: sheep, post-and-wire fences, dry-stone walls (`MoorlandDressing`). */
   farms?: boolean;
+  /** Safari country: giraffes and zebras, sisal plantations, termite mounds (`SavannaDressing`). */
+  wildlife?: boolean;
+  /**
+   * The road throws up dust behind fast cars (`DustEmitter`): its colour, and a paler one off
+   * fech-fech; `ink` is the tyre marks' colour everywhere on the stage, grass and all.
+   */
+  dust?: { color: string; pale: string; ink: string };
 }
 
 const FOREST_PALETTE: StagePalette = {
@@ -1011,6 +1040,112 @@ const MOORLAND: StageTypeDef = {
   towns: false,
 };
 
+/**
+ * Savanna: a Kenyan safari rally (after the Safari Rally photos in
+ * `context/savanna-stage`). Red murram tracks run long and fast across golden
+ * grassland and green scrub, past flat-topped acacias, sisal and tin-roofed
+ * huts, with volcanic cones on the horizon. The road kicks up thick red dust;
+ * stretches of powdery fech-fech slow the car and throw up more; now and then
+ * it fords a muddy river and flies over a crest. Giraffes and zebras graze
+ * well off the road (`SavannaDressing`).
+ */
+const SAVANNA: StageTypeDef = {
+  id: 'savanna',
+  seedKey: 'savanna',
+  surface: 'gravel',
+  offroad: 'grass',
+  weathers: [['clear', 1]],
+  sunny: true,
+  // Early morning: a soft warm mist over the plain, thinning with distance into a pale yellow
+  // horizon under the blue.
+  haze: { near: 35, far: 250 },
+  skyGradient: { zenith: '#7fb3df', horizon: '#eadcb4', glow: '#f3d79c', glowHot: '#fbe9c2' },
+  palette: {
+    sky: '#86bde6',
+    fog: '#eadcb4',
+    // Olive green down in the hollows, the dry gold of the plains above.
+    grassLow: '#8c9548',
+    grassHigh: '#c9a45a',
+    rock: '#8f6a52',
+    // The murram's red earth beside the track.
+    shoulder: '#a8532f',
+    foliage: '#5f7a32',
+    foliageAlt: '#6f8436',
+    // Acacia crowns: a flat, sun-faded green.
+    canopy: '#6f8a3a',
+    canopyAlt: '#86964a',
+    trunk: '#4f3a2a',
+    boulder: '#8a6d58',
+    road: '#b65a33',
+    meadows: {
+      lush: '#6e8a3a',
+      meadow: '#a59a4e',
+      sunlit: '#d2b26a',
+      olive: '#8d8442',
+      rockDark: '#6e5244',
+      rockLight: '#a98a72',
+      earth: '#9c4a2b',
+    },
+    grassPatches: { lush: '#6f8f3c', dry: '#d1ae66' },
+    vergeBlend: 0.7,
+    // Mud-brick walls under rusty corrugated iron.
+    houses: {
+      walls: ['#9a6a4a', '#86593d'],
+      roofs: ['#8a5a3c', '#7a7f80'],
+    },
+  },
+  // Wide plains, gently rolling; a few crests to fly over; volcanic cones far off.
+  terrain: {
+    amplitude: 24,
+    frequency: 1 / 420,
+    ridges: 0.15,
+    rugged: 1,
+    banked: true,
+    crests: { every: 400, height: 0.8, length: 30, turn: 0.5, search: 300, level: 0.02 },
+    cones: { count: [2, 3], distance: [260, 440], height: [45, 80], radius: [90, 150] },
+    // Low ragged banks of red earth along the track's edges, where the grader threw the spoil.
+    earthBanks: { height: 0.3, width: 2.1 },
+  },
+  twistiness: 0.8,
+  straights: 0.3,
+  roadHalfWidth: 3.5,
+  unlined: true,
+  // Murram: a little more grip than loose gravel, so the long tracks flow, but loose enough to
+  // hold the car back like dirt, not tarmac. The fech-fech keeps its own looser grip and drags more.
+  handling: {
+    grip: 1,
+    steer: 1,
+    lock: 1,
+    surfaceGrip: { gravel: 1.1 },
+    surfaceDrag: { gravel: 0.07, fechfech: 0.04, grass: 0.04 },
+  },
+  // Long stretches of murram broken by short powdery fech-fech.
+  surfaceSpans: { alt: 'fechfech', main: [300, 650], other: [60, 140] },
+  // Now and then a muddy river across the road.
+  splashes: { count: [1, 3], length: [8, 14], water: '#6e5a48' },
+  dust: { color: '#b4633c', pale: '#dcb88c', ink: '#a5532f' },
+  wildlife: true,
+  baseLength: 2000,
+  // Open country: acacias spread wide, scrub and sisal, tall golden grass everywhere.
+  scenery: {
+    trees: 14,
+    broadleaf: 0,
+    bushes: 34,
+    rocks: 6,
+    houses: 0.6,
+    treeScale: 1.1,
+    clearance: 3,
+    meanOffset: 26,
+    crowding: 1.2,
+    grass: 600,
+    meadow: 1100,
+    spectators: 2.2,
+    berms: true,
+  },
+  parSpeed: 14,
+  towns: false,
+};
+
 export const STAGE_TYPES: Readonly<Record<StageTypeId, StageTypeDef>> = {
   arctic: ARCTIC,
   circuit: CIRCUIT,
@@ -1023,6 +1158,7 @@ export const STAGE_TYPES: Readonly<Record<StageTypeId, StageTypeDef>> = {
   desert: DESERT,
   lakeland: LAKELAND,
   moorland: MOORLAND,
+  savanna: SAVANNA,
 };
 
 /**
@@ -1052,10 +1188,11 @@ export function isCircuitStage(index: number): boolean {
 
 /**
  * The rally stages between the cities and circuits, in turn: Pinewood,
- * Alpine, Forest, Coastal, Arctic, Autumnal, Desert, Lakeland, Moorland. No
- * type runs twice in a row, round the wrap too, and stage 1 remains Pinewood
- * as before. Lakeland came last (save v14) so the first seven rally stages
- * kept theirs, and Moorland after it (save v15) for the first eight.
+ * Alpine, Forest, Coastal, Arctic, Autumnal, Desert, Lakeland, Moorland,
+ * Savanna. No type runs twice in a row, round the wrap too, and stage 1
+ * remains Pinewood as before. Lakeland came last (save v14) so the first seven
+ * rally stages kept theirs, Moorland after it (save v15) for the first eight,
+ * and Savanna after that (save v16) for the first nine.
  */
 export const RALLY_CYCLE: readonly StageTypeId[] = [
   'pinewood',
@@ -1067,6 +1204,7 @@ export const RALLY_CYCLE: readonly StageTypeId[] = [
   'desert',
   'lakeland',
   'moorland',
+  'savanna',
 ];
 
 /** How many cities and circuits come before `index`. */

@@ -154,7 +154,7 @@ describe('Moorland', () => {
     }
   });
 
-  it('moves v14 saves to v15, keeping records only where the stage and its town are unchanged', () => {
+  it('moves v14 saves on, keeping records only where the stage and its town are unchanged', () => {
     const rec = { best: 90, splits: [30, 60, 90] };
     // Stage 10 was a Pinewood on the eight-type mix and is the first Moorland now; 0 is still a
     // Pinewood; 8 is a city on every calendar.
@@ -173,8 +173,8 @@ describe('Moorland', () => {
       upgrades: {},
       updatedAt: 1,
     })!;
-    expect(SAVE_VERSION).toBe(15);
-    expect(save.version).toBe(15);
+    // Read on through v16 (Savanna), which keeps both: stage 0 and the city never moved.
+    expect(save.version).toBe(SAVE_VERSION);
     expect(
       Object.keys(save.records)
         .map(Number)

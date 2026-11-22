@@ -108,6 +108,49 @@ Only the Arctic also quickens the steering. Lakeland's mud tyres are
 `handling.surfaceGrip` (`{ mud: 1.6 }`, the sim's `SimEnv.surfaceGrip`): 1.6×
 on its mud stretches, tarmac as ever.
 
+## Savanna
+
+A Kenyan safari rally (`SAVANNA` in `regions.ts`, last in `RALLY_CYCLE`,
+save v16; reference photos in `context/savanna-stage/`).
+
+- **Look.** A clear blue sky and a high warm sun (`sunny`), the haze pushed
+  out to 110–290 m (`haze`) with a warm bounce off the red earth. Olive and
+  golden grassland in patches, red-earth verges (`vergeBlend` 0.7). The road
+  is murram: gravel underneath, drawn red (`StagePalette.road`, laid over
+  the surface's stock colour by `dayTheme`) and gripping a fifth more than
+  loose gravel (`handling.surfaceGrip: { gravel: 1.2 }`), unlined, frayed at its edges
+  into low ragged red-earth banks (`terrain.earthBanks`, as the Moorland's).
+- **Fech-fech** (`surfaceSpans: { alt: 'fechfech' }`): 60–140 m stretches of
+  fine powder between 300–650 m of murram, grip 0.62 and drag 0.16 (a car
+  holding 70% throttle covers about 10–20% less ground across 100 m of it
+  than on gravel, without yawing), drawn a lighter, softer orange, and
+  blended into the murram over about 22 m either side of each join (half way
+  each side, ragged lane by lane) so neither starts at a line.
+- **Rivers.** One to three watersplashes (`splashes`, Moorland's) in muddy
+  brown water (`SplashStyle.water`), opaque at their middle, the spray the
+  same mud.
+- **Jumps.** Crests about every 400 m where the road straightens
+  (`terrain.crests`, the Greenvale's mechanism).
+- **Cones** (`Cones.ts`): two or three volcanic cones 45–80 m high, 90–150 m
+  at the foot, 260–440 m off the road with their whole foot clear of every
+  stretch of it, a shallow crater on top, added to the ground's relief.
+- **Dust** (`dust`, `DustEmitter` into a `ParticleRing` with the `DUST`
+  preset): the rear tyres of a grounded car over 4 m/s on the murram or
+  fech-fech throw soft red puffs back and up, in proportion to speed (up to
+  24 a second per wheel on murram, small and kept low), that hang, rise a
+  little, swell 4.6× and fade over 2.4 s; fech-fech throws 3.4× as many,
+  paler, bigger and higher. Puffs fade near the
+  lens so the chase camera never whites out. A `dust` render flag; under
+  reduced motion fewer, lower, smaller puffs.
+- **Plants** (`SavannaKits`): every `tree` a flat-topped acacia (a forked
+  trunk under a layered umbrella crown, two builds), every `bush` a sisal
+  rosette or a thorn scrub.
+- **Wildlife and farms** (`wildlife`, `SavannaDressing.ts` →
+  `SavannaDressingBuilder`): herds of 2–5 giraffes and 4–10 zebras 16–70 m
+  out, static; sisal plantations in rows of tall flower poles 14–40 m out;
+  red termite mounds. Mounds and plantation plants are colliders. Mud-walled
+  huts with rusty roofs (`houses`), crowds with berms, no towns.
+
 ## Moorland
 
 A Welsh forest rally in the rain (`MOORLAND` in `regions.ts`, last in

@@ -70,6 +70,8 @@ const SNOW_POLE_HEIGHT = 2.4;
 /** The edge line stands this far above the carriageway it is painted on. */
 export const LINE_ABOVE_DECK = 0.02;
 export const LINE_LIFT = ROAD_LIFT + LINE_ABOVE_DECK;
+/** Murram and fech-fech blend over about this far either side of a join, metres. */
+const POWDER_BLEND = 22;
 const LINE_WIDTH = 0.22;
 const NO_DIP = [0, 0] as const;
 
@@ -443,6 +445,8 @@ export class RoadBuilder {
     const raggedVerges = mudLane && field.surfaceRuns === null;
     // A forest track between earth banks (the Moorland): no crisp edge, the gravel frays out.
     const frayed = STAGE_TYPES[stage.stageType].terrain.earthBanks !== undefined;
+    // A murram road broken by fech-fech (the Savanna): the two blend across each join.
+    const powder = STAGE_TYPES[stage.stageType].surfaceSpans?.alt === 'fechfech';
     // A soft-shouldered road (`StagePalette.vergeBlend`) has faceted verges: ragged bands, each
     // triangle a shade of its own between the shoulder's dirt and darker earth, as the ground beside
     // them is, so the strip runs into the ground without a seam.
@@ -679,6 +683,26 @@ export class RoadBuilder {
     // cut into the road, with the mud tracks deeper and darker than the packed-snow pair; gravel
     // keeps only faint, fading traces of them.
     const roadBase = strips[0]!;
+    // Fech-fech and murram blend into each other over a few dozen metres either side of every join,
+    // half way each side, so the powder fades in and out rather than starting at a line.
+    if (powder && field.surfaceRuns) {
+      const other = new Color(surface === 'fechfech' ? surfaces[stage.surface] : surfaces.fechfech);
+      const blend = (k: number, _hw: number, band?: number) => {
+        // Each lane band reaches its own way into the other, a little ragged.
+        const reach =
+          POWDER_BLEND * (0.8 + 0.4 * hash01(Math.round(k / 9) * 31 + (band ?? 0) * 17));
+        const t = Math.max(0, 1 - seam.distance(k * sp) / reach);
+        return 0.5 * t * t * (3 - 2 * t);
+      };
+      roadBase.cover = blend;
+      roadBase.coverColor = other;
+      // The frayed verge's first band is the road itself: it blends the same way.
+      for (const st of strips)
+        if (st.side !== undefined && st.facets === undefined && frayed) {
+          st.cover = blend;
+          st.coverColor = other;
+        }
+    }
     // Mud tracked out onto the tarmac either side of a mud stretch.
     if (spill) {
       roadBase.cover = (k, _hw, band) => spill(k, band ?? 0);

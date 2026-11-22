@@ -6695,3 +6695,82 @@ bed)`. The road, its profile and every record stay as they were, so
      at 1.4 m/s, swaying 0.6 m on their own phases (`sway`), white; under
      reduced motion a quarter of them, slower and barely swaying. Same single
      draw call and the same `rainStreaks` budget (700 on software WebGL).
+293. **2026-11-22 — Savanna: a Kenyan safari stage type.** At the user's
+     request, after `docs/UPCOMING_STAGES.md`'s Safari pick and the photos in
+     `context/savanna-stage/`, with giraffes and zebras, dust trails,
+     fech-fech, river crossings and jumps, appended after Moorland.
+     - **Rotation and saves.** `savanna` joins `RALLY_CYCLE` last; save v16.
+       A frozen nine-type `stageSlotV15` and `townV15` (the towns stepped
+       round the nine-type mix) keep the v14→v15 migration's meaning;
+       `migrateV15` keeps a record only where the type and town are
+       unchanged. With ten types the towns no longer step (ten is no multiple
+       of three) and still reach every village type. Calendar-pinned tests
+       use `typeV15`/`slotV15`/`indexV15`; `stableIndexV13` searches 4,000
+       stages, since all four calendars agree only every 2,520 rally stages.
+     - **Road.** Murram is the `gravel` surface drawn red
+       (`StagePalette.road`). A new `fechfech` surface (grip 0.62, drag 0.16,
+       par 0.85, difficulty 1.25), appended to `SURFACE_LIST`, comes in
+       `SurfaceSpans` stretches drawn a lighter orange and blended into the
+       murram over ~22 m either side of each join, at the user's request, as
+       are the frayed edges and earth banks borrowed from the Moorland.
+     - **Effects.** `WaterSpray` became `ParticleRing` with `SPRAY` and
+       `DUST` presets (gravity, drag, growth, opacity, tints); `DustEmitter`
+       throws dust from the rear wheels in proportion to speed, more on
+       fech-fech. The first fech-fech dust whited out the chase camera for
+       seconds, so it was thinned and puffs now fade within 2–7 m of the lens
+       (which helps the spray too). `useTyreParticles` mounts spray and dust
+       from `DriveRig`. A `dust` render flag; calm under reduced motion.
+     - **World.** `Cones.ts` lays two or three volcanic cones far off the road
+       into the base height. `SavannaDressing` (herds, sisal plantations,
+       termite mounds; mounds and plants are colliders) is planned with the
+       world like the Moorland's farms. `SavannaKits` draws acacias and sisal.
+       Splash water takes the type's colour (`SplashStyle.water`): opaque mud
+       on the Savanna, the Moorland's clear grey elsewhere; the spray matches.
+       **Follow-up.** At the user's request the murram's own dust trail is
+       lighter (half the puffs, 60% the size, kept low) while fech-fech's stays
+       big and high (it now throws 3.4× the murram's); the herds graze 16–70 m
+       from the road instead of 40–160 m; and the murram grips a fifth more than
+       loose gravel (`handling.surfaceGrip: { gravel: 1.2 }`, the fech-fech
+       unchanged), so the long tracks flow.
+294. **2026-11-22 — Savanna polish, gentler off-road, rooted trees, a roll-out
+     at the finish.** At the user's request:
+     - **Savanna.** Tyre marks everywhere on the stage are the earth's red
+       (`dust.ink`, through the theme's `skidInk`), not the grass ink's green.
+       The murram now holds the car back like dirt: a new
+       `SimEnv.surfaceDrag` (from `handling.surfaceDrag`) adds 0.07/s on
+       gravel, 0.04 on fech-fech and grass, so a WRC tops out near 130 km/h
+       instead of 170; grip on the murram is 1.1×, and par speed 14 m/s. An
+       early-morning sky: `StageTypeDef.skyGradient` puts the gradient dome
+       (once dusk only) over the stage, blue overhead into a pale yellow
+       horizon, the mist (35–250 m) that colour, a low warm sun. Acacia crowns
+       are a solid core under thicker slabs sunk into each other (less vertical
+       jitter), with no daylight between layers. Giraffes and zebras are
+       rebuilt (`AnimalGeometry`): tapered jointed legs, a sloping body,
+       neck spans, heads with muzzles, ears and ossicones, manes and tufted
+       tails, a patch-cell coat and stripes running round the body and across
+       the legs.
+     - **Banks.** On the Savanna and Moorland the earth banks were laid into
+       the terrain mesh too, whose cells are far coarser than a 2 m bank: on
+       slopes it cut them into a sawtooth with gaps under the verge. A vertical
+       skirt read as a step and a sloping apron jutted over lower ground, so
+       both went: the banks now live in the road mesh's verges (and in
+       `heightAt`, so wheels ride them) but not in the terrain mesh
+       (`TerrainField.sample`), which lies a little under the verge as beside
+       any road and meets its outer edge where the bank has died away. The
+       earth bank is a rounded hump with no flat top.
+     - **Off-road launches.** The ground's upward push on the car is capped at
+       4.2 m/s (`MAX_GROUND_RISE`; downward still 15): a bank or knoll hit at
+       speed gives a hop, not a flight. The road's crests ramp far gentler, so
+       the designed jumps are unchanged (their tests pass).
+     - **Trees.** Every trunked kit's foot (vertices at ground level) is sunk
+       0.9 m (`sinkBase` in `sceneryKits`), so on a slope the downhill side of
+       a trunk runs into the ground instead of floating.
+     - **Finish.** Past the line the car rolls out to a gentle stop on every
+       stage: off the throttle, the brake easing from 0.12 to 0.55 over about
+       3.5 s, steered along the road by an autopilot line so it never wanders
+       into the scenery.
+       **Gantries.** At the user's request the start and finish gantries lose
+       their concrete footings: each post is a plain post running straight
+       into the ground, 1.2 m past the lowest ground round its foot (was
+       0.3 m on a footing), so on any slope, bank or coarse terrain cell it
+       goes through the ground with no gap.

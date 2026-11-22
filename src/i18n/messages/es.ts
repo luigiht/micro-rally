@@ -138,7 +138,7 @@ export const es: Messages = {
       highlights: [
         {
           title: 'Tramos y progresión',
-          body: 'Los tramos de rally recorren ocho tipos, cada uno con su propia superficie: Pinar de grava, Alpino nevado, Valverde y Costero de asfalto, Ártico nevado, Otoñal de barro, Desierto de arena y Lacustre, cuya pista alterna asfalto y barro y cruza lagos por puentes largos. Cada noveno tramo es una ciudad y cada décimo es un circuito de tres vueltas; si coinciden, primero va la ciudad y después el circuito. El ciclo de rally continúa con carreteras más largas y curvas más cerradas.',
+          body: 'Los tramos de rally recorren diez tipos, cada uno con su propia superficie: Pinar de grava, Alpino nevado, Valverde y Costero de asfalto, Ártico nevado, Otoñal de barro, Desierto de arena, Lacustre, cuya pista alterna asfalto y barro y cruza lagos por puentes largos, Páramo de grava mojada bajo la lluvia y Sabana de murram rojo con tramos de fech-fech. Cada noveno tramo es una ciudad y cada décimo es un circuito de tres vueltas; si coinciden, primero va la ciudad y después el circuito. El ciclo de rally continúa con carreteras más largas y curvas más cerradas.',
         },
         {
           title: 'Conduce, reinicia y repite',
@@ -463,6 +463,7 @@ export const es: Messages = {
     desert: 'Desierto',
     lakeland: 'Lacustre',
     moorland: 'Páramo',
+    savanna: 'Sabana',
   },
   controls: [
     { keys: 'W / S · ↑ / ↓', action: 'Acelerar / frenar, mantén para marcha atrás' },
@@ -525,7 +526,7 @@ export const es: Messages = {
     },
     tickerLabel: 'Lo más destacado',
     ticker: [
-      '11 tipos de tramos de rally',
+      '12 tipos de tramos de rally',
       '12 coches disponibles',
       'Carrera en solitario',
       'Multijugador con tus amigos',
@@ -600,6 +601,10 @@ export const es: Messages = {
         moorland: {
           note: 'Lluvia y vados.',
           surface: 'Grava mojada',
+        },
+        savanna: {
+          note: 'Polvo rojo. Horizontes salvajes.',
+          surface: 'Mixto',
         },
       },
     },
@@ -714,6 +719,7 @@ export const es: Messages = {
     sand: 'Arena',
     dune: 'Dunas',
     water: 'Agua',
+    fechfech: 'Fech-fech',
   },
   session: {
     choiceLabel: 'Sesión',

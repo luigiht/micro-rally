@@ -49,8 +49,24 @@ describe('WorldTheme', () => {
         sunIntensity: 2.6,
         // A sunny type (Lakeland) brightens the sun and the sky fill over the stock day.
         ...(region.sunny ? SUNNY_LIGHT : {}),
+        // Open country (the Savanna) sees further, with a warm bounce off its red earth.
+        ...(region.haze
+          ? { fogNear: region.haze.near, fogFar: region.haze.far, hemiGround: '#a07850' }
+          : {}),
+        // A morning sky (the Savanna): the gradient dome, the mist its horizon, a low warm sun.
+        ...(region.skyGradient
+          ? {
+              sky: region.skyGradient,
+              fog: region.skyGradient.horizon,
+              background: region.skyGradient.horizon,
+              sunColor: '#ffe6bd',
+            }
+          : {}),
       });
-      expect(t.road.surfaces).toBe(ROAD_COLORS);
+      // A road of its own colour (the Savanna's murram) over its surface's stock one.
+      if (region.palette.road)
+        expect(t.road.surfaces).toEqual({ ...ROAD_COLORS, [region.surface]: region.palette.road });
+      else expect(t.road.surfaces).toBe(ROAD_COLORS);
       expect(t.road.surface).toBeNull();
       expect(t.road.snowPatches).toBe(true);
       expect(t.road.verge).toBe(region.palette.shoulder);
@@ -61,7 +77,7 @@ describe('WorldTheme', () => {
       expect(t.road.cap).toBe(CAP_COLOR);
       expect(t.gates.chequer.map(themeGlow)).toEqual([0.25, 0.25]);
       expect(t.walls).toEqual({ body: '#c9c0b0', cap: '#e3dccf' });
-      expect(t.skidInk).toBeNull();
+      expect(t.skidInk).toEqual(region.dust ? { color: region.dust.ink, opacity: 0.5 } : null);
       // Memoised, so the renderer can compare themes by identity.
       expect(dayTheme(region)).toBe(t);
     }

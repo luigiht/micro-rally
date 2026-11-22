@@ -49,26 +49,21 @@ describe('the start and finish gates', () => {
     for (const post of posts) {
       box.setFromObject(post);
       const centre = box.getCenter(new Vector3());
-      // The foot is at or below the ground under it, never above: down to the lowest ground within
+      // The foot is well below the ground under it, never above: 1.2 m under the lowest ground within
       // a coarse terrain cell of it (where the drawn ground may dip), and no deeper than that.
       let low = Infinity;
       for (let i = -2; i <= 2; i++)
         for (let j = -2; j <= 2; j++)
           low = Math.min(low, field.heightAt(centre.x + 2 * i, centre.z + 2 * j));
       expect(box.min.y).toBeLessThanOrEqual(field.heightAt(centre.x, centre.z) + 1e-6);
-      expect(box.min.y).toBeLessThanOrEqual(low - 0.3 + 1e-6);
-      expect(box.min.y).toBeGreaterThan(low - 0.4);
+      expect(box.min.y).toBeLessThanOrEqual(low - 1.2 + 1e-6);
+      expect(box.min.y).toBeGreaterThan(low - 1.3);
     }
-    // Each post stands on a footing whose top is a hand over the ground at the post.
+    // A plain post into the ground: no footing round its base.
     const footings = meshesOf(gates.group, themeHex(theme.post).slice(1).toLowerCase()).filter(
       (m) => (m.geometry as never as { parameters: { width: number } }).parameters.width > 0.6,
     );
-    expect(footings.length).toBe(posts.length);
-    for (const f of footings) {
-      box.setFromObject(f);
-      const centre = box.getCenter(new Vector3());
-      expect(box.max.y - field.heightAt(centre.x, centre.z)).toBeCloseTo(0.3, 2);
-    }
+    expect(footings.length).toBe(0);
     // The banner: the chequer-coloured meshes up at the top of a gantry (the finish boards' flag signs stay flat and unshadowed).
     const banners = theme.chequer
       .flatMap((c) => meshesOf(gates.group, themeHex(c).slice(1).toLowerCase()))

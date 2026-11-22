@@ -15,7 +15,7 @@ export interface StageRecord {
   splits: number[];
 }
 
-export const SAVE_VERSION = 15;
+export const SAVE_VERSION = 16;
 export const DRIVER_NAME_MAX = 24;
 
 /** Everything needed to resume a game. Nothing personal beyond the driver name. */
@@ -287,9 +287,11 @@ function migrateV7(raw: Record<string, unknown>): Record<string, unknown> {
 }
 
 /** The stage types before Lakeland joined the rally mix (v13 and older). */
-type StageTypeIdV13 = Exclude<StageTypeId, 'lakeland' | 'moorland'>;
+type StageTypeIdV13 = Exclude<StageTypeId, 'lakeland' | 'moorland' | 'savanna'>;
 /** The stage types before Moorland joined the rally mix (v14 and older). */
-type StageTypeIdV14 = Exclude<StageTypeId, 'moorland'>;
+type StageTypeIdV14 = Exclude<StageTypeId, 'moorland' | 'savanna'>;
+/** The stage types before Savanna joined the rally mix (v15 and older). */
+type StageTypeIdV15 = Exclude<StageTypeId, 'savanna'>;
 
 /** The seven-type rally mix of v7–v13, frozen so the migrations up to v13 keep their meaning. */
 const RALLY_CYCLE_V13: readonly StageTypeIdV13[] = [
@@ -354,13 +356,53 @@ function migrateV14(raw: Record<string, unknown>): Record<string, unknown> {
   const kept = Object.fromEntries(
     Object.entries(records).filter(([key]) => {
       const index = Number(key);
-      const slot = stageSlot(index);
+      const slot = stageSlotV15(index);
       // The towns step on each time round the nine-type mix (`hasTown`): a stage that gained
       // or lost its village is another road too.
-      return slot === stageSlotV14(index) && townV14(index) === stageHasTown(index);
+      return slot === stageSlotV14(index) && townV14(index) === townV15(index);
     }),
   );
   return { ...raw, version: 15, records: kept };
+}
+
+/** The nine-type rally mix of v15, frozen so the migrations up to v15 keep their meaning. */
+const RALLY_CYCLE_V15: readonly StageTypeIdV15[] = [...RALLY_CYCLE_V14, 'moorland'];
+
+/** What stage `index` was in v15: the same cities and circuits, the nine-type mix between them. */
+function stageSlotV15(index: number): StageTypeIdV15 {
+  const rally = rallyIndex(index);
+  if (rally === null) return isCityStage(index) ? 'urban' : 'circuit';
+  return RALLY_CYCLE_V15[rally % RALLY_CYCLE_V15.length]!;
+}
+
+/**
+ * Whether stage `index` carried a town in v15: every third rally stage, the
+ * towns stepping on by one each time round the nine-type mix, on a type that
+ * builds them.
+ */
+function townV15(index: number): boolean {
+  const rally = rallyIndex(index);
+  if (rally === null) return false;
+  const shift = Math.floor(rally / RALLY_CYCLE_V15.length);
+  return (rally + shift) % 3 === 2 && STAGE_TYPES[stageSlotV15(index)].towns;
+}
+
+/**
+ * v16 adds Savanna at the end of the rally mix, which grows from nine types
+ * to ten: from the first Savanna on, many stages are another type's road,
+ * and the towns no longer step round the mix (ten is no multiple of three).
+ * Records are kept only where the stage is still the same type, with or
+ * without its town as before.
+ */
+function migrateV15(raw: Record<string, unknown>): Record<string, unknown> {
+  const records = isRecord(raw.records) ? raw.records : {};
+  const kept = Object.fromEntries(
+    Object.entries(records).filter(([key]) => {
+      const index = Number(key);
+      return stageSlot(index) === stageSlotV15(index) && townV15(index) === stageHasTown(index);
+    }),
+  );
+  return { ...raw, version: 16, records: kept };
 }
 
 function parseCurrent(raw: Record<string, unknown>): SaveFile | null {
@@ -421,6 +463,7 @@ export function parseSaveFile(data: unknown): SaveFile | null {
   if (raw.version === 12) raw = migrateV12(raw);
   if (raw.version === 13) raw = migrateV13(raw);
   if (raw.version === 14) raw = migrateV14(raw);
+  if (raw.version === 15) raw = migrateV15(raw);
   if (raw.version === SAVE_VERSION) return parseCurrent(raw);
   return null;
 }

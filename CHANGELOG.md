@@ -5,6 +5,36 @@ tags yet: `main` is deployed continuously, so entries are grouped by the day
 they landed. The numbered entries in [docs/DECISIONS.md](docs/DECISIONS.md)
 hold the reasoning behind each change; the numbers in brackets point there.
 
+## 2026-11-22
+
+### Added
+
+- **Savanna, a new stage type.** A Kenyan safari rally, after Moorland in the
+  rally mix: long fast tracks of red murram across golden grassland, past
+  flat-topped acacias, sisal plantations, mud huts, and herds of giraffes and
+  zebras, with volcanic cones on the horizon. Fast cars throw thick red dust;
+  stretches of powdery fech-fech, a lighter orange, slow the car and throw up
+  more; muddy rivers cross the road and crests throw the car into the air.
+  Best times on stages whose type or village changed are cleared [293].
+
+### Changed
+
+- **Savanna polish.** Red tyre marks off the road, a slower dirt feel on the
+  murram, an early-morning mist under a sky fading from blue to pale yellow,
+  fuller acacia crowns, and more detailed giraffes and zebras [294].
+- **Smoother verges.** On the Savanna and Moorland the road's edges and their
+  low banks merge into the ground without gaps or steps [294].
+- **No more flying off the road.** Banks and knolls hit at speed give a hop,
+  not a launch; designed jumps are unchanged [294].
+- **Trees stand in the ground** on slopes, with no gap under the trunk [294].
+- **New stage icons** for Pinewood (tall pines), Autumnal (a tree shedding its
+  leaves) and Greenvale (a hairpin road up a mountain) in the Game panel, to
+  match the other stage types.
+- **Simpler start and finish gantries:** plain posts straight into the
+  ground, no footings [294].
+- **A gentle stop at the finish.** The car rolls out along the road and brakes
+  smoothly while the result shows [294].
+
 ## 2026-11-19
 
 ### Added

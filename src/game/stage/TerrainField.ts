@@ -13,6 +13,7 @@ import {
 } from './CircuitTrackside';
 import { Coastline } from './Coastline';
 import { BENCH_REACH, benchAcross, benchAlong, planBenches, type Bench } from './CrowdBenches';
+import { coneHeight, planCones, type Cone } from './Cones';
 import { planRivers, RiverIndex, type River, type RiverHit } from './Rivers';
 import { planSplashes, splashAt, splashCount, type Watersplash } from './Watersplashes';
 import { lacetGround } from './Lacets';
@@ -347,6 +348,8 @@ export class TerrainField implements TerrainQuery {
   private readonly banks: { height: number; width: number } | null;
   /** Low earth banks along the verges (the Moorland), and the salt their raggedness is drawn with. */
   private readonly earthBanks: { height: number; width: number } | null;
+  /** Volcanic cones far off the road (`terrain.cones`); none elsewhere. */
+  readonly cones: Cone[];
   private readonly earthSalt: number;
   private readonly embankment: { height: number; width: number; from?: number } | null;
   /** Road distances of the crests `addCrests` raised on the straights, for the tests and the probes. */
@@ -441,6 +444,7 @@ export class TerrainField implements TerrainQuery {
     this.banked = region.terrain.banked === true;
     this.banks = region.terrain.banks ?? null;
     this.earthBanks = region.terrain.earthBanks ?? null;
+    this.cones = region.terrain.cones ? planCones(stage, region.terrain.cones) : [];
     this.earthSalt = hashSeed(stage.seed, 'earth-banks');
     this.embankment = region.terrain.embankment ?? null;
     this.coast = region.coast
@@ -598,7 +602,9 @@ export class TerrainField implements TerrainQuery {
       0.3 * n(x * f * 0.37 + 17.1, z * f * 0.37 - 4.3) +
       0.11 * n(x * f * 2.3, z * f * 2.3) +
       0.04 * n(x * f * 5.1, z * f * 5.1);
-    const lacets = lacetGround(this.stage.lacets, x, z);
+    const lacets =
+      lacetGround(this.stage.lacets, x, z) +
+      (this.cones.length > 0 ? coneHeight(this.cones, x, z) : 0);
     if (this.ridges === 0 && this.rugged === 0) return this.amplitude * hills + lacets;
     // Crests where the ridge noise crosses zero, broad valleys between: about −0.5..1, mean near 0.
     // The fold is rounded over a few metres (a soft |n|) so a crest never zigzags across the mesh's cells.
@@ -1065,7 +1071,6 @@ export class TerrainField implements TerrainQuery {
       this.benchGround(deck + (base - deck) * t - this.embankDrop(st, t), bench) -
       trench +
       this.bankLift(st) +
-      this.earthBankLift(st) +
       this.detailAt(x, z, t * (1 - bench));
     // Under a city's pavements the terraces' pads do not reach: a pad vertex there would tilt the
     // coarse terrain face up through the pavement as a green wedge along the building.
@@ -1160,9 +1165,8 @@ export class TerrainField implements TerrainQuery {
     if (this.banks || this.trackside || st.stub) return 0;
     if (this.town && townFade(this.town, st.along) > 0) return 0;
     const beyond = st.distance - st.hw;
-    // Down a built-up road's curving bank, or over an earth bank's hump, the coarse mesh strays
-    // further from the strip: twice the margin.
-    const drop = this.embankment || this.earthBanks ? 2 * VERGE_BED_DROP : VERGE_BED_DROP;
+    // Down a built-up road's curving bank the coarse mesh strays further from the strip: twice the margin.
+    const drop = this.embankment ? 2 * VERGE_BED_DROP : VERGE_BED_DROP;
     return (
       drop * (1 - smoothstep(VERGE_WIDTH - VERGE_BED_RAMP, VERGE_WIDTH + VERGE_BED_PAST, beyond))
     );
@@ -1188,9 +1192,12 @@ export class TerrainField implements TerrainQuery {
    * A low earth bank beside a forest track (`terrain.earthBanks`), `beyond`
    * metres past the carriageway's edge at road distance `along`: up off the
    * edge, a rounded top, down to the ground before the verge strip ends; its
-   * height swells and dwindles along the road and dies away altogether now and
-   * then, so the track's edges look graded by hand, not drawn. Shared by the
-   * terrain and the road mesh's verges, so both ride the same bank.
+   * height swells and dwindles along the road and dies away now and then, so the
+   * track's edges look graded by hand, not drawn. The road mesh's verges draw it
+   * and the wheels ride it (`heightAt`), but the terrain mesh leaves it out: its
+   * cells are far coarser than the bank, and would cut it into a sawtooth. Under
+   * the verge the ground lies a little below the strip, as beside any road, so
+   * the two meet at the verge's outer edge where the bank has died away.
    */
   earthBank(beyond: number, along: number): number {
     const e = this.earthBanks;
@@ -1200,8 +1207,8 @@ export class TerrainField implements TerrainQuery {
     const end = Math.min(e.width, rise + 1.5);
     if (beyond <= rise || beyond >= end) return 0;
     const u = (beyond - rise) / (end - rise);
-    // A flat-topped hump: up over the first third, down over the last.
-    const shape = smoothstep(0, 0.35, u) * (1 - smoothstep(0.65, 1, u));
+    // A rounded hump, easing up from the verge and back down to the ground, never a step.
+    const shape = smoothstep(0, 0.5, u) * (1 - smoothstep(0.55, 1, u));
     const swell = smoothstep(0.2, 0.55, ribbonNoise(along / 13, this.earthSalt));
     const wobble = 0.65 + 0.35 * ribbonNoise(along / 4.1, this.earthSalt + 7);
     // A bank squeezed narrow by its wandering foot stays low.

@@ -14,6 +14,8 @@ export const ROAD_COLORS: Readonly<Record<Surface, string>> = {
   dune: '#e0c58b',
   /** A watersplash's muddy grey-brown water (`SplashBuilder` draws it; the ribbon never runs on it). */
   water: '#5e5a4e',
+  /** Fech-fech: powder over the murram, a lighter, softer orange than the red earth beneath. */
+  fechfech: '#d9945d',
 };
 /** White edge lines, 2 cm over the deck. */
 export const LINE_COLOR = '#f4f1e8';

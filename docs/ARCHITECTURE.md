@@ -26,9 +26,10 @@ flowchart TD
   (`BodyMudFlaps`) ride in the body's group so they lean with it. The lofted hulls (`render/car/CarHull.ts`) and the
   buggy's free-standing mudguards (`render/car/FenderShell.ts`) are pure TS
   builders. The GLBs in `assets/` are measurement references only.
-- **Weather and water effects** — `render/effects/Rain` (streaks round the
-  camera) and `WaterSpray` + `SprayEmitter` (tyre spray in watersplashes),
-  GPU-animated rings mounted by `DriveRig`; the splashes themselves are
+- **Weather and particle effects** — `render/effects/Rain` (rain or snow
+  round the camera) and `ParticleRing` (a GPU-flown ring of soft billboards)
+  fed by `SprayEmitter` (watersplash spray) and `DustEmitter` (the Savanna's
+  dust), mounted by `DriveRig` through `useTyreParticles`; the splashes themselves are
   `render/road/SplashBuilder` over `game/stage/Watersplashes`.
 - **`src/components/game`** — R3F `<Canvas>`, scene graph, camera rigs. The
   frame loop accumulates time and steps the sim at a fixed 120 Hz, then

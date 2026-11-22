@@ -44,7 +44,7 @@ driving.
 
 ## Top picks
 
-### Safari (Kenya)
+### Safari (Kenya) — built as Savanna (decision 293)
 
 - **Look:** red earth across open savannah, flat-topped acacias, distant
   hills and escarpments, giraffes and zebras well off the road, dusty haze.

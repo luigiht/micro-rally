@@ -16,6 +16,8 @@ export interface SplashStyle {
   count: readonly [number, number];
   /** Shortest and longest splash along the road, metres. */
   length: readonly [number, number];
+  /** The water's colour where it differs from the Moorland's grey (the Savanna's muddy red-brown). */
+  water?: string;
 }
 
 export interface Watersplash {

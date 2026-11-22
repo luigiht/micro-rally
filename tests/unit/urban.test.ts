@@ -551,7 +551,7 @@ describe('save migration', () => {
   it("moves v10 saves to v11, dropping the cities' records only", () => {
     const rec = { best: 90, splits: [30, 60, 90] };
     const city = indexV13('urban', 2);
-    const pinewood = stableIndexV13('pinewood', 2);
+    const pinewood = stableIndexV13('pinewood', 1);
     const save = parseSaveFile({
       version: 10,
       gameId: 'ABCD2345',

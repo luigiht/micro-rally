@@ -13,11 +13,21 @@ import {
 } from '@/game/vehicle/Collisions';
 import { trafficBoxes, type TramTraffic } from '@/game/stage/TramService';
 import { Autopilot, DEFAULT_AUTOPILOT } from '@/game/vehicle/Autopilot';
-import { createControlInput, mergeControlInput } from '@/game/vehicle/ControlInput';
+import {
+  createControlInput,
+  mergeControlInput,
+  type ControlInput,
+} from '@/game/vehicle/ControlInput';
 import { createVehiclePose, interpolatePose } from '@/game/vehicle/interpolatePose';
 import type { TerrainQuery } from '@/game/vehicle/Terrain';
 import { axleMarkIntensities } from '@/game/vehicle/wheelContacts';
-import { DEFAULT_ENV, type SimEnv, VehicleSim, type SpawnPose } from '@/game/vehicle/VehicleSim';
+import {
+  DEFAULT_ENV,
+  type SimEnv,
+  VehicleSim,
+  type SpawnPose,
+  type VehicleState,
+} from '@/game/vehicle/VehicleSim';
 import { STAGE_TYPES, stageGripScale } from '@/game/stage/regions';
 import { useGameStore } from '@/state/gameStore';
 import { useSettingsStore } from '@/state/settingsStore';
@@ -102,7 +112,7 @@ export class DrivingSession {
     }
     const input =
       run?.phase === 'finished'
-        ? this.coast
+        ? this.rollOut(s, run, dt)
         : this.autopilot
           ? this.autopilot.drive(s, this.env, this.pilotInput)
           : mergeControlInput(this.keyboard.input, TOUCH_INPUT, this.merged);
@@ -121,6 +131,25 @@ export class DrivingSession {
     run?.onMove(px, pz, s.x, s.z);
     this.recordStep(run, dt);
   };
+
+  /**
+   * Past the finish the car rolls to a gentle stop: off the throttle, braking softly and
+   * steadily harder, steered along the road (the autopilot's line) so it never wanders off it.
+   */
+  private rollOut(s: VehicleState, run: StageRun, dt: number): ControlInput {
+    const stage = this.world.stage;
+    if (stage && !this.outPilot)
+      this.outPilot = new Autopilot(stage.path, this.sim.spec, DEFAULT_AUTOPILOT, run.along);
+    const c = this.coast;
+    if (this.outPilot) c.steer = this.outPilot.drive(s, this.env, this.pilotInput).steer;
+    c.throttle = 0;
+    this.outTime += dt;
+    // From a light touch to a firm stop over a few seconds, never a lock-up.
+    c.brake = Math.min(0.55, 0.12 + 0.12 * this.outTime);
+    return c;
+  }
+  private outPilot: Autopilot | null = null;
+  private outTime = 0;
 
   /** The sim's environment for this stage: the region's handling over the defaults. */
   private readonly env: Readonly<SimEnv>;
@@ -153,6 +182,7 @@ export class DrivingSession {
           steerSensitivity: handling?.steer ?? 1,
           steerLock: handling?.lock ?? 1,
           ...(handling?.surfaceGrip ? { surfaceGrip: handling.surfaceGrip } : {}),
+          ...(handling?.surfaceDrag ? { surfaceDrag: handling.surfaceDrag } : {}),
         }
       : DEFAULT_ENV;
     if (this.run && world.startAlong !== undefined) this.run.skipGatesBefore(world.startAlong);

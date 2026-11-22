@@ -8,6 +8,7 @@ import { BarrierBuilder } from '../road/BarrierBuilder';
 import { GravelStoneBuilder } from '../road/GravelStones';
 import { SplashBuilder } from '../road/SplashBuilder';
 import { MoorlandDressingBuilder } from '../scenery/MoorlandDressingBuilder';
+import { SavannaDressingBuilder } from '../scenery/SavannaDressingBuilder';
 import { CircuitCrossingBuilder } from '../road/CircuitCrossingBuilder';
 import { CircuitDressingBuilder } from '../road/CircuitDressingBuilder';
 import { KerbBuilder } from '../road/KerbBuilder';
@@ -80,6 +81,8 @@ export interface StageRenderOptions {
   rainStreaks: number;
   /** Spray thrown up by tyres in a watersplash; the water itself is always drawn. */
   waterSpray: boolean;
+  /** Dust thrown up behind fast cars where the stage type's road is dusty (the Savanna). */
+  dust: boolean;
 }
 
 /** Scenery is streamed in chunks this many metres square. */
@@ -108,6 +111,7 @@ export const DEFAULT_STAGE_RENDER: StageRenderOptions = {
   roadStones: true,
   rainStreaks: 2600,
   waterSpray: true,
+  dust: true,
 };
 
 /**
@@ -171,6 +175,8 @@ interface Surfaces {
   splashes: SplashBuilder | null;
   /** The Moorland's sheep, fences and field walls. */
   farms: MoorlandDressingBuilder | null;
+  /** The Savanna's herds, sisal plantations and termite mounds. */
+  wildlife: SavannaDressingBuilder | null;
   /** A mapped city's barriers across the streets the route passes. */
   closed: RoadClosedBuilder | null;
 }
@@ -290,8 +296,19 @@ export class StageRenderer {
         this.opts.roadStones && stage.surface === 'gravel'
           ? new GravelStoneBuilder(stage, field)
           : null,
-      splashes: field.splashes.length > 0 ? new SplashBuilder(stage, field, field.splashes) : null,
+      splashes:
+        field.splashes.length > 0
+          ? new SplashBuilder(
+              stage,
+              field,
+              field.splashes,
+              STAGE_TYPES[stage.stageType].splashes?.water,
+            )
+          : null,
       farms: this.world.farms ? new MoorlandDressingBuilder(stage, field, this.world.farms) : null,
+      wildlife: this.world.wildlife
+        ? new SavannaDressingBuilder(this.world.wildlife, this.opts.shadows)
+        : null,
     };
     const track = circuitTrackside(stage);
     if (track) {
@@ -401,6 +418,7 @@ export class StageRenderer {
       s.stones,
       s.splashes,
       s.farms,
+      s.wildlife,
       s.closed,
     ].filter((b) => b !== null);
   }

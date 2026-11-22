@@ -133,13 +133,14 @@ the last sector board or lap line passed.
 - Every ninth stage (9, 18, 27…) is a city, and every tenth (10, 20,
   30…) a circuit race; where the two would meet (stage 90, 180…) the city
   keeps the stage and the circuit is the next one. The stages between run
-  through a nine-type rally mix in turn: Pinewood, Alpine, Greenvale, Coastal,
-  Arctic, Autumnal, Desert, Lakeland and Moorland, so a type never runs twice in a row.
+  through a ten-type rally mix in turn: Pinewood, Alpine, Greenvale, Coastal,
+  Arctic, Autumnal, Desert, Lakeland, Moorland and Savanna, so a type never runs twice in a row.
   Each type has one fixed road surface, except Lakeland, whose road changes
   between tarmac and mud along its length.
   Lakeland joined last (save v14), so the first seven rally stages kept their
-  types, and Moorland after it (save v15) for the first eight; best times on
-  later stages whose type or village changed were cleared.
+  types, Moorland after it (save v15) for the first eight, and Savanna after
+  that (save v16) for the first nine; best times on later stages whose type or
+  village changed were cleared.
   Every six stages the roads lengthen by 25 % and the bends tighten a
   little, so there is always a next stage.
 - Greenvale stages are Riviera mountain roads in the Monte Carlo manner:
@@ -156,6 +157,11 @@ the last sector board or lap line passed.
   broken by short mud stretches of 100–200 m, with mud tracked onto the tarmac where
   they meet; bridges are always tarmac. Driving into a lake, the car
   wallows as in soft sand.
+- Savanna stages are a Kenyan safari: long fast red murram tracks across
+  golden grassland past flat-topped acacias, sisal and giraffes and zebras,
+  with volcanic cones on the horizon. Fast cars throw red dust behind them;
+  stretches of powdery fech-fech grip and run a little less; a river or
+  three crosses the road, and crests throw the car into the air.
 - Alpine stages always snow: flakes drift down round the car and a pale
   winter mist hides the far slopes (looks only; the grip is the snow road's).
 - Moorland stages are a Welsh forest rally in the rain: wet slate-grey
@@ -171,27 +177,28 @@ the last sector board or lap line passed.
   streets, and rejoins the stage. Counted along the mix, villages come round
   Pinewood, Autumnal, Greenvale and Alpine; Coastal, Arctic and Desert build
   none, so a town slot that falls there stays open road, and cities and
-  circuits are never counted. Since the mix has nine types, the villages step
-  on by one stage each time round it, so every village type keeps getting
-  them.
+  circuits are never counted. Should the mix ever hold a multiple of three
+  types, the villages step on by one stage each time round it, so every
+  village type keeps getting them.
 - Any stage up to the first unfinished one can be driven again from the
   Game panel's stage list.
 
 ## Stage types
 
-| Stage type | Surface        | Off road            | Terrain                                  | Base length | Par speed |
-| ---------- | -------------- | ------------------- | ---------------------------------------- | ----------- | --------- |
-| Arctic     | snow           | snow                | snow banks and spruce walls              | 1900 m      | 16 m/s    |
-| Circuit    | track          | grass, gravel traps | parkland racing, kerbs                   | 3 laps      | 20 m/s    |
-| Autumnal   | mud            | grass               | autumn trees, crowds, mud ruts and jumps | 1800 m      | 15 m/s    |
-| Pinewood   | gravel         | grass               | soft, wooded hills                       | 1800 m      | 15 m/s    |
-| Alpine     | snow           | snow                | sharper bends and frosted pines          | 1500 m      | 14 m/s    |
-| Greenvale  | tarmac         | grass               | mountains, hairpin stacks, mixed woods   | 1800 m      | 13.5 m/s  |
-| Urban      | tarmac         | grass               | city streets and roundabouts             | 1700 m      | 13 m/s    |
-| Coastal    | tarmac         | grass               | limestone cliffs and sea                 | 1600 m      | 15 m/s    |
-| Desert     | sand           | dune                | dunes and oases                          | 1900 m      | 16 m/s    |
-| Lakeland   | tarmac and mud | grass               | low hills, lakes, long bridges, pines    | 1900 m      | 14 m/s    |
-| Moorland   | wet gravel     | grass               | moor, spruce plantations, watersplashes  | 1900 m      | 14 m/s    |
+| Stage type | Surface        | Off road            | Terrain                                   | Base length | Par speed |
+| ---------- | -------------- | ------------------- | ----------------------------------------- | ----------- | --------- |
+| Arctic     | snow           | snow                | snow banks and spruce walls               | 1900 m      | 16 m/s    |
+| Circuit    | track          | grass, gravel traps | parkland racing, kerbs                    | 3 laps      | 20 m/s    |
+| Autumnal   | mud            | grass               | autumn trees, crowds, mud ruts and jumps  | 1800 m      | 15 m/s    |
+| Pinewood   | gravel         | grass               | soft, wooded hills                        | 1800 m      | 15 m/s    |
+| Alpine     | snow           | snow                | sharper bends and frosted pines           | 1500 m      | 14 m/s    |
+| Greenvale  | tarmac         | grass               | mountains, hairpin stacks, mixed woods    | 1800 m      | 13.5 m/s  |
+| Urban      | tarmac         | grass               | city streets and roundabouts              | 1700 m      | 13 m/s    |
+| Coastal    | tarmac         | grass               | limestone cliffs and sea                  | 1600 m      | 15 m/s    |
+| Desert     | sand           | dune                | dunes and oases                           | 1900 m      | 16 m/s    |
+| Lakeland   | tarmac and mud | grass               | low hills, lakes, long bridges, pines     | 1900 m      | 14 m/s    |
+| Moorland   | wet gravel     | grass               | moor, spruce plantations, watersplashes   | 1900 m      | 14 m/s    |
+| Savanna    | murram         | grass               | plains, acacias, fech-fech, rivers, cones | 2000 m      | 16 m/s    |
 
 Three stage types grip harder than their surface alone: the Arctic's
 studded tyres ×1.45 (with quicker, deeper steering), the Alpine's winter

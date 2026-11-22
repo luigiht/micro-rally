@@ -23,9 +23,10 @@ const SURFACE_ICON: Readonly<Record<Surface, PixelIconName>> = {
   sand: 'sand',
   dune: 'sand',
   water: 'gravel',
+  fechfech: 'sand',
 };
 
-/** Coastal stages show a sun and a palm, circuits a chequered flag, cities a skyline, the Arctic two spruces, the Alpine two snow-capped mountains, Lakeland pines over a lake and the Moorland a rain cloud over a hill, rather than the surface glyph they would show. */
+/** Coastal stages show a sun and a palm, circuits a waving chequered flag, cities a skyline, the Arctic two spruces, the Alpine two snow-capped mountains, Lakeland pines over a lake, the Moorland a rain cloud over a hill, the Savanna an acacia on the plain, the Pinewood its tall pines, the Autumnal a tree shedding leaves and the Greenvale a hairpin road, rather than the surface glyph they would show. */
 function stageIcon(b: StageBrief): PixelIconName {
   if (b.stageType === 'circuit') return 'circuit';
   if (b.stageType === 'urban') return 'urban';
@@ -33,6 +34,10 @@ function stageIcon(b: StageBrief): PixelIconName {
   if (b.stageType === 'alpine') return 'alpine';
   if (b.stageType === 'lakeland') return 'lakeland';
   if (b.stageType === 'moorland') return 'moorland';
+  if (b.stageType === 'savanna') return 'savanna';
+  if (b.stageType === 'pinewood') return 'pinewood';
+  if (b.stageType === 'autumnal') return 'autumnal';
+  if (b.stageType === 'forest') return 'forest';
   return b.stageType === 'coastal' ? 'coast' : SURFACE_ICON[b.surface];
 }
 

@@ -38,7 +38,7 @@ import { hasTown, NARROW_HALF_WIDTH } from '@/game/stage/TownPlan';
 import { halfWidthAt } from '@/game/stage/RoadWidth';
 import { createStageWorld } from '@/game/stage/StageWorld';
 import openRoad from './fixtures/openRoad.json';
-import { rallyIndex, type StageTypeId } from '@/game/stage/regions';
+import { RALLY_CYCLE, rallyIndex, type StageTypeId } from '@/game/stage/regions';
 
 /** A synthetic town laid on the route of a generated stage (index 0, never a real town) around distance `at`, with one blocked side street. */
 function withTown(seed: number, index: number, at: number): { stage: StageDef; town: TownDef } {
@@ -214,10 +214,13 @@ function townStages(): StageDef[] {
 
 describe('town generator', () => {
   it('puts a town on every third rally stage and nowhere else, whatever the game seed', () => {
-    // Every third rally stage, stepping on by one each time round the nine-type mix (`hasTown`).
+    // Every third rally stage: with ten types in the mix (no multiple of three) the towns already
+    // come round every type over three rounds; they step on only for a mix that divides by three.
+    const n = RALLY_CYCLE.length;
     for (let index = 0; index < 60; index++) {
       const rally = rallyIndex(index);
-      expect(hasTown(index)).toBe(rally !== null && (rally + Math.floor(rally / 9)) % 3 === 2);
+      const shift = rally !== null && n % 3 === 0 ? Math.floor(rally / n) : 0;
+      expect(hasTown(index)).toBe(rally !== null && (rally + shift) % 3 === 2);
     }
     // So over three rounds every village-building type gets its towns.
     const typed = new Set<string>();

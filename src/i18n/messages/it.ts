@@ -138,7 +138,7 @@ export const it: Messages = {
       highlights: [
         {
           title: 'Prove e progressione',
-          body: 'Le prove rally ruotano tra otto tipi, ognuno con il proprio fondo: Pineta su ghiaia, Alpino su neve, Valverde e Costiero su asfalto, Artico su neve, Autunnale su fango, Deserto su sabbia e Lacustre, la cui strada alterna asfalto e fango e attraversa i laghi su lunghi ponti. Ogni nona prova è una città e ogni decima è un circuito di tre giri; quando coincidono, la città viene prima e il circuito subito dopo. Il ciclo rally riprende con strade più lunghe e curve più strette.',
+          body: 'Le prove rally ruotano tra dieci tipi, ognuno con il proprio fondo: Pineta su ghiaia, Alpino su neve, Valverde e Costiero su asfalto, Artico su neve, Autunnale su fango, Deserto su sabbia, Lacustre, la cui strada alterna asfalto e fango e attraversa i laghi su lunghi ponti, Brughiera su ghiaia bagnata sotto la pioggia e Savana su murram rosso con tratti di fech-fech. Ogni nona prova è una città e ogni decima è un circuito di tre giri; quando coincidono, la città viene prima e il circuito subito dopo. Il ciclo rally riprende con strade più lunghe e curve più strette.',
         },
         {
           title: 'Guida, riparti e rivedi',
@@ -460,6 +460,7 @@ export const it: Messages = {
     desert: 'Deserto',
     lakeland: 'Lacustre',
     moorland: 'Brughiera',
+    savanna: 'Savana',
   },
   controls: [
     { keys: 'W / S · ↑ / ↓', action: 'Acceleratore / freno, tieni premuto per la retro' },
@@ -525,7 +526,7 @@ export const it: Messages = {
     },
     tickerLabel: 'In evidenza',
     ticker: [
-      '11 tipi di prove di rally',
+      '12 tipi di prove di rally',
       '12 auto disponibili',
       'Carriera in solitaria',
       'Multigiocatore con i tuoi amici',
@@ -600,6 +601,10 @@ export const it: Messages = {
         moorland: {
           note: 'Pioggia e guadi.',
           surface: 'Ghiaia bagnata',
+        },
+        savanna: {
+          note: 'Polvere rossa. Orizzonti selvaggi.',
+          surface: 'Misto',
         },
       },
     },
@@ -714,6 +719,7 @@ export const it: Messages = {
     sand: 'Sabbia',
     dune: 'Dune',
     water: 'Acqua',
+    fechfech: 'Fech-fech',
   },
   session: {
     choiceLabel: 'Sessione',

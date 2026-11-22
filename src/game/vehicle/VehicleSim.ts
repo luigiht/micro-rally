@@ -23,6 +23,12 @@ const STEER_ASSIST_FLOOR = 0.3;
 const MAX_COMPRESSION = 0.35;
 const AIR_EPS = 0.06;
 const MAX_GROUND_VY = 15;
+/**
+ * The ground can throw the car upward no faster than this (m/s): a sharp bank or knoll hit at
+ * speed lifts the car a hop, not a flight. The road's crests ramp up far gentler than this, so
+ * their jumps are unchanged. Downward it still follows the ground as fast as it falls.
+ */
+const MAX_GROUND_RISE = 4.2;
 const HANDBRAKE_DECEL = 6;
 
 export interface VehicleState {
@@ -82,6 +88,8 @@ export interface SimEnv {
   steerLock: number;
   /** A further grip multiplier on the surfaces it names only (the Lakeland's mud tyres); 1 elsewhere. */
   surfaceGrip?: Readonly<Partial<Record<Surface, number>>>;
+  /** Extra drag (1/s) on the surfaces it names only (the Savanna's loose murram); none elsewhere. */
+  surfaceDrag?: Readonly<Partial<Record<Surface, number>>>;
 }
 
 /** The environment's grip multiplier on `surface`: the stage-wide scale times any surface's own. */
@@ -234,7 +242,7 @@ export class VehicleSim {
     const hL = terrain.heightAt(s.x + cosY * halfTrack, s.z - sinY * halfTrack, s.y);
     const hRt = terrain.heightAt(s.x - cosY * halfTrack, s.z + sinY * halfTrack, s.y);
     s.surface = terrain.surfaceAt(s.x, s.z);
-    const groundVy = clamp((h - s.groundHeight) / dt, -MAX_GROUND_VY, MAX_GROUND_VY);
+    const groundVy = clamp((h - s.groundHeight) / dt, -MAX_GROUND_VY, MAX_GROUND_RISE);
     s.groundHeight = h;
     const comp = h - s.y;
     const touching = comp > 0;
@@ -371,7 +379,8 @@ export class VehicleSim {
     fLong -= p.dragCoeff * vLong * Math.abs(vLong) + p.rollingResistance * vLong;
     fLat -= p.dragCoeff * vLat * Math.abs(vLat);
     if (touching) {
-      fLong -= p.mass * (surf.drag * vLong + GRAVITY * ((hF - hR) / L));
+      const drag = surf.drag + (env.surfaceDrag?.[s.surface] ?? 0);
+      fLong -= p.mass * (drag * vLong + GRAVITY * ((hF - hR) / L));
       fLat -= p.mass * GRAVITY * ((hL - hRt) / p.trackWidth);
       const torque = p.cgToFront * (fyF * cosD + fxF * sinD) - p.cgToRear * fyR;
       s.yawRate += (torque / (p.mass * p.yawInertiaScale)) * dt;

@@ -271,6 +271,9 @@ export function dayTheme(
   if (!theme) {
     const road = dayRoad(stageType.palette.shoulder);
     if (stageType.id === 'autumnal') road.line = '#c0a682';
+    // A road of its own colour (the Savanna's red murram) over its surface's stock one.
+    if (stageType.palette.road)
+      road.surfaces = { ...road.surfaces, [stageType.surface]: stageType.palette.road };
     if (rain) {
       road.surfaces = { ...road.surfaces, gravel: RAIN_GRAVEL };
       road.wet = true;
@@ -284,6 +287,18 @@ export function dayTheme(
             ...DAY_LIGHTING,
             ...(stageType.coast ? COAST_HEMI : {}),
             ...(stageType.sunny ? SUNNY_LIGHT : {}),
+            ...(stageType.haze
+              ? { fogNear: stageType.haze.near, fogFar: stageType.haze.far, hemiGround: '#a07850' }
+              : {}),
+            // A morning sky: the dome's gradient, the mist the colour of its horizon, a low warm sun.
+            ...(stageType.skyGradient && !rain
+              ? {
+                  sky: stageType.skyGradient,
+                  fog: stageType.skyGradient.horizon,
+                  background: stageType.skyGradient.horizon,
+                  sunColor: '#ffe6bd',
+                }
+              : {}),
             ...(rain ? RAIN_LIGHTING : {}),
             ...(snow ? SNOW_LIGHTING : {}),
           },
@@ -292,7 +307,14 @@ export function dayTheme(
       walls: DAY_WALLS,
       seawall: DAY_SEAWALL,
       sea: stageType.coast?.sea ?? DAY_SEA,
-      skidInk: dusk ? DUSK_SKID_INK : rain ? RAIN_SKID_INK : null,
+      // A dusty stage marks its earth, off the road too, in its own colour (the Savanna's red).
+      skidInk: dusk
+        ? DUSK_SKID_INK
+        : rain
+          ? RAIN_SKID_INK
+          : stageType.dust
+            ? { color: stageType.dust.ink, opacity: 0.5 }
+            : null,
       circuit: DAY_CIRCUIT,
       carLamps: dusk,
       ...(rain

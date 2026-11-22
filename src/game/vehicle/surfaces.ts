@@ -1,5 +1,5 @@
 export type Surface =
-  'tarmac' | 'track' | 'gravel' | 'mud' | 'snow' | 'grass' | 'sand' | 'dune' | 'water';
+  'tarmac' | 'track' | 'gravel' | 'mud' | 'snow' | 'grass' | 'sand' | 'dune' | 'water' | 'fechfech';
 
 export interface SurfaceProps {
   /** Friction coefficient multiplier. */
@@ -36,6 +36,8 @@ export const SURFACES: Readonly<Record<Surface, SurfaceProps>> = {
    * the wet gravel round it.
    */
   water: { grip: 0.6, drag: 0.35 },
+  /** Fech-fech: fine powdery dust over the Savanna's murram. Looser than gravel, and it drags. */
+  fechfech: { grip: 0.62, drag: 0.16 },
 };
 
 export const SURFACE_LIST: readonly Surface[] = [
@@ -49,4 +51,5 @@ export const SURFACE_LIST: readonly Surface[] = [
   // Appended, so the surface indices replays already store keep their meaning.
   'track',
   'water',
+  'fechfech',
 ];

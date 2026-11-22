@@ -1,6 +1,6 @@
 import type { TerrainQuery } from '@/game/vehicle/Terrain';
 import type { WheelContact } from '@/game/vehicle/wheelContacts';
-import type { WaterSpray } from './WaterSpray';
+import type { ParticleRing } from './ParticleRing';
 
 /**
  * Decides when and how a car's tyres throw spray (`WaterSpray`): each frame,
@@ -34,7 +34,7 @@ export class SprayEmitter {
   private debt = [0, 0, 0, 0];
   private seed = 0x9e3779b9;
 
-  constructor(private readonly spray: WaterSpray) {}
+  constructor(private readonly spray: ParticleRing) {}
 
   private random(): number {
     this.seed = (Math.imul(this.seed, 1664525) + 1013904223) >>> 0;

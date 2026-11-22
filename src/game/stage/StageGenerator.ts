@@ -63,6 +63,7 @@ const SURFACE_PAR: Readonly<Record<Surface, number>> = {
   sand: 0.9,
   dune: 0.8,
   water: 0.6,
+  fechfech: 0.85,
 };
 
 const NAME_HEADS = [

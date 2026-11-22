@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { RALLY_CYCLE, STAGE_TYPES } from '@/game/stage/regions';
-import { slotV13, stageIndexOf } from './stageIndex';
+import { indexV15, slotV13, slotV15, stageIndexOf } from './stageIndex';
 import { createRoadHit } from '@/game/stage/RoadPath';
 import { scatterScenery } from '@/game/stage/SceneryScatter';
 import { generateStage, stageHasTown, stageTypeAt } from '@/game/stage/StageGenerator';
@@ -14,7 +14,10 @@ import { dayTheme } from '@/render/theme/WorldTheme';
 /** The first Coast stage of the cycle, and one on the hardest difficulty loop. */
 const COAST_INDEX = stageIndexOf('coastal');
 /** A Coast stage of a later difficulty loop. */
-const LATE_COAST_INDEX = stageIndexOf('coastal', 0, 42);
+// Found and tuned on the nine-type calendar (v15): the same stage, whatever the calendar now.
+const LATE_COAST_INDEX = indexV15('coastal', 0, 42);
+const lateCoast = (seed: number) =>
+  generateStage(seed, LATE_COAST_INDEX, slotV15(LATE_COAST_INDEX));
 const SEEDS = [1, 2, 3, 4, 5, 6];
 const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
 
@@ -299,7 +302,7 @@ describe('Coast stages', () => {
 
   it('keeps every stacked leg and the way down clear of the road below, on late loops too', () => {
     for (const seed of SEEDS) {
-      for (const stage of [fieldFor(seed).stage, generateStage(seed, LATE_COAST_INDEX)]) {
+      for (const stage of [fieldFor(seed).stage, lateCoast(seed)]) {
         const { path, halfWidth } = stage;
         const hit = createRoadHit();
         const s = { x: 0, z: 0, heading: 0 };
@@ -321,10 +324,7 @@ describe('Coast stages', () => {
   it('cuts the hillside back from the road instead of standing a wall at its edge, hairpins included', () => {
     // The last stage was reported from a game (stage 39 of 6MXS43EN): a 16 m wall at a hairpin's verge.
     const stages = [
-      ...SEEDS.slice(0, 3).flatMap((seed) => [
-        fieldFor(seed).stage,
-        generateStage(seed, LATE_COAST_INDEX),
-      ]),
+      ...SEEDS.slice(0, 3).flatMap((seed) => [fieldFor(seed).stage, lateCoast(seed)]),
       // Stage 38 was a Coastal on the seven-type calendar this case was found on.
       generateStage(1101485805, 38, slotV13(38)),
     ];
@@ -349,7 +349,7 @@ describe('Coast stages', () => {
 
   it('turns through its hairpins without a kink: no heading step over 10° in 2 m, on late loops too', () => {
     for (const seed of SEEDS) {
-      for (const stage of [fieldFor(seed).stage, generateStage(seed, LATE_COAST_INDEX)]) {
+      for (const stage of [fieldFor(seed).stage, lateCoast(seed)]) {
         const { headings } = stage.path;
         let worst = 0;
         for (let i = 1; i < headings.length; i++)
@@ -361,7 +361,7 @@ describe('Coast stages', () => {
 
   it('keeps late-loop roads grade-limited with their hairpin stacks', () => {
     for (const seed of SEEDS.slice(0, 3)) {
-      const field = new TerrainField(generateStage(seed, LATE_COAST_INDEX));
+      const field = new TerrainField(lateCoast(seed));
       expect(field.stage.stageType).toBe('coastal');
       expect(field.stage.loop).toBeGreaterThanOrEqual(4);
       const { path } = field.stage;
@@ -399,7 +399,8 @@ describe('Coast stages', () => {
 
   it('give each stage its own shore, and sharper headlands on later loops', () => {
     const cornersPerKm = (seed: number, index: number) => {
-      const { headings, spacing, length } = generateStage(seed, index).path;
+      const stage = index === LATE_COAST_INDEX ? lateCoast(seed) : generateStage(seed, index);
+      const { headings, spacing, length } = stage.path;
       const step = Math.round(10 / spacing);
       let corners = 0;
       let inCorner = false;

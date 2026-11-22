@@ -10,25 +10,53 @@ import {
 } from 'three';
 
 /**
- * Spray thrown up by tyres wading a watersplash. A ring of soft round
- * billboards: `emit` writes one particle's birth (where, which way, when, how
+ * Particles thrown up by tyres: spray in a watersplash (`SPRAY`), dust off
+ * dry earth (`DUST`). A ring of soft round billboards: `emit` writes one particle's birth (where, which way, when, how
  * big, how muddy) into the next slot and uploads just that slot; the vertex
  * shader flies it under gravity from those alone, growing and fading it over
  * its life. One draw call, fixed buffers, nothing allocated per frame.
  */
 
-export interface SprayOptions {
+export interface ParticleOptions {
   /** Particles alive at most (the ring's size). */
   capacity: number;
   /** Seconds a particle lives. */
   life: number;
+  /** Downward pull, m/s² (negative rises, as warm dust does). */
+  gravity: number;
+  /** How fast a particle's throw dies away (1/s): 0 flies on, more hangs in the air sooner. */
+  drag: number;
+  /** A particle's size at birth and how many times that it grows to by the end of its life. */
+  grow: number;
+  opacity: number;
+  /** The two tints a particle's `tint` (0..1) mixes between. */
+  light: string;
+  dark: string;
 }
 
-export const DEFAULT_SPRAY: SprayOptions = { capacity: 1400, life: 1.1 };
+/** Water thrown up by tyres in a watersplash: white water with mud in it, falling back fast. */
+export const SPRAY: ParticleOptions = {
+  capacity: 1400,
+  life: 1.1,
+  gravity: 9.81,
+  drag: 0,
+  grow: 2.05,
+  opacity: 0.8,
+  light: '#eef1ef',
+  dark: '#7d6d57',
+};
 
-const GRAVITY = 9.81;
-const WHITE = '#eef1ef';
-const MUD = '#7d6d57';
+/** Red dust billowing behind a car on dry earth: slow, rising a little, spreading wide and fading. */
+export const DUST: ParticleOptions = {
+  capacity: 1600,
+  life: 2.4,
+  gravity: -0.35,
+  drag: 1.6,
+  grow: 4.6,
+  opacity: 0.55,
+  light: '#dcb88c',
+  dark: '#b4633c',
+};
 
 const VERTEX = /* glsl */ `
   attribute vec3 aOrigin;
@@ -40,6 +68,8 @@ const VERTEX = /* glsl */ `
   uniform float uTime;
   uniform float uLife;
   uniform float uGravity;
+  uniform float uDrag;
+  uniform float uGrow;
   varying vec2 vCorner;
   varying float vAlpha;
   varying float vMud;
@@ -55,12 +85,16 @@ const VERTEX = /* glsl */ `
       gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
       return;
     }
-    vec3 p = aOrigin + aVelocity * t - vec3(0.0, 0.5 * uGravity * t * t, 0.0);
-    // Water never falls through the road: it settles at the height it left.
+    // The throw dies away with drag (none for water: it flies on), gravity pulls or lifts.
+    float carry = uDrag > 0.0 ? (1.0 - exp(-uDrag * t)) / uDrag : t;
+    vec3 p = aOrigin + aVelocity * carry - vec3(0.0, 0.5 * uGravity * t * t, 0.0);
+    // Nothing falls through the road: it settles at the height it left.
     p.y = max(p.y, aOrigin.y - 0.05);
     vAlpha = (1.0 - k) * (1.0 - k) * smoothstep(0.0, 0.06, t);
-    float size = aSize * (0.45 + 1.6 * k);
+    float size = aSize * (0.45 + (uGrow - 0.45) * k);
     vec4 mvPosition = modelViewMatrix * vec4(p, 1.0);
+    // A puff right by the lens would fill the screen: those fade out as they near it.
+    vAlpha *= smoothstep(2.0, 7.0, -mvPosition.z);
     mvPosition.xy += aCorner * size;
     gl_Position = projectionMatrix * mvPosition;
     #include <fog_vertex>
@@ -70,13 +104,14 @@ const VERTEX = /* glsl */ `
 const FRAGMENT = /* glsl */ `
   uniform vec3 uWhite;
   uniform vec3 uMud;
+  uniform float uOpacity;
   varying vec2 vCorner;
   varying float vAlpha;
   varying float vMud;
   #include <fog_pars_fragment>
   void main() {
     float r = length(vCorner);
-    float alpha = vAlpha * (1.0 - smoothstep(0.35, 1.0, r)) * 0.8;
+    float alpha = vAlpha * (1.0 - smoothstep(0.35, 1.0, r)) * uOpacity;
     if (alpha < 0.01) discard;
     gl_FragColor = vec4(mix(uWhite, uMud, vMud), alpha);
     #include <fog_fragment>
@@ -84,9 +119,9 @@ const FRAGMENT = /* glsl */ `
   }
 `;
 
-export class WaterSpray {
+export class ParticleRing {
   readonly mesh: Mesh;
-  readonly options: Readonly<SprayOptions>;
+  readonly options: Readonly<ParticleOptions>;
   private readonly geometry = new BufferGeometry();
   private readonly material: ShaderMaterial;
   private readonly origin: BufferAttribute;
@@ -99,8 +134,8 @@ export class WaterSpray {
   private dirtyFrom = -1;
   private dirtyCount = 0;
 
-  constructor(options: Partial<SprayOptions> = {}) {
-    this.options = { ...DEFAULT_SPRAY, ...options };
+  constructor(options: Partial<ParticleOptions> = {}) {
+    this.options = { ...SPRAY, ...options };
     const n = this.options.capacity;
     const attr = (width: number) =>
       new BufferAttribute(new Float32Array(n * 4 * width), width).setUsage(DynamicDrawUsage);
@@ -133,9 +168,12 @@ export class WaterSpray {
         {
           uTime: { value: 0 },
           uLife: { value: this.options.life },
-          uGravity: { value: GRAVITY },
-          uWhite: { value: new Color(WHITE) },
-          uMud: { value: new Color(MUD) },
+          uGravity: { value: this.options.gravity },
+          uDrag: { value: this.options.drag },
+          uGrow: { value: this.options.grow },
+          uOpacity: { value: this.options.opacity },
+          uWhite: { value: new Color(this.options.light) },
+          uMud: { value: new Color(this.options.dark) },
         },
       ]),
       vertexShader: VERTEX,
@@ -145,7 +183,7 @@ export class WaterSpray {
       fog: true,
     });
     this.mesh = new Mesh(this.geometry, this.material);
-    this.mesh.name = 'waterSpray';
+    this.mesh.name = 'particles';
     this.mesh.frustumCulled = false;
     this.mesh.renderOrder = 9;
   }
@@ -155,7 +193,7 @@ export class WaterSpray {
     this.material.uniforms.uTime!.value = time;
   }
 
-  /** Throw one particle from (x, y, z) with velocity (vx, vy, vz) at `time`; `mud` 0 white water … 1 brown. */
+  /** Throw one particle from (x, y, z) with velocity (vx, vy, vz) at `time`; `mud` mixes from the light tint (0) to the dark (1). */
   emit(
     time: number,
     x: number,

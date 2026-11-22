@@ -37,7 +37,13 @@ export class SplashBuilder {
   private readonly geometry: BufferGeometry | null;
   private readonly material: MeshStandardMaterial;
 
-  constructor(stage: StageDef, field: TerrainField, splashes: readonly Watersplash[]) {
+  constructor(
+    stage: StageDef,
+    field: TerrainField,
+    splashes: readonly Watersplash[],
+    /** The water's own colour where the stage type gives one (the Savanna's muddy red-brown). */
+    water?: string,
+  ) {
     this.group.name = 'watersplashes';
     const pos: number[] = [];
     const col: number[] = [];
@@ -58,9 +64,14 @@ export class SplashBuilder {
       pos.push(...a, ...c, ...b);
       col.push(ca.r, ca.g, ca.b, aa, cc.r, cc.g, cc.b, ac, cb.r, cb.g, cb.b, ab);
     };
-    const deep: Tint = [DEEP, ALPHA_DEEP];
-    const mid: Tint = [new Color().copy(SHALLOW).lerp(DEEP, 0.6), ALPHA_MID];
-    const rim: Tint = [SHALLOW, ALPHA_RIM];
+    // Muddy water reads opaque and its own colour; the Moorland's clear grey shows the road through.
+    const own = water ? new Color(water) : null;
+    const deepColor = own ?? DEEP;
+    // Muddy water shallows to a pale, sky-caught sheen at its rim, so it reads as water on red earth.
+    const shallowColor = own ? own.clone().lerp(new Color('#b8b0a0'), 0.45) : SHALLOW;
+    const deep: Tint = [deepColor, own ? 0.92 : ALPHA_DEEP];
+    const mid: Tint = [new Color().copy(shallowColor).lerp(deepColor, 0.6), own ? 0.85 : ALPHA_MID];
+    const rim: Tint = [shallowColor, ALPHA_RIM];
     for (const splash of splashes) {
       const rand = mulberry32(hashSeed(stage.seed, 'splash-shape', Math.round(splash.along)));
       const halfLength = (splash.to - splash.from) / 2;
