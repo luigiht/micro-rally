@@ -103,7 +103,7 @@ export function DemoDrive({ paused }: { paused: boolean }) {
       return;
     }
     const pose = l.follower.pose;
-    car.current?.apply(pose);
+    car.current?.apply(pose, world.field);
     l.renderer.update(pose.x, pose.z);
     if (sun.current) followSun(sun.current, pose, camera);
     l.frame.dt = step;

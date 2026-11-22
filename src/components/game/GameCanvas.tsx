@@ -10,7 +10,7 @@ export function GameCanvas() {
   const carId = useGameStore((s) => s.carId);
   return (
     <Canvas
-      shadows="percentage"
+      shadows="soft"
       dpr={[1, 2]}
       camera={{ position: [0, 4, -70], fov: 60, near: 0.1, far: 500 }}
       aria-label={m.boot.canvasLabel}

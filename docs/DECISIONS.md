@@ -6868,7 +6868,40 @@ bed)`. The road, its profile and every record stay as they were, so
        trumpets a bank under a plenum, a turbo each side with its charge pipe
        into the sidepod and its exhaust, inboard rear dampers on the gearbox
        and its casting ribs; the rear red now starts a hair behind the
-       cover's open end, so no white sliver shows between red and grey.
+       cover's open end, so no white sliver shows between red and grey. The
+       helmet gained a red pinstripe through its white, two white stripes over
+       the crown, visor pivots and tear-off tabs, crown vents, a rear spoiler,
+       a slotted chin vent and a neck collar; the front wing moved forward to
+       stand ahead of z 2.05, clear of the front tyres at full lock. At the
+       user's request the helmet is no longer bands of a sphere but a lofted
+       shell (`WokingHelmet`, a tiny `HullSpec`): longer than wide, a high
+       crown, the forehead sloping to the visor, a chin bar jutting forward
+       under it, the back lower over the neck; its paint laid on as
+       `LiverySolid`s so every band wraps the shell. Its proportions were then
+       measured from a CC BY reference model in `context/f1-helmet` (sliced
+       every 1.5 cm, nothing ships): an egg 29 × 23 × 26 cm on a flat bottom,
+       the forehead falling steeply to the visor, the chin bar forward low
+       down; its rim underneath is white so the back's rounding shows no dark
+       patch; it sits 4 cm lower (`HELMET_Y` 0.76). In the cockpit view the
+       wheel stands higher (its hub 7 cm up, the dash with it) so the rim
+       shows whole over the tub, and the windscreen is low and clear, so the
+       red nose no longer peeks round it as stray strips. The driver's body
+       was tried and removed at the user's request. The cockpit view was then
+       rebuilt after reference photos (`FormulaCockpit`, in place of the dash
+       cluster and wheel for a `singleSeat` cabin): a small three-spoke wheel
+       in black suede with a black button plate, and behind it a curved black
+       display at the scuttle's foot, its twelve-segment rev arc lighting
+       green to amber to red over oil, fuel and two status lamps, under a
+       carbon hood. The tub's top now rises in a hump over the instruments
+       (the screen on its crest), painted red from the cockpit's front edge. The
+       cockpit was a closed shell painted black, so its top hid the wheel's
+       lower half: the tub's top now drops 13 cm through the cockpit (z 0.36
+       to 0.7), a real opening; a single-seat cabin draws no firewall, dash,
+       knee roll or scuttle ledge; and its side walls are white, up to the
+       rim, so no dark floor shows between the rim and the red scuttle. From
+       outside the dropped top left a notch in both flanks, so white side
+       panels (`COCKPIT_SIDE`) stand in its place from the dropped top up to
+       the rim, flush with the flanks.
      - **Loose-ground grip.** `CarSpec.looseGrip` (1 for every other car)
        multiplies tyre grip on any surface but tarmac and race asphalt
        (`PAVED`); the single-seater's 0.8 makes its slicks slide on gravel,
@@ -6913,3 +6946,45 @@ bed)`. The road, its profile and every record stay as they were, so
        cornice) were built inside the building. It now takes the outline's
        winding (front then back, round the building) instead; on the user's
        city stage this turns 39 wall edges out that faced in.
+298. **2026-11-22 — Wheels grounded in their shadows.** At the user's report
+     that no shadow showed where a wheel meets the road:
+     - The 12-sided tyre's corners sat at the wheel radius, so a flat at the
+       bottom stood a centimetre over the ground; it is now sized so its
+       flats reach the radius (`TYRE_ROUND`), and it sits 1.5 cm into the
+       ground (`TYRE_SINK`), as a loaded tyre squashes flat, so its foot
+       casts the sun's shadow at road level.
+     - The sun's normal bias (2 cm) left the bottom of every tyre casting
+       nothing, a lit gap between it and the car's shadow; it is now 0.6 cm
+       (the depth bias unchanged), with no acne on road, grass, kerbs or
+       façades in the checks.
+     - Shadows are filtered with soft PCF (`shadows="soft"`, was plain PCF),
+       which smooths the 3.4 cm texels' stair-steps along the tyres'
+       shadow edges.
+     - A fake dark contact patch under each tyre was tried and removed at
+       the user's request. Ground right beside a tyre on the sun's side is
+       lit, as it is in sunlight.
+     - The gap the user kept seeing was mostly real: all four wheels were
+       lifted by one ground height sampled at the car's centre, under a body
+       whose pitch and roll follow smoothed axle heights, so on a crowned
+       road, a camber change or a kerb a wheel hung over the road or sank
+       into it. `CarModel.apply` now takes the terrain and seats each wheel
+       on the ground under its own contact point (up to 12 cm down or the
+       body's travel up from the shared height); the player's car and the
+       splash demo pass it, a multiplayer opponent (no terrain at hand) keeps
+       the shared height.
+     - The sun stands higher, about 70° up (was 54°), at the user's choice,
+       so a car's shadow lies under it and wraps every tyre.
+     - The last, striped gap right at the contact was the depth bias: it is a
+       share of the shadow camera's 240 m depth, so −0.0002 was 4.8 cm and
+       nothing that close above the road shaded it, every tyre's foot
+       included. It is now −0.00002 (about 5 mm), with no acne on road,
+       verge, grass or façades in the checks.
+299. **2026-11-22 — Tyre marks as wide as the tyres.** At the user's request.
+     Every mark was laid 0.24 m wide whatever the car, while the tyres run
+     from 0.23 m (the Berlinette) to 0.38 m (the Sirocco) and the single-
+     seater's fronts and rears differ (0.3 and 0.44 m). The width rule moved
+     out of `CarModel` into `render/car/TyreWidths.ts` (0.8 × the wheel
+     radius, or a car's own), and `SkidMarks.setWidths(front, rear)` gives
+     each wheel's trail its tyre's width, kept across a clear; `DriveRig`
+     sets it whenever the car or the stage changes. Replays use the same
+     widths, as they draw with the current car.

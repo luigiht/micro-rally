@@ -15,7 +15,7 @@ import { WHEEL_COUNT, type WheelContact } from '@/game/vehicle/wheelContacts';
 export interface SkidMarkOptions {
   /** Quads in the ring buffer shared by all four wheels; the oldest are recycled. */
   capacity: number;
-  /** Mark width in metres (the tyres are 0.26 m wide). */
+  /** Mark width in metres until `setWidths` gives each wheel its own tyre's. */
   width: number;
   /** Height above the ground query (which already includes the road ribbon's lift). */
   lift: number;
@@ -97,6 +97,8 @@ const FRAGMENT = /* glsl */ `
 `;
 
 interface WheelTrail {
+  /** This wheel's mark width, metres. */
+  width: number;
   active: boolean;
   hasDirection: boolean;
   x: number;
@@ -115,8 +117,9 @@ interface WheelTrail {
   birth: number;
 }
 
-function createTrail(): WheelTrail {
+function createTrail(width: number): WheelTrail {
   return {
+    width,
     active: false,
     hasDirection: false,
     x: 0,
@@ -203,7 +206,7 @@ export class SkidMarks {
     this.mesh.frustumCulled = false;
     this.mesh.matrixAutoUpdate = false;
     this.mesh.renderOrder = 1;
-    for (let i = 0; i < WHEEL_COUNT; i++) this.trails.push(createTrail());
+    for (let i = 0; i < WHEEL_COUNT; i++) this.trails.push(createTrail(this.options.width));
     for (const key of Object.keys(INK) as Surface[]) {
       this.ink.set(key, new Color(INK[key].color));
     }
@@ -222,10 +225,18 @@ export class SkidMarks {
     this.geometry.setDrawRange(0, 0);
     this.head = 0;
     this.written = 0;
-    for (let i = 0; i < WHEEL_COUNT; i++) this.trails[i] = createTrail();
+    // Each wheel keeps its tyre's width across a clear.
+    for (let i = 0; i < WHEEL_COUNT; i++) this.trails[i] = createTrail(this.trails[i]!.width);
   }
 
   /** Draw every new mark in this ink regardless of surface, or null for the per-surface table. Existing marks keep theirs. */
+  /** Lay each wheel's marks as wide as its tyre (`TyreWidths`): the fronts' and the rears'. */
+  setWidths(front: number, rear: number): void {
+    this.trails.forEach((t, i) => {
+      t.width = i < 2 ? front : rear;
+    });
+  }
+
   setInk(ink: { color: Color; opacity: number } | null): void {
     this.override = ink ? { color: ink.color.clone(), opacity: ink.opacity } : null;
   }
@@ -294,7 +305,7 @@ export class SkidMarks {
     time: number,
     color: Color,
   ): void {
-    const hw = this.options.width / 2;
+    const hw = t.width / 2;
     const dirX = dx / dist;
     const dirZ = dz / dist;
     const sideX = dirZ * hw;

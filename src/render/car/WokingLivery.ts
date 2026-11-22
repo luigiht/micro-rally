@@ -71,6 +71,8 @@ const rearSolid = (from: number): LiverySolid => ({
 });
 
 /** Where the nose's red ends at its sides, the nose's half-width there, and the point of the white triangle cut into it. */
+/** The nose's red starts at the cockpit's front edge, so the scuttle over the instruments is red. */
+const NOSE_FROM = WOKING_COCKPIT.to;
 const NOSE_RED = 1.55;
 const NOSE_EDGE = 0.16;
 const NOTCH = 1.28;
@@ -85,11 +87,11 @@ const noseSolid: LiverySolid = {
   color: RED,
   mirror: true,
   side: [
-    [0.95, 0],
+    [NOSE_FROM, 0],
     [1.25, 0],
     [NOSE_RED, 0.5],
     [NOSE_RED, 1],
-    [0.95, 1],
+    [NOSE_FROM, 1],
   ],
   front: [
     [0, 0],
@@ -98,11 +100,11 @@ const noseSolid: LiverySolid = {
     [0, 1],
   ],
   top: [
-    [0.95, 0],
+    [NOSE_FROM, 0],
     [NOTCH, 0],
     [NOSE_RED, NOSE_EDGE],
     [NOSE_RED, 1],
-    [0.95, 1],
+    [NOSE_FROM, 1],
   ],
 };
 

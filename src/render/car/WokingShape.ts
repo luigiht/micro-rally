@@ -12,7 +12,8 @@ import { loft, type LoftKey } from './HullLoft';
  * red, `WokingLivery`):
  *
  * - **The tub** (`WOKING_TUB`): a needle nose from z 2.58 widening to the
- *   monocoque round the driver's legs; the open cockpit from z 0.28 to 0.74
+ *   monocoque round the driver's legs; the open cockpit from z 0.28 to 0.76
+ *   under a scuttle rising in a hump over the instruments
  *   (its top at 0.62 painted black, the driver's helmet above it); then the
  *   engine cover, at its highest (0.86) just behind the helmet and falling
  *   low and flat to its end over the rear axle (z −1.3), the engine's tail,
@@ -63,9 +64,16 @@ const tubKeys: LoftKey[] = [
   { z: -0.8, belt: 0.54, roof: 0.68, crown: 0.03, xBelt: 0.27, xRoof: 0.16 },
   { z: -0.3, belt: 0.58, roof: 0.82, crown: 0.03, xRoof: 0.14 },
   { z: 0.15, belt: 0.6, roof: 0.84, crown: 0.02, xRoof: 0.13 },
-  // The cockpit: the tub's top at the shoulders, open (painted black) from here to the scuttle.
+  // The cockpit: the tub's top at the shoulders, then dropping a hand into the opening (painted
+  // black) so the driver sees down past the wheel, and back up to the scuttle.
   { z: 0.3, belt: 0.58, roof: 0.62, crown: 0.01, xBelt: 0.28, xRoof: 0.22 },
-  { z: 0.95, belt: 0.58, roof: 0.63, crown: 0.01, xBody: 0.3, xBelt: 0.28, xRoof: 0.22 },
+  { z: 0.36, belt: 0.47, roof: 0.49, crown: 0, xRoof: 0.22 },
+  { z: 0.7, belt: 0.47, roof: 0.49, crown: 0 },
+  // The scuttle: the tub's top rising in a hump over the instruments in front of the driver, the
+  // screen on its crest, then falling to the nose.
+  { z: 0.76, belt: 0.58, roof: 0.62, crown: 0.01 },
+  { z: 0.86, belt: 0.6, roof: 0.71, crown: 0.03, xRoof: 0.2 },
+  { z: 0.95, belt: 0.58, roof: 0.67, crown: 0.02, xBody: 0.3, xBelt: 0.28, xRoof: 0.21 },
   // The nose narrowing and falling to its tip over the front wing.
   {
     z: 1.1,
@@ -178,4 +186,4 @@ export const WOKING_SIDEPODS: HullSpec = {
 };
 
 /** The cockpit's opening along the tub's top, z, and its half-width. */
-export const WOKING_COCKPIT = { from: 0.28, to: 0.74, halfWidth: 0.19 } as const;
+export const WOKING_COCKPIT = { from: 0.28, to: 0.76, halfWidth: 0.19 } as const;

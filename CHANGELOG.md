@@ -34,6 +34,10 @@ hold the reasoning behind each change; the numbers in brackets point there.
 - **Mirrors** sit on the body on every car and in city traffic; several are
   wider and slimmer, with the glass facing back [295].
 - **Front mud flaps** on the Toro Dakar Buggy [295].
+- **Tyre marks match the tyres:** each car's marks are as wide as its own tyres, front and
+  rear [299].
+- **Wheels meet their shadows:** every car's tyres sit on the road with the sun's shadow
+  running right up to them, and shadow edges are smoother [298].
 - **Clearer city windows:** windows stand further out from the walls, so they no longer
   flicker or vanish in the distance, and plain buildings have windows on every side [297].
 - **Savanna polish.** Red tyre marks off the road, a slower dirt feel on the

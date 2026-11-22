@@ -11,8 +11,11 @@ import { SkyDome } from './SkyDome';
 
 installShadowEdgeFade();
 
-/** Where the sun shines from (toward the light from its target); only the direction matters. */
-const SUN_DIRECTION = [8, 14, 6] as const;
+/**
+ * Where the sun shines from (toward the light from its target); only the direction matters. High,
+ * about 70° up, so a car's shadow lies under it and wraps every tyre where it meets the road.
+ */
+const SUN_DIRECTION = [8, 27, 6] as const;
 /**
  * The sun stands this far back along its direction, and its shadow camera
  * reaches this deep, so tall spruces and hillsides at the frustum's edge
@@ -101,8 +104,11 @@ export function SceneLights({ lighting: l, sunRef }: SceneLightsProps) {
         shadow-camera-bottom={-half}
         shadow-camera-near={1}
         shadow-camera-far={SHADOW_FAR}
-        shadow-bias={-0.0002}
-        shadow-normalBias={0.02}
+        // Depth bias is a share of the shadow camera's depth (SHADOW_FAR, 240 m): -0.00002 is
+        // about 5 mm, so the last centimetres of a tyre still shade the road where it touches
+        // (-0.0002 was 4.8 cm, and left every tyre's foot casting nothing).
+        shadow-bias={-0.00002}
+        shadow-normalBias={0.006}
       />
     </>
   );

@@ -5,6 +5,7 @@ import type { Group } from 'three';
 import type { CarSpec } from '@/game/vehicle/CarSpec';
 import type { VehiclePose } from '@/game/vehicle/interpolatePose';
 import { Box } from './CarParts';
+import { FormulaCockpit } from './interior/FormulaCockpit';
 import { DashCluster, type DashHandle } from './interior/InteriorDash';
 import {
   BucketSeat,
@@ -71,12 +72,16 @@ export function CarInterior({ ref, spec }: { ref: Ref<CarInteriorHandle>; spec: 
       <group position={[cx, 0, 0]}>
         {/* Floor, roof lining (self-lit a little so the ground light doesn't tint it), header, sun strip, mirror, map light */}
         <Box p={[0, floorY, (cowlZ + rearZ) / 2]} s={[hw * 2, 0.01, cowlZ - rearZ]} c="#2b2a33" />
-        {/* Front wall below the dash (firewall and kick panels): a shallow dash must not show the outside */}
-        <Box
-          p={[0, (floorY + dashTopY) / 2, cowlZ - 0.01]}
-          s={[hw * 2, dashTopY - floorY, 0.02]}
-          c={p.door}
-        />
+        {/* Front wall below the dash (firewall and kick panels): a shallow dash must not show the outside.
+            A single-seater has none, nor a dash or scuttle ledge: its footwell runs on under the
+            scuttle, open below the wheel. */}
+        {!s.singleSeat && (
+          <Box
+            p={[0, (floorY + dashTopY) / 2, cowlZ - 0.01]}
+            s={[hw * 2, dashTopY - floorY, 0.02]}
+            c={p.door}
+          />
+        )}
         {!s.open && (
           <>
             <Box
@@ -147,33 +152,45 @@ export function CarInterior({ ref, spec }: { ref: Ref<CarInteriorHandle>; spec: 
             c={p.door}
           />
         )}
-        {/* Dash and knee roll, then the cluster */}
-        <Box
-          p={[0, dashTopY - 0.09, cowlZ - dashDepth / 2]}
-          s={[hw * 2, 0.18, dashDepth]}
-          c={p.dash}
-        />
-        <Box
-          p={[0, dashTopY - 0.24, cowlZ - dashDepth / 4]}
-          s={[hw * 2, 0.12, dashDepth / 2]}
-          c={p.dash}
-        />
-        {/* Scuttle ledge up to the screen base, with a demister slot, where the hull's cowl sits above the dash */}
-        {cowlY > dashTopY - 0.01 && (
+        {!s.singleSeat && (
           <>
+            {/* Dash and knee roll, then the cluster */}
             <Box
-              p={[0, (dashTopY - 0.02 + cowlY + 0.01) / 2, cowlZ - 0.1]}
-              s={[hw * 2, cowlY + 0.03 - dashTopY, 0.2]}
+              p={[0, dashTopY - 0.09, cowlZ - dashDepth / 2]}
+              s={[hw * 2, 0.18, dashDepth]}
               c={p.dash}
             />
-            <Box p={[0, cowlY + 0.012, cowlZ - 0.08]} s={[hw * 2 - 0.4, 0.006, 0.08]} c="#15141a" />
+            <Box
+              p={[0, dashTopY - 0.24, cowlZ - dashDepth / 4]}
+              s={[hw * 2, 0.12, dashDepth / 2]}
+              c={p.dash}
+            />
+            {/* Scuttle ledge up to the screen base, with a demister slot, where the hull's cowl sits above the dash */}
+            {cowlY > dashTopY - 0.01 && (
+              <>
+                <Box
+                  p={[0, (dashTopY - 0.02 + cowlY + 0.01) / 2, cowlZ - 0.1]}
+                  s={[hw * 2, cowlY + 0.03 - dashTopY, 0.2]}
+                  c={p.dash}
+                />
+                <Box
+                  p={[0, cowlY + 0.012, cowlZ - 0.08]}
+                  s={[hw * 2 - 0.4, 0.006, 0.08]}
+                  c="#15141a"
+                />
+              </>
+            )}
           </>
         )}
       </group>
-      <DashCluster ref={dash} spec={s} redlineRpm={spec.redlineRpm} />
+      {s.singleSeat ? (
+        <FormulaCockpit ref={dash} spec={s} redlineRpm={spec.redlineRpm} rimRef={rim} />
+      ) : (
+        <DashCluster ref={dash} spec={s} redlineRpm={spec.redlineRpm} />
+      )}
       {s.raidKit && <RaidKit spec={s} />}
       {!s.open && <RollCage spec={s} />}
-      <SteeringWheel spec={s} rimRef={rim} />
+      {!s.singleSeat && <SteeringWheel spec={s} rimRef={rim} />}
       {/* Transmission tunnel with the gear lever, handbrake and intercom; seats; co-driver kit. A
           single-seater has its lever by the driver's right hand and no tunnel or handbrake. */}
       {s.singleSeat ? (

@@ -51,6 +51,24 @@ describe('SkidMarks', () => {
     marks.dispose();
   });
 
+  it("lays each wheel's marks as wide as its tyre, and keeps the widths across a clear", () => {
+    const marks = new SkidMarks({ capacity: 64 });
+    marks.setWidths(0.3, 0.44);
+    const across = () => {
+      const p = marks.mesh.geometry.getAttribute('position') as BufferAttribute;
+      const xs = Array.from({ length: marks.quadCount * 4 }, (_, v) => p.getX(v));
+      // Rear-left strip runs down x 0.75: its quads span 0.75 ± half the rear tyre.
+      const left = xs.filter((x) => x > 0);
+      return Math.max(...left) - Math.min(...left);
+    };
+    drive(marks, 20, 1);
+    expect(across()).toBeCloseTo(0.44, 3);
+    marks.clear();
+    drive(marks, 20, 1);
+    expect(across()).toBeCloseTo(0.44, 3);
+    marks.dispose();
+  });
+
   it('clear wipes every mark and lays fresh strips afterwards', () => {
     const marks = new SkidMarks({ capacity: 64 });
     const t = drive(marks, 20, 1);

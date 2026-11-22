@@ -21,6 +21,7 @@ import {
   REDUCED_SNOW,
 } from '@/render/effects/Rain';
 import { SkidMarks } from '@/render/effects/SkidMarks';
+import { tyreWidths } from '@/render/car/TyreWidths';
 import type { StageRenderOptions } from '@/render/stage/StageRenderer';
 import { themeColor } from '@/render/theme/themeColor';
 import type { WorldTheme } from '@/render/theme/WorldTheme';
@@ -130,6 +131,12 @@ export function DriveRig({ world, theme, onPose, effects, children }: DriveRigPr
     session.current?.setSpec(spec);
   }, [spec]);
 
+  // Tyre marks as wide as this car's tyres.
+  useEffect(() => {
+    const w = tyreWidths(spec);
+    marks.current?.setWidths(w.front, w.rear);
+  }, [spec, world]);
+
   useFrame((state, dt) => {
     const s = session.current;
     if (!s) return;
@@ -139,7 +146,7 @@ export function DriveRig({ world, theme, onPose, effects, children }: DriveRigPr
       car.current?.setView(s.cameraMode);
     }
     const pose = s.pose;
-    car.current?.apply(pose);
+    car.current?.apply(pose, world.terrain);
     car.current?.setBraking(s.replaying ? 0 : s.braking);
     const m = marks.current;
     if (m) {
