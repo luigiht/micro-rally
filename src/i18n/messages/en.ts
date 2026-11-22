@@ -485,7 +485,7 @@ export const en = {
     no: 'no',
   },
   landing: {
-    title: 'Micro Rally — Tiny car. Huge rush.',
+    title: 'Micro Rally — Tiny cars. Huge rush.',
     description:
       'Micro Rally is a cozy low-poly rally game for your browser. Drive procedural stages, upgrade your car and play free.',
     nav: {
@@ -499,7 +499,7 @@ export const en = {
     },
     play: 'Play',
     hero: {
-      top: 'Tiny car',
+      top: 'Tiny cars',
       bottom: 'Huge rush',
       body: 'A cozy low-poly rally game where every bend is new. Drive procedurally generated roads, earn your upgrades and build a garage worth showing off.',
       see: 'See how it plays',
@@ -586,7 +586,7 @@ export const en = {
     },
     garage: {
       top: 'Start humble',
-      bottom: 'Finish legendary',
+      bottom: 'Finish a star',
       body: 'Begin in the free Rally Hatch. Win prize money, then move into Group B monsters, WRC icons, a Dakar truck—or a low-slung Le Mans prototype.',
       prev: 'Previous vehicle',
       next: 'Next vehicle',

@@ -504,7 +504,7 @@ export const it: Messages = {
     no: 'no',
   },
   landing: {
-    title: 'Micro Rally — Auto piccola. Emozione enorme.',
+    title: 'Micro Rally — Auto piccole. Emozione enorme.',
     description:
       'Micro Rally è un accogliente gioco di rally low-poly per il browser. Guida prove procedurali, potenzia la tua auto e gioca gratis.',
     nav: {
@@ -518,7 +518,7 @@ export const it: Messages = {
     },
     play: 'Gioca',
     hero: {
-      top: 'Auto piccola',
+      top: 'Auto piccole',
       bottom: 'Emozione enorme',
       body: 'Un accogliente gioco di rally low-poly dove ogni curva è nuova. Guida su strade generate proceduralmente, guadagnati i potenziamenti e costruisci un garage da mostrare.',
       see: 'Guarda come si gioca',
@@ -605,7 +605,7 @@ export const it: Messages = {
     },
     garage: {
       top: 'Parti umile',
-      bottom: 'Arriva leggenda',
+      bottom: 'Arriva da star',
       body: 'Inizia con la Rally Hatch gratuita. Vinci premi, poi passa ai mostri del Gruppo B, alle icone del WRC, a un camion della Dakar… o a un prototipo di Le Mans rasoterra.',
       prev: 'Veicolo precedente',
       next: 'Veicolo successivo',

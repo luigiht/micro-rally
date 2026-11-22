@@ -10,6 +10,7 @@ import { LandingCameras } from './LandingCameras';
 import { LandingControls } from './LandingControls';
 import { LandingFaq } from './LandingFaq';
 import { LandingGarage } from './LandingGarage';
+import { useHeadingReveal } from './useHeadingReveal';
 import {
   FEATURE_ICONS,
   LANDING_STAGES,
@@ -97,9 +98,11 @@ export function LandingPage() {
   const navRef = useRef<HTMLElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
   useDismiss(menuOpen, close, navRef, toggleRef);
+  const pageRef = useRef<HTMLDivElement>(null);
+  useHeadingReveal(pageRef);
 
   return (
-    <div className="landing-page">
+    <div className="landing-page" ref={pageRef}>
       <main className="page-shell">
         <nav ref={navRef} className={`nav ${scrolled ? 'scrolled' : ''}`} aria-label={t.nav.label}>
           <a href="#top" className="nav-logo" aria-label={t.nav.home}>

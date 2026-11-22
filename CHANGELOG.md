@@ -50,6 +50,10 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Changed
 
+- **A livelier landing page.** The hero now reads "Tiny cars, huge rush" and
+  drives in line by line as the page loads;
+  section headings rise into place as you scroll to them. Still under
+  reduced motion.
 - **New session and Join session are tabs** on the Multiplayer screen: folder
   tabs on a rule, the open one raised and joined to the form below, arrow keys move
   between them.

@@ -504,7 +504,7 @@ export const es: Messages = {
     no: 'no',
   },
   landing: {
-    title: 'Micro Rally — Coche pequeño. Emoción enorme.',
+    title: 'Micro Rally — Coches pequeños. Emoción enorme.',
     description:
       'Micro Rally es un acogedor juego de rally low-poly para tu navegador. Conduce tramos procedurales, mejora tu coche y juega gratis.',
     nav: {
@@ -518,7 +518,7 @@ export const es: Messages = {
     },
     play: 'Jugar',
     hero: {
-      top: 'Coche pequeño',
+      top: 'Coches pequeños',
       bottom: 'Emoción enorme',
       body: 'Un acogedor juego de rally low-poly donde cada curva es nueva. Conduce por carreteras generadas proceduralmente, gánate tus mejoras y monta un garaje digno de presumir.',
       see: 'Mira cómo se juega',
@@ -605,7 +605,7 @@ export const es: Messages = {
     },
     garage: {
       top: 'Empieza humilde',
-      bottom: 'Acaba siendo leyenda',
+      bottom: 'Acaba siendo estrella',
       body: 'Empieza con el Rally Hatch gratuito. Gana premios y pasa a monstruos del Grupo B, iconos del WRC, un camión del Dakar… o un prototipo de Le Mans a ras de suelo.',
       prev: 'Vehículo anterior',
       next: 'Vehículo siguiente',
