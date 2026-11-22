@@ -24,6 +24,12 @@ const STOREY = 3.1;
 const WINDOW_W = 1.1;
 const WINDOW_H = 1.5;
 const WINDOW_EVERY = 2.6;
+/**
+ * Windows stand this far proud of the wall, a dark pane on a box whose sides are the wall's tint
+ * shaded: far enough that the depth buffer keeps pane and wall apart a few hundred metres off, so
+ * they read clearly in the distance instead of fighting the wall.
+ */
+const WINDOW_OUT = 0.12;
 const PLINTH = 0.7;
 const CORNICE_H = 0.35;
 const CORNICE_OUT = 0.2;
@@ -53,12 +59,37 @@ class Faces {
 }
 
 /**
+ * A window from `a` to `b` along a wall (`at`: a point `s` along it, `y` up, `out` from it) and
+ * `WINDOW_H` up from `y`: the dark pane `WINDOW_OUT` proud of the wall, its four sides back to the
+ * wall in the wall's `tint` shaded (`tmp` is scratch).
+ */
+function windowBox(
+  f: Faces,
+  at: (s: number, y: number, out: number) => number[],
+  a: number,
+  b: number,
+  y: number,
+  tint: Color,
+  tmp: Color,
+): void {
+  const t = y + WINDOW_H;
+  const o = WINDOW_OUT;
+  f.quad(at(a, y, o), at(b, y, o), at(b, t, o), at(a, t, o), WINDOW);
+  tmp.copy(tint).multiplyScalar(0.8);
+  f.quad(at(a, y, 0), at(b, y, 0), at(b, y, o), at(a, y, o), tmp);
+  f.quad(at(a, t, o), at(b, t, o), at(b, t, 0), at(a, t, 0), tmp);
+  f.quad(at(a, y, 0), at(a, y, o), at(a, t, o), at(a, t, 0), tmp);
+  f.quad(at(b, y, o), at(b, y, 0), at(b, t, 0), at(b, t, o), tmp);
+}
+
+/**
  * A city's fitted buildings (`TownInfill`): each footprint (a corner lot
  * with a face on each street, a lot no catalog building stood on) stands
  * from a sunk footing to its roof, walls in the building's tint, and along
  * the street front a darker plinth, a row of windows per storey spaced along
  * the whole front (round the corner and all), a door on each street face and
- * a cornice; a flat grey roof. One merged mesh for the whole city.
+ * a cornice; windows on every storey of the back and side walls too; a flat
+ * grey roof. One merged mesh for the whole city.
  */
 export class TownInfillBuilder {
   readonly group = new Group();
@@ -102,14 +133,20 @@ export class TownInfillBuilder {
       for (const [a, b, c] of ShapeUtils.triangulateShape(contour, []))
         f.tri(v(outline[a!]!, top), v(outline[b!]!, top), v(outline[c!]!, top), ROOF);
       // The street front: plinth, cornice and windows along every piece, standing just proud of it.
+      // Which way the outline runs (front then back, round the building), so each edge's outside
+      // is its same side whatever the shape: a centroid test picks the inside of an L-shaped lot's
+      // inner walls and hides their windows in the building.
+      let area = 0;
+      for (let i = 0; i < outline.length; i++) {
+        const a = outline[i]!;
+        const b = outline[(i + 1) % outline.length]!;
+        area += a.x * b.z - b.x * a.z;
+      }
+      const turn = area > 0 ? 1 : -1;
       const outward = (p: Pt, q: Pt) => {
         const len = Math.hypot(q.x - p.x, q.z - p.z) || 1;
-        let nx = (q.z - p.z) / len;
-        let nz = -(q.x - p.x) / len;
-        if (nx * (cx - p.x) + nz * (cz - p.z) > 0) {
-          nx = -nx;
-          nz = -nz;
-        }
+        const nx = (turn * (q.z - p.z)) / len;
+        const nz = (-turn * (q.x - p.x)) / len;
         return { x: nx, z: nz, len, ux: (q.x - p.x) / len, uz: (q.z - p.z) / len };
       };
       // Where along the front each door stands, so the ground floor's windows leave it room.
@@ -182,13 +219,7 @@ export class TownInfillBuilder {
           if (b - a > WINDOW_W * 0.6)
             for (let y = floor + 1.1; y + WINDOW_H < top - CORNICE_H - 0.3; y += STOREY) {
               if (y < floor + STOREY && byDoor) continue;
-              f.quad(
-                at(a, y, 0.03),
-                at(b, y, 0.03),
-                at(b, y + WINDOW_H, 0.03),
-                at(a, y + WINDOW_H, 0.03),
-                WINDOW,
-              );
+              windowBox(f, at, a, b, y, tint, tmp);
             }
           next += WINDOW_EVERY;
         }
@@ -223,6 +254,25 @@ export class TownInfillBuilder {
           );
         }
         run += o.len;
+      }
+      // The back and side walls: plain windows on every storey, no doors (where a wall stands
+      // against a neighbour, its windows are hidden inside it).
+      const back = [pulled[pulled.length - 1]!, ...infill.back, pulled[0]!];
+      for (let i = 1; i < back.length; i++) {
+        const p = back[i - 1]!;
+        const q = back[i]!;
+        const o = outward(p, q);
+        const at = (s: number, y: number, out: number) => [
+          p.x + o.ux * s + o.x * out,
+          y,
+          p.z + o.uz * s + o.z * out,
+        ];
+        const count = Math.floor((o.len - 0.6) / WINDOW_EVERY);
+        for (let k = 0; k < count; k++) {
+          const s = (o.len - (count - 1) * WINDOW_EVERY) / 2 + k * WINDOW_EVERY;
+          for (let y = floor + 1.1; y + WINDOW_H < top - CORNICE_H - 0.3; y += STOREY)
+            windowBox(f, at, s - WINDOW_W / 2, s + WINDOW_W / 2, y, tint, tmp);
+        }
       }
     }
     if (f.pos.length === 0) {

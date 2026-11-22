@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CATALOG_IDS } from '@/game/economy/cars';
-import { CAR_SPECS, type CarId } from '@/game/vehicle/CarSpec';
+import { CAR_SPECS, type CarId, type CarSpec } from '@/game/vehicle/CarSpec';
 import { autoShift, torqueAt } from '@/game/vehicle/Drivetrain';
 import { SURFACES } from '@/game/vehicle/surfaces';
 import { flatTerrain } from '@/game/vehicle/Terrain';
@@ -323,5 +323,34 @@ describe('race asphalt', () => {
       expect(track.lat).toBeGreaterThan(road.lat * 1.15);
       expect(track.peak).toBeLessThan(road.peak * 0.4);
     }
+  });
+});
+
+describe('the single-seater', () => {
+  /** Peak lateral acceleration sweeping a full-lock corner from 72 km/h on `surface`. */
+  const grip = (spec: CarSpec, surface: 'tarmac' | 'gravel') => {
+    const g = flatTerrain(surface);
+    const sim = makeSim(spec, g, 20);
+    let lat = 0;
+    run(sim, g, 3, input({ throttle: 0.6, steer: 1 }), (s) => {
+      lat = Math.max(lat, Math.abs(s.state.latAccel));
+    });
+    return lat;
+  };
+
+  it('is the fastest car in the shop on tarmac', () => {
+    const others = CATALOG_IDS.filter((id) => id !== 'formula').map((id) => topSpeedKmh(id));
+    expect(topSpeedKmh('formula')).toBeGreaterThan(Math.max(...others));
+  });
+
+  it('loses grip on its slicks on loose ground only (`looseGrip`)', () => {
+    const slicks = CAR_SPECS.formula;
+    const treaded = { ...slicks, looseGrip: 1 };
+    expect(slicks.looseGrip).toBeLessThan(1);
+    expect(grip(slicks, 'tarmac')).toBeCloseTo(grip(treaded, 'tarmac'), 5);
+    expect(grip(slicks, 'gravel')).toBeLessThan(grip(treaded, 'gravel') * 0.92);
+    // Every other car keeps its full grip on loose ground.
+    for (const id of CATALOG_IDS.filter((c) => c !== 'formula'))
+      expect(CAR_SPECS[id].looseGrip, id).toBe(1);
   });
 });

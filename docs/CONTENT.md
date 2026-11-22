@@ -920,11 +920,13 @@ dashboard kit and palette.
 | `saloon`     | Boreal Saloon         | Impreza S6 WRC-shaped saloon               | 1230 kg | `SaloonBody.tsx`     |
 | `wrc`        | Riviera WRC           | Late-80s Group A five-door hatch           | 1230 kg | `WrcHatchBody.tsx`   |
 | `groupb`     | Tempesta Group B      | Group B monster with box flares            | 960 kg  | `GroupBBody.tsx`     |
+| `scrs`       | Schwaben SC Rallye    | 911 SC RS-style rear-engined rally coupé   | 980 kg  | `SchwabenBody.tsx`   |
 | `s1`         | Edelweiss S1          | Sport Quattro S1 E2-shaped coupé           | 1090 kg | `S1CoupeBody.tsx`    |
 | `focus`      | Albion RS Hatch       | First-gen Focus hatch in works WRC trim    | 1230 kg | `FocusHatchBody.tsx` |
 | `dakar`      | Sirocco Dakar Truck   | Rally-raid truck, twice a car's size       | 2600 kg | `DakarTruckBody.tsx` |
 | `lemans`     | Mulsanne LM Prototype | 917K-shaped 1970 Le Mans coupé             | 800 kg  | `LeMansBody.tsx`     |
 | `buggy`      | Toro Dakar Buggy      | SMG-style two-wheel-drive raid buggy       | 1450 kg | `BuggyBody.tsx`      |
+| `formula`    | Woking V6 Turbo       | MP4/4-style turbo Formula One car          | 600 kg  | `WokingBody.tsx`     |
 
 The buggy's mudguards are not part of its hull: `render/car/FenderShell.ts`
 lofts a thick half-ring shell around each axle from an outline of
@@ -947,6 +949,27 @@ with an orange sill band (the stripe band split blue over orange), an orange
 nose by cap and deck decals, an orange centre stripe over both lofts, white
 a plain roundel on each door.
 
+The Schwaben is lofted from a side photo (`SchwabenShape`): its roof falls
+in one curve from the screen's top to the tail, round headlamps stand in
+raised front wings with the bonnet dipping between them, and both arches
+are flared; it is squared off for a boxy read. White over deep blue with a
+gold band, a white pinstripe and a red stripe along the doors that sweep
+down over the front wing and across the tail (`SchwabenLivery`); a
+four-lamp pod on the bonnet's front edge, a whale-tail spoiler with
+louvres, red mirrors, and one black bar across the tail holding the tail
+lamps and a red centre band.
+
+The Woking is two lofts with no wheel wells (`WokingShape`): a
+needle-nosed tub carrying the open cockpit (its top painted black, a
+helmet in it) and the engine cover, and low sidepods pinching in to the
+gearbox; front and rear wings stand on prism endplates, and wishbones,
+pushrods and driveshafts run out to the hubs. White with fluorescent red
+on the nose, the sidepods and the rear endplates (`WokingLivery`). Its
+wheels are its own widths (`CarModel`'s `TYRES`: narrow fronts, wide rear
+slicks), its cabin is an open single seat on the centre line
+(`InteriorSpec.open`, `singleSeat`, `CarSpec.cabinAcross`), and its slicks
+find a fifth less grip on loose ground (`CarSpec.looseGrip`).
+
 Two further specs, `pickup` and `monster`, exist in `CarSpec.ts` for tuning
 tests but are not on sale.
 
@@ -954,8 +977,8 @@ Physics per car: mass and centre of gravity, yaw inertia, steering lock and
 speed falloff, torque curve, five gear ratios and final drive, front/rear
 drive split, tyre grip and cornering stiffness, braking, handbrake rear grip,
 drag and rolling resistance, suspension rates and stability, turbo force and
-timing, aero grip. Visual-only fields move the cabin and scale the body for
-the cameras.
+timing, aero grip, grip on loose ground. Visual-only fields move the cabin
+(down, forward and across) and scale the body for the cameras.
 
 ## Surfaces
 

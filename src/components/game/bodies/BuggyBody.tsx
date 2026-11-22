@@ -175,6 +175,15 @@ function Spare({ x }: { x: number }) {
 /** White work lights lie on the rear fenders' domes just above their rear lips, facing back and a little up. */
 const REAR_LAMP = fenderPoint(REAR_FENDER, -62, 0.01);
 
+/**
+ * Front mud flaps behind the front tyres, 5 cm clear of the tyre (clear of its trailing corner at
+ * full lock), their tops tucked 5 cm up into the fender's arch so no gap shows, their feet level
+ * with the rear flaps'.
+ */
+const FRONT_FLAP_Z = FRONT - (R + 0.065);
+const FRONT_FLAP_TOP = R + Math.sqrt(ARCH * ARCH - (R + 0.065) ** 2) + 0.05;
+const FLAP_FOOT = SPARE_Y - R - 0.42;
+
 /** Wedge upright of the rear wing, tall at the back, in the (z, y) plane. */
 const UPRIGHT: readonly (readonly [number, number])[] = [
   [-1.62, DECK + 0.02],
@@ -212,9 +221,9 @@ export function BuggyBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Ref<Gro
       <group ref={cabinRef}>
         {SIDES.map((side) => (
           <group key={side}>
-            <Box p={[0.96 * side, 1.3, 0.62]} s={[0.2, 0.03, 0.03]} c={K.trim} />
-            <Box p={[1.08 * side, 1.3, 0.62]} s={[0.1, 0.12, 0.08]} c={K.navy} />
-            <Box p={[1.08 * side, 1.3, 0.575]} s={[0.08, 0.1, 0.01]} c={K.glass} />
+            <Box p={[0.815 * side, 1.3, 0.62]} s={[0.07, 0.03, 0.03]} c={K.trim} />
+            <Box p={[0.88 * side, 1.3, 0.62]} s={[0.1, 0.12, 0.08]} c={K.navy} />
+            <Box p={[0.88 * side, 1.3, 0.575]} s={[0.08, 0.1, 0.01]} c={K.glass} />
           </group>
         ))}
       </group>
@@ -233,6 +242,15 @@ export function BuggyBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Ref<Gro
       <Box p={[0, 0.62, NOSE + 0.005]} s={[0.26, 0.07, 0.01]} c={K.white} />
       {[-0.5, 0.5].map((x) => (
         <Box key={x} p={[x, 0.52, NOSE - 0.04]} s={[0.07, 0.07, 0.12]} c={K.red} />
+      ))}
+      {/* Front mud flaps, rubber like the rear ones, hung under the front fenders behind the tyres */}
+      {SIDES.map((side) => (
+        <Box
+          key={side}
+          p={[0.9 * side, (FRONT_FLAP_TOP + FLAP_FOOT) / 2, FRONT_FLAP_Z]}
+          s={[0.42, FRONT_FLAP_TOP - FLAP_FOOT, 0.03]}
+          c={K.trim}
+        />
       ))}
       {/* Front suspension in the gap between the nose and the tyres: wishbones to the hub, a coil-over up into the fender */}
       {SIDES.map((side) => (

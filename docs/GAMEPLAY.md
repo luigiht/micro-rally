@@ -303,7 +303,7 @@ Each level costs the previous price times the growth factor, rounded to $10.
 
 ### Dealership
 
-Ten cars in showroom order, each a distinct procedural body (see
+Fourteen cars in showroom order, each a distinct procedural body (see
 [CONTENT.md](CONTENT.md)). Buying is one-off; switching between owned cars
 is free. Showroom bars for power, grip and agility are derived from the
 physics so they cannot drift from the truth.
@@ -316,11 +316,14 @@ physics so they cannot drift from the truth.
 | Boreal Saloon         | $8,000  | Four-door WRC saloon             |
 | Riviera WRC           | $11,000 | WRC hatch                        |
 | Tempesta Group B      | $14,000 | Group B monster                  |
+| Schwaben SC Rallye    | $16,000 | Rear-engined Group B coupé       |
 | Edelweiss S1          | $18,000 | Short-wheelbase Group B coupé    |
 | Albion RS Hatch       | $21,000 | Three-door WRC hatch             |
 | Sirocco Dakar Truck   | $26,000 | "Special": a rally-raid truck    |
 | Mulsanne LM Prototype | $29,000 | "Special": a 1970 Le Mans coupé  |
 | Toro Dakar Buggy      | $32,000 | "Special": a rally-raid buggy    |
+| Dieppe Berlinette     | $35,000 | "Special": a 1970s berlinette    |
+| Woking V6 Turbo       | $40,000 | "Special": a turbo F1 car        |
 
 ### Pace notes
 

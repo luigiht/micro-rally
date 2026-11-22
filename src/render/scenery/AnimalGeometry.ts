@@ -17,19 +17,19 @@ import { merge, paint } from './HouseGeometry';
  * ossicones, a short mane, jointed legs, a tufted tail) in a coat of brown
  * patches on cream, and a zebra (a barrel body, an arched neck under a
  * standing mane, a long head with a dark muzzle, jointed legs, a tufted
- * tail) striped black on white, the stripes running round the body and
- * across the legs. Pure geometry; `SavannaDressingBuilder` instances them.
+ * tail) striped black on white, the stripes ringing the body, neck and
+ * legs square to their length. Pure geometry; `SavannaDressingBuilder` instances them.
  */
 
 type V3 = readonly [number, number, number];
 
 const UP = new Vector3(0, 1, 0);
 
-/** A tapered limb from `a` to `b`, `r0` thick at `a` and `r1` at `b`, `sides` round. */
-function limb(a: V3, b: V3, r0: number, r1: number, sides = 6): BufferGeometry {
+/** A tapered limb from `a` to `b`, `r0` thick at `a` and `r1` at `b`, `sides` round, `rings` long. */
+function limb(a: V3, b: V3, r0: number, r1: number, sides = 6, rings = 1): BufferGeometry {
   const d = new Vector3(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
   const len = d.length();
-  const g = new CylinderGeometry(r1, r0, len, sides).translate(0, len / 2, 0);
+  const g = new CylinderGeometry(r1, r0, len, sides, rings).translate(0, len / 2, 0);
   g.applyQuaternion(new Quaternion().setFromUnitVectors(UP, d.normalize()));
   return g.translate(a[0], a[1], a[2]);
 }
@@ -128,36 +128,54 @@ const WHITE = new Color('#ece8de');
 const BLACK = new Color('#1c1a1a');
 const MUZZLE = new Color('#2a2624');
 
-/** Stripes round the body: bands across the run of `along`, `width` apart, wider on the rump. */
-const stripes = (g: BufferGeometry, along: 'z' | 'y', width: number) =>
-  pattern(g, WHITE, BLACK, (x, y, z) => {
-    const t = along === 'z' ? z + 0.12 * Math.sin(y * 9) : y + 0.05 * Math.sin(z * 11);
-    return Math.floor(t / width + 100.5) % 2 === 0;
+/** Black on every other ring, white between: stripes square to whatever the rings run along. */
+const ringStripe = (ring: number) => ((Math.floor(ring) % 2) + 2) % 2 === 0;
+
+/** A limb ringed into `rings` bands, alternately black and white, across its own length. */
+function stripedLimb(a: V3, b: V3, r0: number, r1: number, sides: number, rings: number) {
+  const d = new Vector3(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+  const len = d.length();
+  d.normalize();
+  return pattern(limb(a, b, r0, r1, sides, rings), WHITE, BLACK, (x, y, z) =>
+    ringStripe((((x - a[0]) * d.x + (y - a[1]) * d.y + (z - a[2]) * d.z) / len) * rings),
+  );
+}
+
+/** An ellipsoid body with its poles fore and aft, ringed into `rings` bands round the barrel. */
+function stripedBody(c: V3, rx: number, ry: number, rz: number, sides: number, rings: number) {
+  const g = new SphereGeometry(1, sides, rings)
+    .rotateX(Math.PI / 2)
+    .scale(rx, ry, rz)
+    .translate(c[0], c[1], c[2]);
+  return pattern(g, WHITE, BLACK, (_x, _y, z) => {
+    const u = Math.min(1, Math.max(-1, (z - c[2]) / rz));
+    return ringStripe(Math.acos(u) / (Math.PI / rings));
   });
+}
 
 /** A zebra facing +z, about 1.9 m to the top of its head. */
 export function zebraGeometry(): BufferGeometry {
   const parts: BufferGeometry[] = [];
   // Barrel body, a little deeper at the chest.
-  parts.push(stripes(blob([0, 1.05, 0.05], 0.32, 0.34, 0.72, 10, 8), 'z', 0.11));
+  parts.push(stripedBody([0, 1.05, 0.05], 0.32, 0.34, 0.72, 10, 15));
   // Neck arching up and forward, under a standing black-and-white mane.
-  parts.push(stripes(limb([0, 1.2, 0.55], [0, 1.65, 0.85], 0.17, 0.12, 7), 'y', 0.09));
-  parts.push(stripes(limb([0, 1.42, 0.5], [0, 1.85, 0.82], 0.035, 0.03, 4), 'y', 0.07));
+  parts.push(stripedLimb([0, 1.2, 0.55], [0, 1.65, 0.85], 0.17, 0.12, 7, 5));
+  parts.push(stripedLimb([0, 1.42, 0.5], [0, 1.85, 0.82], 0.035, 0.03, 4, 6));
   // Head: the long face sloping down to a dark muzzle; upright ears.
-  parts.push(stripes(limb([0, 1.75, 0.88], [0, 1.45, 1.28], 0.11, 0.08, 7), 'y', 0.07));
+  parts.push(stripedLimb([0, 1.75, 0.88], [0, 1.45, 1.28], 0.11, 0.08, 7, 5));
   parts.push(paint(blob([0, 1.43, 1.3], 0.085, 0.08, 0.09, 6, 4), MUZZLE));
   for (const x of [-1, 1])
     parts.push(paint(limb([0.06 * x, 1.82, 0.86], [0.1 * x, 2.0, 0.82], 0.04, 0.015, 4), WHITE));
   // Legs: thigh to knee, knee to hoof, banded across; black hooves.
   for (const z of [0.48, -0.52]) {
     for (const x of [-0.16, 0.16]) {
-      parts.push(stripes(limb([x, 1.0, z], [x, 0.5, z + 0.02], 0.09, 0.06, 6), 'y', 0.08));
-      parts.push(stripes(limb([x, 0.5, z + 0.02], [x, 0.08, z], 0.055, 0.045, 6), 'y', 0.06));
+      parts.push(stripedLimb([x, 1.0, z], [x, 0.5, z + 0.02], 0.09, 0.06, 6, 5));
+      parts.push(stripedLimb([x, 0.5, z + 0.02], [x, 0.08, z], 0.055, 0.045, 6, 6));
       parts.push(paint(limb([x, 0.08, z], [x, 0, z], 0.05, 0.055, 6), BLACK));
     }
   }
   // Tail: a striped switch with a black tuft.
-  parts.push(stripes(limb([0, 1.2, -0.7], [0, 0.6, -0.78], 0.03, 0.02, 4), 'y', 0.06));
+  parts.push(stripedLimb([0, 1.2, -0.7], [0, 0.6, -0.78], 0.03, 0.02, 4, 8));
   parts.push(
     paint(new ConeGeometry(0.05, 0.2, 5).rotateX(Math.PI).translate(0, 0.52, -0.79), BLACK),
   );

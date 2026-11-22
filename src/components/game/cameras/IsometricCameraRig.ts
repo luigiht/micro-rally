@@ -1,6 +1,6 @@
 import { Vector3 } from 'three';
 import type { TerrainQuery } from '@/game/vehicle/Terrain';
-import { dampFactor, type CameraRig, type CameraRigFrame } from './CameraRig';
+import { dampFactor, NEAR_OUTSIDE, type CameraRig, type CameraRigFrame } from './CameraRig';
 
 /** A long lens flattens perspective toward the classic isometric look. */
 const FOV = 28;
@@ -29,6 +29,7 @@ export class IsometricCameraRig implements CameraRig {
   snap({ camera, target }: CameraRigFrame): void {
     this.focus.set(target.x, target.y, target.z);
     camera.fov = FOV;
+    camera.near = NEAR_OUTSIDE;
     camera.updateProjectionMatrix();
     this.apply(camera);
   }

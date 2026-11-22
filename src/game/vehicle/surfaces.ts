@@ -40,6 +40,9 @@ export const SURFACES: Readonly<Record<Surface, SurfaceProps>> = {
   fechfech: { grip: 0.62, drag: 0.16 },
 };
 
+/** The sealed surfaces; every other one is loose ground, where a car's `looseGrip` applies. */
+export const PAVED: ReadonlySet<Surface> = new Set<Surface>(['tarmac', 'track']);
+
 export const SURFACE_LIST: readonly Surface[] = [
   'tarmac',
   'gravel',

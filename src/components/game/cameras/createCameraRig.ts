@@ -10,7 +10,8 @@ import { IsometricCameraRig } from './IsometricCameraRig';
 /**
  * Build the rig for a mode. `axisYaw` is the stage's main heading (the spawn
  * yaw); `eyeDrop` / `eyeForward` move first-person eyes for cars whose cabin
- * sits lower/higher or further forward than the hatchback's; `bodyScale`
+ * sits lower/higher or further forward than the hatchback's, `eyeAcross` for a
+ * car whose driver sits elsewhere across it (a single-seater's, on the centre line); `bodyScale`
  * pushes the chase, isometric and cinematic cameras back for bigger
  * vehicles; `road` is the stage, whose centreline the cinematic director
  * places its trackside cameras beside (absent on the test track).
@@ -23,10 +24,11 @@ export function createCameraRig(
   eyeForward = 0,
   bodyScale = 1,
   road?: RoadWidthSource,
+  eyeAcross = 0,
 ): CameraRig {
   switch (mode) {
     case 'interior':
-      return new FirstPersonCameraRig(INTERIOR_VIEW, eyeDrop, eyeForward);
+      return new FirstPersonCameraRig(INTERIOR_VIEW, eyeDrop, eyeForward, eyeAcross);
     case 'iso':
       return new IsometricCameraRig(terrain, axisYaw + Math.PI / 4, Math.sqrt(bodyScale));
     case 'chase':

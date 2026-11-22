@@ -7,6 +7,7 @@ import {
   FirstPersonCameraRig,
   INTERIOR_VIEW,
 } from '@/components/game/cameras/FirstPersonCameraRig';
+import { NEAR_COCKPIT, NEAR_OUTSIDE } from '@/components/game/cameras/CameraRig';
 import { createCameraRig } from '@/components/game/cameras/createCameraRig';
 import { IsometricCameraRig } from '@/components/game/cameras/IsometricCameraRig';
 
@@ -79,6 +80,16 @@ describe('IsometricCameraRig', () => {
   });
 });
 
+describe('near planes', () => {
+  it('keep the outside cameras far out for depth precision, the cockpit close', () => {
+    for (const mode of CAMERA_MODES) {
+      const f = frame(0, 0, 0);
+      createCameraRig(mode, flat, 0).snap(f);
+      expect(f.camera.near, mode).toBe(mode === 'interior' ? NEAR_COCKPIT : NEAR_OUTSIDE);
+    }
+  });
+});
+
 describe('FirstPersonCameraRig', () => {
   it('puts the eye in the left seat and looks along the car heading', () => {
     const rig = new FirstPersonCameraRig(INTERIOR_VIEW);
@@ -98,6 +109,15 @@ describe('FirstPersonCameraRig', () => {
     expect(dir.x).toBeGreaterThan(0.99);
     // The seat offset rotates with the car: left of a car heading +x is -z.
     expect(turned.camera.position.z).toBeCloseTo(-0.34, 2);
+  });
+
+  it("moves a single-seater's eye across onto the centre line", () => {
+    const rig = new FirstPersonCameraRig(INTERIOR_VIEW, -0.46, 0.6, -0.34);
+    const f = frame(3, -2, 0);
+    rig.snap(f);
+    expect(f.camera.position.x).toBeCloseTo(3, 2);
+    expect(f.camera.position.y).toBeCloseTo(0.78, 2);
+    expect(f.camera.position.z).toBeCloseTo(-1.55, 2);
   });
 
   it('keeps the head level under reduced motion', () => {

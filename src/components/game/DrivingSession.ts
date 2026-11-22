@@ -83,6 +83,7 @@ export class DrivingSession {
   private autopilot: Autopilot | null = null;
   private cabinDrop: number;
   private cabinForward: number;
+  private cabinAcross: number;
   private bodyScale: number;
   private readonly respawn: SpawnPose = { x: 0, z: 0, yaw: 0 };
   private rig: CameraRig;
@@ -169,6 +170,7 @@ export class DrivingSession {
       );
     this.cabinDrop = spec.cabinDrop;
     this.cabinForward = spec.cabinForward;
+    this.cabinAcross = spec.cabinAcross;
     this.bodyScale = spec.bodyScale;
     this.sim.reset(world.spawn, world.terrain);
     this.run = world.stage ? new StageRun(world.stage) : null;
@@ -235,11 +237,13 @@ export class DrivingSession {
     if (
       spec.cabinDrop === this.cabinDrop &&
       spec.cabinForward === this.cabinForward &&
+      spec.cabinAcross === this.cabinAcross &&
       spec.bodyScale === this.bodyScale
     )
       return;
     this.cabinDrop = spec.cabinDrop;
     this.cabinForward = spec.cabinForward;
+    this.cabinAcross = spec.cabinAcross;
     this.bodyScale = spec.bodyScale;
     this.rig.dispose();
     this.rig = this.buildRig(this.rig.mode);
@@ -277,6 +281,7 @@ export class DrivingSession {
       this.cabinForward,
       this.bodyScale,
       this.world.stage,
+      this.cabinAcross,
     );
   }
 

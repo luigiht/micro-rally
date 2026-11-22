@@ -69,5 +69,8 @@ describe('autopilot', () => {
     const circuit = drive(1, stageIndexOf('circuit'), 'lemans', 40);
     expect(circuit.travelled).toBeGreaterThan(500);
     expect(circuit.off).toBeLessThan(2);
+    const f1 = drive(1, stageIndexOf('circuit'), 'formula', 40);
+    expect(f1.travelled).toBeGreaterThan(500);
+    expect(f1.off).toBeLessThan(2);
   }, 60_000);
 });

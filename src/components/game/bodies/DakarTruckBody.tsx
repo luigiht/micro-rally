@@ -165,7 +165,7 @@ export function DakarTruckBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Re
       <group ref={cabinRef}>
         {SIDES.map((side) => (
           <group key={side}>
-            <Box p={[1.3 * side, 2.45, 2.35]} s={[0.24, 0.04, 0.04]} c={K.orange} />
+            <Box p={[1.29 * side, 2.45, 2.35]} s={[0.27, 0.04, 0.04]} c={K.orange} />
             <Box p={[1.44 * side, 2.4, 2.35]} s={[0.22, 0.36, 0.07]} c={K.orange} />
             <Box p={[1.44 * side, 2.4, 2.309]} s={[0.18, 0.3, 0.012]} c={K.glass} />
             <Box p={[1.44 * side, 2.205, 2.35]} s={[0.08, 0.05, 0.05]} c={K.orange} />

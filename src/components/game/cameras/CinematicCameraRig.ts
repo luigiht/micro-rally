@@ -3,7 +3,13 @@ import { hashSeed } from '@/game/rng';
 import type { RoadWidthSource } from '@/game/stage/RoadWidth';
 import type { TerrainQuery } from '@/game/vehicle/Terrain';
 import type { VehiclePose } from '@/game/vehicle/interpolatePose';
-import { dampAngle, dampFactor, type CameraRig, type CameraRigFrame } from './CameraRig';
+import {
+  dampAngle,
+  dampFactor,
+  NEAR_OUTSIDE,
+  type CameraRig,
+  type CameraRigFrame,
+} from './CameraRig';
 import {
   createDirector,
   isFixed,
@@ -223,6 +229,7 @@ export class CinematicCameraRig implements CameraRig {
     camera.lookAt(this.look);
     if (force || Math.abs(camera.fov - this.fov) > 0.01) {
       camera.fov = this.fov;
+      camera.near = NEAR_OUTSIDE;
       camera.updateProjectionMatrix();
     }
   }

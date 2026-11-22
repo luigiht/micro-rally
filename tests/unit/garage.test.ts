@@ -80,28 +80,32 @@ describe('cars', () => {
       'saloon',
       'wrc',
       'groupb',
+      'scrs',
       's1',
       'focus',
       'dakar',
       'lemans',
       'buggy',
       'berlinette',
+      'formula',
     ]);
     for (let i = 1; i < CAR_CATALOG.length; i++) {
       expect(CAR_CATALOG[i]!.price).toBeGreaterThan(CAR_CATALOG[i - 1]!.price);
     }
-    // The four one-offs close the list and are the only special listings.
-    expect(CAR_CATALOG.slice(-4).map((c) => c.id)).toEqual([
+    // The five one-offs close the list and are the only special listings.
+    expect(CAR_CATALOG.slice(-5).map((c) => c.id)).toEqual([
       'dakar',
       'lemans',
       'buggy',
       'berlinette',
+      'formula',
     ]);
     expect(CAR_CATALOG.filter((c) => c.special).map((c) => c.id)).toEqual([
       'dakar',
       'lemans',
       'buggy',
       'berlinette',
+      'formula',
     ]);
   });
 

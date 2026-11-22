@@ -121,7 +121,7 @@ export function HatchbackBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Ref
       <group ref={cabinRef}>
         {([1, -1] as const).map((side) => (
           <group key={side}>
-            <Box p={[0.9 * side, 1.02, 0.55]} s={[0.08, 0.04, 0.04]} c={C.trim} />
+            <Box p={[0.87 * side, 1.02, 0.55]} s={[0.14, 0.04, 0.04]} c={C.trim} />
             <Box p={[0.98 * side, 1.04, 0.55]} s={[0.12, 0.12, 0.08]} c={C.paint} />
           </group>
         ))}

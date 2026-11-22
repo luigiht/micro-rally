@@ -27,6 +27,8 @@ const HEAD = new Color('#fff6d0');
 const TAIL = new Color('#d9343a');
 
 const STATIONS = { wrc: WRC_STATIONS, groupb: GROUPB_STATIONS } as const;
+/** Each door mirror's centre (right side): wide and shallow, its inner end a couple of centimetres into the door top under the A pillar. */
+const MIRROR_AT = { wrc: [0.9, 1.05, 0.42], groupb: [0.835, 1.05, 0.6] } as const;
 
 /** Nose and tail z, and the belt height and half width there, from the stations. */
 function ends(model: ParkedCarModel) {
@@ -85,8 +87,10 @@ export function parkedCarBodyGeometry(model: ParkedCarModel): BufferGeometry {
     ...wheel(half, -spec.cgToRear, r),
     ...wheel(-half, -spec.cgToRear, r),
     // Mirrors on the A pillars, number plates on the nose and tail.
-    block(0.18, 0.1, 0.16, -(nose.xBody + 0.1), nose.belt + 0.22, 0.6, MIRROR),
-    block(0.18, 0.1, 0.16, nose.xBody + 0.1, nose.belt + 0.22, 0.6, MIRROR),
+    ...[-1, 1].map((side) => {
+      const [x, y, z] = MIRROR_AT[model];
+      return block(0.2, 0.1, 0.05, x * side, y, z, MIRROR);
+    }),
     block(0.44, 0.11, 0.03, 0, (nose.floor + nose.belt) / 2, nose.z + 0.02, PLATE),
     block(0.44, 0.11, 0.03, 0, (tail.floor + tail.belt) / 2 + 0.1, tail.z - 0.02, PLATE),
   ];

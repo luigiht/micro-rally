@@ -9,6 +9,13 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Added
 
+- **Two new cars.** The Schwaben SC Rallye, an early-1980s rear-engined
+  rally coupé in white and blue with gold and red stripes, a lamp pod and a
+  whale-tail spoiler ($16,000, after the Tempesta), and the Woking V6 Turbo,
+  a late-1980s turbo Formula One car in white and fluorescent red, the
+  fastest car in the shop, whose slicks slide on loose ground ($40,000)
+  [296].
+
 - **Savanna, a new stage type.** A Kenyan safari rally, after Moorland in the
   rally mix: long fast tracks of red murram across golden grassland, past
   flat-topped acacias, sisal plantations, mud huts, and herds of giraffes and
@@ -19,6 +26,16 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Changed
 
+- **Zebra stripes** run round the body, neck and legs instead of along them
+  [295].
+- **Smoother murram to fech-fech** on the Savanna: the change fades in over
+  a few dozen metres, the wheel tracks with it, instead of a straight line
+  [295].
+- **Mirrors** sit on the body on every car and in city traffic; several are
+  wider and slimmer, with the glass facing back [295].
+- **Front mud flaps** on the Toro Dakar Buggy [295].
+- **Clearer city windows:** windows stand further out from the walls, so they no longer
+  flicker or vanish in the distance, and plain buildings have windows on every side [297].
 - **Savanna polish.** Red tyre marks off the road, a slower dirt feel on the
   murram, an early-morning mist under a sky fading from blue to pale yellow,
   fuller acacia crowns, and more detailed giraffes and zebras [294].

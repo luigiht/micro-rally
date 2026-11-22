@@ -117,9 +117,10 @@ export function FocusHatchBody({ cabinRef }: { spec: CarSpec; cabinRef: Ref<Grou
       <group ref={cabinRef}>
         {([1, -1] as const).map((side) => (
           <group key={side}>
-            {/* White mirror shells on black arms at the front of the door glass */}
-            <Box p={[0.9 * side, 1.04, 0.6]} s={[0.12, 0.03, 0.05]} c={K.trim} />
-            <Box p={[0.98 * side, 1.07, 0.6]} s={[0.12, 0.11, 0.16]} c={WHITE} />
+            {/* Slim white mirror shells on short black stalks off the door, its glass facing back */}
+            <Box p={[0.865 * side, 1.0, 0.42]} s={[0.07, 0.03, 0.04]} c={K.trim} />
+            <Box p={[0.96 * side, 1.03, 0.42]} s={[0.14, 0.1, 0.045]} c={WHITE} />
+            <Box p={[0.965 * side, 1.03, 0.394]} s={[0.12, 0.08, 0.01]} c={K.glass} />
           </group>
         ))}
       </group>

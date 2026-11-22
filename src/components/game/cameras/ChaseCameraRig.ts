@@ -1,7 +1,13 @@
 import { Vector3 } from 'three';
 import type { TerrainQuery } from '@/game/vehicle/Terrain';
 import type { VehiclePose } from '@/game/vehicle/interpolatePose';
-import { dampAngle, dampFactor, type CameraRig, type CameraRigFrame } from './CameraRig';
+import {
+  dampAngle,
+  dampFactor,
+  NEAR_OUTSIDE,
+  type CameraRig,
+  type CameraRigFrame,
+} from './CameraRig';
 
 const BASE_FOV = 60;
 const MIN_ZOOM = 0.6;
@@ -29,6 +35,7 @@ export class ChaseCameraRig implements CameraRig {
     this.baseY = target.y;
     this.roll = 0;
     camera.fov = BASE_FOV;
+    camera.near = NEAR_OUTSIDE;
     camera.updateProjectionMatrix();
     this.computeDesired(target);
     this.pos.copy(this.desired);

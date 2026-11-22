@@ -8,12 +8,14 @@ export const CATALOG_IDS = [
   'saloon',
   'wrc',
   'groupb',
+  'scrs',
   's1',
   'focus',
   'dakar',
   'lemans',
   'buggy',
   'berlinette',
+  'formula',
 ] as const;
 export type CatalogCarId = (typeof CATALOG_IDS)[number];
 
@@ -31,12 +33,14 @@ export const CAR_CATALOG: readonly CarListing[] = [
   { id: 'saloon', price: 8000 },
   { id: 'wrc', price: 11000 },
   { id: 'groupb', price: 14000 },
+  { id: 'scrs', price: 16000 },
   { id: 's1', price: 18000 },
   { id: 'focus', price: 21000 },
   { id: 'dakar', price: 26000, special: true },
   { id: 'lemans', price: 29000, special: true },
   { id: 'buggy', price: 32000, special: true },
   { id: 'berlinette', price: 35000, special: true },
+  { id: 'formula', price: 40000, special: true },
 ];
 
 /**

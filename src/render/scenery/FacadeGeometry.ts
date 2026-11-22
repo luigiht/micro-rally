@@ -5,8 +5,9 @@ import { box, paint } from './HouseGeometry';
  * Façade parts the city kits share, all boxes in the flat-shaded style of
  * HouseGeometry: framed casements with lintel and sill, stepped arches,
  * cornices, quoins, a striped awning and a fire escape. Every part stands
- * 2–8 cm proud of the wall plane and at least 1 cm clear of its neighbours,
- * so nothing z-fights and the outward-face test sees each box on its own.
+ * proud of the wall plane, windows' frames and glass 9–14 cm, and at least
+ * 1 cm clear of its neighbours, so nothing z-fights, even a few hundred
+ * metres off, and the outward-face test sees each box on its own.
  * A `Face` names a wall plane: its axis, outward sign and position.
  */
 export interface Face {
@@ -52,8 +53,8 @@ export function strip(
   glass: Color = GLASS,
 ): BufferGeometry[] {
   return [
-    onWall(f, u, y, w + 0.2, h + 0.2, 0.08, 0.02, FRAME),
-    onWall(f, u, y, w, h, 0.1, 0.04, glass),
+    onWall(f, u, y, w + 0.2, h + 0.2, 0.08, 0.05, FRAME),
+    onWall(f, u, y, w, h, 0.1, 0.09, glass),
   ];
 }
 
@@ -68,8 +69,8 @@ export function casement(
 ): BufferGeometry[] {
   return [
     ...strip(f, u, y, w, h, glass),
-    onWall(f, u, y + h / 2 + 0.22, w + 0.5, 0.2, 0.18, 0.07, STONE),
-    onWall(f, u, y - h / 2 - 0.16, w + 0.4, 0.12, 0.22, 0.09, STONE),
+    onWall(f, u, y + h / 2 + 0.22, w + 0.5, 0.2, 0.18, 0.12, STONE),
+    onWall(f, u, y - h / 2 - 0.16, w + 0.4, 0.12, 0.22, 0.14, STONE),
   ];
 }
 
@@ -89,12 +90,12 @@ export function archBay(
 ): BufferGeometry[] {
   const top = y + h / 2;
   return [
-    onWall(f, u, y + 0.15, w, h + 0.3, 0.1, 0.04, glass),
-    onWall(f, u - w / 2 - 0.1, y, 0.2, h, 0.08, 0.06, stone),
-    onWall(f, u + w / 2 + 0.1, y, 0.2, h, 0.08, 0.06, stone),
-    onWall(f, u - w / 4 - 0.05, top + 0.2, w / 2 + 0.1, 0.22, 0.08, 0.07, stone),
-    onWall(f, u + w / 4 + 0.05, top + 0.2, w / 2 + 0.1, 0.22, 0.08, 0.07, stone),
-    onWall(f, u, top + 0.5, 0.5, 0.36, 0.08, 0.08, stone),
+    onWall(f, u, y + 0.15, w, h + 0.3, 0.1, 0.09, glass),
+    onWall(f, u - w / 2 - 0.1, y, 0.2, h, 0.08, 0.11, stone),
+    onWall(f, u + w / 2 + 0.1, y, 0.2, h, 0.08, 0.11, stone),
+    onWall(f, u - w / 4 - 0.05, top + 0.2, w / 2 + 0.1, 0.22, 0.08, 0.12, stone),
+    onWall(f, u + w / 4 + 0.05, top + 0.2, w / 2 + 0.1, 0.22, 0.08, 0.12, stone),
+    onWall(f, u, top + 0.5, 0.5, 0.36, 0.08, 0.13, stone),
   ];
 }
 

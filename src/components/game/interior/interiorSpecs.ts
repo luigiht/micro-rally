@@ -54,6 +54,14 @@ export interface InteriorSpec {
   rearZ: number;
   /** Co-driver seat centre (the driver sits at `EYE.x`). */
   coDriverX: number;
+  /** An open cockpit: no roof lining, header, mirror, map light, pillars or cage, the sky overhead. */
+  open?: boolean;
+  /**
+   * A single-seater: one seat, the cabin's walls, floor and dash centred on the driver (`EYE.x`)
+   * instead of the car, and no co-driver's seat, kit, tunnel or handbrake. The car moves the
+   * whole cabin across so the driver sits on its centre line (`CarSpec.cabinAcross`).
+   */
+  singleSeat?: boolean;
   wheelRadius: number;
   wheelRake: number;
   /** Hub position; the rim has to clear the binnacle hood ahead of it (see the interior tests). */
@@ -131,6 +139,74 @@ export const INTERIORS: Readonly<Record<CarId, InteriorSpec>> = {
    * Tiny rear-engined 1970s berlinette: a snug low cabin under a steep screen,
    * black trim, a silver bar cage, three period dials, blue harness.
    */
+  /**
+   * Early-1980s rear-engined rally coupé: a narrow cabin under a low roof, a
+   * steep screen close ahead, a period dash; a white cage, black seats with
+   * blue backs, red harnesses.
+   */
+  scrs: base({
+    halfWidth: 0.74,
+    roofY: 1.31,
+    dashTopY: 0.99,
+    cowlZ: 0.8,
+    cowlY: 0.88,
+    screenTopZ: 0.28,
+    rearZ: -0.6,
+    dash: 'period',
+    palette: {
+      dash: BLACK,
+      lining: BLACK,
+      door: '#1d3f9a',
+      cage: '#e8e6e0',
+      seat: '#1f1e24',
+      seatAccent: '#1d3f9a',
+      harness: '#d8321f',
+      wheel: BLACK,
+      accent: '#d8321f',
+    },
+  }),
+  /**
+   * Turbo Formula One car: an open single-seat cockpit, the driver lying low
+   * on the car's centre line (eye 0.78 m up, the cabin moved across by
+   * `cabinAcross`), a narrow tub round the shoulders, a small wheel close to
+   * the chest over a shallow dash, a sequential lever by the right hand.
+   * Black tub and seat, red harnesses and accents.
+   */
+  formula: base({
+    open: true,
+    singleSeat: true,
+    halfWidth: 0.26,
+    roofY: 1.3,
+    floorY: 0.48,
+    dashTopY: 0.9,
+    cowlZ: 0.35,
+    cowlY: 0.86,
+    clusterForward: 0.31,
+    dashDepth: 0.12,
+    screenTopZ: 0.1,
+    doorTopY: 0.96,
+    rearZ: -0.5,
+    wheelRadius: 0.13,
+    wheelRake: 0.3,
+    wheelZ: 0.15,
+    wheelY: 0.93,
+    dash: 'period',
+    lever: 'sequential',
+    fullCage: false,
+    tripMeter: false,
+    extinguisher: false,
+    palette: {
+      dash: BLACK,
+      lining: BLACK,
+      door: '#1f1e24',
+      cage: '#1f1e24',
+      seat: '#1f1e24',
+      seatAccent: '#f0442a',
+      harness: '#f0442a',
+      wheel: BLACK,
+      accent: '#f0442a',
+    },
+  }),
   berlinette: base({
     halfWidth: 0.66,
     roofY: 1.34,

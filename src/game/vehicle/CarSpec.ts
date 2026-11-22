@@ -6,11 +6,13 @@ export type CarId =
   | 'saloon'
   | 'wrc'
   | 'groupb'
+  | 'scrs'
   | 's1'
   | 'focus'
   | 'dakar'
   | 'lemans'
   | 'buggy'
+  | 'formula'
   | 'pickup'
   | 'monster';
 
@@ -63,10 +65,17 @@ export interface CarSpec {
   turboRecharge: number;
   /** Grip gain per (m/s)² / 1000 from downforce. */
   aeroGrip: number;
+  /**
+   * Tyre grip multiplier on loose ground (anything but tarmac and race asphalt, `PAVED`): 1 for
+   * a rally car; below 1 for slicks on a car built for the track, which slide on gravel and snow.
+   */
+  looseGrip: number;
   /** Visual only: how much lower this car's cabin (and first-person eye) sits than the hatchback's. */
   cabinDrop: number;
   /** Visual only: how far forward the cabin (and first-person eye) sits relative to the hatchback's. */
   cabinForward: number;
+  /** Visual only: how far across the car (+x, its left) the cabin and the eye sit relative to the hatchback's: a single-seater's driver sits on the centre line. */
+  cabinAcross: number;
   /** Visual only: how much bigger the body is than a car's, so chase and showroom cameras stand further back. */
   bodyScale: number;
 }
@@ -112,8 +121,10 @@ const BASE: Omit<CarSpec, 'id'> = {
   turboDuration: 3,
   turboRecharge: 12,
   aeroGrip: 0.02,
+  looseGrip: 1,
   cabinDrop: 0,
   cabinForward: 0,
+  cabinAcross: 0,
   bodyScale: 1,
 };
 
@@ -129,12 +140,14 @@ export const DEALERSHIP_GRIP = {
   saloon: 1.17,
   wrc: 1.21,
   groupb: 1.19,
+  scrs: 1.22,
   s1: 1.25,
   focus: 1.27,
   dakar: 1.24,
   lemans: 1.33,
   buggy: 1.29,
   berlinette: 1.35,
+  formula: 1.35,
 } as const;
 
 /**
@@ -245,6 +258,39 @@ export const CAR_SPECS: Readonly<Record<CarId, CarSpec>> = {
     cabinDrop: -0.04,
   },
   /** Late-80s Group A five-door rally hatch (its body: `WrcHatchBody`): 2.615 m wheelbase, 1.55 m track, restricted turbo, 50/50 drive. */
+  /**
+   * Early-1980s rear-engined rally coupé (its body: `SchwabenBody`): 2.27 m
+   * wheelbase with the flat-six hung behind the rear axle (most of the weight
+   * on the rear wheels), 1.45 m track under wide flares, rear-drive, a big
+   * naturally aspirated engine revving high instead of a turbo, light and
+   * quick to rotate.
+   */
+  scrs: {
+    ...BASE,
+    id: 'scrs',
+    tyreGrip: DEALERSHIP_GRIP.scrs,
+    mass: 980,
+    cgToFront: 1.33,
+    cgToRear: 0.94,
+    cgHeight: 0.46,
+    trackWidth: 1.45,
+    wheelRadius: 0.32,
+    peakTorque: 400,
+    redlineRpm: 7600,
+    torqueCurve: [
+      [0, 0.5],
+      [0.3, 0.75],
+      [0.62, 1.0],
+      [0.85, 0.96],
+      [1.0, 0.82],
+    ],
+    dragCoeff: 0.68,
+    frontDrive: 0,
+    brakeDecel: 10.5,
+    yawInertiaScale: 1.2,
+    maxSteer: 0.52,
+    cabinDrop: -0.12,
+  },
   wrc: {
     ...BASE,
     id: 'wrc',
@@ -434,6 +480,53 @@ export const CAR_SPECS: Readonly<Record<CarId, CarSpec>> = {
     cabinDrop: 0.21,
     cabinForward: -0.1,
     bodyScale: 1.25,
+  },
+  /**
+   * Late-1980s turbo Formula One car (its body: `WokingBody`): 2.875 m
+   * wheelbase, 1.74 m track, slicks, 600 kg with the driver, a small
+   * high-revving turbocharged V6 behind the driver through six gears to the
+   * rear wheels, huge brakes, stiff springs and the lowest centre of gravity
+   * in the shop. The fastest car on tarmac and race asphalt; on loose ground
+   * its slicks find a fifth less grip (`looseGrip`), so it slides on gravel,
+   * snow and sand. The driver lies low on the centre line (eye 0.78 m up).
+   */
+  formula: {
+    ...BASE,
+    id: 'formula',
+    tyreGrip: DEALERSHIP_GRIP.formula,
+    mass: 600,
+    cgToFront: 1.64,
+    cgToRear: 1.235,
+    cgHeight: 0.3,
+    trackWidth: 1.74,
+    yawInertiaScale: 1.3,
+    wheelRadius: 0.33,
+    maxSteer: 0.45,
+    steerFalloffSpeed: 30,
+    peakTorque: 560,
+    idleRpm: 3500,
+    redlineRpm: 12000,
+    torqueCurve: [
+      [0, 0.35],
+      [0.3, 0.55],
+      [0.55, 0.92],
+      [0.78, 1.0],
+      [1.0, 0.9],
+    ],
+    gearRatios: [2.6, 1.9, 1.5, 1.24, 1.06, 0.94],
+    finalDrive: 4.8,
+    frontDrive: 0,
+    brakeDecel: 13,
+    dragCoeff: 0.55,
+    rollingResistance: 10,
+    suspensionStiffness: 600,
+    suspensionDamping: 30,
+    turboForce: 0.3,
+    turboDuration: 3,
+    looseGrip: 0.8,
+    cabinDrop: -0.46,
+    cabinForward: 0.6,
+    cabinAcross: -0.34,
   },
   pickup: {
     ...BASE,

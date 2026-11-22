@@ -15,7 +15,9 @@ import { HatchbackBody } from './bodies/HatchbackBody';
 import { LeMansBody } from './bodies/LeMansBody';
 import { S1CoupeBody } from './bodies/S1CoupeBody';
 import { SaloonBody } from './bodies/SaloonBody';
+import { SchwabenBody } from './bodies/SchwabenBody';
 import { T16HatchBody } from './bodies/T16HatchBody';
+import { WokingBody } from './bodies/WokingBody';
 import { WrcHatchBody } from './bodies/WrcHatchBody';
 import { CarLamps } from '@/render/car/CarLamps';
 import { CarInterior, type CarInteriorHandle } from './CarInterior';
@@ -35,9 +37,16 @@ const MAX_WHEEL_LIFT = 0.35;
 
 /**
  * Bodies that hang their own mud flaps (the buggy's hang from its spare carrier, inside the
- * leaning body; the Sirocco's from its floors, `BodyMudFlaps`).
+ * leaning body; the Sirocco's from its floors, `BodyMudFlaps`), or none: the single-seater's
+ * wheels stand in the open.
  */
-const OWN_FLAPS: ReadonlySet<CarId> = new Set<CarId>(['buggy', 'saloon', 't16', 'dakar']);
+const OWN_FLAPS: ReadonlySet<CarId> = new Set<CarId>([
+  'buggy',
+  'saloon',
+  't16',
+  'dakar',
+  'formula',
+]);
 
 /** Wheel rim colour per car; cream by default. */
 const RIM: Partial<Record<CarId, string>> = {
@@ -45,26 +54,35 @@ const RIM: Partial<Record<CarId, string>> = {
   saloon: '#e9b949',
   wrc: '#f4f1ea',
   s1: '#f4f1ea',
+  scrs: '#f4f1ea',
   focus: '#f4f1ea',
   berlinette: '#b7b4ac',
   dakar: '#f0741f',
   lemans: '#4a4a52',
   buggy: '#b7b4ac',
+  formula: '#2e2e34',
+};
+
+/**
+ * Tyre widths per car, front and rear, where they differ from the default (0.8 × the radius,
+ * truck tyres as fat as they are tall): a single-seater's narrow fronts and wide rear slicks.
+ */
+const TYRES: Partial<Record<CarId, { readonly front: number; readonly rear: number }>> = {
+  formula: { front: 0.3, rear: 0.44 },
 };
 
 interface WheelProps {
   x: number;
   z: number;
   radius: number;
+  width: number;
   rim: string;
   steerRef?: Ref<Group>;
   spinRef: Ref<Group>;
 }
 
-function Wheel({ x, z, radius, rim, steerRef, spinRef }: WheelProps) {
+function Wheel({ x, z, radius, width, rim, steerRef, spinRef }: WheelProps) {
   const out = x > 0 ? 1 : -1;
-  // Tyre width scales with the wheel, so truck tyres are as fat as they are tall.
-  const width = radius * 0.8;
   return (
     <group position={[x, radius, z]} ref={steerRef}>
       <group ref={spinRef}>
@@ -76,7 +94,11 @@ function Wheel({ x, z, radius, rim, steerRef, spinRef }: WheelProps) {
           <cylinderGeometry args={[radius * 0.6, radius * 0.6, width, 8]} />
           <meshStandardMaterial color={rim} flatShading metalness={0.3} roughness={0.5} />
         </mesh>
-        <Box p={[0.15 * out, 0, 0]} s={[0.02, radius * 1.1, 0.08]} c={C.trim} />
+        <Box
+          p={[Math.max(0.15, width / 2 + 0.02) * out, 0, 0]}
+          s={[0.02, radius * 1.1, 0.08]}
+          c={C.trim}
+        />
       </group>
     </group>
   );
@@ -96,6 +118,8 @@ function BodyFor({ spec, cabinRef }: { spec: CarSpec; cabinRef: Ref<Group> }) {
       return <WrcHatchBody spec={spec} cabinRef={cabinRef} />;
     case 'groupb':
       return <GroupBBody spec={spec} cabinRef={cabinRef} />;
+    case 'scrs':
+      return <SchwabenBody spec={spec} cabinRef={cabinRef} />;
     case 's1':
       return <S1CoupeBody spec={spec} cabinRef={cabinRef} />;
     case 'focus':
@@ -106,6 +130,8 @@ function BodyFor({ spec, cabinRef }: { spec: CarSpec; cabinRef: Ref<Group> }) {
       return <LeMansBody spec={spec} cabinRef={cabinRef} />;
     case 'buggy':
       return <BuggyBody spec={spec} cabinRef={cabinRef} />;
+    case 'formula':
+      return <WokingBody spec={spec} cabinRef={cabinRef} />;
     default:
       return <HatchbackBody spec={spec} cabinRef={cabinRef} />;
   }
@@ -189,10 +215,11 @@ export function CarModel({
   const front = spec.cgToFront;
   const rear = -spec.cgToRear;
   const rim = RIM[spec.id] ?? C.rim;
+  const tyres = TYRES[spec.id] ?? { front: r * 0.8, rear: r * 0.8 };
   return (
     <group ref={root}>
       <group ref={body} position={[0, 0.1, 0]}>
-        <group position={[0, spec.cabinDrop, spec.cabinForward]}>
+        <group position={[spec.cabinAcross, spec.cabinDrop, spec.cabinForward]}>
           <CarInterior ref={interior} spec={spec} />
         </group>
         <BodyFor spec={spec} cabinRef={cabin} />
@@ -209,10 +236,25 @@ export function CarModel({
         </>
       )}
       <group ref={wheels}>
-        <Wheel x={half} z={front} radius={r} rim={rim} steerRef={steerFL} spinRef={spinFL} />
-        <Wheel x={-half} z={front} radius={r} rim={rim} steerRef={steerFR} spinRef={spinFR} />
-        <Wheel x={half} z={rear} radius={r} rim={rim} spinRef={spinRL} />
-        <Wheel x={-half} z={rear} radius={r} rim={rim} spinRef={spinRR} />
+        {(
+          [
+            [half, front, steerFL, spinFL],
+            [-half, front, steerFR, spinFR],
+            [half, rear, undefined, spinRL],
+            [-half, rear, undefined, spinRR],
+          ] as const
+        ).map(([x, z, steerRef, spinRef]) => (
+          <Wheel
+            key={`${x},${z}`}
+            x={x}
+            z={z}
+            radius={r}
+            width={z === front ? tyres.front : tyres.rear}
+            rim={rim}
+            steerRef={steerRef}
+            spinRef={spinRef}
+          />
+        ))}
       </group>
     </group>
   );

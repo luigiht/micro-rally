@@ -17,6 +17,7 @@ const K = {
   body: BERLINETTE_COLORS.body,
   trim: BERLINETTE_COLORS.trim,
   chrome: BERLINETTE_COLORS.chrome,
+  glass: BERLINETTE_COLORS.glass,
   head: '#fff6d0',
   rally: '#ffd76a',
 } as const;
@@ -39,9 +40,10 @@ export function BerlinetteBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Re
       <group ref={cabinRef}>
         {([1, -1] as const).map((side) => (
           <group key={side}>
-            {/* Chrome bullet mirrors on the doors' leading corners */}
-            <Box p={[0.75 * side, 0.81, 0.62]} s={[0.05, 0.02, 0.02]} c={K.chrome} />
-            <Box p={[0.79 * side, 0.835, 0.6]} s={[0.05, 0.045, 0.09]} c={K.chrome} />
+            {/* Slim chrome mirrors on the doors' leading corners, their glass facing back */}
+            <Box p={[0.72 * side, 0.81, 0.6]} s={[0.11, 0.02, 0.02]} c={K.chrome} />
+            <Box p={[0.82 * side, 0.835, 0.6]} s={[0.11, 0.055, 0.035]} c={K.chrome} />
+            <Box p={[0.825 * side, 0.835, 0.58]} s={[0.09, 0.042, 0.01]} c={K.glass} />
           </group>
         ))}
       </group>

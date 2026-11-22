@@ -120,7 +120,7 @@ export function T16HatchBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Ref<
       <group ref={cabinRef}>
         {([1, -1] as const).map((side) => (
           <group key={side}>
-            <Box p={[0.86 * side, 1.04, 0.42]} s={[0.1, 0.04, 0.04]} c={K.trim} />
+            <Box p={[0.82 * side, 1.04, 0.42]} s={[0.18, 0.04, 0.04]} c={K.trim} />
             <Box p={[0.95 * side, 1.06, 0.42]} s={[0.14, 0.1, 0.08]} c={K.trim} />
           </group>
         ))}

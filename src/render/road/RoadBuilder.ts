@@ -71,7 +71,9 @@ const SNOW_POLE_HEIGHT = 2.4;
 export const LINE_ABOVE_DECK = 0.02;
 export const LINE_LIFT = ROAD_LIFT + LINE_ABOVE_DECK;
 /** Murram and fech-fech blend over about this far either side of a join, metres. */
-const POWDER_BLEND = 22;
+const POWDER_BLEND = 34;
+/** The blend's reach wanders smoothly between hashed knots this far apart, metres. */
+const POWDER_KNOT = 9;
 const LINE_WIDTH = 0.22;
 const NO_DIP = [0, 0] as const;
 
@@ -633,6 +635,11 @@ export class RoadBuilder {
     const pos: number[] = [];
     const col: number[] = [];
     const index: number[] = [];
+    // On a murram road broken by fech-fech, what each piece blends toward at its joins.
+    const powderOther =
+      powder && field.surfaceRuns
+        ? new Color(surface === 'fechfech' ? surfaces[stage.surface] : surfaces.fechfech)
+        : null;
     for (let stripIndex = strips.length - 1; stripIndex >= 0; stripIndex--) {
       const verge = strips[stripIndex]!;
       if (!verge.blendFromRoad && !verge.facets) continue;
@@ -668,6 +675,10 @@ export class RoadBuilder {
               tone: (k: number) => 1 + (GRAVEL_RUTS.tone[0]! - 1) * GRAVEL_RUTS.fade!(k),
             }
           : {}),
+        // Its gravel bands blend across a fech-fech join with the road, each at its own mix of earth.
+        ...(frayed && powderOther && band < 2
+          ? { coverColor: powderOther.clone().lerp(verge.color, [0, 0.55][band]!) }
+          : {}),
         // A frayed track's gravel spills out over the verge in ragged tongues before the earth.
         color: frayed
           ? road.clone().lerp(verge.color, [0, 0.55, 1][band]!)
@@ -685,23 +696,26 @@ export class RoadBuilder {
     const roadBase = strips[0]!;
     // Fech-fech and murram blend into each other over a few dozen metres either side of every join,
     // half way each side, so the powder fades in and out rather than starting at a line.
-    if (powder && field.surfaceRuns) {
-      const other = new Color(surface === 'fechfech' ? surfaces[stage.surface] : surfaces.fechfech);
-      const blend = (k: number, _hw: number, band?: number) => {
-        // Each lane band reaches its own way into the other, a little ragged.
-        const reach =
-          POWDER_BLEND * (0.8 + 0.4 * hash01(Math.round(k / 9) * 31 + (band ?? 0) * 17));
-        const t = Math.max(0, 1 - seam.distance(k * sp) / reach);
-        return 0.5 * t * t * (3 - 2 * t);
-      };
-      roadBase.cover = blend;
-      roadBase.coverColor = other;
-      // The frayed verge's first band is the road itself: it blends the same way.
-      for (const st of strips)
-        if (st.side !== undefined && st.facets === undefined && frayed) {
-          st.cover = blend;
-          st.coverColor = other;
+    // 0..0.5 how far a station's colour has blended into the other surface: half way at the join.
+    const powderBlend = powderOther
+      ? (k: number) => {
+          // The reach wanders smoothly along the road, so the fade has no straight front of its own.
+          const c = (k * sp) / POWDER_KNOT;
+          const i = Math.floor(c);
+          const f = smoothstep(0, 1, c - i);
+          const wander = hash01(i * 31) + (hash01((i + 1) * 31) - hash01(i * 31)) * f;
+          const reach = POWDER_BLEND * (0.75 + 0.5 * wander);
+          const t = Math.max(0, 1 - seam.distance(k * sp) / reach);
+          return 0.5 * t * t * (3 - 2 * t);
         }
+      : null;
+    if (powderOther && powderBlend) {
+      const blend = powderBlend;
+      roadBase.cover = blend;
+      roadBase.coverColor = powderOther;
+      // The frayed verge's gravel bands blend the same way, toward their own mix (set with the bands).
+      for (const st of strips)
+        if (st.side !== undefined && st.coverColor !== undefined && frayed) st.cover = blend;
     }
     // Mud tracked out onto the tarmac either side of a mud stretch.
     if (spill) {
@@ -810,7 +824,8 @@ export class RoadBuilder {
       // Ruts and worn dips ease out into a town and toward a change of surface; the ruts' tones run
       // on to the join, where the spill zone's flat ruts carry them across.
       const rutBlend = (1 - t) * relief(st.d);
-      const toneBlend = 1 - t;
+      // The murram's wheel-track tones fade out with its colour toward a fech-fech join.
+      const toneBlend = (1 - t) * (powderBlend ? 1 - 2 * powderBlend(st.k) : 1);
       // A built-up road's verges slope down its bank with the ground (none in town).
       const bank =
         strip.side !== undefined && strip.rise === undefined

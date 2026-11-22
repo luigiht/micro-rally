@@ -1,6 +1,6 @@
 import { Euler, Quaternion, Vector3 } from 'three';
 import type { CameraMode } from '@/lib/cameraMode';
-import { dampFactor, type CameraRig, type CameraRigFrame } from './CameraRig';
+import { dampFactor, NEAR_COCKPIT, type CameraRig, type CameraRigFrame } from './CameraRig';
 
 export interface FirstPersonView {
   mode: CameraMode;
@@ -37,11 +37,15 @@ export class FirstPersonCameraRig implements CameraRig {
   private readonly up = new Vector3();
   private readonly look = new Vector3();
 
-  /** `eyeDrop` lowers (or raises) the eye for cars whose cabin sits lower (higher) than the hatchback's; `eyeForward` moves it along the car. */
+  /**
+   * `eyeDrop` lowers (or raises) the eye for cars whose cabin sits lower (higher) than the
+   * hatchback's; `eyeForward` moves it along the car, `eyeAcross` across it.
+   */
   constructor(
     private readonly view: FirstPersonView,
     private readonly eyeDrop = 0,
     private readonly eyeForward = 0,
+    private readonly eyeAcross = 0,
   ) {
     this.mode = view.mode;
   }
@@ -51,6 +55,7 @@ export class FirstPersonCameraRig implements CameraRig {
     this.pitch = target.pitch;
     this.roll = target.roll;
     camera.fov = this.view.fov;
+    camera.near = NEAR_COCKPIT;
     camera.updateProjectionMatrix();
     this.apply(camera, target);
   }
@@ -78,6 +83,7 @@ export class FirstPersonCameraRig implements CameraRig {
     this.pos.copy(this.view.eye);
     this.pos.y += this.eyeDrop;
     this.pos.z += this.eyeForward;
+    this.pos.x += this.eyeAcross;
     this.pos.applyQuaternion(this.quat).add(this.base);
     // View direction uses the smoothed pitch/roll, the tilt and the glance.
     this.euler.set(this.pitch + this.view.tiltDown, t.yaw + this.glance, this.roll);

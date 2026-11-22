@@ -38,8 +38,10 @@ export function GroupBBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Ref<Gr
       <group ref={cabinRef}>
         {([1, -1] as const).map((side) => (
           <group key={side}>
-            <Box p={[0.88 * side, 1.04, 0.7]} s={[0.08, 0.04, 0.04]} c={K.trim} />
-            <Box p={[0.96 * side, 1.06, 0.7]} s={[0.12, 0.12, 0.08]} c={K.body} />
+            <Box p={[0.84 * side, 1.04, 0.7]} s={[0.16, 0.04, 0.04]} c={K.trim} />
+            {/* A wide, shallow housing, its glass facing back */}
+            <Box p={[1.0 * side, 1.06, 0.7]} s={[0.2, 0.11, 0.04]} c={K.body} />
+            <Box p={[1.01 * side, 1.06, 0.677]} s={[0.17, 0.085, 0.01]} c={K.glass} />
           </group>
         ))}
       </group>

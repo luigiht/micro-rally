@@ -6774,3 +6774,142 @@ bed)`. The road, its profile and every record stay as they were, so
        into the ground, 1.2 m past the lowest ground round its foot (was
        0.3 m on a footing), so on any slope, bank or coarse terrain cell it
        goes through the ground with no gap.
+295. **2026-11-22 — Zebra stripes round the body, a gradual fech-fech join,
+     mirrors on the body, the buggy's front flaps.** At the user's request:
+     - **Zebras.** A stripe was picked per face from its centroid, but the
+       body sphere's rings ran horizontally (pole on y) and the limbs were one
+       segment long, so the stripes came out as horizontal rows. The body is
+       now a sphere with its poles fore and aft, 15 rings round the barrel,
+       alternate rings black (`stripedBody`), and the neck, mane, head, legs
+       and tail are cylinders of 5–8 rings striped by ring along their own
+       axis (`stripedLimb`), so every stripe runs square to the part.
+     - **Murram to fech-fech.** The blend's reach was re-hashed every 9
+       samples, a step that showed as a straight line across the road; it now
+       wanders smoothly between knots 9 m apart, over 34 m (25–42) either side
+       of a join. The murram's wheel-track tones, which ran at full strength to
+       the join, fade with the colour (`powderBlend`), and the frayed verge's
+       gravel mix band blends too, toward its own mix of the other surface.
+     - **Mirrors.** A probe ray-cast from each mirror arm's inner end to the
+       hull found nine cars' mirrors floating 3–8 cm off it; every arm now
+       starts about 1.5 cm inside the body at all its corners. The city
+       traffic's mirrors stood off the nose's width (the WRC's above the
+       body line); each model now has its own mirror position on the door
+       top. The Tempesta's, Tricolore's and Berlinette's mirrors are wide,
+       slim panels with glass facing back instead of cubes; the Boreal's glass
+       faced forward and now faces back; the Toro buggy's sit 3 cm off the
+       body instead of 23; the Albion's are slim shells on short stalks off
+       the door, 18 cm further back than the cowl.
+     - **Toro front flaps.** Built in `BuggyBody` beside its rear flaps, not
+       through `BodyMudFlaps`, whose frame stands 0.1 m below the buggy's
+       raised body and would have left a gap under its fenders: 42 cm wide,
+       5 cm behind the tyre, the top tucked 5 cm into the fender's arch, the
+       foot level with the rear flaps'.
+296. **2026-11-22 — Two new cars: the Schwaben SC Rallye and the Woking V6
+     Turbo.** At the user's request, from the references in
+     `context/rally-porsche` (an early-1980s rear-engined rally coupé) and
+     `context/mclaren-mp44` (a late-1980s turbo Formula One car, with a
+     CC BY model of its successor). References only, as decisions 112 and
+     284: no names, logos, numbers or marks, the colours ours, and nothing
+     from the model ships; its proportions were measured by slicing its
+     bodywork every 10 cm along the car, scaled to a 2.875 m wheelbase.
+     - **Schwaben SC Rallye** (`scrs`, $16,000, after the Tempesta in the
+       rally ladder, tyre grip 1.22): 980 kg, 2.27 m wheelbase with the
+       engine behind the rear axle, rear-drive, a 400 N·m naturally
+       aspirated flat-six revving to 7600 rpm. A lofted hull
+       (`SchwabenShape`) from the side photo: the roof falling in one curve
+       to the tail, a raked screen, raised front wings carrying round
+       headlamps with the bonnet dipping between them, flared arches, squared
+       off at the user's request (flat flanks and roof, a square nose and tail
+       in plan). Livery (`SchwabenLivery`): white over deep blue, a gold band,
+       white pinstripe and red stripe along the doors, sweeping down over the
+       front wing and across the tail. A slim white strip over the roof's edge
+       (`SCHWABEN_ROOF_LINE`, the A-pillar's `pillarStrip` run on along the
+       roof and down the fastback to the tail) frames the glasshouse, at the
+       user's request. A four-lamp pod on the bonnet's front
+       edge, a whale-tail spoiler with louvres, red mirrors, and at the
+       user's request one black bar across the tail holding the tail lamps
+       (amber, reversing white, red) and a red centre band. The whale tail's
+       turned-up lip is a strip of its own: `Prism` points each face away from
+       its outline's centre, which turned a thin lip on so long an outline
+       inside out.
+     - **Woking V6 Turbo** (`formula`, $40,000, the last special, tyre grip
+       1.35): 600 kg, 2.875 m wheelbase, 1.74 m track, a 560 N·m turbo V6 to
+       12,000 rpm through six gears, the fastest car in the shop. Two lofts
+       (`WokingShape`, no wheel wells): a needle-nosed tub with the open
+       cockpit (its top painted black, a helmet in it) and the engine cover,
+       and low sidepods pinching in to the gearbox. White with fluorescent
+       red in two blocks (`WokingLivery`). Front and rear wings on prism
+       endplates, wishbones, pushrods and driveshafts as tubes to the hubs
+       (drawn in the body, so they lean with it; stiff springs keep them on
+       the hubs), a rain light, no mud flaps. At the user's request the
+       nose's red runs down its sides to the floor, the rear block runs up the
+       engine cover's flanks and over its top so the two sides meet there,
+       the cover ends over the rear axle with the V6's banks, bellhousing,
+       gearbox (the rain light on its tail), exhausts and a cross tube bare
+       behind it, the wishbones run on to 4 cm short of each tyre's centre so
+       they still meet the wheel when it steers, and the helmet is a
+       full-face racing helmet after a reference photo: a red shell, white
+       below its middle, a dark-gold visor under a white strip, a chin vent
+       (bands of one sphere, each a hair proud of the last). Then: the rear
+       block's edge continues from the flanks over the cover's rounded
+       shoulders and crown as one straight diagonal (its top-view edge bent to
+       meet the diagonal at each height); the nose's red ends in two points
+       with a white triangle cut into it from the front, as the reference's;
+       the cover's open end is the engine bay's dark grey and the sidepods'
+       tails red (both through the livery's `back` view). Painted view by view
+       (flank, top), the red's edges broke where a face turned from one view
+       to the next, so both red areas are now `LiverySolid`s, regions cut
+       through the car and painted on every face they cross: the rear block
+       everything behind one tilted plane (from the cover's open end back on
+       the tub, so that stays grey), and the nose's red one solid each side
+       whose top outline carries the white triangle's sides out to the nose's
+       edge, where its side outline takes them down to the floor. The engine
+       bay (`WokingEngineBay`) gained cam covers striped red, three intake
+       trumpets a bank under a plenum, a turbo each side with its charge pipe
+       into the sidepod and its exhaust, inboard rear dampers on the gearbox
+       and its casting ribs; the rear red now starts a hair behind the
+       cover's open end, so no white sliver shows between red and grey.
+     - **Loose-ground grip.** `CarSpec.looseGrip` (1 for every other car)
+       multiplies tyre grip on any surface but tarmac and race asphalt
+       (`PAVED`); the single-seater's 0.8 makes its slicks slide on gravel,
+       snow and sand while it still passes the gravel-corner test.
+       `aeroGrip` stays shared across the dealership (its test), so its pace
+       on tarmac comes from power, mass and drag.
+     - **Tyre widths.** `CarModel`'s `TYRES` gives a car its own front and
+       rear widths (visual only): the single-seater's 0.3 m fronts and
+       0.44 m rears. Every other car keeps 0.8 × its wheel radius.
+     - **A centre seat.** `CarSpec.cabinAcross` moves the cabin and the
+       first-person eye across the car (`FirstPersonCameraRig`'s
+       `eyeAcross`); the single-seater's −0.34 puts the driver on the centre
+       line. `InteriorSpec.open` drops the roof lining, header, mirror, map
+       light, pillars and cage; `singleSeat` centres the cabin's walls, floor
+       and dash on the one seat and drops the co-driver's seat and kit, the
+       tunnel and the handbrake, the lever by the driver's right hand.
+     - Landing stills (`car-scrs.png`, `car-formula.png`) rendered from
+       `LandingCarStage` at its starting angle, as the others.
+297. **2026-11-22 — Near planes per camera.** At the user's report of city
+     windows colliding in the distance: with the near plane at 0.1 m and far
+     at 500 m, a 24-bit depth buffer separates surfaces only about 1.5 cm
+     apart at 150 m and 4 cm at 250 m, the order of a façade's window frame
+     and glass (2–9 cm proud of the wall, `FacadeGeometry`), so they fought.
+     Each rig now sets the near plane when it snaps: 0.5 m for the chase,
+     isometric and cinematic cameras (`NEAR_OUTSIDE`), which never come
+     within metres of anything, five times the depth precision at a
+     distance; 0.1 m (`NEAR_COCKPIT`) for the cockpit view only, for the
+     wheel and dash. A logarithmic depth buffer was the alternative, but it
+     costs every shader and early depth rejection.
+     - The user then found windows missing in the distance rather than
+       flickering: the same view at both near planes rendered identically,
+       so it was the windows themselves. Infill buildings' windows were flat
+       panes 3 cm off the wall, on the street front only; they are now boxes
+       (`windowBox`), the dark pane 12 cm proud with its sides in the wall's
+       tint shaded, and every storey of an infill's back and side walls has
+       them too (no doors), so no infill shows a blank wall down a street.
+       The shared façade parts stand further out: frames 5 cm (were 2),
+       glass 9 cm (4), lintels, sills, jambs and arch heads 11–14 cm.
+     - Blank walls remained: each infill wall chose its outside by facing away
+       from the lot's centroid, which on an L-shaped or otherwise concave lot
+       picks the inside of its inner walls, so their windows (and plinth and
+       cornice) were built inside the building. It now takes the outline's
+       winding (front then back, round the building) instead; on the user's
+       city stage this turns 39 wall edges out that faced in.

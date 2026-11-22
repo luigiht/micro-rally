@@ -4,7 +4,14 @@ import type { CarId, CarSpec } from '@/game/vehicle/CarSpec';
 import { Box, CAR_COLORS as C } from './CarParts';
 
 /** Cars that hang mud flaps behind their front wheels too (every car has rear ones). */
-const FRONT_FLAPS: ReadonlySet<CarId> = new Set<CarId>(['coupe', 'wrc', 'groupb', 's1', 'focus']);
+const FRONT_FLAPS: ReadonlySet<CarId> = new Set<CarId>([
+  'coupe',
+  'wrc',
+  'groupb',
+  'scrs',
+  's1',
+  'focus',
+]);
 
 /** The flap stands this far behind the tyre: clear of its trailing corner at full lock. */
 const GAP = 0.05;

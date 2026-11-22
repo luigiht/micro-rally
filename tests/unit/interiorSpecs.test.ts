@@ -20,14 +20,18 @@ describe('interior specs', () => {
       expect(s.dashTopY + s.clusterRise, id).toBeLessThan(EYE.y - 0.1);
       expect(s.screenTopZ, id).toBeGreaterThan(EYE.z);
       expect(s.rearZ, id).toBeLessThanOrEqual(-0.5);
-      // Room for the driver's seat inboard of the wall, and the co-driver on the other side.
-      expect(s.halfWidth, id).toBeGreaterThan(EYE.x + 0.25);
-      expect(s.coDriverX, id).toBeLessThan(0);
+      // Room for the driver's seat inboard of the wall, and the co-driver on the other side; a
+      // single-seater's cabin is centred on its one seat.
+      if (s.singleSeat) expect(s.halfWidth, id).toBeGreaterThan(0.22);
+      else {
+        expect(s.halfWidth, id).toBeGreaterThan(EYE.x + 0.25);
+        expect(s.coDriverX, id).toBeLessThan(0);
+        expect(-s.coDriverX, id).toBeLessThan(s.halfWidth - 0.2);
+      }
       // Door cards stand clear of the floor and below the eye, so the driver can still see out.
       const doorTop = s.doorTopY ?? s.dashTopY - 0.06;
       expect(doorTop, id).toBeGreaterThan(s.floorY + 0.05);
       expect(doorTop, id).toBeLessThan(EYE.y - 0.05);
-      expect(-s.coDriverX, id).toBeLessThan(s.halfWidth - 0.2);
     }
   });
 

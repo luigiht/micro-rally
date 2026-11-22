@@ -146,9 +146,9 @@ export function SaloonBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Ref<Gr
         {([1, -1] as const).map((side) => (
           <group key={side}>
             {/* Door mirrors on short arms at the A-pillar's base */}
-            <Box p={[0.9 * side, 0.9, 0.4]} s={[0.12, 0.04, 0.04]} c={K.trim} />
+            <Box p={[0.89 * side, 0.9, 0.4]} s={[0.14, 0.04, 0.04]} c={K.trim} />
             <Box p={[1.0 * side, 0.92, 0.4]} s={[0.16, 0.11, 0.1]} c={K.body} />
-            <Box p={[1.02 * side, 0.92, 0.45]} s={[0.1, 0.08, 0.01]} c={K.glass} />
+            <Box p={[1.02 * side, 0.92, 0.347]} s={[0.1, 0.08, 0.01]} c={K.glass} />
           </group>
         ))}
       </group>

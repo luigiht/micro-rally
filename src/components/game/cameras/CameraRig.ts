@@ -22,6 +22,15 @@ export interface CameraRig {
   dispose(): void;
 }
 
+/**
+ * The camera's near plane per kind of rig. Depth precision at a distance scales with it, so the
+ * outside cameras, which never come within metres of anything, keep theirs well out and city
+ * façades' window frames and glass (2–9 cm proud of the wall) stay apart a few hundred metres off;
+ * only the cockpit view needs it close, for the wheel and dash.
+ */
+export const NEAR_COCKPIT = 0.1;
+export const NEAR_OUTSIDE = 0.5;
+
 /** Frame-rate independent exponential smoothing factor. */
 export function dampFactor(lambda: number, dt: number): number {
   return 1 - Math.exp(-lambda * dt);

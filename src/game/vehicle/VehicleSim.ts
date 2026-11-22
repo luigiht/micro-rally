@@ -1,7 +1,7 @@
 import type { CarSpec } from './CarSpec';
 import type { ControlInput } from './ControlInput';
 import { REVERSE_GEAR, autoShift, driveForce, wheelLockedRpm } from './Drivetrain';
-import { SURFACES, type Surface } from './surfaces';
+import { PAVED, SURFACES, type Surface } from './surfaces';
 import type { TerrainQuery } from './Terrain';
 
 export const GRAVITY = 9.81;
@@ -268,7 +268,11 @@ export class VehicleSim {
 
     const surf = SURFACES[s.surface];
     const mu =
-      surf.grip * p.tyreGrip * envGrip(env, s.surface) * (1 + (p.aeroGrip * speed * speed) / 1000);
+      surf.grip *
+      p.tyreGrip *
+      (PAVED.has(s.surface) ? 1 : p.looseGrip) *
+      envGrip(env, s.surface) *
+      (1 + (p.aeroGrip * speed * speed) / 1000);
     const weight = p.mass * GRAVITY * load;
     const transfer = (p.cgHeight / L) * p.mass * s.longAccel * load;
     const wf = Math.max(0, (p.cgToRear / L) * weight - transfer);

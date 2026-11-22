@@ -181,6 +181,11 @@ export const it: Messages = {
       intro: 'Tutte le versioni dal primo rilascio giocabile, dalla più recente alla più vecchia.',
       entries: [
         {
+          date: '22 novembre 2026',
+          title: 'Due auto nuove',
+          body: 'Due auto arrivano in concessionaria. La Schwaben SC Rallye è una coupé da rally a motore posteriore dei primi anni Ottanta, bianca e blu con strisce oro e rosse, una batteria di fari sul cofano e uno spoiler a «coda di balena», dopo la Tempesta nello showroom. La Woking V6 Turbo è una Formula 1 turbo di fine anni Ottanta, bianca e rosso fluorescente, l’auto più veloce del negozio, con un abitacolo aperto da cui guidi sull’asse centrale; le sue gomme slick scivolano su ghiaia, neve e sabbia. Inoltre le zebre portano le strisce attorno al corpo, la laterite della Savana sfuma nel fech-fech invece di cambiare di colpo, gli specchietti di ogni auto sono attaccati alla carrozzeria e la Toro Dakar Buggy ha i paraspruzzi anteriori.',
+        },
+        {
           date: '19 novembre 2026',
           title: 'Lacustre',
           body: 'Un nuovo tipo di prova entra nel ciclo rally dopo il Deserto: Lacustre, un’estate svedese di colline boscose arrotondate e laghi allungati. La strada stretta costeggia i laghi per buona parte del percorso, passa sulle colline tra l’uno e l’altro e attraversa un lago su un lungo ponte di cemento, alternando asfalto e fango lungo il percorso; le gomme da fango aiutano solo sul fango. Boschi misti di pini e latifoglie coprono le colline, punteggiate di fattorie rosso Falun sotto un sole di piena estate. I tempi migliori delle prove che hanno cambiato tipo con il ciclo più lungo vengono azzerati.',
@@ -371,6 +376,9 @@ export const it: Messages = {
     groupb: {
       name: 'Tempesta Gruppo B',
     },
+    scrs: {
+      name: 'Schwaben SC Rallye',
+    },
     s1: {
       name: 'Edelweiss S1',
     },
@@ -385,6 +393,9 @@ export const it: Messages = {
     },
     buggy: {
       name: 'Toro Dakar Buggy',
+    },
+    formula: {
+      name: 'Woking V6 Turbo',
     },
   },
   touch: {
@@ -626,11 +637,13 @@ export const it: Messages = {
         wrc: 'Compatta WRC',
         lemans: 'Prototipo endurance',
         groupb: 'Mostro del Gruppo B',
+        scrs: 'Coupé del Gruppo B',
         berlinette: 'Berlinetta Gruppo 4',
         s1: 'Coupé del Gruppo B',
         focus: 'Compatta WRC',
         dakar: 'Rally raid',
         buggy: 'Rally raid',
+        formula: 'Formula 1 turbo',
       },
     },
     cameras: {

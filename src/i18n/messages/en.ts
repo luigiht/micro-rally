@@ -173,6 +173,11 @@ export const en = {
       intro: 'Every release since the first playable build, newest first.',
       entries: [
         {
+          date: '22 November 2026',
+          title: 'Two new cars',
+          body: 'Two cars join the dealership. The Schwaben SC Rallye is an early-1980s rear-engined rally coupé in white and blue with gold and red stripes, a lamp pod on the bonnet and a whale-tail spoiler, after the Tempesta in the showroom. The Woking V6 Turbo is a late-1980s turbo Formula One car in white and fluorescent red, the fastest car in the shop, with an open cockpit you drive from the centre line; its slicks slide on gravel, snow and sand. Elsewhere, zebras wear their stripes round their bodies, the Savanna’s murram fades into fech-fech instead of changing at a line, every car’s mirrors sit on its body, and the Toro Dakar Buggy gets front mud flaps.',
+        },
+        {
           date: '19 November 2026',
           title: 'Lakeland',
           body: 'A new stage type joins the rally mix after the Desert: Lakeland, a Swedish summer of rounded wooded hills and long lakes. Its narrow road winds along the lakes for much of its length, rolls over the hills between them and crosses one lake on a long concrete bridge, changing between tarmac and mud as it goes; mud tyres help on the mud only. Mixed woods of pines and broadleaves cover the hills, with Falu-red farmhouses all over under a high summer sun. Best times on stages that changed type with the longer rotation are reset.',
@@ -363,6 +368,9 @@ export const en = {
     groupb: {
       name: 'Tempesta Group B',
     },
+    scrs: {
+      name: 'Schwaben SC Rallye',
+    },
     s1: {
       name: 'Edelweiss S1',
     },
@@ -377,6 +385,9 @@ export const en = {
     },
     buggy: {
       name: 'Toro Dakar Buggy',
+    },
+    formula: {
+      name: 'Woking V6 Turbo',
     },
   },
   touch: {
@@ -607,11 +618,13 @@ export const en = {
         wrc: 'WRC hatch',
         lemans: 'Endurance prototype',
         groupb: 'Group B monster',
+        scrs: 'Group B coupé',
         berlinette: 'Group 4 berlinette',
         s1: 'Group B coupé',
         focus: 'WRC hatch',
         dakar: 'Rally raid',
         buggy: 'Rally raid',
+        formula: 'Turbo F1 car',
       },
     },
     cameras: {

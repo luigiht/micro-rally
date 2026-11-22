@@ -118,8 +118,10 @@ export function CoupeBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Ref<Gro
       <group ref={cabinRef}>
         {([1, -1] as const).map((side) => (
           <group key={side}>
-            <Box p={[0.8 * side, 0.94, 0.42]} s={[0.08, 0.03, 0.03]} c={K.trim} />
-            <Box p={[0.88 * side, 0.96, 0.42]} s={[0.1, 0.08, 0.07]} c={K.body} />
+            <Box p={[0.74 * side, 0.94, 0.42]} s={[0.2, 0.03, 0.03]} c={K.trim} />
+            {/* A wide, shallow housing, its glass facing back */}
+            <Box p={[0.915 * side, 0.96, 0.42]} s={[0.17, 0.09, 0.035]} c={K.body} />
+            <Box p={[0.92 * side, 0.96, 0.4]} s={[0.14, 0.072, 0.01]} c={K.glass} />
           </group>
         ))}
       </group>

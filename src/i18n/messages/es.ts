@@ -181,6 +181,11 @@ export const es: Messages = {
       intro: 'Todas las versiones desde la primera entrega jugable, de más reciente a más antigua.',
       entries: [
         {
+          date: '22 de noviembre de 2026',
+          title: 'Dos coches nuevos',
+          body: 'Dos coches llegan al concesionario. El Schwaben SC Rallye es un cupé de rally de motor trasero de principios de los ochenta, blanco y azul con franjas doradas y rojas, una batería de faros sobre el capó y un alerón «cola de ballena», después del Tempesta en la exposición. El Woking V6 Turbo es un Fórmula 1 turbo de finales de los ochenta, blanco y rojo fluorescente, el coche más rápido de la tienda, con una cabina abierta desde la que conduces sobre el eje central; sus neumáticos lisos patinan en grava, nieve y arena. Además, las cebras llevan las rayas alrededor del cuerpo, la laterita de la Sabana se funde con el fech-fech en vez de cambiar de golpe, los retrovisores de todos los coches van pegados a la carrocería y el Toro Dakar Buggy estrena faldillas delanteras.',
+        },
+        {
           date: '19 de noviembre de 2026',
           title: 'Lacustre',
           body: 'Un nuevo tipo de tramo se suma al ciclo de rally después del Desierto: Lacustre, un verano sueco de colinas boscosas redondeadas y lagos alargados. Su pista estrecha bordea los lagos buena parte del recorrido, pasa por las colinas entre ellos y cruza un lago por un largo puente de hormigón, alternando asfalto y barro por el camino; los neumáticos de barro solo ayudan en el barro. Bosques mixtos de pinos y frondosas cubren las colinas, salpicadas de granjas de rojo Falun bajo un sol de pleno verano. Los mejores tiempos de los tramos que cambiaron de tipo con el ciclo más largo se reinician.',
@@ -374,6 +379,9 @@ export const es: Messages = {
     groupb: {
       name: 'Tempesta Grupo B',
     },
+    scrs: {
+      name: 'Schwaben SC Rallye',
+    },
     s1: {
       name: 'Edelweiss S1',
     },
@@ -388,6 +396,9 @@ export const es: Messages = {
     },
     buggy: {
       name: 'Toro Dakar Buggy',
+    },
+    formula: {
+      name: 'Woking V6 Turbo',
     },
   },
   touch: {
@@ -626,11 +637,13 @@ export const es: Messages = {
         wrc: 'Compacto WRC',
         lemans: 'Prototipo de resistencia',
         groupb: 'Monstruo del Grupo B',
+        scrs: 'Cupé del Grupo B',
         berlinette: 'Berlinette Grupo 4',
         s1: 'Coupé del Grupo B',
         focus: 'Compacto WRC',
         dakar: 'Rally raid',
         buggy: 'Rally raid',
+        formula: 'Fórmula 1 turbo',
       },
     },
     cameras: {

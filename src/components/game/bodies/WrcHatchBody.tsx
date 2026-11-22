@@ -71,7 +71,7 @@ export function WrcHatchBody({ spec, cabinRef }: { spec: CarSpec; cabinRef: Ref<
         {([1, -1] as const).map((side) => (
           <group key={side}>
             {/* Door mirrors on short stalks at the screen's foot */}
-            <Box p={[0.9 * side, 1.1, 0.5]} s={[0.07, 0.03, 0.05]} c={K.trim} />
+            <Box p={[0.87 * side, 1.1, 0.5]} s={[0.14, 0.03, 0.05]} c={K.trim} />
             <Box p={[0.98 * side, 1.12, 0.5]} s={[0.12, 0.1, 0.07]} c={K.body} />
           </group>
         ))}
