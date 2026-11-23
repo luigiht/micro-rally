@@ -7035,4 +7035,8 @@ bed)`. The road, its profile and every record stay as they were, so
      canopy's side glazing runs down to the screen's foot (was to z 1.0), so
      the screen wraps its front corners with no body-coloured triangles. The
      cooling fan, a flat disc that sank into the concave deck off the cover's
-     centre, is now a solid a layer over the engine cover, centred on it.
+     centre, is now a solid a layer over the engine cover, centred on it. The
+     door shut lines are gone and a mirror stands on each door. Every car's
+     tyres now sink 0.5 cm into the ground (`TYRE_SINK`, was 1.5): with the
+     shadow's depth bias at 5 mm the deeper sink is no longer needed, and it
+     showed as wheels sunk into the road.

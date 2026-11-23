@@ -82,11 +82,11 @@ interface WheelProps {
 }
 
 /**
- * Each tyre sits this far into the ground, as a loaded tyre squashes flat: its foot then still
+ * Each tyre sits this far into the ground (half a centimetre, unseen), as a loaded tyre squashes flat: its foot then still
  * casts the sun's shadow at road level, where the shadow map's normal bias would otherwise leave
  * the last centimetres under it lit.
  */
-const TYRE_SINK = 0.015;
+const TYRE_SINK = 0.005;
 /** A wheel seated on its own ground moves at most this far down from where the shared height puts it. */
 const MAX_WHEEL_DROP = 0.12;
 /** Scratch for the wheels' contact points; no allocation per frame. */

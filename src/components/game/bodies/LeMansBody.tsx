@@ -82,12 +82,14 @@ function buildTail(): BufferGeometry {
   return merged;
 }
 
-/** The mirror on the driver's door top, its black stalk and a blue housing. */
+/** A mirror on each door top: a black stalk and a blue housing. */
 function buildMirror(): BufferGeometry {
-  const merged = merge([
-    part(box(0.02, 0.07, 0.02, -0.55, 0.71, 0.38, C.trim), C.trim),
-    part(box(0.12, 0.06, 0.05, -0.6, 0.76, 0.38, C.blue), C.blue),
-  ]);
+  const merged = merge(
+    SIDES.flatMap((side) => [
+      part(box(0.02, 0.07, 0.02, 0.55 * side, 0.71, 0.38, C.trim), C.trim),
+      part(box(0.12, 0.06, 0.05, 0.6 * side, 0.76, 0.38, C.blue), C.blue),
+    ]),
+  );
   merged.computeVertexNormals();
   return merged;
 }

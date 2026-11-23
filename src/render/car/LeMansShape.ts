@@ -471,26 +471,6 @@ const FAN: LiverySolid = {
   ),
   layer: 1,
 };
-/** The door's shut lines, thin dark lines down the flank. */
-const doorLine = (z: number) =>
-  solid(
-    LEMANS_COLORS.trim,
-    [
-      [z - 0.008, 0.12],
-      [z + 0.008, 0.12],
-      [z + 0.008, 0.66],
-      [z - 0.008, 0.66],
-    ],
-    [
-      [0.85, -0.1],
-      [1.3, -0.1],
-      [1.3, 1.3],
-      [0.85, 1.3],
-    ],
-    ALL_TOP,
-    true,
-  );
-
 const SIDE_U: ViewAxis = [2, -2.3, 2.3];
 const SIDE_V: ViewAxis = [1, 0, 1.2];
 const ACROSS: ViewAxis = [0, -1.3, 1.3];
@@ -533,8 +513,6 @@ export const LEMANS_LIVERY: LiveryShapes = {
     SIDE_INTAKE,
     FENDER_VENT,
     REAR_INTAKE,
-    doorLine(0.82),
-    doorLine(-0.38),
   ],
 };
 
