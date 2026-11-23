@@ -35,3 +35,6 @@ my-video/
 assets/*.mp4
 # Second-round video footage, renders and the recorder that made them: kept locally
 assets/v2/
+
+# Desktop app builds (electron-builder output)
+desktop/dist/

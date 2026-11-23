@@ -7,6 +7,12 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ## 2026-11-23
 
+### Added
+
+- **Desktop apps.** Micro Rally for macOS (a universal app, Apple silicon
+  and Intel) and Windows (an installer and a portable .exe), each a native
+  window around the live game with its own icon [304].
+
 ### Changed
 
 - **Coast stages at sunset.** Every other Coast stage now runs as the sun

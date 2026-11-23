@@ -38,5 +38,7 @@ export default defineConfig([
     'android/**',
     // The local Remotion walkthrough project (git-ignored) has its own tooling.
     'my-video/**',
+    // The Electron desktop shell: CommonJS for Node, with its own package.
+    'desktop/**',
   ]),
 ]);

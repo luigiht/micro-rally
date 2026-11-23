@@ -7074,3 +7074,25 @@ bed)`. The road, its profile and every record stay as they were, so
      across, they count as one centre lamp: the first beam shines behind it
      and the second stays dark (still present, so the light count never
      changes).
+304. **2026-11-23 — Desktop apps as an Electron shell around production.** At
+     the user's request: a Windows .exe and a native Mac app that embed
+     micro-rally.luigiht.com. `desktop/` is its own npm package (Electron 45,
+     electron-builder 26), out of the Next app's lint and type checks. It
+     loads `/game` in a sandboxed, context-isolated window with no Node in
+     the page; same-origin navigation stays inside, other links open in the
+     browser, a load failure shows a retry page, and one instance runs at a
+     time. Electron over Tauri: Chromium on every platform matches the
+     WebGL the game is tuned for (Tauri would be WebKit on macOS and
+     WebView2 on Windows), and electron-builder cross-builds the Windows
+     NSIS installer (x64 + arm64) and a portable x64 exe from a Mac, writing
+     the exe's icon and version info without Wine. The Mac build is one
+     universal app (dmg + zip), ad-hoc signed because there is no Developer
+     ID yet; unsigned arm64 code would not launch at all. Icons come from
+     `src/app/icon0.svg`. The Mac icon follows Icon Composer's dimensions
+     (at the user's request, after a first full-bleed icns):
+     `build/MicroRally.icon` is the macOS 26 source (1024 canvas, gradient
+     fill, full-bleed M and R layers; the system masks it). Compiling it
+     needs Xcode 26's `actool`, which this machine lacks, so builds use an
+     icns drawn to the same grid: an 824 px rounded square (radius 185)
+     centred on 1024, artwork filling it, no baked shadow. A full-bleed icns
+     would be framed in grey by macOS 26 as non-conforming.

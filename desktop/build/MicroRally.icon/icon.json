@@ -1,0 +1,43 @@
+{
+  "fill": {
+    "linear-gradient": [
+      "srgb:0.70980,0.81961,0.50588,1.00000",
+      "srgb:0.80000,0.64706,0.48627,1.00000"
+    ],
+    "orientation": {
+      "start": {
+        "x": 0.236,
+        "y": 0.15
+      },
+      "stop": {
+        "x": 1.0,
+        "y": 1.12
+      }
+    }
+  },
+  "groups": [
+    {
+      "layers": [
+        {
+          "image-name": "R.svg",
+          "name": "R"
+        },
+        {
+          "image-name": "M.svg",
+          "name": "M"
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "translucency": {
+        "enabled": false,
+        "value": 0.5
+      }
+    }
+  ],
+  "supported-platforms": {
+    "squares": ["macOS"]
+  }
+}
