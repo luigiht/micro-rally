@@ -57,11 +57,18 @@ export interface LiverySolid {
   top: Outline;
   /** Also the same region mirrored to the other side (x → −x). */
   mirror?: boolean;
+  /**
+   * Stacking: solids lie a layer off the hull (the details layer); each `layer` up stands one more
+   * `PROUD` out, so a solid over another (a lens on its dark recess) never fights it. Default 0.
+   */
+  layer?: number;
 }
 
 /** A solid as half-spaces: each `f(p) ≥ 0` inside, linear in p, plus its bounds. */
 export interface SolidCut {
   rgb: V3;
+  /** How far off the hull it lies, metres. */
+  lift: number;
   planes: ((q: V3) => number)[];
   box: [V3, V3];
 }
@@ -97,7 +104,12 @@ export function solidCuts(solid: LiverySolid): SolidCut[] {
         hi[j] = Math.max(hi[j], a[1]);
       }
     }
-    out.push({ rgb: hexToLinear(solid.color), planes, box: [lo, hi] });
+    out.push({
+      rgb: hexToLinear(solid.color),
+      lift: PROUD * (2 + (solid.layer ?? 0)),
+      planes,
+      box: [lo, hi],
+    });
   }
   return out;
 }
@@ -292,7 +304,7 @@ export function paintLivery(
         const w0 = 1 - w1 - w2;
         const m = [0, 1, 2].map((k) => cn[0]![k]! * w0 + cn[1]![k]! * w1 + cn[2]![k]! * w2);
         const ml = Math.hypot(m[0]!, m[1]!, m[2]!) || 1;
-        return [0, 1, 2].map((k) => q[k]! + (m[k]! / ml) * PROUD * 2) as V3;
+        return [0, 1, 2].map((k) => q[k]! + (m[k]! / ml) * sc.lift) as V3;
       });
       for (let k = 1; k + 1 < lifted.length; k++) {
         for (const q of [lifted[0]!, lifted[k]!, lifted[k + 1]!]) {

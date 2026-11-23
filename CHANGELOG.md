@@ -5,6 +5,16 @@ tags yet: `main` is deployed continuously, so entries are grouped by the day
 they landed. The numbered entries in [docs/DECISIONS.md](docs/DECISIONS.md)
 hold the reasoning behind each change; the numbers in brackets point there.
 
+## 2026-11-23
+
+### Changed
+
+- **A sharper Mulsanne LM Prototype.** Rebuilt on the real short-tail Le Mans
+  coupé's proportions: peaked front fenders over a low bonnet, a narrow
+  cab-forward canopy, wide rear fenders with twin fins and a concave deck,
+  twin headlamps, nose intakes, and much wider rear tyres [300].
+- **Exhausts only out the back** on the Woking V6 Turbo.
+
 ## 2026-11-22
 
 ### Added

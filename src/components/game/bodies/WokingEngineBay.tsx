@@ -26,8 +26,8 @@ const RIBS = [-1.45, -1.55, -1.65] as const;
 /**
  * The Woking V6 Turbo's engine bay, bare behind the engine cover's open end over the rear axle
  * (`WokingShape`): the turbo V6's two banks with black cam covers striped red, three intake
- * trumpets a bank under a plenum in the vee, a turbo each side with its pipe forward into the
- * sidepod and its exhaust out under the rear wing; the bellhousing, then the ribbed gearbox out
+ * trumpets a bank under a plenum in the vee, a turbo each side with its exhaust straight back
+ * out under the rear wing; the bellhousing, then the ribbed gearbox out
  * under the wing with the inboard rear dampers on it and the rain light on its tail; a cross tube.
  * Coordinates in the body's frame (`WokingBody`).
  */
@@ -52,7 +52,7 @@ export function WokingEngineBay() {
               c={C.alloy}
             />
           ))}
-          {/* The turbo: its turbine and compressor, the charge pipe forward into the sidepod */}
+          {/* The turbo: its turbine and compressor */}
           <Tube
             a={[0.17 * side, 0.36, -1.36]}
             b={[0.26 * side, 0.36, -1.36]}
@@ -65,18 +65,11 @@ export function WokingEngineBay() {
             r={0.045}
             c={C.alloy}
           />
-          <Tube a={[0.22 * side, 0.4, -1.28]} b={[0.4 * side, 0.38, -0.95]} r={0.024} c={C.alloy} />
-          {/* The exhaust from the turbo out under the rear wing */}
+          {/* The exhaust from the turbo straight back out under the rear wing */}
           <Tube
-            a={[0.21 * side, 0.34, -1.4]}
-            b={[0.15 * side, 0.4, -1.66]}
+            a={[0.21 * side, 0.34, -1.36]}
+            b={[0.16 * side, 0.38, -1.68]}
             r={0.028}
-            c={C.exhaust}
-          />
-          <Tube
-            a={[0.17 * side, 0.4, -1.0]}
-            b={[0.2 * side, 0.36, -1.33]}
-            r={0.024}
             c={C.exhaust}
           />
           {/* An inboard rear damper lying on the gearbox, its spring yellow */}

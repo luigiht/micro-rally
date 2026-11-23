@@ -6,6 +6,8 @@ import type { CarId, CarSpec } from '@/game/vehicle/CarSpec';
  */
 const OWN: Partial<Record<CarId, { readonly front: number; readonly rear: number }>> = {
   formula: { front: 0.3, rear: 0.44 },
+  // The 917-shaped coupé's fronts and much wider rears (`context/porsche-lemans`).
+  lemans: { front: 0.3, rear: 0.42 },
 };
 
 /** A car's tyre widths, front and rear, metres: what `CarModel` draws and its tyre marks are laid at. */

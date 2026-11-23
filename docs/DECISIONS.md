@@ -6988,3 +6988,51 @@ bed)`. The road, its profile and every record stay as they were, so
      each wheel's trail its tyre's width, kept across a clear; `DriveRig`
      sets it whenever the car or the stage changes. Replays use the same
      widths, as they draw with the current car.
+300. **2026-11-23 — The Mulsanne LM Prototype relofted as a boxy 917K.** At the
+     user's request, from the photos and a CC BY reference model in
+     `context/porsche-lemans` (measured by 10 cm slices, nothing ships; the
+     reference sheet is `917k-model-notes.md` there). The body moved into
+     `render/car/LeMansShape.ts`: one `DIMENSIONS` constant, shell and
+     canopy lofted (`loft`) from measured keys with crisp sections (a flat
+     flank, one facet to the fender line, two across the top for the crown),
+     so the front fenders peak at 0.74 m with the bonnet 14 cm below between
+     them, the waist narrows at the doors, the rear fenders widen to 2.12 m
+     and the deck between them is concave to the tail lip; the canopy is a
+     narrow, cab-forward bubble with a long wraparound screen. The orange
+     skirt is the hull's own stripe band (no overlay), the centre stripe and
+     nose orange the base livery layer, and the roundels, headlamp surrounds,
+     intakes, vents, engine cover and door lines solids over it. Twin
+     headlamps lie on each fender's slope under a clear cover; the fins,
+     spoiler lip, tail panel, engine, gearbox, fan, exhausts and the toe-board
+     are one merged vertex-coloured mesh. Its tyres are 0.30 m front, 0.42 m
+     rear (`TyreWidths`). About 3,300 triangles for the body (the old shell
+     alone was 2,888). The cabin's spec, wheels and physics are unchanged.
+     Then, at the user's request: the canopy runs back as a fastback fairing
+     narrowing down into the engine cover (it ended in a cut face over the
+     deck), its windscreen's foot sinks into the bonnet so no ledge stands
+     between them and the bonnet's stripe runs up to the glass, and the
+     headlamp surrounds are rounded ovals instead of squares. The headlamps
+     are now painted flush into the surround as solids (a pale lens in a
+     chrome ring, the main lamp high and outboard, the small one inboard
+     below it, both above the nose's orange, which solids don't paint over)
+     instead of discs and a clear cover standing off the face; the door
+     roundel sits higher, clear of the skirt band, and the bonnet roundel's
+     side outline reaches low enough that the nose's dip no longer crops it. At the user's
+     request the black surround went: each lamp is a pale lens with a thin
+     black border, the border a ring of convex segments round the lens, since
+     solids all lie at one depth and a lens painted over a black disc fought
+     it. Then, after the references, a dark oval recess under each
+     pair: on the livery's base layer (ahead and from above, the two views the
+     fender's slope splits between), so the lamps, a layer further out, lie
+     over it without fighting. Painted in two views, though, the oval's edges
+     broke where the fender's facets turned from one to the other, so it
+     clashed with the body: it is now one solid seen from ahead, cut through
+     the fender's face only, a clean oval on every facet. `LiverySolid.layer`
+     (new) stacks solids a `PROUD` apart, so the lamps (a big main lamp high
+     and outboard, a small one below and inboard, each with a bright centre)
+     lie over the recess, all inside it. The cut reaches back to z 1.2 (was 1.45), so
+     the oval's top, where the face curves back, is no longer clipped. The
+     canopy's side glazing runs down to the screen's foot (was to z 1.0), so
+     the screen wraps its front corners with no body-coloured triangles. The
+     cooling fan, a flat disc that sank into the concave deck off the cover's
+     centre, is now a solid a layer over the engine cover, centred on it.

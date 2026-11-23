@@ -924,7 +924,7 @@ dashboard kit and palette.
 | `s1`         | Edelweiss S1          | Sport Quattro S1 E2-shaped coupé           | 1090 kg | `S1CoupeBody.tsx`    |
 | `focus`      | Albion RS Hatch       | First-gen Focus hatch in works WRC trim    | 1230 kg | `FocusHatchBody.tsx` |
 | `dakar`      | Sirocco Dakar Truck   | Rally-raid truck, twice a car's size       | 2600 kg | `DakarTruckBody.tsx` |
-| `lemans`     | Mulsanne LM Prototype | 917K-shaped 1970 Le Mans coupé             | 800 kg  | `LeMansBody.tsx`     |
+| `lemans`     | Mulsanne LM Prototype | 917K-shaped 1970 Le Mans short-tail coupé  | 800 kg  | `LeMansBody.tsx`     |
 | `buggy`      | Toro Dakar Buggy      | SMG-style two-wheel-drive raid buggy       | 1450 kg | `BuggyBody.tsx`      |
 | `formula`    | Woking V6 Turbo       | MP4/4-style turbo Formula One car          | 600 kg  | `WokingBody.tsx`     |
 
