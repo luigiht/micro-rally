@@ -40,7 +40,8 @@ describe('Moorland', () => {
         expect(world.props.some((p) => p.kind === 'house')).toBe(false);
         expect(world.field.lakes.some((l) => l.bridge)).toBe(false);
       }
-  });
+    // Twelve whole stage worlds: about 7 s on a CI runner.
+  }, 30_000);
 
   it('fences the open road in wood that stops a car, a post at each end', () => {
     for (const seed of SEEDS.slice(0, 3)) {
