@@ -79,6 +79,28 @@ describe('CarLamps', () => {
     expect(lamps.group.parent).toBeNull();
   });
 
+  it('throws one red beam behind a single centre lamp, not a second from nowhere', () => {
+    const b = body();
+    const lamp = new Mesh(
+      new BoxGeometry(0.12, 0.08, 0.04),
+      new MeshBasicMaterial({ color: '#ff2a1a' }),
+    );
+    lamp.position.set(0.02, 0.2, -2.02);
+    b.add(lamp);
+    const lamps = new CarLamps();
+    b.add(lamps.group);
+    lamps.fit(b, b);
+    lamps.setBraking(1);
+    const brakes = lamps.group.children.filter(
+      (o): o is SpotLight =>
+        (o as SpotLight).isSpotLight && (o as SpotLight).target.position.z < o.position.z,
+    );
+    const lit = brakes.filter((s) => s.intensity > 0);
+    expect(brakes).toHaveLength(2);
+    expect(lit).toHaveLength(1);
+    expect(lit[0]!.position.x).toBeCloseTo(0.02, 1);
+  });
+
   it('brightens the body’s own glowing tail faces under braking, not the nose, and gives them back', () => {
     const b = body();
     const h = hull();

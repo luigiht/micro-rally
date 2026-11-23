@@ -36,6 +36,8 @@ const PAINTED_BRAKING = 1.6;
 /** Tail lamps lie in the rear quarter of the body; an unlit red part this small (bounding radius, m) is a lamp, not livery. */
 const TAIL_ZONE = 0.25;
 const SMALL_PART = 0.2;
+/** Tail lamps spanning less than this (m) across, all told, are one centre lamp (a single-seater's): one brake beam. */
+const CENTRE_LAMP = 0.4;
 
 const box = new Box3();
 const part = new Box3();
@@ -89,6 +91,8 @@ export class CarLamps {
   /** Each side's tail lamps (+x, −x) in the body's frame, for the brake beams. */
   private readonly tailSides: [Box3, Box3] = [new Box3(), new Box3()];
   private cx = 0;
+  /** Which brake beams shine: both, or only the first on a car with one centre lamp. */
+  private readonly brakeLit = [1, 1];
   private faces: FaceLamp[] = [];
   private parts: PartLamp[] = [];
   private braking = -1;
@@ -129,6 +133,14 @@ export class CarLamps {
     for (const s of this.tailSides) s.makeEmpty();
     this.collect(body, rear, false);
     if (this.faces.length === 0 && this.parts.length === 0) this.collect(body, rear, true);
+    // One centre lamp (all the tail lamps within `CENTRE_LAMP` across): the first beam behind it,
+    // the second dark, so a single-seater throws one red glow, not a second from nowhere.
+    const [left, right] = this.tailSides;
+    const centre =
+      left.isEmpty() !== right.isEmpty() ||
+      (!left.isEmpty() && left.clone().union(right).getSize(v).x < CENTRE_LAMP);
+    if (centre) left.union(right);
+    this.brakeLit[1] = centre ? 0 : 1;
     // Each brake beam starts just behind its side's lamps (the generic spot when a body has none)
     // and shines back and down, away from the car's own tail.
     this.brakeBeams.forEach((b, i) => {
@@ -236,7 +248,9 @@ export class CarLamps {
         p.material.color.setRGB(p.color.r * k, p.color.g, p.color.b);
       }
     }
-    for (const b of this.brakeBeams) b.intensity = on * BRAKE_BEAM_INTENSITY;
+    this.brakeBeams.forEach(
+      (b, i) => (b.intensity = on * this.brakeLit[i]! * BRAKE_BEAM_INTENSITY),
+    );
   }
 
   /** Give the body back the colours it had before the lamps were fitted. */

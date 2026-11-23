@@ -9,6 +9,14 @@ hold the reasoning behind each change; the numbers in brackets point there.
 
 ### Changed
 
+- **Coast stages at sunset.** Every other Coast stage now runs as the sun
+  goes down: a peach and violet sky, warm low light and the car's lamps on,
+  still light enough to see the road [301].
+- **Distance fog matches the sky.** On dusk, sunset and morning skies, far
+  hills and roads fade into the sky behind them instead of showing as pale
+  shapes against it [302].
+- **One brake light on single-seaters.** The Formula One car's single centre
+  lamp throws one red glow when braking, not two [303].
 - **A sharper Mulsanne LM Prototype.** Rebuilt on the real short-tail Le Mans
   coupé's proportions: peaked front fenders over a low bonnet, a narrow
   cab-forward canopy, wide rear fenders with twin fins and a concave deck,

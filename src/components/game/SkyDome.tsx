@@ -3,6 +3,7 @@
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import { BackSide, Color, type Mesh, ShaderMaterial, SphereGeometry, Vector3 } from 'three';
+import { SKY_GRADIENT_GLSL } from '@/render/effects/SkyFog';
 import type { SkyGradient } from '@/render/theme/WorldTheme';
 
 /** Inside the camera's far plane (500 m), outside the fog's reach. */
@@ -23,17 +24,9 @@ uniform vec3 glow;
 uniform vec3 glowHot;
 uniform vec3 sunset;
 varying vec3 vDir;
+${SKY_GRADIENT_GLSL}
 void main() {
-  vec3 d = normalize(vDir);
-  float up = d.y;
-  vec3 col = mix(horizon, zenith, smoothstep(0.0, 0.6, up));
-  vec2 flat2 = d.xz;
-  float len = length(flat2);
-  float toward = len > 0.0001 ? max(dot(flat2 / len, sunset.xz), 0.0) : 0.0;
-  float low = smoothstep(-0.04, 0.03, up);
-  col = mix(col, glow, pow(toward, 3.0) * (1.0 - smoothstep(0.0, 0.32, up)) * low * 0.85);
-  col = mix(col, glowHot, pow(toward, 10.0) * (1.0 - smoothstep(0.0, 0.1, up)) * low * 0.9);
-  gl_FragColor = vec4(col, 1.0);
+  gl_FragColor = vec4(skyGradient(normalize(vDir), zenith, horizon, glow, glowHot, sunset), 1.0);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
 }

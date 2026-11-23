@@ -11,8 +11,9 @@ how they play is in [GAMEPLAY.md](GAMEPLAY.md).
 A stage is deterministic from `(game seed, stage type, stage index)`, so it is
 identical every time it is driven and records are fair. The career takes its
 types from the calendar; a multiplayer session cycles through the types its
-host ticked, with towns on every third rally stage and dusk on every third
-stage of a dusk-running type, as the calendar does (`StageSlot`).
+host ticked, with towns on every third rally stage and late runs on a
+late-running type's share of its stages (`StageTypeDef.dusk`), as the
+calendar does (`StageSlot`).
 
 - **Brief.** `stageBrief` draws the name, surface, weather, length and par
   from the first draws of the stage's RNG stream, without building the road,
@@ -399,6 +400,13 @@ nearly flat country (relief 9 m, long waves) with long flowing bends.
   (`CarLamps`): two spotlight beams down the road from the nose, and the
   body's own red tail lamps brightened while braking. No lamp parts are
   added: the body's own lamps are lit.
+- **At sunset.** Every other Coast stage (its second, fourth…;
+  `StageTypeDef.dusk = { every: 2, light: 'sunset' }`) runs as the sun goes
+  down (`SUNSET_LIGHTING`): a blue-violet zenith over a peach horizon with a
+  rose and gold glow, a warm, low sun and a brighter fill than dusk, so the
+  road still reads; the car's lamps are lit as at dusk. Under any gradient
+  sky the fog takes the dome's colour in each view direction
+  (`installSkyFog`), so far hills fade into the sky behind them.
 
 - **Unmarked road.** No edge lines: the winter road carries only its snow,
   the banks and, every 20 m, snow poles in place of the marker posts: a

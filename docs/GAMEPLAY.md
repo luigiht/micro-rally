@@ -30,7 +30,8 @@ here as of 2 November 2026.
   fixed run of 3, 6 or 9 stages. The host ticks the **stage types** the
   session uses (all by default); its stages take them in turn, in the
   picker's order (Pinewood, Alpine, Greenvale, Coastal, Arctic, Autumnal,
-  Desert, Lakeland, Urban, Circuit), with towns and dusk runs on every third as in the
+  Desert, Lakeland, Urban, Circuit), with towns on every third rally stage and late runs (every
+  third Arctic stage at dusk, every other Coast stage at sunset) as in the
   career. **Each driver picks their own car** in the lobby, any in the
   catalogue; driving their first stage locks it in for the session. The
   scoreboard shows each driver's car under their name ("Choosing a car…"

@@ -119,7 +119,7 @@ export interface StageBrief {
   /** Start line to finish line, metres. */
   length: number;
   parTime: number;
-  /** Run after sunset (`stageAtDusk`): a twilight sky and the car's lamps lit. */
+  /** Run late in the day (`stageAtDusk`): the stage type's twilight light and the car's lamps lit. */
   dusk?: true;
 }
 
@@ -151,16 +151,18 @@ export function stageHasTown(index: number): boolean {
   return hasTown(index) && STAGE_TYPES[stageTypeAt(index).stageType].towns;
 }
 
-/** In a region that runs at dusk, every this-many'th of its stages does; the rest run by day. */
-export const DUSK_EVERY = 3;
+/** Whether the `ordinal`th (from 0) stage of a type runs late: every `dusk.every`th of them, the rest by day. */
+function lateRun(def: StageTypeDef, ordinal: number): boolean {
+  return def.dusk !== undefined && ordinal % def.dusk.every === def.dusk.every - 1;
+}
 
-/** Whether the stage at `index` runs at dusk: the third, sixth… stage of a region with `dusk`. */
+/** Whether the stage at `index` runs late (`StageTypeDef.dusk`): the Arctic's third, sixth…, the Coast's second, fourth… */
 export function stageAtDusk(index: number): boolean {
   const { stageType } = stageTypeAt(index);
   if (!STAGE_TYPES[stageType].dusk) return false;
   let ordinal = 0;
   for (let j = 0; j < index; j++) if (stageTypeAt(j).stageType === stageType) ordinal++;
-  return ordinal % DUSK_EVERY === DUSK_EVERY - 1;
+  return lateRun(STAGE_TYPES[stageType], ordinal);
 }
 
 /**
@@ -186,8 +188,8 @@ export function calendarSlot(index: number): StageSlot {
 /**
  * A run of stages cycling through `types` in order: stage `index` is
  * `types[index % types.length]`. As in the calendar, a town stands on every
- * third rally stage of a type that has towns, and a dusk-running type runs
- * every third of its own stages at dusk.
+ * third rally stage of a type that has towns, and a type that runs late runs
+ * its own share of its stages late (`StageTypeDef.dusk`).
  */
 export function cycleSlot(types: readonly StageTypeId[], index: number): StageSlot {
   const typeAt = (j: number) => types[j % types.length]!;
@@ -204,7 +206,7 @@ export function cycleSlot(types: readonly StageTypeId[], index: number): StageSl
     stageType,
     loop: Math.floor(index / STAGES_PER_LOOP),
     town: rally(stageType) && def.towns && rallyBefore % TOWN_EVERY === TOWN_EVERY - 1,
-    dusk: def.dusk === true && sameBefore % DUSK_EVERY === DUSK_EVERY - 1,
+    dusk: lateRun(def, sameBefore),
   };
 }
 

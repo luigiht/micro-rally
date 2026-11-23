@@ -5,11 +5,13 @@ import type { Ref } from 'react';
 import { type Camera, type DirectionalLight, Vector3 } from 'three';
 import type { VehiclePose } from '@/game/vehicle/interpolatePose';
 import { installShadowEdgeFade } from '@/render/effects/ShadowEdgeFade';
+import { installSkyFog, setSkyFog } from '@/render/effects/SkyFog';
 import { ShadowSnap } from '@/render/effects/ShadowSnap';
 import type { ThemeLighting } from '@/render/theme/WorldTheme';
 import { SkyDome } from './SkyDome';
 
 installShadowEdgeFade();
+installSkyFog();
 
 /**
  * Where the sun shines from (toward the light from its target); only the direction matters. High,
@@ -86,6 +88,8 @@ export function SceneLights({ lighting: l, sunRef }: SceneLightsProps) {
   const maxTexture = useThree((s) => s.gl.capabilities.maxTextureSize);
   const map = maxTexture >= SHADOW_MAP_MAX ? SHADOW_MAP_MAX : SHADOW_MAP_MIN;
   const half = (SHADOW_TEXEL * map) / 2;
+  // Before the scene renders (not in an effect), so the first frame's fog already matches the dome.
+  setSkyFog(l.sky, SUN_DIRECTION);
   return (
     <>
       <color attach="background" args={[l.background]} />

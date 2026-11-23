@@ -7040,3 +7040,37 @@ bed)`. The road, its profile and every record stay as they were, so
      tyres now sink 0.5 cm into the ground (`TYRE_SINK`, was 1.5): with the
      shadow's depth bias at 5 mm the deeper sink is no longer needed, and it
      showed as wheels sunk into the road.
+
+301. **2026-11-23 — Every other Coast stage at sunset.** At the user's request.
+     `StageTypeDef.dusk` is now `{ every, light }` instead of a flag: the
+     Arctic keeps every third stage at `dusk`, and the Coast runs every second
+     of its own stages (its 2nd, 4th…) at `sunset`. `StageBrief.dusk` still
+     just says "run late, lamps on"; the stage type picks the light, so the
+     calendar, saves and stage geometry are untouched. `SUNSET_LIGHTING` sits
+     between day and dusk: a blue-violet zenith over a peach horizon with a
+     rose and gold glow, a warm low-intensity sun (1.5 against 2.6 by day,
+     0.3 at dusk) and a brighter sky fill, so the road still reads while the
+     car's lamps are lit. Tyre marks keep their stock ink at sunset (the dusk
+     ink exists only because unlit marks glow after dark).
+302. **2026-11-23 — Fog takes the sky dome's colour.** At the user's report of
+     distant hills and road showing as pale shapes in the sky. Under a gradient
+     sky (dusk, sunset, the Savanna morning) the fog was one flat colour, the
+     dome's horizon, while the sky behind far hills was zenith- or
+     glow-tinted, so anything near or past `fogFar` stood out as a silhouette.
+     `installSkyFog` patches three's fog chunks once, like
+     `installShadowEdgeFade`: the fragment's view direction (view space,
+     rotated back to world by `viewMatrix`) picks the dome's colour from the
+     same `skyGradient` GLSL `SkyDome` now uses, tone-mapped and converted as
+     the dome is. The uniform is one shared `Float32Array` added to every
+     built-in `ShaderLib` entry (three keeps plain typed arrays by reference
+     when it clones uniforms), switched on by `SceneLights` only while a dome
+     is up; custom shaders that include the fog chunks read it as zero and
+     keep the flat fog.
+303. **2026-11-23 — One brake beam behind a single centre lamp.** At the
+     user's report of a second red glow on the Formula One car. `CarLamps`
+     splits tail lamps by side; a single-seater's one centre lamp filled one
+     side and left the other empty, which fell back to a generic beam
+     outboard. When the lamps fill only one side, or all lie within 0.4 m
+     across, they count as one centre lamp: the first beam shines behind it
+     and the second stays dark (still present, so the light count never
+     changes).

@@ -263,7 +263,9 @@ flowchart LR
   gates, terrain and scenery first.
 - **Themes.** `render/theme/WorldTheme.ts` holds each stage type's sky, fog, light,
   road, gate and wall colours as data. `dayTheme(stageType, dusk)` selects the
-  normal daytime or dusk palette; `StageRenderer` builds the stage with that
+  normal daytime palette or, on a late run, the type's twilight one (dusk or
+  sunset, `StageTypeDef.dusk.light`); `effects/SkyFog.ts` makes the fog match
+  the sky dome; `StageRenderer` builds the stage with that
   theme once. `sceneryKits.ts` uses `stagePalette(stageType)` to tint the rally
   props, including autumn on Autumnal. `DriveRig`
   passes the theme to `SceneLights`, tyre marks and car lamps for dusk.

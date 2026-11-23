@@ -15,6 +15,7 @@ import {
   SUNNY_LIGHT,
   dayTheme,
   DUSK_LIGHTING,
+  SUNSET_LIGHTING,
   flatTheme,
   type ThemeColor,
 } from '@/render/theme/WorldTheme';
@@ -85,7 +86,7 @@ describe('WorldTheme', () => {
 
   it('a stage at dusk gets a twilight sky, little light, the car lamps lit, the day kits', () => {
     const arctic = dayTheme(STAGE_TYPES.arctic, true);
-    expect(STAGE_TYPES.arctic.dusk).toBe(true);
+    expect(STAGE_TYPES.arctic.dusk).toEqual({ every: 3, light: 'dusk' });
     expect(arctic.lighting).toBe(DUSK_LIGHTING);
     expect(arctic.carLamps).toBe(true);
     // Unlit marks: dark and faint after dark, never the snow's pale ink.
@@ -100,15 +101,32 @@ describe('WorldTheme', () => {
     for (const region of Object.values(STAGE_TYPES)) expect(dayTheme(region).carLamps).toBe(false);
   });
 
-  it('runs every third Arctic stage at dusk and every other stage by day', () => {
+  it('a Coast stage run late gets a sunset: lamps lit, dimmer than day, brighter than dusk', () => {
+    const coast = dayTheme(STAGE_TYPES.coastal, true);
+    expect(coast.lighting).toBe(SUNSET_LIGHTING);
+    expect(coast.carLamps).toBe(true);
+    expect(coast.skidInk).toBeNull();
+    const l = coast.lighting;
+    expect(l.sky?.horizon).toBe(l.fog);
+    expect(l.hemiIntensity).toBeLessThan(1.9);
+    expect(l.hemiIntensity).toBeGreaterThan(DUSK_LIGHTING.hemiIntensity);
+    expect(l.sunIntensity).toBeLessThan(2.6);
+    expect(l.sunIntensity).toBeGreaterThan(DUSK_LIGHTING.sunIntensity);
+  });
+
+  it('runs every third Arctic stage at dusk, every other Coast stage at sunset, the rest by day', () => {
     const arctic: boolean[] = [];
+    const coast: boolean[] = [];
     for (let i = 0; i < 200; i++) {
       const { stageType } = stageTypeAt(i);
       if (stageType === 'arctic') arctic.push(stageAtDusk(i));
+      else if (stageType === 'coastal') coast.push(stageAtDusk(i));
       else expect(stageAtDusk(i)).toBe(false);
     }
     expect(arctic.length).toBeGreaterThan(9);
+    expect(coast.length).toBeGreaterThan(9);
     arctic.forEach((dusk, k) => expect(dusk).toBe(k % 3 === 2));
+    coast.forEach((late, k) => expect(late).toBe(k % 2 === 1));
     const first = [...Array(200).keys()].find((i) => stageAtDusk(i))!;
     expect(stageBrief(1, first).dusk).toBe(true);
     expect(stageBrief(1, first - 1).dusk).toBeUndefined();

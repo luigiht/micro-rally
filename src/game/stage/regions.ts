@@ -23,6 +23,9 @@ export type StageTypeId =
   | 'savanna';
 export type Weather = 'clear' | 'overcast' | 'rain' | 'night' | 'snow';
 
+/** The light a stage run late in the day wears (`StageTypeDef.dusk`). */
+export type TwilightLight = 'dusk' | 'sunset';
+
 export interface StagePalette {
   sky: string;
   fog: string;
@@ -279,8 +282,12 @@ export interface StageTypeDef {
   scenery: SceneryDensity;
   /** Average speed (m/s) a decent run should hold. */
   parSpeed: number;
-  /** Some of its stages run after sunset (every `DUSK_EVERY`th): a twilight sky, little light, the car's lamps lit. */
-  dusk?: boolean;
+  /**
+   * Some of its stages run late in the day with the car's lamps lit: every `every`th of its own
+   * stages, in `light` (`dusk`: just past sunset, a twilight sky and little light; `sunset`: the
+   * sun going down, low and warm, the sky still bright enough to see by).
+   */
+  dusk?: { every: number; light: TwilightLight };
   /** The road changes surface along its length (`SurfaceSpans`): stretches of `surface` and of another. */
   surfaceSpans?: SurfaceSpanStyle;
   /** Lakes in the valleys, beside the road and bridged by it (`Lakes`); none when unset. */
@@ -589,6 +596,7 @@ const COAST: StageTypeDef = {
   id: 'coastal',
   seedKey: 'coast',
   surface: 'tarmac',
+  dusk: { every: 2, light: 'sunset' },
   offroad: 'grass',
   weathers: [['clear', 1]],
   palette: {
@@ -781,7 +789,7 @@ const ARCTIC: StageTypeDef = {
   id: 'arctic',
   seedKey: 'arctic',
   surface: 'snow',
-  dusk: true,
+  dusk: { every: 3, light: 'dusk' },
   offroad: 'snow',
   weathers: [
     ['overcast', 2],

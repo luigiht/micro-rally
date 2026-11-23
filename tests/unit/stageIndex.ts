@@ -83,7 +83,7 @@ export function slotV15(index: number): StageSlot {
     stageType,
     loop: Math.floor(index / STAGES_PER_LOOP),
     town: townV15(index),
-    dusk: def.dusk === true && ordinal % 3 === 2,
+    dusk: def.dusk?.light === 'dusk' && ordinal % 3 === 2,
   };
 }
 
@@ -108,7 +108,7 @@ export function slotV13(index: number): StageSlot {
     loop: Math.floor(index / STAGES_PER_LOOP),
     // v13's towns: every third rally stage, before they stepped on round the nine-type mix.
     town: rallyIndex(index) !== null && rallyIndex(index)! % 3 === 2 && def.towns,
-    dusk: def.dusk === true && ordinal % 3 === 2,
+    dusk: def.dusk?.light === 'dusk' && ordinal % 3 === 2,
   };
 }
 

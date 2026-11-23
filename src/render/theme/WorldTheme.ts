@@ -1,4 +1,4 @@
-import type { StageTypeDef, Weather } from '@/game/stage/regions';
+import type { StageTypeDef, TwilightLight, Weather } from '@/game/stage/regions';
 import type { Surface } from '@/game/vehicle/surfaces';
 import {
   CAP_COLOR,
@@ -165,6 +165,30 @@ export const DUSK_LIGHTING: ThemeLighting = {
 };
 
 /**
+ * The sun going down: a dusky blue overhead fading to a peach horizon, a rose
+ * and gold glow where the sun sits, a warm haze. Dimmer than the day but still
+ * light enough to read the road; the car's lamps are on all the same.
+ */
+export const SUNSET_LIGHTING: ThemeLighting = {
+  background: '#e0a48c',
+  fog: '#e0a48c',
+  fogNear: 55,
+  fogFar: 240,
+  hemiSky: '#ffd2b4',
+  hemiGround: '#6a5a6e',
+  hemiIntensity: 1.15,
+  sunColor: '#ff9f60',
+  sunIntensity: 1.5,
+  sky: { zenith: '#56649e', horizon: '#e0a48c', glow: '#f2846e', glowHot: '#ffc35c' },
+};
+
+/** The light a late-running stage of this type wears. */
+const TWILIGHT: Record<TwilightLight, ThemeLighting> = {
+  dusk: DUSK_LIGHTING,
+  sunset: SUNSET_LIGHTING,
+};
+
+/**
  * Rain: a low grey sky over everything, the mist closing in, a flat light
  * from a dim, soft sun, so the moor reads dark and damp and the far hills
  * fade into the murk.
@@ -255,8 +279,9 @@ export function dayRoad(shoulder: string): RoadTheme {
 const DAY = new Map<string, WorldTheme>();
 
 /**
- * A stage type's look by day, as the game has always drawn it, or after sunset on
- * a stage that runs at dusk (`StageBrief.dusk`). Memoised, so a theme can be
+ * A stage type's look by day, as the game has always drawn it, or late in the day
+ * on a stage that runs late (`StageBrief.dusk`): the type's twilight light
+ * (`StageTypeDef.dusk.light`), the car's lamps lit. Memoised, so a theme can be
  * compared by identity.
  */
 export function dayTheme(
@@ -264,6 +289,7 @@ export function dayTheme(
   dusk = false,
   weather: Weather = 'clear',
 ): WorldTheme {
+  const twilight = dusk ? (stageType.dusk?.light ?? 'dusk') : null;
   const rain = weather === 'rain' && !dusk;
   const snow = weather === 'snow';
   const key = `${stageType.id}${dusk ? ':dusk' : ''}${rain ? ':rain' : ''}${snow ? ':snow' : ''}`;
@@ -279,8 +305,8 @@ export function dayTheme(
       road.wet = true;
     }
     theme = {
-      lighting: dusk
-        ? DUSK_LIGHTING
+      lighting: twilight
+        ? TWILIGHT[twilight]
         : {
             background: stageType.palette.sky,
             fog: stageType.palette.fog,
@@ -308,13 +334,15 @@ export function dayTheme(
       seawall: DAY_SEAWALL,
       sea: stageType.coast?.sea ?? DAY_SEA,
       // A dusty stage marks its earth, off the road too, in its own colour (the Savanna's red).
-      skidInk: dusk
-        ? DUSK_SKID_INK
-        : rain
-          ? RAIN_SKID_INK
-          : stageType.dust
-            ? { color: stageType.dust.ink, opacity: 0.5 }
-            : null,
+      // Only after dark do the unlit marks need dimming; a sunset still lights the road.
+      skidInk:
+        twilight === 'dusk'
+          ? DUSK_SKID_INK
+          : rain
+            ? RAIN_SKID_INK
+            : stageType.dust
+              ? { color: stageType.dust.ink, opacity: 0.5 }
+              : null,
       circuit: DAY_CIRCUIT,
       carLamps: dusk,
       ...(rain
